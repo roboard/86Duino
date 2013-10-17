@@ -1,0 +1,346 @@
+This is the DJGPP port of gcc-4.3.2
+
+Please read this file up to end (maybe skipping sections You don't need,
+for example You don't need to read how to build gcc-4.3.2 from sources
+if You only intend to use binary archives). Also consult DJGPP documentation
+and FAQ where needed.
+
+
+Requirements to use this binary release:
+    DJGPP-2.03 Patchlevel 2 or above. 
+    binutils-2.16 or above (Earlier versions will NOT work any more due to
+	incompatible linker scripts as linker script is no more included
+	with DJGPP port of GCC)
+
+Requirements to build gcc-4.3.2 from sources:
+    Long filename support. I built it in DOS session under WinXP Pro (SP2).
+        Win95, Win98, WinME or Win2K should be OK. I myself haven't tested
+	whether it can be build under Win98, Win2k or Win2K.
+    perhaps at least 256Mb of RAM for building (Amount of available
+        DPMI memory for DOS session should be set to auto).
+    rebuilt stubify.exe with the default stack size increased (I used 1024K).
+    DOS transfer buffer size increased to 32K for sime executables (I did it
+        for GNU make and LD).
+    at least DJGPP-2.03 patchlevel 2 required
+    other GNU utilities (see below)
+
+
+Source archives
+===============
+
+
+Archive gcc432s2.zip contains script which modifies original gcc-4.3.2
+and sources for DJGPP. You don't need it unless You want to recreate
+GCC source archive for DJGPP. If You are using this archive and original 
+sources of gcc-4.3.2.tar.gz, then You don't need gcc432s.zip.
+    
+The source archive gcc432s.zip contains all the sources to build
+all compilers (C, C++, Objective C, Objective C++, GNU Fortran) and also C++
+and Fortran libraries (libstdcxx.a, libgpp.a and libg2c.a). 
+libg++ is no more supported.
+
+Most users don't need source archives at all.
+
+Binary archives
+================
+
+Binary archives are split into 5 parts:
+
+  gcc432b.zip  : The gcc.exe driver program and the C compiler.
+                 It also contains the documentation.
+
+  gpp432b.zip  : The C++ compiler and libstdcxx.a together 
+                 with needed header files. Please note that one must
+		 recompile all C++ sources built with any earlier GCC version
+
+  objc432b.zip : The Objective C and Objective C++ compilers and 
+		 libobjc.a and the needed header files.
+
+  gfor432b.zip  : GNU Fortran compiler
+
+  ada432b.zip  : Ada compiler (untested)
+
+
+The archive gcc432b.zip is required by all other binary packages
+
+Binary packages includes following documentation files:
+  
+  Archive gcc432b.zip:  
+	info/gcc.info - the use and the internals of the GNU compiler
+	info/cpp.info - documentation of the GNU C preprocessor.
+	info/cppinternals.info  - internals of the GNU C Preprocessor.
+        info/gccinstall.info
+	info/gccint.info
+		(NEW: use install-info to add it to info/dir)
+  Archive gpp432b.zip:
+        gnu/gcc-4.32/libstdcxx/* - some documentation of libstdc++-v3
+		(HTML and text formats)
+  Archive gfor432b.zip:
+	info/gfortran.info - documentation of the GNU Fortran compiler
+
+
+Before you install gcc-4.3.2 binaries
+======================================
+
+You should remove previous installation of gcc or egcs completely
+(unless You really know what You are doing).
+
+Make sure You don't have following files from earlier versions
+(relative paths against to DJGPP directory are given):
+	bin/cc1.exe		(from gcc272b.zip or gcc2721b.zip)
+	bin/cc1plus.exe		(from gpp272b.zip or gpp2721b.zip)
+	lib/libgcc.a		(from gcc272b.zip or gcc2721b.zip)
+	lib/libobjc.a		
+	lib/specs		(from djdev201.zip or djdev202.zip) 
+	lib/libstdcxx.a		
+	lib/libgpp.a		
+
+Following packages are required for binaries:
+	binutils-2.16 or above. Linker script is no more included in DJGPP
+	    release of GCC and all earlier binutils releases for DJGPP
+	    had incompatible scripts. SO PLEASE UPGRADE.
+
+	DJGPP-2.03 Patchlevel 2 or above (djdev203.zip)
+
+
+Installing binaries of gcc-4.3.2
+=================================
+
+Needed archives for different programing languages
+	C 			: gcc432b.zip
+
+	C++			: gcc432b.zip, gpp432b.zip
+
+	Fortran	95              : gcc432b.zip, gfor432b.zip
+
+	Objective C		: gcc432b.zip, objc432b.zip
+
+	Ada			: gcc432b.zip, ada432b.zip
+
+Of course for ALL languages You also need at least binutils (bnu215b.zip
+or newer) and djdev204.zip (or newer when it will be released)
+
+Unzip all the zip files from that directory, preserving the
+directory structure.  For example:
+
+	pkunzip -d djdev204
+or
+	unzip386 djdev204
+
+
+NOTE:   For debugging GDB version 6.3 or above is recommended. 
+        (gdb-6.3 is not released for DJGPP yet though).
+
+
+1. Only long filenames
+----------------------
+
+Unzip the binaries with an unzip program, which can restore the long filenames
+stored in the zip archive.
+
+2. Only short filenames
+-----------------------
+
+Unzip the binaries with an unzip program which doesn't know about long
+filenames, or if your unzipper knows about them, please follow first
+the steps described in the DJGPP FAQ in the section 
+about setting the NameNumericTail to 0 __BEFORE__!!! unzipping the archives.
+
+3. Long and short filenames at the same time
+--------------------------------------------
+
+Use an unzip program which can restore the long filenames and follow
+the instructions under 2. when the unzipper knows about long filenames.
+
+
+Note for users of C++ IO classes fstream, ifstream, ofstream
+============================================================
+
+There is a regression against earlier versions of GCC (gcc-2.95.3 and
+earlier): Member functions tellp(), tellg(), seekp() and seekg()
+are broken when stream is opened not in binary mode. If You are going
+to use any similar functions You should open stream in binary mode.
+
+Don't ask me when it will be fixed as I don't know that. I'm also 
+not sure I'll spend much time trying to fix that.
+
+
+Rebuilding gcc-4.3.2 from the sources
+======================================
+
+Requirements
+------------
+
+-  Long filename support is required. It means You should build gcc-4.3.2
+   under Win95, Win98, WinME, Win2000 or WinXP. I myself built gcc-4.3.2
+   under WinXP.
+
+-  Much of free disk space (more than 1Gb)
+
+-  perhaps 128Mb RAM (or more) to build gcc-4.3.2 under Win9X. 
+   DPMI memory amount for DOS session should be set to "Auto".
+   Building on machine with only 64 Mb of memory is not tested.
+   (I used machine with 1512Mb of memory, operating system WinXP Pro SP2)
+   
+-  One must rebuild stubify.exe to use larger stack size. The default
+   512Kb is not enough and the build not succeed in that case:
+   - download DJGPP runtime sources (djlsr203.zip or djlsr204.zip)
+   - patch src/stub/stub.asm to increase stack size to 1Mb
+   - rebuild stub and stubify.exe
+   See DJGPP FAQ for more information how to build DJGPP from sources.
+   stubify.exe is built very soon and further failures caused by incompatibility
+   with newer GCC version can safely be ignores.
+
+-  It is recommended to build and install MPFR-2.2.1 or above (http://www.mpfr.org/).
+   There is buggy version shipped inside GMP, GCC builds also in that case.
+
+-  rebuilt stubify.exe with the default stack size increased (I used 1024K).
+
+-  DOS transfer buffer size increased to 32K for sime executables (I did it
+   for GNU make and ld). I do not know whether both are needed. 
+        
+    at least DJGPP-2.03 patchlevel 2 required
+-  Many GNU packages.
+	bash-2.0.4 or above
+	GNU Diffutils 2.8 or above
+	GNU Fileutils-4.1
+	GNU Find 4.1.7 or above
+	GNU grep 2.5.1 or above
+	GNU Awk 3.1.1 or above
+	GNU Make 3.80 or above
+	GNU Sed 4.0.7 or above
+	GNU shell utils 2.0.11
+	GNU Textutils 2.0
+	GNU Texinfo 4.8 or above
+	GNU tar 1.1.2 or above
+	GNU binutils 2.16.1 or above
+	GNU gmp 4.2.1 (required to build GNU Fortran compiler) or above
+	MPFR 2.3.0 or above (no official DJGPP port yet, but builds for
+            DJGPP "out of box"), see 
+	working GNU C compiler (perhaps not earlier than gcc-3.3). 
+
+   If You modify some source files You may also need
+	autoconf-2.59 or above
+	automake-1.9.4 or above
+	(for some directories also old autoconf-2.13 and automake-1.5
+        may be needed)
+	
+   You need autoconf and automake also if You are using gcc432s2.zip.
+   However it's normally not needed for most users who builds gcc-4.3.2 from
+   contents of gcc432s.zip. In that case You need to edit script unpack-gcc
+   to specify place where old and new versions of autoconf and automake are
+   installed
+
+   Usually newer versions of these packages should also work unless
+   otherwise stated above. Older versions may work in some cases, but that
+   is not tested
+
+-  INFO-ZIP binary (compiled with DJGPP v2!!!) is needed for using build.sh 
+   to create binary distribution archives. There is no problems to compile 
+   it. See http://www.info-zip.org for additional information
+   about INFO-ZIP. You can find DJGPP compiled binary there. 
+
+-  Working DJGPP installation of course:
+	DJGPP-2.03 patchlevel 2 or above, 
+	working gcc installation (gcc-3.3.0 or above, You need
+                working Ada compiler to build Ada compiler)
+   NOTE: gcc-4.3.2 compiled using DJGPP-2.03 Patchelevel 2 must not be
+   used with DJGPP-2.04 and otherwise - gcc-4.3.2 compiled using 
+   for example recent DJGPP-2.04 CVS version can be used with DJGPP-2.04
+   Beta 1 but not with DJGPP-2.03 Patchlevel 2. This must be taken into
+   account when compiling gcc-4.3.2 for DJGPP from sources
+
+   NOTE: Building GCC-4.3.2 using DJGPP v2.03 patchlevel 2 requires rebuilding
+   several DJGPP packets before building GCC.
+
+-  You should have sh.exe in DJGPP bin directory as symbolic link to  
+   bash.exe (type 'ln -s bash.exe sh.exe' in that directory)
+
+
+Extracting the sources
+----------------------
+
+At first you should unzip the archive gcc432s.zip. The sources are _NOT_
+the complete sources like the original gcc-4.3.2 distribution. I have
+removed many files to save disk space which are not needed for the DJGPP
+port. However I left configuration of other machines in to make archives
+usable to build cross-to-DJGPP compilers and DJGPP hosted cross-compilers
+(I haven't tested it).
+
+
+Compiling gcc
+-------------
+
+Directory gnu/gcc-4.32 contains all sources of gcc-4.3.2
+
+Sources are NOT configured. 
+	
+Change to directory gnu/build.gcc and configure sources
+by running script djconfig.sh. 
+
+	sh djconfig.sh
+
+When this is done You can build gcc-4.3.2 by running script djmake.sh
+Under Win9X You'll have to restart it some times when it will crash 
+due to Win9X DPMI descriptor leaks. You may use redir to get output in file.
+
+	sh djmake.sh bootstrap
+
+When this successfully ends run script djinsttmp.sh which installs
+all into directory gnu/install.gcc
+
+After that change to this directory and run script makepkg.sh
+to create binary distribution packages
+	
+
+Installing newly compiled gcc
+-----------------------------
+
+It's recommended to install binary packages which are generated 
+by makepkg.sh
+
+
+
+Available resources
+===================
+
+See following URL for additional information:
+gcc:		  http://gcc.gnu.org
+
+
+
+Reporting bugs
+==============
+
+If you found a bug in gcc-4.3.2 (gcc, gfortran, libstdc++, etc) please report it to 
+the GCC bug addresses and _NOT_ (or at least not only) in the DJGPP news group. 
+
+But if you think you found a bug in the DJGPP related things, then please 
+report it in comp.os.msdos.djgpp (the news group) or mail it to 
+djgpp@delorie.com, which is the gateway to the news group.
+
+Some possible situations:
+  - gcc says 'Internal compiler error' (or something similar)
+       more likely it is error of gcc if it is reproducible. It would 
+       be nice to test on some other system (e.g. Linux) and also with 
+       different version of compiler if possible and submit report to 
+       gcc bug address. 
+  - gcc crashes or freezes. 
+       In this situation it's hard to guess where is the problem. It may be
+       problem with gcc itself but it may be also DJGPP specific one.
+
+Please email me directly only in rare cases, if you think it is only of
+interest to me, since I'll see the reports in DJGPP mailing list.
+
+
+Thanks to
+=========
+
+To all who have contributed new features, test results, bug-fixes to GCC
+(see http://gcc.gnu.org/thanks.html) and also who helped with DJGPP port of 
+gcc-4.3.2
+
+
+Have fun with gcc
+
+Andris Pavenis <andris.pavenis@iki.fi>

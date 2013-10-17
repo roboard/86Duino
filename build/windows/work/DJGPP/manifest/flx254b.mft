@@ -1,0 +1,11 @@
+bin/flex.exe
+bin/flexpp.exe
+bin/flexx.exe
+include/FlexLexer.h
+lib/libfl.a
+info/flex.info
+man/cat1/flex.1
+gnu/flex-2.5-4/MISC/MSDOS/README
+gnu/flex-2.5-4/NEWS
+manifest/flx254b.mft
+manifest/flx254b.ver

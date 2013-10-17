@@ -1,0 +1,33 @@
+#
+# DSM for zlib 1.1.4 binaries
+# Written by Richard Dawe <rich@phekda.freeserve.co.uk> 2001-06-13
+#
+
+dsm-file-version: 1.0
+dsm-name: zlib114b
+dsm-version: 0.5.0
+
+dsm-author: Richard Dawe
+dsm-author-email: rich@phekda.freeserve.co.uk
+
+name: zlib
+version: 1.1.4 release 1
+type: binaries
+manifest: zlib114b
+sources-dsm: zlib114s
+short-description: General purpose data compression library
+
+author: Jean-loup Gailly and Mark Adler
+web-site: http://www.zlib.org/
+web-site: http://www.cdrom.com/pub/infozip/zlib/
+ftp-site: ftp://ftp.cdrom.com/pub/infozip/zlib/
+
+simtelnet-path: v2tk/
+zip: zlib114b.zip
+
+replaces: zlib < 1.1.4 release 1
+
+# To use zlib, you really need a compiler.
+requires: djdev
+requires: gcc
+requires: binutils

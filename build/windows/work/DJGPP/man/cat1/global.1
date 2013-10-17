@@ -1,0 +1,330 @@
+
+
+
+GLOBAL(1)                                               GLOBAL(1)
+
+
+NNAAMMEE
+       global - print the locations of specified object.
+
+SSYYNNOOPPSSIISS
+       gglloobbaall [-aGilnqrstTvx][-e] _p_a_t_t_e_r_n
+       gglloobbaall -c[qrsv] _p_r_e_f_i_x
+       gglloobbaall -f[anqrstvx] _f_i_l_e_s
+       gglloobbaall -g[aGilnoOqtvx][-e] _p_a_t_t_e_r_n
+       gglloobbaall -I[ailnqtvx][-e] _p_a_t_t_e_r_n
+       gglloobbaall -p[qrv]
+       gglloobbaall -P[aGilnoOqtvx][-e] _p_a_t_t_e_r_n
+       gglloobbaall -u[qv]
+
+DDEESSCCRRIIPPTTIIOONN
+       GGlloobbaall  find  the locations of specified object in C, C++,
+       Yacc, Java, PHP and Assembly  source  files.   GGlloobbaall  can
+       treat  a source tree, that is, a directory that has subdi-
+       rectories and source files.  You can get the relative path
+       of  objects  from  anywhere  within  the tree.  GGlloobbaall can
+       locate not only object definitions but also object  refer-
+       ences and other symbols.  Duplicate entries are allowed.
+
+       In  advance  of  using  this  command,  you  must  execute
+       ggttaaggss(1) at the root directory of the source tree to  make
+       tag files.  Then you can execute at anywhere in the source
+       tree.
+
+CCOOMMMMAANNDDSS
+       The following commands are available:
+
+       _p_a_t_t_e_r_n
+              Print object which match to the _p_a_t_t_e_r_n.   Extended
+              regular  expressions  which  are  the same as those
+              accepted by eeggrreepp(1) are available.
+
+       --cc, ----ccoommpplleettiioonn [_p_r_e_f_i_x]
+              Print candidate definition names which  start  with
+              specified  _p_r_e_f_i_x.  _P_r_e_f_i_x  is not specified, print
+              all definition names.
+
+       --ff, ----ffiillee _f_i_l_e_s
+              Print all tags in the _f_i_l_e_s.  This  option  implies
+              -x option.
+
+       --gg, ----ggrreepp
+              Print all lines which match to the _p_a_t_t_e_r_n.
+
+       --II, ----iidduuttiillss
+              Print  all  lines which match to the _p_a_t_t_e_r_n.  This
+              function use iidduuttiillss(1) as a search engine.  To use
+              this  command,  you  need  to install iidduuttiillss(1) in
+              your system and you must execute ggttaaggss(1)  with  --II
+              option.
+
+
+
+
+GNU Project                 April 2006                          1
+
+
+
+
+
+GLOBAL(1)                                               GLOBAL(1)
+
+
+       --pp, ----pprriinntt--ddbbppaatthh
+              Print the location of 'GTAGS'.
+
+       --PP, ----ppaatthh [_p_a_t_t_e_r_n]
+              Print  the  path which match to the _p_a_t_t_e_r_n.  If no
+              pattern specified, print all.
+
+       --uu, ----uuppddaattee
+              Locate tag files and update them incrementally.
+
+       ----vveerrssiioonn
+              Show version number.
+
+       ----hheellpp Show help.
+
+OOPPTTIIOONNSS
+       The following options are available:
+
+       --aa, ----aabbssoolluuttee
+              Print absolute path name. By default,  print  rela-
+              tive path name.
+
+       --ee, ----rreeggeexxpp _p_a_t_t_e_r_n
+              Use _p_a_t_t_e_r_n as the pattern; useful to protect  pat-
+              terns beginning with -.
+
+       --GG, ----bbaassiicc--rreeggeexxpp
+              Interpret _p_a_t_t_e_r_n as a  basic  regular  expression.
+              The  default  is extended regular expression.  This
+              option is valid for the --gg and --PP command.
+
+       --ii, ----iiggnnoorree--ccaassee
+              ignore case distinctions in pattern.
+
+       --ll, ----llooccaall
+              Print just objects which exist  under  the  current
+              directory.
+
+       --nn, ----nnooffiilltteerr
+              Suppress sort filter and path conversion filter.
+
+       --oo, ----ootthheerr
+              Search  pattern  in  not only source files but also
+              other files like 'README'.  This  option  is  valid
+              only with --gg or --PP command.
+
+       --OO, ----oonnllyy--ootthheerr
+              Search  pattern  only in other files like 'README'.
+              This option is valid only with --gg  or  --PP  command.
+              This option override the --oo option.
+
+       --qq, ----qquuiieett
+              Quiet mode.
+
+
+
+
+GNU Project                 April 2006                          2
+
+
+
+
+
+GLOBAL(1)                                               GLOBAL(1)
+
+
+       --rr, ----rreeffeerreennccee, ----rroooottddiirr
+              Print  the  locations  of  object  references.   By
+              default, print object  definitions.   With  the  --pp
+              option, print the root directory of source tree.
+
+       ----rreessuulltt _f_o_r_m_a_t
+              _f_o_r_m_a_t may be 'path', `ctags', `ctags-x', `grep' or
+              'cscope'.  The ----rreessuulltt==ccttaaggss and  ----rreessuulltt==ccttaaggss--xx
+              are  equivalent to the --tt and --xx respectively.  The
+              --result option is given to priority more than  the
+              -t and -x option.
+
+       --ss, ----ssyymmbbooll
+              Print  the locations of specified symbol other than
+              definitions.
+
+       --tt, ----ttaaggss
+              Print with standard ctags format.
+
+       --TT, ----tthhrroouugghh
+              Go through all the tag files  listed  in  GGTTAAGGSSLLIIBB--
+              PPAATTHH.   By  default,  stop  searching  when  tag is
+              found.  This option is ignored when either  --ss,  --rr
+              or --ll option is specified.
+
+       --vv, ----vveerrbboossee
+              Verbose mode.
+
+       --xx, ----ccxxrreeff
+              In addition to the default output, produce the line
+              number and the line contents.
+
+EEXXAAMMPPLLEESS
+            $ ls -F
+            Makefile      src/    lib/
+            $ gtags
+            $ global main
+            src/main.c
+            $ global -x main
+            main              10 src/main.c  main (argc, argv) {
+            $ global -x '^[sg]et'
+            set_num           20 lib/util.c  set_num(values)
+            get_num           30 lib/util.c  get_num() {
+            $ global -rx '^[sg]et'
+            set_num          113 src/op.c            set_num(32);
+            set_num          225 src/opop.c               if (set_num(0) > 0) {
+            get_num           90 src/op.c            while (get_num() > 0) {
+            $ cd lib
+            $ global -rx '^[sg]et'
+            set_num          113 ../src/op.c            set_num(32);
+            set_num          225 ../src/opop.c               if (set_num(0) > 0) {
+            get_num           90 ../src/op.c            while (get_num() > 0) {
+            $ global strlen
+            $ (cd /usr/src/sys; gtags)
+
+
+
+GNU Project                 April 2006                          3
+
+
+
+
+
+GLOBAL(1)                                               GLOBAL(1)
+
+
+            $ export GTAGSLIBPATH=/usr/src/sys
+            $ global strlen
+            ../../../usr/src/sys/libkern/strlen.c
+            $ (cd /usr/src/lib; gtags)
+            $ GTAGSLIBPATH=/usr/src/lib:/usr/src/sys
+            $ global strlen
+            ../../../usr/src/lib/libc/string/strlen.c
+
+FFIILLEESS
+       'GTAGS'
+              Tag file for object definitions.
+
+       'GRTAGS'
+              Tag file for object references.
+
+       'GSYMS'
+              Tag file for other symbols.
+
+       'GPATH'
+              Tag file for path of source files.
+
+       'GTAGSROOT'
+              If environment variable GGTTAAGGSSRROOOOTT is  not  set  and
+              'GTAGSROOT'   exist  in  the  same  directory  with
+              'GTAGS' then use the value as GGTTAAGGSSRROOOOTT.
+
+       '/etc/gtags.conf', '$HOME/.globalrc'
+              Configuration file.
+
+EENNVVIIRROONNMMEENNTT
+       The following environment variables affect  the  execution
+       of gglloobbaall:
+
+       GGTTAAGGSSRROOOOTT
+              The directory which is the root of source tree.
+
+       GGTTAAGGSSDDBBPPAATTHH
+              The  directory on which gtags database exist.  This
+              value is ignored when GGTTAAGGSSRROOOOTT is not defined.
+
+       GGTTAAGGSSLLIIBBPPAATTHH
+              If this variable is set, it is used as the path  to
+              search  for  library  functions.  If  the specified
+              function is not found in a source tree, gglloobbaall also
+              search in these paths.
+
+       GGTTAAGGSSLLAABBEELL
+              If  this  variable is set, its value is used as the
+              label  of  configuration  file.  The   default   is
+              default.
+
+CCOONNFFIIGGUURRAATTIIOONN
+       The following configuration variables affect the execution
+       of gglloobbaall:
+
+
+
+GNU Project                 April 2006                          4
+
+
+
+
+
+GLOBAL(1)                                               GLOBAL(1)
+
+
+       icase_path(boolean)
+              Ignore case distinctions in the _p_a_t_t_e_r_n.
+
+DDIIAAGGNNOOSSTTIICCSS
+       GGlloobbaall exits with a non 0 value if an  error  occurred,  0
+       otherwise.
+
+SSEEEE AALLSSOO
+       ggttaaggss--ppaarrsseerr(1), ggttaaggss(1), hhttaaggss(1), lleessss(1).
+
+       GNU GLOBAL source code tag system
+       (http://www.gnu.org/software/global/).
+
+AAUUTTHHOORR
+       Tama Communications Corporation.
+
+HHIISSTTOORRYY
+       The gglloobbaall command appeared in FreeBSD 2.2.2.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU Project                 April 2006                          5
+
+

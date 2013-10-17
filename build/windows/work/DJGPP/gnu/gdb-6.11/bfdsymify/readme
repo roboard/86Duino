@@ -1,0 +1,21 @@
+Once upon a time, a long, LONG time ago, DJ asked for a version of
+SYMIFY that would be based on BFD functions, rather than on our
+private syms.c from libdbg.a.  The advantage of this would be that
+such a program would automatically support every format of debugging
+info that BFD is configured to support, not only the COFF debug info
+supported by libdbg.a.
+
+Well, it took more than a year, but I finally got to making it happen.
+I called the program BFDSYMIFY, but that's a temporary name (it also
+exceeds DOS 8+3 limits, which isn't very nice), so if you have a
+better name, I am open to suggestions.  My intent was to eventually ask
+the Binutils maintainer to include this program as part of Binutils,
+but it looks like it won't happen any time soon...
+
+In the meantime, I'm making it available as part of GDB distro.
+
+Please tell me how well does bfdsymify work (or doesn't work) for you.
+
+
+Enjoy,
+                                  Eli Zaretskii  <eliz@is.elta.co.il>

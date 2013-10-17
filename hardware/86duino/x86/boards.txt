@@ -1,0 +1,84 @@
+# See: http://code.google.com/p/arduino/wiki/Platforms
+
+menu.cpu=Processor
+
+################################################################################
+
+86DuinoZERO.name=86Duino ZERO
+86DuinoZERO.upload.tool=86upload
+86DuinoZERO.upload.protocol=avr109
+86DuinoZERO.upload.maximum_size=28672
+86DuinoZERO.upload.speed=57600
+86DuinoZERO.upload.disable_flushing=true
+86DuinoZERO.upload.use_1200bps_touch=true
+86DuinoZERO.upload.wait_for_upload_port=true
+
+86DuinoZERO.bootloader.tool=avrdude
+86DuinoZERO.bootloader.low_fuses=0xff
+86DuinoZERO.bootloader.high_fuses=0xd8
+86DuinoZERO.bootloader.extended_fuses=0xcb
+86DuinoZERO.bootloader.file=caterina/Caterina-Leonardo.hex
+86DuinoZERO.bootloader.unlock_bits=0x3F
+86DuinoZERO.bootloader.lock_bits=0x2F
+
+86DuinoZERO.build.mcu=atmega32u4
+86DuinoZERO.build.f_cpu=16000000L
+86DuinoZERO.build.vid=0x2341
+86DuinoZERO.build.pid=0x8036
+86DuinoZERO.build.core=arduino
+86DuinoZERO.build.variant=86duinozero
+86DuinoZERO.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+
+################################################################################
+
+86DuinoONE.name=86Duino ONE
+86DuinoONE.upload.tool=86upload
+86DuinoONE.upload.protocol=avr109
+86DuinoONE.upload.maximum_size=28672
+86DuinoONE.upload.speed=57600
+86DuinoONE.upload.disable_flushing=true
+86DuinoONE.upload.use_1200bps_touch=true
+86DuinoONE.upload.wait_for_upload_port=true
+
+86DuinoONE.bootloader.tool=avrdude
+86DuinoONE.bootloader.low_fuses=0xff
+86DuinoONE.bootloader.high_fuses=0xd8
+86DuinoONE.bootloader.extended_fuses=0xcb
+86DuinoONE.bootloader.file=caterina/Caterina-Leonardo.hex
+86DuinoONE.bootloader.unlock_bits=0x3F
+86DuinoONE.bootloader.lock_bits=0x2F
+
+86DuinoONE.build.mcu=atmega32u4
+86DuinoONE.build.f_cpu=16000000L
+86DuinoONE.build.vid=0x2341
+86DuinoONE.build.pid=0x8036
+86DuinoONE.build.core=arduino
+86DuinoONE.build.variant=86duinoone
+86DuinoONE.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+
+################################################################################
+
+EduCake.name=86Duino EduCake
+EduCake.upload.tool=86upload
+EduCake.upload.protocol=avr109
+EduCake.upload.maximum_size=28672
+EduCake.upload.speed=57600
+EduCake.upload.disable_flushing=true
+EduCake.upload.use_1200bps_touch=true
+EduCake.upload.wait_for_upload_port=true
+
+EduCake.bootloader.tool=avrdude
+EduCake.bootloader.low_fuses=0xff
+EduCake.bootloader.high_fuses=0xd8
+EduCake.bootloader.extended_fuses=0xcb
+EduCake.bootloader.file=caterina/Caterina-Leonardo.hex
+EduCake.bootloader.unlock_bits=0x3F
+EduCake.bootloader.lock_bits=0x2F
+
+EduCake.build.mcu=atmega32u4
+EduCake.build.f_cpu=16000000L
+EduCake.build.vid=0x2341
+EduCake.build.pid=0x8036
+EduCake.build.core=arduino
+EduCake.build.variant=educake
+EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}

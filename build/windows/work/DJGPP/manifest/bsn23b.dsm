@@ -1,0 +1,74 @@
+#
+# DSM for GNU bison 2.3 binaries.
+# Written by Juan Manuel Guerrero <juan.guerrero@gmx.de> 2006-06-05
+#
+
+dsm-file-version: 1.0
+dsm-name: bsn23b
+dsm-version: 0.6.1
+
+type: binaries
+
+dsm-author: Juan Manuel Guerrero
+dsm-author-email: juan.guerrero@gmx.de
+
+name: bison
+version: 2.3
+manifest: bsn23b
+sources-dsm: bsn23s
+documentation-dsm: bsn23d
+short-description: Binaries for GNU bison version 2.3
+long-description: GNU bison is the GNU implementation of the\n\
+parser generator (yacc replacement).
+
+license: GNU GPL
+# author.
+author: Robert Corbett
+# author.
+author: Richard Stallman
+# author.
+author: Wilfred Hansen
+# maintainer.
+maintainer: Akim Demaille
+maintainer-email: akim@epita.fr
+# For reporting bugs
+mailing-list: bug-bison@gnu.org
+# The home page of GNU bison.
+web-site:http://www.gnu.org/software/bison
+# The ftp site of GNU bison.
+ftp-site:ftp://ftp.gnu.org/pub/gnu/bison
+# For discussing DJGPP- and DOS/Windows-specific aspects
+mailing-list: djgpp@delorie.com
+newsgroup: comp.os.msdos.djgpp
+
+porter: Juan Manuel Guerrero
+porter-email: juan.guerrero@gmx.de
+
+simtelnet-path: v2gnu/
+zip: bsn23b.zip
+
+changelog: gnu/bison-2.3/ChangeLog
+
+post-install-readme: gnu/bison-2.3/djgpp/readme
+post-install-readme: gnu/bison-2.3/News
+
+requires: DPMI 0.9
+replaces: bison < 2.3 r1
+requires: m4 >= 1.4.3
+
+# For reading the docs.
+depends-on: info-reader
+depends-on: man
+depends-on: less
+
+# Remove obsolete parser files from previous
+# ports located in non-canonical subdirs.
+builtin-pre-install-script: command:\
+ rm -f /dev/env/DJDIR/share/bison.hai\
+ rm -f /dev/env/DJDIR/share/bison.sim\
+ rm -f /dev/env/DJDIR/share/bison/bison.hai\
+ rm -f /dev/env/DJDIR/share/bison/bison.sim
+
+# This updates the info/DIR main menu
+builtin-post-install-script: command:\
+ install-info --info-dir=/dev/env/DJDIR/info /dev/env/DJDIR/info/bison.info

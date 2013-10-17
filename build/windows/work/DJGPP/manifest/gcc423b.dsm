@@ -1,0 +1,48 @@
+#
+# DSM for gcc 4.2.3
+#
+
+dsm-file-version: 1.1
+dsm-name: gcc423b
+dsm-version: 0.5.0
+
+dsm-author: @porter@
+dsm-author-email: @e_mail@
+
+name: gcc
+version: 4.2.3
+manifest: gcc423b
+type: binaries
+sources-dsm: gcc423s
+short-description: GNU Compiler Collection, C compiler
+organisation: Free Software Foundation
+license: GNU General Public License
+web-site: http://gcc.gnu.org
+
+porter: @porter@
+porter-email: @e_mail@
+
+simtelnet-path: v2gnu/
+zip: gcc423b.zip
+
+pre-install-readme: gnu/gcc-@dver@/readme.DJGPP
+
+#
+# Dependencies
+#
+
+replaces: gcc < 4.2.3
+
+requires: DPMI
+requires: djdev 2.03 Patchlevel 2
+requires: binutils >= 2.16
+conflicts-with: gcc < 4.2.3
+
+# For reading docs
+depends-on: info-reader
+
+# This updates the info/DIR menu
+builtin-post-install-script: command:\
+  install-info --info-dir=/dev/env/DJDIR/info /dev/env/DJDIR/info/gcc.info\n\
+  install-info --info-dir=/dev/env/DJDIR/info /dev/env/DJDIR/info/cpp.info\n\
+  install-info --info-dir=/dev/env/DJDIR/info /dev/env/DJDIR/info/cppinternals.info

@@ -1,0 +1,660 @@
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+NNAAMMEE
+       objdump - display information from object files.
+
+SSYYNNOOPPSSIISS
+       objdump [--aa|----aarrcchhiivvee--hheeaaddeerrss]
+               [--bb _b_f_d_n_a_m_e|----ttaarrggeett==_b_f_d_n_a_m_e]
+               [--CC|----ddeemmaannggllee[=_s_t_y_l_e] ]
+               [--dd|----ddiissaasssseemmbbllee]
+               [--DD|----ddiissaasssseemmbbllee--aallll]
+               [--zz|----ddiissaasssseemmbbllee--zzeerrooeess]
+               [--EEBB|--EELL|----eennddiiaann=={big | little }]
+               [--ff|----ffiillee--hheeaaddeerrss]
+               [--FF|----ffiillee--ooffffsseettss]
+               [----ffiillee--ssttaarrtt--ccoonntteexxtt]
+               [--gg|----ddeebbuuggggiinngg]
+               [--ee|----ddeebbuuggggiinngg--ttaaggss]
+               [--hh|----sseeccttiioonn--hheeaaddeerrss|----hheeaaddeerrss]
+               [--ii|----iinnffoo]
+               [--jj _s_e_c_t_i_o_n|----sseeccttiioonn==_s_e_c_t_i_o_n]
+               [--ll|----lliinnee--nnuummbbeerrss]
+               [--SS|----ssoouurrccee]
+               [--mm _m_a_c_h_i_n_e|----aarrcchhiitteeccttuurree==_m_a_c_h_i_n_e]
+               [--MM _o_p_t_i_o_n_s|----ddiissaasssseemmbblleerr--ooppttiioonnss==_o_p_t_i_o_n_s]
+               [--pp|----pprriivvaattee--hheeaaddeerrss]
+               [--rr|----rreelloocc]
+               [--RR|----ddyynnaammiicc--rreelloocc]
+               [--ss|----ffuullll--ccoonntteennttss]
+               [--WW|----ddwwaarrff]
+               [--GG|----ssttaabbss]
+               [--tt|----ssyymmss]
+               [--TT|----ddyynnaammiicc--ssyymmss]
+               [--xx|----aallll--hheeaaddeerrss]
+               [--ww|----wwiiddee]
+               [----ssttaarrtt--aaddddrreessss==_a_d_d_r_e_s_s]
+               [----ssttoopp--aaddddrreessss==_a_d_d_r_e_s_s]
+               [----pprreeffiixx--aaddddrreesssseess]
+               [----[[nnoo--]]sshhooww--rraaww--iinnssnn]
+               [----aaddjjuusstt--vvmmaa==_o_f_f_s_e_t]
+               [----ssppeecciiaall--ssyymmss]
+               [--VV|----vveerrssiioonn]
+               [--HH|----hheellpp]
+               _o_b_j_f_i_l_e...
+
+DDEESSCCRRIIPPTTIIOONN
+       oobbjjdduummpp  displays  information  about  one  or more object
+       files.  The options control what particular information to
+       display.  This information is mostly useful to programmers
+       who are working on the compilation tools,  as  opposed  to
+       programmers  who  just  want  their program to compile and
+       work.
+
+       _o_b_j_f_i_l_e... are the object files to be examined.  When  you
+       specify archives, oobbjjdduummpp shows information on each of the
+       member object files.
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+OOPPTTIIOONNSS
+       The long  and  short  forms  of  options,  shown  here  as
+       alternatives,  are  equivalent.   At least one option from
+       the                                                   list
+       --aa,,--dd,,--DD,,--ee,,--ff,,--gg,,--GG,,--hh,,--HH,,--pp,,--rr,,--RR,,--ss,,--SS,,--tt,,--TT,,--VV,,--xx must
+       be given.
+
+       --aa
+       ----aarrcchhiivvee--hheeaaddeerr
+           If any of the _o_b_j_f_i_l_e files are archives, display  the
+           archive  header information (in a format similar to llss
+           --ll).  Besides the information you could list  with  aarr
+           ttvv,  oobbjjdduummpp  --aa  shows the object file format of each
+           archive member.
+
+       ----aaddjjuusstt--vvmmaa==_o_f_f_s_e_t
+           When dumping information, first add _o_f_f_s_e_t to all  the
+           section  addresses.   This  is  useful  if the section
+           addresses do not correspond to the symbol table, which
+           can   happen   when  putting  sections  at  particular
+           addresses when using a format which can not  represent
+           section addresses, such as a.out.
+
+       --bb _b_f_d_n_a_m_e
+       ----ttaarrggeett==_b_f_d_n_a_m_e
+           Specify  that  the  object-code  format for the object
+           files is _b_f_d_n_a_m_e.  This option may not  be  necessary;
+           _o_b_j_d_u_m_p can automatically recognize many formats.
+
+           For example,
+
+                   objdump -b oasys -m vax -h fu.o
+
+           displays  summary information from the section headers
+           (--hh) of _f_u_._o, which is explicitly identified (--mm) as a
+           VAX  object  file  in  the  format  produced  by Oasys
+           compilers.  You can list the  formats  available  with
+           the --ii option.
+
+       --CC
+       ----ddeemmaannggllee[[==_s_t_y_l_e]]
+           Decode  (_d_e_m_a_n_g_l_e)  low-level  symbol names into user-
+           level names.  Besides removing any initial  underscore
+           prepended by the system, this makes C++ function names
+           readable.  Different compilers have different mangling
+           styles.  The optional demangling style argument can be
+           used to choose an  appropriate  demangling  style  for
+           your compiler.
+
+       --gg
+       ----ddeebbuuggggiinngg
+           Display debugging information.  This attempts to parse
+           STABS and IEEE debugging format information stored  in
+           the  file  and print it out using a C like syntax.  If
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+           neither of these formats are found this  option  falls
+           back  on  the --WW option to print any DWARF information
+           in the file.
+
+       --ee
+       ----ddeebbuuggggiinngg--ttaaggss
+           Like --gg, but the information is generated in a  format
+           compatible with ctags tool.
+
+       --dd
+       ----ddiissaasssseemmbbllee
+           Display   the  assembler  mnemonics  for  the  machine
+           instructions   from   _o_b_j_f_i_l_e.    This   option   only
+           disassembles  those  sections  which  are  expected to
+           contain instructions.
+
+       --DD
+       ----ddiissaasssseemmbbllee--aallll
+           Like --dd, but disassemble the contents of all sections,
+           not just those expected to contain instructions.
+
+       ----pprreeffiixx--aaddddrreesssseess
+           When disassembling, print the complete address on each
+           line.  This is the older disassembly format.
+
+       --EEBB
+       --EELL
+       ----eennddiiaann=={{bbiigg||lliittttllee}}
+           Specify the endianness of the object files.  This only
+           affects   disassembly.    This   can  be  useful  when
+           disassembling a file format which  does  not  describe
+           endianness information, such as S-records.
+
+       --ff
+       ----ffiillee--hheeaaddeerrss
+           Display summary information from the overall header of
+           each of the _o_b_j_f_i_l_e files.
+
+       --FF
+       ----ffiillee--ooffffsseettss
+           When disassembling  sections,  whenever  a  symbol  is
+           displayed,  also display the file offset of the region
+           of data that is about to be  dumped.   If  zeroes  are
+           being skipped, then when disassembly resumes, tell the
+           user how many zeroes were skipped and the file  offset
+           of  the  location  from where the disassembly resumes.
+           When dumping sections, display the file offset of  the
+           location from where the dump starts.
+
+       ----ffiillee--ssttaarrtt--ccoonntteexxtt
+           Specify   that   when  displaying  interlisted  source
+           code/disassembly (assumes --SS) from a file that has not
+           yet been displayed, extend the context to the start of
+           the file.
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+       --hh
+       ----sseeccttiioonn--hheeaaddeerrss
+       ----hheeaaddeerrss
+           Display summary information from the  section  headers
+           of the object file.
+
+           File   segments   may   be  relocated  to  nonstandard
+           addresses, for example by using the --TTtteexxtt, --TTddaattaa, or
+           --TTbbssss  options  to  lldd.   However,  some  object  file
+           formats, such as a.out,  do  not  store  the  starting
+           address  of  the  file segments.  In those situations,
+           although lldd relocates the  sections  correctly,  using
+           oobbjjdduummpp  --hh  to  list  the file section headers cannot
+           show the correct addresses.   Instead,  it  shows  the
+           usual addresses, which are implicit for the target.
+
+       --HH
+       ----hheellpp
+           Print a summary of the options to oobbjjdduummpp and exit.
+
+       --ii
+       ----iinnffoo
+           Display  a  list  showing all architectures and object
+           formats available for specification with --bb or --mm.
+
+       --jj _n_a_m_e
+       ----sseeccttiioonn==_n_a_m_e
+           Display information only for section _n_a_m_e.
+
+       --ll
+       ----lliinnee--nnuummbbeerrss
+           Label the display (using debugging  information)  with
+           the  filename and source line numbers corresponding to
+           the object code or relocs shown.  Only useful with --dd,
+           --DD, or --rr.
+
+       --mm _m_a_c_h_i_n_e
+       ----aarrcchhiitteeccttuurree==_m_a_c_h_i_n_e
+           Specify  the  architecture  to  use when disassembling
+           object files.  This can be useful  when  disassembling
+           object   files  which  do  not  describe  architecture
+           information, such as  S-records.   You  can  list  the
+           available architectures with the --ii option.
+
+       --MM _o_p_t_i_o_n_s
+       ----ddiissaasssseemmbblleerr--ooppttiioonnss==_o_p_t_i_o_n_s
+           Pass  target specific information to the disassembler.
+           Only supported on some targets.  If it is necessary to
+           specify   more   than  one  disassembler  option  then
+           multiple --MM options can  be  used  or  can  be  placed
+           together into a comma separated list.
+
+           If  the target is an ARM architecture then this switch
+           can be used to select which register name set is  used
+
+
+
+binutils-2.18.90            2008-09-10                          4
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+           during disassembler.  Specifying --MM rreegg--nnaammeess--ssttdd (the
+           default) will select the register  names  as  used  in
+           ARM's instruction set documentation, but with register
+           13 called 'sp', register 14 called 'lr'  and  register
+           15  called  'pc'.   Specifying  --MM rreegg--nnaammeess--aappccss will
+           select the name set used by  the  ARM  Procedure  Call
+           Standard, whilst specifying --MM rreegg--nnaammeess--rraaww will just
+           use rr followed by the register number.
+
+           There are also  two  variants  on  the  APCS  register
+           naming  scheme  enabled  by  --MM rreegg--nnaammeess--aattppccss and --MM
+           rreegg--nnaammeess--ssppeecciiaall--aattppccss  which   use   the   ARM/Thumb
+           Procedure  Call  Standard naming conventions.  (Either
+           with the normal register names or the special register
+           names).
+
+           This  option can also be used for ARM architectures to
+           force the disassembler to interpret  all  instructions
+           as    Thumb   instructions   by   using   the   switch
+           ----ddiissaasssseemmbblleerr--ooppttiioonnss==ffoorrccee--tthhuummbb.    This   can   be
+           useful  when  attempting  to  disassemble  thumb  code
+           produced by other compilers.
+
+           For the x86, some of the options  duplicate  functions
+           of  the  --mm  switch,  but allow finer grained control.
+           Multiple  selections  from  the   following   may   be
+           specified  as  a comma separated string.  xx8866--6644, ii338866
+           and   ii88008866   select   disassembly   for   the   given
+           architecture.   iinntteell  and  aatttt  select  between intel
+           syntax mode and AT&T syntax mode.  iinntteell--mmnneemmoonniicc  and
+           aatttt--mmnneemmoonniicc  select  between  intel mnemonic mode and
+           AT&T mnemonic mode. iinntteell--mmnneemmoonniicc implies  iinntteell  and
+           aatttt--mmnneemmoonniicc  implies  aatttt.   aaddddrr6644,  aaddddrr3322, aaddddrr1166,
+           ddaattaa3322 and ddaattaa1166 specify the default address size and
+           operand  size.   These four options will be overridden
+           if xx8866--6644, ii338866 or ii88008866 appear later  in  the  option
+           string.   Lastly, ssuuffffiixx, when in AT&T mode, instructs
+           the disassembler to print a mnemonic suffix even  when
+           the suffix could be inferred by the operands.
+
+           For PPC, bbooookkee, bbooookkee3322 and bbooookkee6644 select disassembly
+           of BookE instructions.  3322 and 6644 select  PowerPC  and
+           PowerPC64  disassembly,  respectively.   ee330000  selects
+           disassembly  for  the  e300   family.    444400   selects
+           disassembly   for  the  PowerPC  440.   ppppccppss  selects
+           disassembly for the paired single instructions of  the
+           PPC750CL.
+
+           For   MIPS,  this  option  controls  the  printing  of
+           instruction  mnemonic  names  and  register  names  in
+           disassembled  instructions.   Multiple selections from
+           the following may be specified as  a  comma  separated
+           string, and invalid options are ignored:
+
+
+
+
+binutils-2.18.90            2008-09-10                          5
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+           "no-aliases"
+               Print  the  'raw'  instruction mnemonic instead of
+               some pseudo  instruction  mnemonic.   I.e.,  print
+               'daddu'  or  'or' instead of 'move', 'sll' instead
+               of 'nop', etc.
+
+           "gpr-names=ABI"
+               Print  GPR  (general-purpose  register)  names  as
+               appropriate  for  the  specified ABI.  By default,
+               GPR names are selected according to the ABI of the
+               binary being disassembled.
+
+           "fpr-names=ABI"
+               Print   FPR  (floating-point  register)  names  as
+               appropriate for the specified  ABI.   By  default,
+               FPR numbers are printed rather than names.
+
+           "cp0-names=ARCH"
+               Print CP0 (system control coprocessor; coprocessor
+               0) register names as appropriate for  the  CPU  or
+               architecture  specified  by _A_R_C_H.  By default, CP0
+               register  names  are  selected  according  to  the
+               architecture   and   CPU   of   the  binary  being
+               disassembled.
+
+           "hwr-names=ARCH"
+               Print HWR (hardware register, used by the  "rdhwr"
+               instruction)  names  as appropriate for the CPU or
+               architecture specified by _A_R_C_H.  By  default,  HWR
+               names  are  selected according to the architecture
+               and CPU of the binary being disassembled.
+
+           "reg-names=ABI"
+               Print GPR and FPR names  as  appropriate  for  the
+               selected ABI.
+
+           "reg-names=ARCH"
+               Print  CPU-specific  register  names (CP0 register
+               and HWR names) as appropriate for the selected CPU
+               or architecture.
+
+           For  any  of the options listed above, _A_B_I or _A_R_C_H may
+           be specified as nnuummeerriicc to have numbers printed rather
+           than  names, for the selected types of registers.  You
+           can list the available values of _A_B_I  and  _A_R_C_H  using
+           the ----hheellpp option.
+
+           For VAX, you can specify function entry addresses with
+           --MM eennttrryy::00xxff0000bbaa.  You can use this multiple times  to
+           properly  disassemble  VAX  binary  files  that  don't
+           contain symbol tables  (like  ROM  dumps).   In  these
+           cases,  the  function  entry  mask  would otherwise be
+           decoded as VAX instructions, which would probably lead
+           the rest of the function being wrongly disassembled.
+
+
+
+binutils-2.18.90            2008-09-10                          6
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+       --pp
+       ----pprriivvaattee--hheeaaddeerrss
+           Print  information that is specific to the object file
+           format.  The exact information  printed  depends  upon
+           the object file format.  For some object file formats,
+           no additional information is printed.
+
+       --rr
+       ----rreelloocc
+           Print the relocation entries of  the  file.   If  used
+           with   --dd   or   --DD,   the   relocations  are  printed
+           interspersed with the disassembly.
+
+       --RR
+       ----ddyynnaammiicc--rreelloocc
+           Print the dynamic  relocation  entries  of  the  file.
+           This  is  only meaningful for dynamic objects, such as
+           certain types of shared libraries.
+
+       --ss
+       ----ffuullll--ccoonntteennttss
+           Display the full contents of any  sections  requested.
+           By default all non-empty sections are displayed.
+
+       --SS
+       ----ssoouurrccee
+           Display  source  code  intermixed with disassembly, if
+           possible.  Implies --dd.
+
+       ----sshhooww--rraaww--iinnssnn
+           When disassembling instructions, print the instruction
+           in  hex  as  well  as  in  symbolic form.  This is the
+           default except when ----pprreeffiixx--aaddddrreesssseess is used.
+
+       ----nnoo--sshhooww--rraaww--iinnssnn
+           When disassembling  instructions,  do  not  print  the
+           instruction   bytes.    This   is   the  default  when
+           ----pprreeffiixx--aaddddrreesssseess is used.
+
+       --WW
+       ----ddwwaarrff
+           Displays the contents of the DWARF debug  sections  in
+           the file, if any are present.
+
+       --GG
+       ----ssttaabbss
+           Display  the  full contents of any sections requested.
+           Display the contents of the .stab and .stab.index  and
+           .stab.excl  sections  from  an ELF file.  This is only
+           useful on systems  (such  as  Solaris  2.0)  in  which
+           ".stab"  debugging symbol-table entries are carried in
+           an ELF section.  In most other file formats, debugging
+           symbol-table  entries  are  interleaved  with  linkage
+           symbols, and are visible in the ----ssyymmss output.
+
+
+
+binutils-2.18.90            2008-09-10                          7
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+       ----ssttaarrtt--aaddddrreessss==_a_d_d_r_e_s_s
+           Start displaying data at the specified address.   This
+           affects the output of the --dd, --rr and --ss options.
+
+       ----ssttoopp--aaddddrreessss==_a_d_d_r_e_s_s
+           Stop  displaying  data at the specified address.  This
+           affects the output of the --dd, --rr and --ss options.
+
+       --tt
+       ----ssyymmss
+           Print the symbol table entries of the file.   This  is
+           similar to the information provided by the nnmm program,
+           although the display format is different.  The  format
+           of  the  output  depends  upon  the format of the file
+           being dumped, but there are two main types.  One looks
+           like this:
+
+                   [  4](sec  3)(fl 0x00)(ty   0)(scl   3) (nx 1) 0x00000000 .bss
+                   [  6](sec  1)(fl 0x00)(ty   0)(scl   2) (nx 0) 0x00000000 fred
+
+           where  the  number  inside  the square brackets is the
+           number of the entry  in  the  symbol  table,  the  _s_e_c
+           number  is  the  section  number, the _f_l value are the
+           symbol's flag bits, the  _t_y  number  is  the  symbol's
+           type, the _s_c_l number is the symbol's storage class and
+           the  _n_x  value  is  the  number  of  auxilary  entries
+           associated  with  the symbol.  The last two fields are
+           the symbol's value and its name.
+
+           The other common output format, usually seen with  ELF
+           based files, looks like this:
+
+                   00000000 l    d  .bss   00000000 .bss
+                   00000000 g       .text  00000000 fred
+
+           Here the first number is the symbol's value (sometimes
+           refered  to  as  its  address).   The  next  field  is
+           actually a set of characters and spaces indicating the
+           flag  bits  that  are  set  on  the   symbol.    These
+           characters  are  described below.  Next is the section
+           with which the symbol is associated or  _*_A_B_S_*  if  the
+           section   is  absolute  (ie  not  connected  with  any
+           section), or _*_U_N_D_* if the section is referenced in the
+           file being dumped, but not defined there.
+
+           After  the section name comes another field, a number,
+           which for common symbols  is  the  alignment  and  for
+           other  symbol  is the size.  Finally the symbol's name
+           is displayed.
+
+           The flag characters  are  divided  into  7  groups  as
+           follows:
+
+           "l"
+
+
+
+binutils-2.18.90            2008-09-10                          8
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+           "g"
+           "!" The  symbol  is  local (l), global (g), neither (a
+               space) or both (!).  A symbol can be neither local
+               or  global for a variety of reasons, e.g., because
+               it is used for debugging, but it  is  probably  an
+               indication  of  a bug if it is ever both local and
+               global.
+
+           "w" The symbol is weak (w) or strong (a space).
+
+           "C" The  symbol  denotes  a  constructor  (C)  or   an
+               ordinary symbol (a space).
+
+           "W" The  symbol is a warning (W) or a normal symbol (a
+               space).  A warning symbol's name is a  message  to
+               be  displayed  if the symbol following the warning
+               symbol is ever referenced.
+
+           "I" The symbol is an  indirect  reference  to  another
+               symbol (I) or a normal symbol (a space).
+
+           "d"
+           "D" The  symbol is a debugging symbol (d) or a dynamic
+               symbol (D) or a normal symbol (a space).
+
+           "F"
+           "f"
+           "O" The symbol is the name of a function (F) or a file
+               (f)  or  an  object (O) or just a normal symbol (a
+               space).
+
+       --TT
+       ----ddyynnaammiicc--ssyymmss
+           Print the dynamic symbol table entries  of  the  file.
+           This  is  only meaningful for dynamic objects, such as
+           certain types of shared libraries.  This is similar to
+           the  information provided by the nnmm program when given
+           the --DD (----ddyynnaammiicc) option.
+
+       ----ssppeecciiaall--ssyymmss
+           When displaying symbols include those which the target
+           considers  to  be  special in some way and which would
+           not normally be of interest to the user.
+
+       --VV
+       ----vveerrssiioonn
+           Print the version number of oobbjjdduummpp and exit.
+
+       --xx
+       ----aallll--hheeaaddeerrss
+           Display all available  header  information,  including
+           the  symbol table and relocation entries.  Using --xx is
+           equivalent to specifying all of --aa --ff --hh --pp --rr --tt.
+
+
+
+
+binutils-2.18.90            2008-09-10                          9
+
+
+
+
+
+OBJDUMP(1)            GNU Development Tools            OBJDUMP(1)
+
+
+       --ww
+       ----wwiiddee
+           Format some lines for output devices  that  have  more
+           than  80  columns.   Also do not truncate symbol names
+           when they are displayed.
+
+       --zz
+       ----ddiissaasssseemmbbllee--zzeerrooeess
+           Normally the disassembly output will  skip  blocks  of
+           zeroes.   This  option  directs  the  disassembler  to
+           disassemble those blocks, just like any other data.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       _n_m(1), _r_e_a_d_e_l_f(1), and the Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1991, 1992, 1993, 1994,  1995,  1996,  1997,
+       1998,  1999,  2000,  2001,  2002,  2003, 2004, 2005, 2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission is granted to copy,  distribute  and/or  modify
+       this   document   under   the   terms   of  the  GNU  Free
+       Documentation License, Version 1.2 or  any  later  version
+       published   by  the  Free  Software  Foundation;  with  no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover  Texts.   A  copy of the license is included in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                         10
+
+

@@ -1,0 +1,124 @@
+___________________________________
+|      |  |  |     |  _  |     |  |
+|  |___|  |  |  |  |    _|  |  |  |    GNU GLOBAL source code tag system
+|  |   |  |  |  |  |     |     |  |
+|  ~~  |   ~~|     |  ~  |  |  |   ~~|          for all hackers.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ Copyright (c) 2000, 2001, 2002, 2003, 2004, 2006, 2007
+	Tama Communications Corporation
+
+ This file is free software; as a special exception the author gives
+ unlimited permission to copy and/or distribute it, with or without
+ modifications, as long as this notice is preserved.
+
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+ implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+		----------------------------------
+
+Thanks to the following people for their contributions.
+
+Thanks to:		for his(her):
+---------------------------------------------------------------------------
+A.E. Brouwer		advice about writing code for generic UNIX.
+Andrew Gallatin		bug report about generating wrong path.
+Andrs Azar		Cygwin trouble report.
+Andy Newman		bug report about treating tab character.
+Andy Zhou		bug report about gtags-parser overlook 'extern' prefixed function.
+Bakken, Luke		bug fix method about stat() in htags(1).
+Bert Gijsbers		investigation about mandoc macro and a bug report.
+Bob Bentley		bug report about bless.sh and gtags.
+Bvk chaitanya		bug report about global (it cannot find gtags).
+Christoph Conrad	bug report and advice about S.u.S.E Linux 5.1.
+Daisuke Kawahara	bug report about redifinition in gtags.el.
+Dan Fandrich		port to Windows 32 environment.
+Darryl Okahata		benchmark report about global(1).
+David Aspinwall		port to Cygwin 32 environment.
+David Brownlee		advice about fine coding style of C.
+David Keegan		patch for support of java 1.5 enums.
+Dimitri van Heesch      integration of Doxygen and GLOBAL.
+Don Fisher		bug report about the buffer overflow in htags(1).
+Dunford, Martin		advice about Windows 32 version of GLOBAL.
+Dirk Schultheis		advice about compat.h for Solaris.
+Emile Heyns		advice about writing code for generic UNIX.
+Eric Paire		bug report about gtags-parser's memory violation.
+Frederic Maitre		bug report about global(1) and gtags(1) at the system root directory.
+Gary Kline		advice about the name of parser.
+Geoffrey Robson		bug report about global (-t option didn't work correctly).
+Giuseppe Corbelli	Global.py for glimmer code editor and an advice about vim.
+Hageseter, Trond E.	bug report about gtags-parser.
+Hendrik Visage		bug report about gtags-parser(here document of PHP).
+Hideaki Okada		idea about -g option of global(1).
+Hideki Iwamoto		many bug reports and improvements about gtags-parser(1), htags(1).
+Hideki Mori		advice about the name of parser.
+Hidetaka KOIE		bug report and advice about configure.in for Solaris7.
+Hiroshi MIURA		idea about printing file name on browser's status bar.
+Jason Hood		port to DJGPP and Mingw32, and bug report about globash.rc.
+Jeff Trawick		idea about -l option of htags(1).
+Jordan K. Hubbard	idea about supporting BSD's obj directory.
+Jos Backus		bug report about global.cgi.
+Julien Gilles		idea about -T option of global(1).
+Jun Inoue		idea about generation of lex symbol.
+Jun Obama		improvements on gtags.el.
+Justin Tripp		software evaluation for GNU standard.
+Justin Wojdacki		bug report about htags(1).
+Katsuyuki Okabe		advice about deciding emacs version.
+Klaus Borchers		advice about deciding emacs version.
+Hiroyuki KOBAYASHI	bug report and fix patch for gtags-parser(1).
+Koen Hufkens		advice about HP-UX 10.x.
+Koie Hidetaka		bug report about global.conf.
+Marcello Nuccio		bug report about globash.rc.
+Marco Corvi		advice about Digital Unix 4.0C.
+Marius Gedminas		bug report and fix patch for htags(1).
+Mark Nudelman		GLOBAL tag support on less(1).
+Marty Leisner		advice about --version option and some bug reports.
+Masahiro Fujiwara	bug report and fix patch for htags(1).
+Masashi YAMAGUCHI	suggestion and patch about how to display path names in gtags.el.
+Masato Yoshida		bug report and fix method about <NOFRAME> tag.
+Mathieu Virbel		bug report and fix patch about dead symbolic link for gtags(1).
+Motonori Iwamuro	bug report and fix method about strbuf_fgets function.
+Oleg Checkulaev		advice about writing code for generic UNIX.
+Oliver Paukstadt	idea about -c (gzipped html) option of htags(1).
+Patrick Strasser	many bug reports about htags(1).
+Paul Lew		advice about the build in Solaris environment.
+Paulius Bulotas		bug report and fix patch for gozilla(1).
+Pawel Wilk		idea about home_etc facility on PLD Linux/GNU.
+Philippe Defert		building on many plathomes and the problem report.
+Ray Simard		detailed investigation about POSIX dirent(3).
+Richard Stallman	advice about gtags.el and GNU style packaging.
+Rob Fitzgerald		bug fix patch for global(1).
+Ron Lee			Debian package, htmake(1) and many bug reports.
+Rui Lopes		report about build error in *BSD and revision of term.
+Ruppert Koch		bug report about htags(1).
+Sadaichi Hayashida	idea about generating relative path.
+Satoru SATOH		profitable materrial for the support of XHTML.
+Sanpei Yoshiro Mihira	bug report of xargs.c in Windows 32.
+Sergio Talens-Oliag	writing online manual for systags(1).
+Shankar Chakkere	useful method to use vim editor with GLOBAL.
+Shigeyuki Yamano	idea about -h option of htags(1).
+Silas S. Brown		proofreading about manuals.
+Sven Verdoolaege	support for gtags.pl(nvi-1.81.5).
+Steve Kirkendall	two commands of Elvis for external tag system.
+Takao Yamashita		advice about assembly parsing.
+Takeshi Hojo		idea about compact format of gtags(1).
+Tero Saarni		bug report about long line problem of htags(1).
+Thomas Gerigk		bug report about skip variable in gtags.conf.
+Thomas Klausner		report about groff's command error of *.1.
+Tim Vanderhoek		GLOBAL tag support on more(1).
+Tobias Polzin		suggestion about correct treatment of CVS repository in htags.
+Tomohiko Morioka	advice about deciding emacs version.
+Tom Tromey		GTAGS target in automake.
+Tomi Ollila		proposal of adding (provide 'gtags) to gtags.el.
+Toshiyasu Kojima	advice about deciding emacs version.
+Van Trinh		bug report about db(3) and patch information.
+Wolfgang Helbig		bug report about generating wrong path name.
+Yann Dirson		many bug reports and many valuable suggestions.
+Yoshiharu Ito		advice about SunOS 4.1.3.
+Yoshinori Tomita	advice about compat.h for Solaris.
+Y. Yoshinaga		advice about makefile for Debian GNU/Linux.
+Yushi Oka		bug report about config path.
+---------------------------------------------------------------------------
+
+If you cannot find your contributions on this list or you find mistakes,
+please send to bug-global@gnu.org. Thanks.

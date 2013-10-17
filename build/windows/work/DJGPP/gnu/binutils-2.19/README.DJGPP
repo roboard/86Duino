@@ -1,0 +1,140 @@
+This is a DOS/DJGPP port of GNU Binutils 2.19
+
+Contents
+========
+
+* Installing the binary
+* DJGPP port news
+* Building from sources
+* The BFD library
+* Bug reports & Known problems
+* Thanks
+
+Installing the binary
+=====================
+
+Unzip the binary package with the option to preserve directories 
+(the -d option in PKUNZIP, the -directories option in PKZIP 2.5 and above)
+from the top of your DJGPP directory tree.
+
+DJGPP port news
+===============
+
+Notable changes in the binutils 2.19
+
+* Modified sources to avoid BFD_HOST_64_BIT being defined when
+  configuring BFD (it was caused by presence of fseeko64 and
+  ftello64 in current CVS version of DJGPP). No user visible DJGPP
+  specific changes
+
+* No DVI docs any more. Building DVI docs is broken and I do not
+  have time to fix it. 
+
+* ALso PS documentation is left out. It would be too large if generated
+  from PDF files by either pdf2ps or acroread. PDF, HTML should hopefully be
+  enough.
+
+Notable changes in the binutils-2.16
+
+* Now the builtin linker script seems to be compatible with
+  new GCC versions and DJGPP libc versions (up to current CVS).
+  So linker script in GCC could not have be needed, but one can
+  still use earlier binutils versions ...
+
+Notable changes in the binutils-2.15
+
+* Modified djmake.sh to set max permitted command line length
+* Removed djinstall.sh, as it was broken for DJGPP (one can use
+  'djmake.sh install' instead of it)
+  
+  Binaries for DJGPP distribution are built under Linux (this 
+  time with gcc-3.3.3 Linux to DJGPP cross-compiler).
+
+Notable changes in the binutils-2.14
+
+* Workaround for fseek problem (filling with garbage when seeking
+  beyound file end) 
+
+Notable changes in the binutils-2.13
+
+* Improvements of support of DWARF2 debugging info for DJGPP from
+  Mark Elbrecht
+
+Notable changes in then binutils-2.12.1
+
+* Should now not emit wrong error messages on unresolved references
+  when DWARF2 debugging info is being used
+
+Notable changes in the binutils-2.11.2:
+
+* Fixed a case where symbols with the same name were wrongly merged.
+* Section symbols from discarded sections are also discarded.
+* Linker script update for building libstdc++ v3.
+
+Notable changes in binutils-2.11:
+
+* SSE2 instructions supported.
+* DWARF2 debugging supported.
+* Linker script update for libstdc++ v3.
+
+Building from sources
+=====================
+
+You will need:
+
+* bnu219s.zip
+* Bash 2.04 or later.
+* GCC compiler and existing Binutils.
+* Make 3.79.1 or later.
+* Sed 3.02 or later.
+* Fileutils 4.1 or later.
+* DJGPP v2.03 patchlevel 2 or later
+* and possibly more packages
+
+1. Unzip the source archive with the option to preserve directories
+(the -d option in the old PKUNZIP, the -directories option in newer
+versions of PKZIP) from the top of your DJGPP directory tree. Install
+the Bash binary and required utilities if you haven't already done so.
+
+2. Run configure. Change to the directory 'gnu/binutl-2.19/build.djg' and
+   run 'sh djconfig.sh [any additional parameters]'.
+
+3. Run make. Then either 'make info' or 'make doc' depending on what types
+   of documentation you want.
+
+4. If the generated executables are built for DJGPP (the default when
+   using DJGPP's tools, unless you used the '--target' option with
+   configure), install the binaries and documentation by running:
+      sh djmake.sh install'. 
+   You can additionally specify prefix to install in a temporary directory,
+   for example, by running the following from bash:
+      ./djmake.sh install prefix=`pwd`/inst
+
+You can also try simply running script build.sh which runs djconfig.sh,
+make and after that installs into temporary directory and creates DJGPP
+packages (You need INFO-ZIP for that)
+
+
+The BFD Library
+===============
+
+The BFD library -- along its associated libraries and header files --
+provides a way for programs to manipulate object files using its API.
+The BFD documentation and the binutils subdirectory in bnu211s.zip are your
+best tools for learning how to use BFD.
+
+Bug reports & Known Problems
+============================
+
+Please send DJGPP-specific bug reports to the newsgroup comp.os.msdos.djgpp
+or to the e-mail gateway djgpp@delorie.com. All other bug reports should be
+sent to binutils@sources.redhat.com . 
+
+
+Thanks
+======
+
+Thanks to Mark Elbrecht for his work to provide DWARF2 debugging information
+support for DJGPP and (of course) also to all other developpers
+
+Andris Pavenis <andris.pavenis@iki.fi>.

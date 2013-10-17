@@ -1,0 +1,132 @@
+
+
+
+GTAGS-CSCOPE(1)                                   GTAGS-CSCOPE(1)
+
+
+NNAAMMEE
+       gtags-cscope  -  pseudo  cscope which implements the line-
+       oriented interface
+
+SSYYNNOOPPSSIISS
+       ggttaaggss--ccssccooppee [-Cqv]
+
+DDEESSCCRRIIPPTTIIOONN
+       GGttaaggss--ccssccooppee is a pseudo cscope which implements the line-
+       oriented  interface.  You can use this command for various
+       clients instead of true cscope.
+
+       Since ggttaaggss--ccssccooppee is intended to  make  GLOBAL  available
+       through  cscope  interface,  the output is not necessarily
+       the same as cscope.
+
+OOPPTTIIOONNSS
+       The following options are available:
+
+       --CC, ----iiggnnoorree--ccaassee
+              Ignore letter case when searching.
+
+       --qq, ----qquuiieett
+              Quiet mode.
+
+       --vv, ----vveerrbboossee
+              Verbose mode.
+
+EEXXAAMMPPLLEESS
+            $ gtags-cscope
+            >> help
+            0<arg>: Find this C symbol
+            1<arg>: Find this definition
+            2<arg>: Find functions called by this function
+                 (Not implemented yet.)
+            3<arg>: Find functions calling this function
+            4<arg>: Find this text string
+            6<arg>: Find this egrep pattern
+            7<arg>: Find this file
+            8<arg>: Find files #including this file
+            c: Toggle ignore/use letter case
+            r: Rebuild the database
+            q: Quit the session
+            h: Show help
+            >> 1main
+            cscope: 9 lines
+            global/global.c main 158 main(int argc, char **argv)
+            gozilla/gozilla.c main 155 main(int argc, char **argv)
+            gtags-parser/gctags.c main 158 main(int argc, char **argv)
+            gtags-cscope/gtags-cscope.c main 115 main(int argc, char **argv)
+            gtags/gtags.c main 150 main(int argc, char **argv)
+            htags-refkit/htags_path2url.c main 281 main(int argc, char **argv)
+            htags/htags.c main 1400 main(int argc, char **argv)
+            libglibc/getopt.c main 704 main (argc, argv)
+
+
+
+GNU Project                  May 2006                           1
+
+
+
+
+
+GTAGS-CSCOPE(1)                                   GTAGS-CSCOPE(1)
+
+
+            libglibc/getopt1.c main 93 main (argc, argv)
+            >> q
+            $ _
+
+DDIIAAGGNNOOSSTTIICCSS
+       GGttaaggss--ccssccooppee  exits  with  a  non  0  value  if  an  error
+       occurred, 0 otherwise.
+
+SSEEEE AALLSSOO
+       ccssccooppee(1), ggttaaggss--ppaarrsseerr(1), ggttaaggss(1), gglloobbaall(1), hhttaaggss(1).
+
+       GNU GLOBAL source code tag system
+       (http://www.gnu.org/software/global/).
+
+BBUUGG
+       The second field of the output is almost  <unknown>  since
+       GLOBAL  doesn't  recognize  it.  Command 2 (Find functions
+       called by this function) is not implemented.
+
+AAUUTTHHOORR
+       Tama Communications Corporation.
+
+HHIISSTTOORRYY
+       The ggttaaggss--ccssccooppee command appeared in 2006.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU Project                  May 2006                           2
+
+

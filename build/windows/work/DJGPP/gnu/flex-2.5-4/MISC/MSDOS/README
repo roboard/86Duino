@@ -1,0 +1,56 @@
+This is a DJGPP port of GNU Flex 2.5.4
+
+
+1. To install the binary package, just unzip the file flx254b.zip
+   preserving the directory structure (for PKUNZIP, use the -d
+   switch) and you are all set.
+
+   Note that the distribution comes with two symlinks to `flex.exe'
+   called `flexx.exe' and `flexpp.exe'.  These make `flex' default to
+   producing a C++ scanner class, exactly like the -+ command-line
+   option.  (On Unix, this symlink is usually called `flex++', but
+   MS-DOS doesn't allow `+' in the filename.)
+
+2. Rebuilding from sources
+   -----------------------
+
+   You will need the following tools:
+
+       - Gcc and the development environment (gccNNNb.zip,
+	 djdevNNN.zip, bnuNNNb.zip);
+       - Sed (sedNNNb.zip);
+       - cp, rm, mv and touch from Fileutils (filNNNb.zip);
+       - Bison (bsnNNNb.zip);
+       - diff from Diffutils (difNNNb.zip) -- if you want to run the
+	 tests after building Flex.
+
+   Install these tools, unpack the source distribution (use -d switch
+   if you do that with PKUNZIP), then type the following to build
+   Flex:
+
+		misc\msdos\configur.bat
+		make
+
+   When Make finishes, run the test:
+
+		make check
+
+   This should print ``Check successful, using COMPRESSION=""'';
+   anything else means trouble.
+
+   You may also run the large test suite; type "make bigcheck" and be
+   prepared to wait for a while (it can take up to 20 minutes on slow
+   machines).  Some of the scanners produced by Flex during the tests,
+   notably when COMPRESSION is set to "-f:", include humongous tables
+   which might cause CWSDPMI run out of its internal heap when cc1
+   compiles the scanner.  If gcc prints "Virtual memory exhausted",
+   enlarge the CWSDPMI internal heap to 256 paragraphs (using the
+   CWSPARAM program) and rerun the tests.  You will also need to make
+   sure your TMPDIR points to a real disk, since gcc produces
+   temporary files that can easily overflow a typical RAM drive.
+
+3. The file DIFFS in the source distribution describes the changes
+   for this port, relative to the official FSF archive.
+
+4. Enjoy,
+				Eli Zaretskii <eliz@is.elta.co.il>

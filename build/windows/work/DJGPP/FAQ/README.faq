@@ -1,0 +1,73 @@
+This is version 2.30 of the FAQ list for DJGPP.  DJGPP is a port of
+the GNU C/C++ compiler and GNU development tools to 32-bit,
+protected-mode environment under MS-DOS and compatible systems.
+
+To install the on-line versions of the FAQ, you should unzip the
+`faq230b.zip' archive with "unzip" or "PKUNZIP -d" command from the
+root directory of your DJGPP installation tree.  (On Windows 9X use an
+unzip program that supports long file names.)  The FAQ in the Info
+format will be extracted into the info/ subdirectory; other files will
+be extracted into the FAQ/ subdirectory.  
+
+You can then browse the FAQ by e.g. invoking the stand-alone Info
+reader info.exe from the DOS prompt, like this:
+
+     info faq
+
+Alternatively, use a text file browser to read `djgppfaq.txt' or a Web
+browser to read `djgppfaq.html'.
+
+If you need to search the FAQ for a specific subject, look up that
+subject in the two large indices at the end of the FAQ.  Inside Info,
+pressing the `i' key will cause Info to prompt for a subject, and,
+after you type the subject, display the first section that refers to
+it; pressing the comma `,' key repeatedly will then display the rest
+of the sections which discuss that subject.  If Info beeps after you
+type the subject, it means there are no index entries which refer to
+that subject; try a different subject.
+
+For those who are familiar with the previous versions, the file
+WHATSNEW.faq describes the changes in this release.
+
+The HTML version of the FAQ was tested with Netscape (versions 3.01,
+4.0, and 4.7) and with Microsoft Internet Explorer version 4.
+
+Ready-to-print versions of the FAQ are available in the `faq230p.zip'
+archive.  Currently, you will find there a PostScript version
+`djgppfaq.ps' suitable for any PostScript device; a PCL version
+`djgppfaq.lj' suitable for printing on LaserJet4 or better printer;
+and a DVI file `djgppfaq.dvi' that can be used to drive any other
+printer or device, provided that you find a DVI driver for that
+printer or device.  Some DVI drivers ported to DJGPP can be found in
+the v2apps/tex/ directory on the usual DJGPP sites.
+
+If you want to create the FAQ list in other formats, or change its
+Texinfo sources and regenerate the FAQ, get the file `faq230s.zip'
+from the DJGPP archives and use the appropriate target of the Makefile
+therein.  You will need the following programs to build the various
+FAQ formats:
+
+	- GCC and DJGPP C library
+	- GNU Make (any version)
+	- Makeinfo 4.0 or later (from the GNU Texinfo distribution)
+	- TeX and DVI drivers from the Web2C distribution version 7.2
+	  or later
+
+Please note that you *must* use the LATEST upload of the GNU Texinfo
+distribution ported to DJGPP, as previous versions had subtle bugs
+that would prevent the FAQ from being correctly converted into some of
+the supported formats, and also did not support conversion to HTML.
+Beginning with version 2.30, the FAQ relies on Texinfo for generating
+the HTML version; the previous kludgey way of using Texinfo macros and
+auxiliary Sed scripts was tossed.
+
+If you have comments, corrections or suggestions for inclusion
+in the FAQ list, please mail them to <eliz@is.elta.co.il>.  Be
+sure to include in your mail the version number of the document
+to which your comments apply (you can find the version at the
+beginning of the FAQ list).
+
+
+
+Eli Zaretskii
+eliz@is.elta.co.il

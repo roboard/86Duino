@@ -1,0 +1,41 @@
+#
+# DSM for gcc 4.2.3
+#
+
+dsm-file-version: 1.1
+dsm-name: gpp423b
+dsm-version: 0.5.0
+
+dsm-author: @porter@
+dsm-author-email: @e_mail@
+
+name: g++
+version: 4.2.3
+manifest: gpp423b
+type: binaries
+sources-dsm: gcc423s
+short-description: GNU Compiler Collection, C++ compiler
+organisation: Free Software Foundation
+license: GNU General Public License
+web-site: http://gcc.gnu.org
+
+porter: @porter@
+porter-email: @e_mail@
+
+simtelnet-path: v2gnu/
+zip: gpp423b.zip
+
+#
+# Dependencies
+#
+
+replaces: g++ < 4.2.3
+
+requires: DPMI
+requires: djdev >= 2.03 Patchlevel 2
+requires: binutils >= 2.16
+requires: gcc 4.2.3
+conflicts-with: g++ < 4.2.3
+
+# For reading docs
+depends-on: info-reader

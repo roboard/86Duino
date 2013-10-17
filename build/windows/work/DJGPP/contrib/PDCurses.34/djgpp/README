@@ -1,0 +1,85 @@
+This is a port of PDCurses 3.4 to MSDOS/DJGPP.
+
+
+1.:     DJGPP specific changes.
+        =======================
+
+        There are no DJGPP specific changes to sources.  Only the Makefile for
+        DJGPP has been modified to produce a library zip archive that reflects
+        the stock DJGPP installation tree.  The diffs file shows the changes.
+        The library documentation is located in /contrib/PDCurses.NNN and
+        /gnudocs/PDCurses.NNN, where NNN stands for the version number.
+
+
+
+2.:     Installing the library package.
+        ===============================
+
+2.1.:   Copy the binary distribution into the top DJGPP installation directory,
+        just unzip it preserving the directory structure running *ONE* of the
+        following commands:
+          unzip32 pdcurNNNa.zip      or
+          djtarx pdcurNNNa.zip       or
+          pkunzip -d pdcurNNNa.zip
+        where NNN stands for the version number.
+
+
+
+3.:     Building the binaries from sources.
+        ===================================
+
+3.1.:   Create a temporary directory, copy the source package into that
+        directory and just unzip it preserving the directory structure
+        running *ONE* of the following commands:
+          unzip32 pdcurNNNs.zip      or
+          djtarx pdcurNNNs.zip       or
+          pkunzip -d pdcurNNNs.zip
+        where NNN stands for the version number.
+
+3.2.:   To build the binaries you will need the following binary packages:
+          djdev203.zip (or a later but NOT a prior version)
+          bsh204b.zip  (or a later but NOT a prior version)
+          gccNNNb.zip, bnuNNNb.zip, makNNNb.zip, filNNNb.zip, shlNNNb.zip
+          and txtNNNb.zip
+
+        NNN represents the latest version number of the binary packages. All
+        this packages can be found in the /v2gnu directory of any
+        ftp.delorie.com mirror.
+        You will need bsh204b.zip or later and *NOT* a prior version or
+        the build will fail.  The same applies to djdev203.zip.
+
+3.3.:   The sources are compiled using the DJGPP specific Makefile stored in the
+        /dos directory.  This is gccdos.mak.  To compile the package run from
+        the /dos directory the command:
+          make -f gccdos.mak all
+        This will produce the libraries, some test programs, and a manual.
+
+3.4.:   Now you can run the tests if you like.  From the /dos directory run the
+        command:
+          testcurs
+
+        There are some other example and/or test binaries.  You can run and
+        inspect their code if you like.
+
+3.5.:   To install the headers, libraries and docs run the following command
+        from the /dos directory:
+          make -f gccdos.mak install
+
+        This will install the products into your DJGPP installation tree given
+        by the default prefix "/dev/env/DJDIR".  If you prefer to install them
+        into some other directory you will have to set prefix to the appropiate
+        value:
+          make -f gccdos.mak install prefix=z:/some/other/place
+
+
+
+        To send PDCurses specific bug reports look at
+        <http://pdcurses.sourceforge.net/> to see how to register to the bug
+        mailing list.
+        Send suggestions and bug reports concerning the DJGPP port to
+        comp.os.msdos.djgpp or <djgpp@delorie.com>.
+
+
+Enjoy.
+
+        Robert Riebisch <rr@bttr-software.de>

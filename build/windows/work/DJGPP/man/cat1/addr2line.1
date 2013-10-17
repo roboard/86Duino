@@ -1,0 +1,198 @@
+
+
+
+ADDR2LINE(1)          GNU Development Tools          ADDR2LINE(1)
+
+
+NNAAMMEE
+       addr2line  -  convert  addresses  into file names and line
+       numbers.
+
+SSYYNNOOPPSSIISS
+       addr2line [--bb _b_f_d_n_a_m_e|----ttaarrggeett==_b_f_d_n_a_m_e]
+                 [--CC|----ddeemmaannggllee[=_s_t_y_l_e]]
+                 [--ee _f_i_l_e_n_a_m_e|----eexxee==_f_i_l_e_n_a_m_e]
+                 [--ff|----ffuunnccttiioonnss] [--ss|----bbaasseennaammee]
+                 [--ii|----iinnlliinneess]
+                 [--jj|----sseeccttiioonn==_n_a_m_e]
+                 [--HH|----hheellpp] [--VV|----vveerrssiioonn]
+                 [addr addr ...]
+
+DDEESSCCRRIIPPTTIIOONN
+       aaddddrr22lliinnee translates addresses into file  names  and  line
+       numbers.   Given  an address in an executable or an offset
+       in  a  section  of  a  relocatable  object,  it  uses  the
+       debugging  information  to  figure out which file name and
+       line number are associated with it.
+
+       The executable or relocatable object to use  is  specified
+       with  the  --ee option.  The default is the file _a_._o_u_t.  The
+       section in the relocatable object to use is specified with
+       the --jj option.
+
+       aaddddrr22lliinnee has two modes of operation.
+
+       In  the  first, hexadecimal addresses are specified on the
+       command line, and aaddddrr22lliinnee displays  the  file  name  and
+       line number for each address.
+
+       In  the second, aaddddrr22lliinnee reads hexadecimal addresses from
+       standard input, and prints the file name and  line  number
+       for  each  address  on  standard  output.   In  this mode,
+       aaddddrr22lliinnee may be used in a  pipe  to  convert  dynamically
+       chosen addresses.
+
+       The  format  of  the  output is FFIILLEENNAAMMEE::LLIINNEENNOO.  The file
+       name and line number for each  address  is  printed  on  a
+       separate  line.   If  the  --ff  option  is  used, then each
+       FFIILLEENNAAMMEE::LLIINNEENNOO line is preceded by  a  FFUUNNCCTTIIOONNNNAAMMEE  line
+       which  is the name of the function containing the address.
+
+       If the file name or function name can not  be  determined,
+       aaddddrr22lliinnee  will  print  two question marks in their place.
+       If the line number can not be determined,  aaddddrr22lliinnee  will
+       print 0.
+
+OOPPTTIIOONNSS
+       The  long  and  short  forms  of  options,  shown  here as
+       alternatives, are equivalent.
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+ADDR2LINE(1)          GNU Development Tools          ADDR2LINE(1)
+
+
+       --bb _b_f_d_n_a_m_e
+       ----ttaarrggeett==_b_f_d_n_a_m_e
+           Specify that the object-code  format  for  the  object
+           files is _b_f_d_n_a_m_e.
+
+       --CC
+       ----ddeemmaannggllee[[==_s_t_y_l_e]]
+           Decode  (_d_e_m_a_n_g_l_e)  low-level  symbol names into user-
+           level names.  Besides removing any initial  underscore
+           prepended by the system, this makes C++ function names
+           readable.  Different compilers have different mangling
+           styles.  The optional demangling style argument can be
+           used to choose an  appropriate  demangling  style  for
+           your compiler.
+
+       --ee _f_i_l_e_n_a_m_e
+       ----eexxee==_f_i_l_e_n_a_m_e
+           Specify the name of the executable for which addresses
+           should be translated.  The default file is _a_._o_u_t.
+
+       --ff
+       ----ffuunnccttiioonnss
+           Display function names as well as file and line number
+           information.
+
+       --ss
+       ----bbaasseennaammeess
+           Display only the base of each file name.
+
+       --ii
+       ----iinnlliinneess
+           If the address belongs to a function that was inlined,
+           the source information for all enclosing  scopes  back
+           to   the  first  non-inlined  function  will  also  be
+           printed.  For example,  if  "main"  inlines  "callee1"
+           which   inlines   "callee2",   and   address  is  from
+           "callee2", the source information  for  "callee1"  and
+           "main" will also be printed.
+
+       --jj
+       ----sseeccttiioonn
+           Read offsets relative to the specified section instead
+           of absolute addresses.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+ADDR2LINE(1)          GNU Development Tools          ADDR2LINE(1)
+
+
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1991, 1992, 1993, 1994,  1995,  1996,  1997,
+       1998,  1999,  2000,  2001,  2002,  2003, 2004, 2005, 2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission is granted to copy,  distribute  and/or  modify
+       this   document   under   the   terms   of  the  GNU  Free
+       Documentation License, Version 1.2 or  any  later  version
+       published   by  the  Free  Software  Foundation;  with  no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover  Texts.   A  copy of the license is included in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+

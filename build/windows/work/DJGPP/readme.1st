@@ -1,0 +1,554 @@
+
+               ######         #   #####   ######   ######
+               #     #        #  #     #  #     #  #     #
+               #     #        #  #        #     #  #     #
+               #     #        #  #  ####  ######   ######
+               #     #  #     #  #     #  #        #
+               #     #  #     #  #     #  #        #
+               ######    #####    #####   #        #
+
+                              DJ Delorie
+
+
+          This is the README.1ST file for DJGPP Version 2.03
+
+************************************************************************
+*  This file contains information on obtaining, installing, and using  *
+*  DJGPP.  Please read it *completely* before asking for help.         *
+************************************************************************
+
+DJGPP is a non-proprietary environment for developing 32-bit protected
+mode software in C/C++ under MS-DOS.  The DJGPP home page on the WWW
+is:
+	http://www.delorie.com/djgpp/
+
+Status and other information (online docs, FAQ, mail archives) are
+made available through the DJGPP web pages.  Discussion of DJGPP and
+questions about its usage or features are through the djgpp news group
+(post to comp.os.msdos.djgpp) and djgpp mailing list (send your
+messages to <djgpp@delorie.com>, subscribe through
+<listserv@delorie.com>).  Look on the web page for information on the
+latest versions of various DJGPP packages.
+
+Version information is in manifest/*.ver within each zip.  Contents
+are in manifest/*.mft in each zip.
+
+There are also alternate (and usually better) tutorials on getting,
+setting up, and using djgpp available on the World Wide Web:
+
+	http://www.delorie.com/djgpp/doc/
+
+
+
+THE DISTRIBUTION
+****************
+
+The DJGPP distribution is broken into a few subdirectories, by
+content.  Each subdirectory has a file called 00_index.txt that
+contains descriptions of each of the files in that directory.
+
+The 'b' zips include the binaries and on-line documentation.  At the
+time of writing this file, the various packages are:
+
+FAQ      A short file which points you to other documents you should
+           read (including the full FAQ list).
+
+v2/
+unzip32  A free program to unzip the archive (like PKUNZIP)
+djdev203 DJGPP V2 Development Kit and Runtime
+djlsr203 DJGPP V2 Base Library Sources
+djtst203 DJGPP V2 Test Programs (for testing the C library)
+djcrx203 DJGPP V2 Cross-to-DOS Compiler Support Files (from djlsr/djdev)
+djtzn203 DJGPP V2 Timezone Files
+djtzs203 DJGPP V2 Timezone Sources
+faq*b    The full FAQ list in various formats (Info, ASCII, HTML...)
+faq*s    The Texinfo sources of the FAQ and tools to generate all the
+          different formats of the FAQ
+frfaq*   DJGPP FAQ en Francais
+
+v2apps/
+(various applications built with/for DJGPP, like RHIDE and TeX)
+
+v2gnu/
+(ports of various FSF/GNU programs to DJGPP, like gcc and binutils)
+
+v2tk/
+(various toolkits for use with DJGPP, like Allegro and libsocket)
+
+v2misc/
+csdpmi* CWSDPMI, Charles Sandmann's free DPMI server binaries and docs
+mlp*    ML's Executable File Packer Binaries ("djp")
+pmode*  PMODE stub for djgpp V2
+wmemu*  WM's alternative 387 emulator binaries for DJGPP V2
+(and other miscellaneous things to use with DJGPP)
+
+
+
+GETTING STARTED
+***************
+
+The info below is the minimum new users should know to get them up and
+running with DJGPP.  Please read the DJGPP documentation and the FAQ
+list for further details.  New users are encouraged to read the FAQ
+list in its entirety.
+
+
+
+What to download
+----------------
+
+See http://www.delorie.com/djgpp/zip-picker.html for a form-based
+guide to what to download.  In general, download the binary
+distributions only; most people don't need the source distributions.
+
+To build C programs, you'll need djdev203.zip, gcc*b.zip, and
+bnu*b.zip.  For C++, also get gpp*b.zip.
+
+To read the online manuals, get txi*b.zip and run "info".  If you don't
+have a DPMI server installed, you'll need csdpmi*b.zip.  (Windows, QDPMI,
+386Max, NWDOS, OpenDOS, OS/2, Win/NT and Linux DOSEmu all provide DPMI
+services, so you don't need CWSDPMI in those environments.)  For more
+details, download faq*b.zip (the full FAQ list) and read Chapter 4,
+"Where and What to Download".
+
+If you have Windows ME, 2000 or XP, images dated before December 2001
+may not work properly, so make sure you get new distributions where
+possible if you are using a newer Windows release.
+
+
+Installation
+------------
+
+1. Create a directory for DJGPP, say C:\DJGPP.  (WARNING: do NOT
+   install DJGPP in a directory C:\DEV, D:\DEV, etc., or in any of their
+   subdirectories: it will not work!  See the FAQ for more details.)  Do
+   not use a long directory name or one with spaces or special characters.
+
+   If you have version 1.x installed, it's best to delete the contents
+   of its `bin/' subdirectory or move it to another directory (not on
+   your PATH), and delete everything else from that installation.
+   (Some of the problems reported by users of DJGPP v2 were caused by
+   inadvertently mixing it with old v1.x programs.)  The only program
+   from v1.x that you should keep is `go32.exe'.
+
+   If you are running under Windows NT 4.0, you need to decide if you
+   want to use long names or DOS 8.3 names before you install.  If you
+   plan to use long names you need to download and install the long file
+   name TSR (ntlfn*b.zip) before expanding the distributions.
+
+2. Unzip all the zip files from that directory, preserving the
+   directory structure.  For example:
+
+	pkunzip -d djdev203
+  or
+	unzip32 djdev203
+
+   On Windows 9x, Windows/ME, Windows 2000 and Windows XP, use an unzip
+   program which supports long file names.  Latest versions of InfoZip's
+   UnZip and PKUnZip, as well as WinZip, all support long file names.
+   unzip32.exe, available from the DJGPP sites, also supports long
+   file names.  One way to make sure you have preserved long file
+   names is to look for a file include/sys/sysmacros.h: if you see
+   only sysmacro.h instead, your unzip program does NOT support long
+   filenames, and you need to find another one.
+
+   You must make sure when you expand the distributions that you preserve
+   the directory structure.  If you use WinZip, you MUST check the box
+   "Use folder names".  If you use pkunzip, you must use the -d switch.
+
+   On Windows/NT (NT version 4 and below, not W2K!) use an unzip
+   program which does NOT support long file names if you not plan on
+   using the LFN TSR, as DJGPP programs cannot access long file names
+   on NT4 without the TSR.  Again, unzip32.exe will do The Right Thing
+   for you, so using it is recommended.
+
+3. After unzipping all the zip files, set the DJGPP environment
+   variable to point to the file DJGPP.ENV in the main DJGPP
+   installation directory and add its BIN subdirectory to your PATH.
+
+   The exact way how these variables should be set depends on your
+   operating system:
+
+   * For Windows 98 systems:
+
+     - Click START;
+     - Choose Programs->Accessories->System Tools->System Information;
+     - Click Tools in the menu-bar, then choose "System Configuration";
+     - Use the tab provided there for editing your AUTOEXEC.BAT as
+       explained below.
+
+   * For Windows ME systems:
+
+     - Click START, choose Run, type msconfig.exe, click OK;
+     - Click the "Environment" tab;
+     - Edit the PATH system variable to add the DJGPP bin subdirectory;
+     - Add a new variable DJGPP and set its value to the full path
+       name of the DJGPP.ENV file as explained below.
+
+   * For Windows NT systems:
+
+     - Right-click "My Computer", then select "Properties";
+     - Click the "Environment" tab;
+     - Edit the PATH system variable to add the DJGPP bin subdirectory;
+       (if you are not an administrator, add the DJGPP bin directory to
+       the user PATH variable - or create one with only this directory
+       since it is added to the system path);
+     - Add a new variable DJGPP and set its value to the full path
+       name of the DJGPP.ENV file as explained below.
+
+   * For Windows 2000 or Windows XP systems:
+
+     - Right-click "My Computer", then select "Properties";
+     - Select the "Advanced" tab, then click "Environment Variables" button;
+     - Edit the PATH system variable to add the DJGPP bin subdirectory;
+       (if you are not an administrator, add the DJGPP bin directory to
+       the user PATH variable - or create one with only this directory
+       since it is added to the system path);
+     - Add a new variable DJGPP and set its value to the full path
+       name of the DJGPP.ENV file as explained below.
+
+   * For all other systems (DOS, Windows 3.X and Windows 95): use any
+     text editor, e.g. the standard EDIT, to edit the file
+     AUTOEXEC.BAT in the root directory of the boot drive (usually,
+     C:).
+
+   Instead of editing your autoexec files and/or global environment,
+   you may wish to create a djgpp shortcut instead.  To do this, create
+   a BAT file which has the lines below in it.  This is often needed if
+   you have multiple compilers on the same system.
+
+   No matter which method you use, assuming your DJGPP installation is
+   rooted at C:\DJGPP, the values of the two environment variables
+   DJGPP and PATH should be set like this:
+
+	set DJGPP=C:\DJGPP\DJGPP.ENV
+	set PATH=C:\DJGPP\BIN;%PATH%
+
+4. Reboot.  This makes sure the two lines you added to autoexec.bat
+   will take effect.  (On Windows NT, Windows 2000 and Windows XP, the
+   changes take effect immediately, so you don't need to reboot there,
+   but you do have to close and reopen the DOS box windows.)
+
+5. Run the go32-v2.exe program without arguments:
+
+	go32-v2
+
+   It should report how much DPMI memory and swap space can DJGPP use
+   on your system, like this:
+
+	DPMI memory available: 8020 Kb
+	DPMI swap space available: 39413 Kb
+
+   The actual numbers will vary according to amount of RAM installed
+   on your system, the available disk space and the DPMI server.  If
+   the sum of the two numbers reported by go32-v2 is less than 4MB,
+   read section 3.9 of the FAQ, "How to configure your system for
+   DJGPP".  (If you have more than that, but want to get the optimal
+   performance from your system, read that section anyway.)
+
+
+Compilation
+-----------
+
+GCC is a command-line compiler which you invoke from the DOS command
+line.  To compile and link a single-file C program, use a command like
+this:
+
+	gcc myfile.c -o myfile.exe -lm
+
+The -lm links in the lib/libm.a library (trig math) if needed.  (Link
+order is significant, so if you need libm.a, always put `-lm' at the
+end of the command line.)
+
+To compile a C or C++ source file into an object file, use this
+command line:
+
+	gcc -c -Wall myfile.c  (for C source)
+  or
+	gcc -c -Wall myfile.cc (for C++ source)
+
+This produces the object file myfile.o.  The `-Wall' switch turns on
+many useful warning messages which are especially beneficial for new
+users of GCC.  (Other C++ extensions, like .cpp, are also supported,
+see section 8.4 of the FAQ, "How does GCC recognize the source
+language", for details.)
+
+To link several C object files into an executable program, use a
+command line such as this:
+
+	gcc -o myprog.exe mymain.o mysub1.o mysub2.o
+
+This produces `myprog.exe' which can be run from the DOS prompt.
+
+To link a C++ program, use gxx instead of gcc, like this:
+
+	gxx -o myprog.exe mymain.o mysub1.o mysub2.o
+
+This will automatically search the C++ libraries, so you won't need to
+mention them on the command line.
+
+You can also combine the compilation and link steps, like this:
+
+	gcc -Wall -o myprog.exe mymain.c mysub1.c mysub2.c
+
+Further info about the plethora of GCC switches can be found in the
+GCC on-line documentation.  To begin reading it, install the Texinfo
+package (txi*b.zip, see the ``On-line docs'' section below) and type
+this:
+
+	info gcc invoking
+
+
+
+Development environment (aka IDE)
+---------------------------------
+
+Currently, DJGPP doesn't come with an integrated environment of its
+own.  You are free to choose any editor that can launch DOS programs
+and catch their output, to act as an IDE.  Many people who work with
+DJGPP use a DOS port of GNU Emacs (it's available in the v2gnu
+subdirectory) which can be compiled with DJGPP.  Emacs is a very
+powerful editor (for example, it has a built-in Info reader, so you
+can read DJGPP documentation without leaving the editor), but many
+other free editors can serve as an IDE.  The only task that these
+editors (including Emacs) cannot do is to run a debugger in a
+full-screen session.
+
+A DJGPP-specific IDE called RHIDE has recently been released and is
+now available to all DJGPP users.  It features a Turbo C-style
+interface, auto-indentation, color syntax highlighting, automatic
+invocation of the DJGPP compiler, automatic Makefile generation, and
+easy access to the DJGPP online documentation.  RHIDE also
+incorporates integrated and/or standalone debugging using the same
+functionality as the GNU Debugger (gdb).  Since RHIDE is brand new,
+there are still revisions and bugfixes being made; visit
+http://www.tu-chemnitz.de/~sho/rho/rhide.html for the latest
+information and updates.
+
+
+
+Debugging
+---------
+
+To debug a program, you must first compile its source files with the
+`-g'switch:
+
+	gcc -c -Wall -g mymain.c
+	gcc -c -Wall -g mysub1.c
+	gcc -c -Wall -g mysub2.c
+
+and then link with `-g' as well:
+
+	gcc -g -o myprog.exe mymain.o mysub1.o mysub2.o
+
+(Note that beginning with v2.01 of DJGPP, it is no longer necessary to
+compile to a raw COFF output by omitting the `.exe' from the filename
+in order to debug programs.  The debuggers distributed with v2.01 and
+later are capable of reading an executable as well as the raw COFF.
+If you don't understand what this means, don't worry about it.)
+
+Then run your program under the debugger:
+
+	fsdb myprog.exe
+or
+	gdb myprog.exe
+or
+	edebug32 myprog.exe
+
+(You will have to get gdb*b.zip if you want to debug with GDB.)
+FSDB has a help screen; press F1 to read it.  GDB comes with Info
+docs (see below) which can be read with info.exe.  Edebug32 is a
+seldom-used alternative debugger; type 'h' to get help.
+
+
+
+On-line docs
+------------
+
+Most of the on-line documentation is organized in a special hypertext
+format used by the GNU project.  Each package comes with its own docs,
+in files with the .iNN extension which are unzipped into the info/
+subdirectory of your main DJGPP installation directory.  To browse
+these docs, get and unzip the file txi*b.zip, then run info.exe.  If
+you don't know how to use Info, read the next section.
+
+
+
+Reading the documentation, or A Crash Course in Info
+----------------------------------------------------
+
+The following is not supposed to be a complete guide to using Info,
+but just a starting point, so you could move around the docs and
+search it efficiently for specific subjects.
+
+To invoke Info to read a manual, type "info" followed by the manual
+name.  For example:
+
+  - type "info libc" to read the C library docs;
+  - type "info libc alphabetical printf" to read the documentation
+    of library function `printf';
+  - type "info gcc" to read the manual for GCC, the GNU C compiler;
+  - type "info faq" to read the DJGPP FAQ list;
+  - type "info make" to read the manual for the Make utility;
+  - type "info" to get a menu of all the manuals.
+
+To exit Info, press `q' (for Quit).
+
+Once inside Info, you can move around with the usual cursor motion
+keys: Up-arrow, Down-arrow, PageDown, PageUp, etc.
+
+To read the entire manual in an orderly fashion, press SPACE every
+time you've completed reading a screenful.  This will take you through
+the entire sequence of chapters and sections of a manual.
+
+Menus are marked by a line that says "* Menu:".  Each line below the
+menu marker that begins with a "* " is a menu item.  To choose a menu
+item, position the cursor at the beginning of a line, right under the
+asterisk `*', and press [Enter].
+
+Hypertext links are marked by "* Note".  To follow the reference,
+position the cursor at the asterisk, then press [Enter].  To get back
+from the excursion, press `l' (that's a lower-case letter ell, not the
+digit one), for "Last".
+
+To quickly search for a particular subject in the index of a manual,
+press `i' (for Index), type the subject, then press [Enter].  You can
+type only part of the subject name and press TAB, to see whether the
+index includes any entries that begin with what you typed.  TAB causes
+Info to try to complete what you typed using the available index
+entries.  If Info beeps at you or flashes the screen colors when you
+press TAB, it means that there are no index entries which begin with
+what you typed; delete what you have typed (using the BackSpace key)
+and try a different name for what you were looking for.  If there are
+some index entries that begin with what you typed, Info will complete
+it.  If the completed entry looks like what you are looking for, press
+[Enter] to go to the section of the manual that discusses it; if not,
+press TAB again to see all the possible completions.  If any of the
+completions seem right, type enough text to make it unique and press
+[Enter].  If none of the completions seem appropriate, delete what you
+typed and try a different subject name.
+
+For example, suppose you get the infamous message "ld.exe: cannot open
+-lstdcxx: No such file or directory" and you want to check what the
+FAQ has to say about that.  You start Info ("info faq"), then press
+`i' and type "c a n TAB" (without the blanks).  The first TAB just
+capitalizes "can" into "Can", so you know there are some index entries
+which begin with "Can", and type TAB again.  Now you will see a list
+of potential completions.  Alas, none of them seems to be relevant for
+this problem, so you use BackSpace to delete "Can" and then type
+"-lstd" followed by TAB.  Now Info has only one choice so it completes
+your search and this time it's exactly what you are looking for!
+Finally, press [Enter] to go to that node and read what the FAQ has to
+say about this subject.
+
+If you prefer to look up the subject in the index yourself, page
+through the top-level menu of the manual until you find a menu entry
+that says something like "* Concept Index" or "* Command Index" or
+just "* Index", press [Enter] to go to the index, then browse it for
+any pertinent entries.  An index is just a huge menu sorted in
+alphabetical order, so find an entry you are looking for, position the
+cursor at the beginning of its line, and press [Enter] to go to the
+relevant section.
+
+The library reference doesn't have an index, so search for functions
+either in the alphabetical list or in the functional categories.  For
+example, library function `mktime' is in the "Time Functions"
+category, `random' is in the "Random Number Functions" category, etc.
+
+Sometimes the index search won't help you (because the indices cannot
+list everything).  In this case, press `s' (for Search), type the text
+you want to find, and then press [Enter].  Info will search the entire
+manual for this string and position you at the first occurrence.  To
+search for the next occurrence, press `s' and [Enter] again: Info will
+repeat the search.
+
+Finally, if you don't know in what manual to look for some subject,
+you can use the "--apropos" switch to cause Info to look for that
+subject in the indices of every installed manual.  For example,
+suppose you have heard that DJGPP programs support file-name
+wildcards, but you don't know in which manual to look for their
+description.  The following command will ask Info to print all the
+sections in every manual whose indices mention the string "wildcard":
+
+	info --apropos=wildcard
+
+This will run for a while, and then print lines like these:
+
+    "(kb)Features" -- Wildcards
+    "(kb)Changes in 2.01" -- wildcards
+    "(djgppfaq)Filename globbing" -- Filename wildcards expansion
+
+The text inside the quotes is the name of the manual and the section
+where the subject "wildcard" is discussed.  To invoke Info in order to
+read the first entry above, type this:
+
+	info --node="(kb)Features"
+
+Info has many more commands and options.  To find out, from the
+command line type "info info".  To find out even more, type
+"info info-standalone".
+
+
+
+Compatibility with V2.00
+------------------------
+
+If you are upgrading from version 2.00 of DJGPP, you should completely
+reinstall all the packages you need to use.  Because of the different
+methods used by versions 2.01 and later to handle long command lines
+(and long filenames under Win95), mixing V2.00 programs with those
+from later versions can cause very subtle and difficult to debug
+problems.  See the FAQ section 16.6 for more information.
+
+
+
+Compatibility with V1.x
+-----------------------
+
+Existing binaries compiled under DJGPP V1.x can be used for
+applications for which there is no v2.x version.  V1 programs cannot
+run V2 programs (but v2 programs *can* run v1 programs), so don't try,
+say, using v1.x Make to run v2.x compiler.
+
+
+
+
+--- COPYRIGHT ---
+
+DJGPP V2 is Copyright (C) 1989-1999 by DJ Delorie.  Some parts of
+libc.a are Copyright (C) Regents of the University of California at
+Berkeley.
+
+GNU software (gcc, make, libg++, etc) is Copyright by the Free
+Software Foundation.
+
+DJGPP V2's copyright allows it to be used to produce commercial
+applications.  However, if you include code or libraries that are not
+part of djgpp (like gnu's libg++) then you must comply with their
+copyrights.  See Chapter 19 of the FAQ for more details.
+
+There was a discussion a while ago on the DJGPP news group about the
+copyright of some of libc's functions.  This copyright required that you
+mentioned the "University of California, Berkeley" in your
+distribution even if it only consisted of binaries, i.e. a compiled
+program.  However, the Berkeley license has been changed in July
+1999, and you don't need to mention their copyright in your
+distribution anymore.
+
+The functions and files in libc that have the Berkeley copyright are
+listed here:
+
+from libc/ansi/time/ctime.c: asctime ctime gmtime localtime mktime
+	tzset tzsetwall
+
+from libc/compat/stdlib/random.c: initstate random setstate srandom
+
+==============================================================================
+
+
+Enjoy!
+
+
+DJ Delorie
+dj@delorie.com
+http://www.delorie.com/
