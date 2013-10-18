@@ -87,7 +87,6 @@ size_t File::write(const uint8_t *buf, size_t size)
   if (!_file || (_type == O_READ)) {
     return 0;
   }
-  
   t = fwrite(buf, 1, size, _file);
   flush();
   return t;

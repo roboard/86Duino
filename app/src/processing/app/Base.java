@@ -1180,9 +1180,9 @@ public class Base {
 
     File platformFolder = targetPlatform.getFolder();
     librariesFolders = new ArrayList<File>();  
-    String selectBoard = Preferences.get("board");
-    if(selectBoard.compareTo("86DuinoZERO") != 0 && selectBoard.compareTo("86DuinoONE") != 0 && selectBoard.compareTo("EduCake") != 0)
-      librariesFolders.add(getContentFile("libraries"));
+    //String selectBoard = Preferences.get("board");
+    //if(selectBoard.compareTo("86DuinoZERO") != 0 && selectBoard.compareTo("86DuinoONE") != 0 && selectBoard.compareTo("EduCake") != 0)
+    librariesFolders.add(getContentFile("libraries"));
     librariesFolders.add(new File(platformFolder, "libraries"));
     librariesFolders.add(getSketchbookLibrariesFolder());
 
