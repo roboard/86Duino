@@ -21,6 +21,7 @@
 #define FILE_READ O_READ
 #define FILE_WRITE (O_READ | O_WRITE | O_CREAT)
 
+
 // use the gnu style oflag in open()
 /** open() oflag for reading */
 uint8_t const O_READ = 0X01;
@@ -135,5 +136,8 @@ private:
 };
 
 extern SDClass SD;
+
+
+
 
 #endif

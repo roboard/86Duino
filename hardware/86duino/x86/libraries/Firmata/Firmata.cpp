@@ -155,18 +155,18 @@ void FirmataClass::processSysexMessage(void)
     break;
   case STRING_DATA:
     if(currentStringCallback) {
-      byte bufferLength = (sysexBytesRead - 1) / 2;
+	  byte bufferLength = (sysexBytesRead - 1) + 1;
       char *buffer = (char*)malloc(bufferLength * sizeof(char));
       byte i = 1;
       byte j = 0;
-      while(j < bufferLength) {
+      while(j < (bufferLength - 1)) {
         buffer[j] = (char)storedInputData[i];
-        i++;
-        buffer[j] += (char)(storedInputData[i] << 7);
         i++;
         j++;
       }
+	  buffer[j] = '\0';
       (*currentStringCallback)(buffer);
+	  free(buffer);
     }
     break;
   default:
@@ -319,7 +319,14 @@ void FirmataClass::sendSysex(byte command, byte bytec, byte* bytev)
 
 void FirmataClass::sendString(byte command, const char* string) 
 {
-  sendSysex(command, strlen(string), (byte *)string);
+  byte i, bytec;
+  bytec = strlen(string);
+  startSysex();
+  FirmataSerial.write(command);
+  for(i=0; i<bytec ; i++) {
+    FirmataSerial.write(string[i]);        
+  }
+  endSysex();
 }
 
 

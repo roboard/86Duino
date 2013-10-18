@@ -1,11 +1,11 @@
 This file includes licensing information for parts of 86duino.
 
 First, the gnu general public license, which covers the main body 
-of the processing/86duino code (in general, all the stuff inside the 
-'app' and 'core' subfolders).
+of the processing/arduino/86duino code (in general, all the stuff 
+inside the 'app' and 'core' subfolders).
 
-Next, the gnu lesser general public license that covers the 86duino 
-core and libraries.
+Next, the gnu lesser general public license that covers the arduino 
+and 86duino core and libraries.
 
 
 .....................................................................

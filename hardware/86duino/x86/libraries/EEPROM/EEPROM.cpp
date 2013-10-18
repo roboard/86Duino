@@ -37,59 +37,69 @@
  ******************************************************************************/
 // assume eeprom.txt exist in the disk
 #define DATA_SIZE    (8)
-#define E2END        (1000)
+#define E2END        (1024)
 FILE* create_newfile(void) {
 	FILE* fp;
 	int i;
-	char ch[DATA_SIZE+1];
-	if((fp = fopen("eeprom.txt", "w")) == NULL) {printf("EEPROM init fail\n"); return NULL;}
+	if((fp = fopen("eeprom.bin", "wb")) == NULL) 
+		return NULL;
 	
-	for(i=0; i<DATA_SIZE; i++) ch[i] = '0';
-	ch[DATA_SIZE] = '\n';
-	
-	for(i=0; i<E2END; i++)
+	char ch = '\0';
+	if(fwrite(&ch, 1, E2END, fp) != E2END)
 	{
-		if(fseek(fp, i*(DATA_SIZE+2), SEEK_SET) != 0) {printf("fseek() fail\n"); fclose(fp); return NULL;}
-		if(fwrite(ch, sizeof(char), DATA_SIZE+1, fp) != (DATA_SIZE+1)) {printf("fwrite() fail\n"); fclose(fp); return NULL;}
+		fclose(fp);
+		return NULL;
 	}
-	printf("EEPROM init ok\n");
 	return fp;
+}
+
+static uint32_t get_size(FILE *_file) {
+  if (_file == NULL) 
+	return 0;
+  
+  long pos = ftell(_file);
+  long len = 0;
+  fseek(_file, 0L, SEEK_END);
+  len = ftell(_file);
+  fseek(_file, pos, SEEK_SET);
+  return len;
 }
 
 static uint8_t eeprom_read_byte(int addr) {
     FILE* fp;
-	uint8_t ch[DATA_SIZE+1], val = 0;
-	int i;
+	uint8_t ch = 0;
+	int size;
 
 	if(addr >= E2END) return 0;
-	fp = fopen("eeprom.txt", "r");
+	fp = fopen("eeprom.bin", "rb");
 	if(fp == NULL)
 		if((fp = create_newfile()) == NULL) return 0;
 	
-	fseek(fp, addr*(DATA_SIZE+2), SEEK_SET);
-	fread(ch, sizeof(char), DATA_SIZE+1, fp);
-	for(i=0; i<DATA_SIZE; i++)
-		val = (val<<1)+((ch[i] == '0') ? 0 : 1);
+	size = get_size(fp);
+	if(addr > size)
+		return 0;
+	
+	fseek(fp, addr, SEEK_SET);
+	fread(&ch, sizeof(char), 1, fp);
 	fclose(fp);
-	return val;
+	return ch;
 }
 
 static void eeprom_write_byte(int addr, uint8_t val) {
     FILE* fp;
-	uint8_t ch[DATA_SIZE+1];
-	uint8_t* a;
-	int i;
+	int size;
 
 	if(addr >= E2END) return;
-	fp = fopen("eeprom.txt", "r+");
+	fp = fopen("eeprom.bin", "rb+");
 	if(fp == NULL)
 		if((fp = create_newfile()) == NULL) return;
 	
-	for(i=DATA_SIZE-1, a=ch; i>=0; i--, a++)
-		*a = ((val & (0x01<<i)) == 0) ? '0' : '1';
-	*a = '\n';
-	fseek(fp, addr*(DATA_SIZE+2), SEEK_SET);
-	fwrite(ch, sizeof(char), DATA_SIZE+1, fp);
+	size = get_size(fp);
+	if(addr > size)
+		return;
+	
+	fseek(fp, addr, SEEK_SET);
+	fwrite(&val, sizeof(char), 1, fp);
 	fclose(fp);
 }
 

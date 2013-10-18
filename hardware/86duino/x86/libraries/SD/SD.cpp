@@ -175,7 +175,7 @@ bool SDClass::exists(char *filepath) {
   return result;
 }
 
-bool mid_mkdir(char *filepath)
+static bool mid_mkdir(char *filepath)
 {
 	bool result = mkdir((const char *)filepath, (mode_t)S_IWUSR);
 	return result == 0;
@@ -208,7 +208,7 @@ bool SDClass::mkdir(char *filepath) {
 	return exists(filepath);
 }
 
-bool mid_rmdir(char *filepath)
+static bool mid_rmdir(char *filepath)
 {
 	return rmdir(filepath);
 }
@@ -217,7 +217,7 @@ bool SDClass::rmdir(char *filepath) {
   return mid_rmdir(filepath);
 }
 
-bool mid_remove(char *filepath)
+static bool mid_remove(char *filepath)
 {
 	return (remove(filepath) == 0);
 }

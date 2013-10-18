@@ -28,7 +28,6 @@ extern USBDevice_ USBDevice;
 class Serial_ : public Stream
 {
 private:
-	ring_buffer *_cdc_rx_buffer;
 public:
 	void begin(uint16_t baud_count);
 	void end(void);
