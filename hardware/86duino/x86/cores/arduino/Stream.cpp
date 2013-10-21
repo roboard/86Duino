@@ -27,7 +27,7 @@
 #define NO_SKIP_CHAR  1  // a magic char not found in a valid ASCII numeric field
 
 // private method to read stream with timeout
-/*int Stream::timedRead()
+int Stream::timedRead()
 {
   int c;
   _startMillis = millis();
@@ -62,12 +62,12 @@ int Stream::peekNextDigit()
     if (c >= '0' && c <= '9') return c;
     read();  // discard non-numeric
   }
-}   */
+}
 
 // Public Methods
 //////////////////////////////////////////////////////////////
 
-/*void Stream::setTimeout(unsigned long timeout)  // sets the maximum number of milliseconds to wait
+void Stream::setTimeout(unsigned long timeout)  // sets the maximum number of milliseconds to wait
 {
   _timeout = timeout;
 }
@@ -224,13 +224,13 @@ size_t Stream::readBytes(char *buffer, size_t length)
     count++;
   }
   return count;
-} */
+}
 
 
 // as readBytes with terminator character
 // terminates if length characters have been read, timeout, or if the terminator character  detected
 // returns the number of characters placed in the buffer (0 means no valid data found)
-/*
+
 size_t Stream::readBytesUntil(char terminator, char *buffer, size_t length)
 {
   if (length < 1) return 0;
@@ -266,5 +266,5 @@ String Stream::readStringUntil(char terminator)
     c = timedRead();
   }
   return ret;
-}*/
+}
 

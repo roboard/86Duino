@@ -1,9 +1,5 @@
-
-
 #ifndef __USBAPI__
 #define __USBAPI__
-
-#if defined(USBCON)
 
 //================================================================================
 //================================================================================
@@ -28,6 +24,8 @@ extern USBDevice_ USBDevice;
 class Serial_ : public Stream
 {
 private:
+	bool peek_stored;
+    uint8_t peek_val;
 public:
 	void begin(uint16_t baud_count);
 	void end(void);
@@ -190,6 +188,4 @@ int USB_Recv(uint8_t ep, void* data, int len);		// non-blocking
 int USB_Recv(uint8_t ep);							// non-blocking
 void USB_Flush(uint8_t ep);
 
-#endif
-
-#endif /* if defined(USBCON) */
+#endif /* ifndef __USBAPI__ */

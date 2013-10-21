@@ -28,7 +28,7 @@ class HardwareSerial : public Stream
     inline size_t write(long n) { return write((uint8_t)n); }
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
     inline size_t write(int n) { return write((uint8_t)n); }
-    //using Print::write; // pull in write(str) and write(buf, size) from Print
+    using Print::write; // pull in write(str) and write(buf, size) from Print
     operator bool();
 };
 
@@ -63,7 +63,8 @@ extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;
 extern HardwareSerial Serial3;
 extern HardwareSerial Serial485;
+extern HardwareSerial Serial4;
 
-extern void serialEventRun(void) __attribute__((weak));
+//extern void serialEventRun(void) __attribute__((weak));
 
 #endif

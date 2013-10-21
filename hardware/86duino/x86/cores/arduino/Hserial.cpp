@@ -42,12 +42,21 @@ void HardwareSerial::begin(unsigned long baud, byte config) {
 	com_FlushRxQueue(handle);
 	com_SetTimeOut(handle, timeout);
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-	io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
-	io_outpb(crossbar_ioaddr + COM1_RX, 0x08);
-	io_outpb(crossbar_ioaddr + COM2_TX, 0x08);
-	io_outpb(crossbar_ioaddr + COM2_RX, 0x08);
-	io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
-	io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
+	if(port == COM1)
+	{
+		io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
+		io_outpb(crossbar_ioaddr + COM1_RX, 0x08);
+	}
+	else if(port == COM2)
+	{
+		io_outpb(crossbar_ioaddr + COM2_TX, 0x08);
+		io_outpb(crossbar_ioaddr + COM2_RX, 0x08);
+	}
+	else if(port == COM3)
+	{
+		io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
+		io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
+	}
 }
 
 void HardwareSerial::end() {
@@ -107,4 +116,5 @@ HardwareSerial Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
 HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
 HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
 HardwareSerial Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
+HardwareSerial Serial4(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
 // Preinstantiate Objects //////////////////////////////////////////////////////

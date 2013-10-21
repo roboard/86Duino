@@ -6,7 +6,7 @@
 
 void *USBDEV = NULL;
 unsigned long millis() {
-  return timer_nowtime();
+	return timer_nowtime();
 }
 
 void delay(unsigned long ms) {
