@@ -89,14 +89,16 @@ void digitalWrite(uint8_t, uint8_t);
 int  digitalRead(uint8_t);
 int  analogRead(uint8_t);
 void analogReference(uint8_t mode);
-void analogWrite(uint8_t, int);
+void analogWrite(uint8_t, uint32_t);
+void analogReadResolution(int res);
+void analogWriteResolution(int res);
 void Close_Pwm(uint8_t);
 
 unsigned long millis(void);
 unsigned long long int micros(void);
 void delay(unsigned long);
 void delayMicroseconds(unsigned long us);
-unsigned long long int pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
+unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
 
 void shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t val);
 uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder);

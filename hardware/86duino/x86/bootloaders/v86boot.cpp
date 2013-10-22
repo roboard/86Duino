@@ -72,8 +72,7 @@ int GetBootLoaderMode(void) {
 }
 
 #define _SIZE    (100000L)
-unsigned long pro_size = 0;
-void* get_maxspace(void) {
+void* get_prospace(long pro_size) {
     void *p;
     unsigned long disk_freespace, memsize = _SIZE;
 	struct dfree cdisk, adisk;
@@ -85,32 +84,37 @@ void* get_maxspace(void) {
 		disk_freespace = (long) adisk.df_avail * (long) adisk.df_bsec * (long) adisk.df_sclus;
 	else
 		disk_freespace = (long) cdisk.df_avail * (long) cdisk.df_bsec * (long) cdisk.df_sclus;
-	printf("Disk free space = %ld\n", disk_freespace);
+	//printf("Disk free space = %ld\n", disk_freespace);
 	
 	// Get memory free space
 	while((p = ker_Malloc(memsize)) != NULL)
 	{
 		ker_Mfree((void*)p);
-		//printf("mem: %ld\n", memsize);
 		memsize = memsize << 1;
 	}
 	
 	if(memsize == _SIZE) return NULL;
 	
 	memsize = memsize >> 1;
-	if(disk_freespace > memsize) p = ker_Malloc(memsize); else p = ker_Malloc(disk_freespace);
-	pro_size = (disk_freespace > memsize) ? memsize : disk_freespace;
-	printf("malloc %ld.\n", pro_size);
+	if(disk_freespace > memsize)
+	{
+		if(memsize >= pro_size)
+			p = ker_Malloc(pro_size);
+		else if(pro_size > memsize)
+			return NULL;
+	}
+	else
+	{
+		if(disk_freespace >= pro_size)
+			p = ker_Malloc(pro_size);
+		else if(pro_size > disk_freespace)
+			return NULL;
+	}
+	//pro_size = (disk_freespace > memsize) ? memsize : disk_freespace;
+	//printf("malloc %ld.\n", pro_size);
 	
 	return p;
 }
-
-// 86Duino will return message:
-// 1: Burn 86duino bootloader complete!!
-// 2: Burn 86duino program complete!!
-// 3: Length error!!
-// 4: Disk have not enough space!!
-                   
 
 #define TIME_OUT    (8000)
 
@@ -125,7 +129,8 @@ int main(void)
 	long length = 0L, total_l = 0L, tmp = 0L;
 	bool get_length = false, transfer = false;
 	bool empty_program = false, reboot = false;
-	
+	unsigned char* start_p;
+	unsigned char* p;
 	
 	/* For writing flash*/
 	#define SECTION    (8192L) // write size 8k to flash every time
@@ -155,48 +160,42 @@ int main(void)
 	if(usb_Init(USBDEV) == false)
 		{printf("Usb_Init() return NULL\n"); return -1;}
 	usb_SetTimeOut(USBDEV, 2000);
-		
-	// 2. Alloc memory
-	unsigned char* start_p;
-	unsigned char* p;
 
-	if ((p = (unsigned char*)get_maxspace()) == NULL)
-	{
-		printf("ERROR: \'program_size\' alloc fail.\n");
-		return -1;
-	}
-	
-	start_p = p;
 	EnableLLED(); 
-	// 3. main loop, timeout 8 sec
+	// 2. main loop, timeout 8 sec
 	time = timer_nowtime();
 	while((timer_nowtime() - time) < TIME_OUT)
 	{
 		LEDPulse();
-		// 3.1 If no 86duino.exe file in disk or flash, reading process without 8 sec limit until complete 
+		// 2.1 If no 86duino.exe file in disk or flash, reading process without 8 sec limit until complete 
 		if(empty_program == true) time = timer_nowtime();
 		
 		if(usb_Ready(USBDEV) == false || usb_QueryRxQueue(USBDEV) == 0) continue;
 		
 		if(get_length == false)
 		{
-			// 3.2 Get file size
+			// 2.2 Get file size
 		    if(usb_QueryRxQueue(USBDEV) >= 5)
 		    {
 		    	type = usb_Read(USBDEV);
-		    	for(i=0; i<4; i++) length = length + ((unsigned long)usb_Read(USBDEV) << (8*i));
-		    	if(length < pro_size && length > 0L)
+		    	for(i=0; i<4; i++) length = length + ((long)usb_Read(USBDEV) << (8*i));
+		    	//2.3 Get program memory size
+				if ((p = (unsigned char*)get_prospace(length)) == NULL)
+				{
+					printf("ERROR: \'program_size\' alloc fail.\n");
+					break;
+				}
+				else
 				{
 					get_length = true;
 					total_l = length; //printf("Length = %ld\n", length);
+					start_p = p;
 				}
-		    	else
-					break;
 			}
 		}
 		else
 		{
-			// 3.3 Put file to memory
+			// 2.3 Put file to memory
 			tmp = usb_QueryRxQueue(USBDEV);
 			length = length - tmp;
 			if(length <= 0)	transfer = true;
@@ -212,7 +211,6 @@ int main(void)
 	p = start_p;
 	if(transfer == false) {usb_Write(USBDEV, '3'); goto END;}
 	
-	
 	fp = NULL;	
 	if(type == BOOTLOADER)
 	{
@@ -225,9 +223,8 @@ int main(void)
 		fp = fopen("____86pg.$$$", "wb");
 	}
 	if(fp == NULL) {usb_Write(USBDEV, '4'); goto END;}
-	
 		
-	// 4. Write file from memory to disk or flash
+	// 3. Write file from memory to disk or flash
 	for(; total_l > 0L; total_l -= msize, start_p += msize)
 	{
 		msize = (total_l <= SECTION) ? total_l : SECTION;
@@ -250,12 +247,13 @@ int main(void)
 			fclose(fp);
 			goto END;
 		}
+
 		usb_Write(USBDEV, 'z');
 		fflush(fp);
 	}
     fclose(fp);
-    
-    // 4.5 switch filename
+   
+    // 3.5 switch filename
 	if(type == BOOTLOADER)
 	{
 		//system("del _86boot.$$$"); // force to delete this file
@@ -284,12 +282,12 @@ int main(void)
     	usb_Write(USBDEV, '2');
 	}
 	
-END: // 5. prepare to run user program
+END: // 4. prepare to run user program
+	delay_ms(10);
 	usb_FlushWFIFO(USBDEV);
-	ker_Mfree((void*)p);	
+	ker_Mfree((void*)p);
 	usb_Close(USBDEV);
 	DisableLLED();
-	delay_ms(10);
 	
 	if(reboot == true)
 		io_outpb(0x64, 0xfe); //reset CPU;

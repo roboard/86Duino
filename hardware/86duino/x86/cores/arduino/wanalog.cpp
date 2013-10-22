@@ -12,11 +12,13 @@
 #include "mcm.h"
 
 #define BaseAddress (0xfe00)
-#define TimeOut		  (5000)
-#define MCM_MC   (0)
-#define MCM_MD   (1)
+#define TimeOut		(5000)
+#define MCM_MC      (0)
+#define MCM_MD      (1)
 static int mc_md_inuse[PINS];
-							
+
+#define ADC_RESOLUTION    (11) // for 86Duino
+#define PWM_RESOLUTION    (13) // for 86duino						
 static int mc = MC_MODULE0, md = MCPWM_MODULEA;
 //uint8_t analog_reference = DEFAULT;
 
@@ -24,8 +26,28 @@ void analogReference(uint8_t mode) {
 	return;	
 }
 
+static int _readResolution = 10; // Arduino compatibility
+static int _writeResolution = 8; // Arduino compatibility
+void analogReadResolution(int res) {
+	_readResolution = res;
+}
+
+void analogWriteResolution(int res) {
+	_writeResolution = res;
+}
+
+static inline uint32_t mapResolution(uint32_t value, uint32_t from, uint32_t to) {
+	if (from == to)
+		return value;
+	if (from > to)
+		return value >> (from-to);
+	else
+		return value << (to-from);
+}
+
 void Close_Pwm(uint8_t pin){			
 	if(pin >= PINS) return;
+	if(mc_md_inuse[pin] == 0) return;
 	
 	mc = arduino_to_mc_md[MCM_MC][pin];
 	md = arduino_to_mc_md[MCM_MD][pin];
@@ -37,7 +59,7 @@ void Close_Pwm(uint8_t pin){
 }
 
 int analogRead(uint8_t pin) {
-		unsigned int  d;
+	unsigned int  d;
 	unsigned long time;
 	int i;
 	
@@ -66,19 +88,21 @@ int analogRead(uint8_t pin) {
 		}
 	}	 
 	
-	d = (d&0x07ff)>>1;
+	d = mapResolution((d&0x07ff), ADC_RESOLUTION, _readResolution);
 	
 	return d;
 }
 
-void analogWrite(uint8_t pin, int val) {
+#define MAX_RESOLUTION    (100000L)
+void analogWrite(uint8_t pin, uint32_t val) {
 	unsigned short crossbar_ioaddr = 0;
+	unsigned int uint;
 	
 	if(pin >= PINS) return;
 	
-	if (val <= 0)
+	if (val == 0L)
 		digitalWrite(pin, LOW);
-	else if (val >= 255)
+	else if (val >= ((0x00000001L<<_writeResolution)-1))
 		digitalWrite(pin, HIGH);
 	else
 	{
@@ -87,32 +111,21 @@ void analogWrite(uint8_t pin, int val) {
 	    
 	    if(mc == NOPWM || md == NOPWM)
 		{
-			if (val < 128)
+			if (val < (0x00000001L<<(_writeResolution-1)))
 				digitalWrite(pin, LOW);
 			else
 				digitalWrite(pin, HIGH);
 			return;				
 	    }
 	    
-	    mc_setbaseaddr();
-	    //Master_DX2();
-	    crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-	    
-		if (pin <= 9)
-			io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-		else if (pin > 28)
-	    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-		else
-			io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 	    
 	    // Init H/W PWM
 	    if(mc_md_inuse[pin] == 0)
 		{
+			set_MMIO();
+			mc_setbaseaddr();
 			if (mc_SetMode(mc, MCMODE_PWM_SIFB) == false)
-			{
 			    printf("ERROR: fail to change MC mode!\n");
-			    return;
-			}
 			
 			mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 			mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
@@ -125,10 +138,20 @@ void analogWrite(uint8_t pin, int val) {
 			mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
 			mcpwm_SetDeadband(mc, md, 0L);
 			mcpwm_ReloadOUT_Unsafe(mc, md, MCPWM_RELOAD_NOW);
+			
+			crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
+			if (pin <= 9)
+				io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
+			else if (pin > 28)
+		    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
+			else
+				io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
 	    }
-	   
-	    mcpwm_SetWidth(mc, md, 2040L*SYSCLK, (8*val*SYSCLK));  // period: 2.04ms, duty: 8us  resolution: 10ns
+	    
+	    val = mapResolution(val, _writeResolution, PWM_RESOLUTION);
+	    uint = MAX_RESOLUTION/(0x00000001L<<_writeResolution);
+	    mcpwm_SetWidth(mc, md, 1000L*SYSCLK, val*uint);
 	    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	    
 	    if(mc_md_inuse[pin] == 0)
