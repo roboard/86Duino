@@ -1,7 +1,10 @@
-All files in this directory (circuit and layout files of 86Duino) are licensed 
-under a Creative Commons Attribution-ShareAlike 3.0 License:
+All files in this directory (schematics, layout, and CAD files of 86Duino) are 
+licensed under a Creative Commons Attribution-ShareAlike 3.0 License:
 
       http://creativecommons.org/licenses/by-sa/3.0/
+
+(If you need a commercial license except CC-BY-SA, please contact 
+ soc@dmp.com.tw to get more information.)
 
 
 .....................................................................

@@ -96,7 +96,7 @@ int analogRead(uint8_t pin) {
 #define MAX_RESOLUTION    (100000L)
 void analogWrite(uint8_t pin, uint32_t val) {
 	unsigned short crossbar_ioaddr = 0;
-	unsigned int uint;
+	unsigned long uint;
 	
 	if(pin >= PINS) return;
 	
@@ -117,7 +117,6 @@ void analogWrite(uint8_t pin, uint32_t val) {
 				digitalWrite(pin, HIGH);
 			return;				
 	    }
-	    
 	    
 	    // Init H/W PWM
 	    if(mc_md_inuse[pin] == 0)
@@ -150,7 +149,7 @@ void analogWrite(uint8_t pin, uint32_t val) {
 	    }
 	    
 	    val = mapResolution(val, _writeResolution, PWM_RESOLUTION);
-	    uint = MAX_RESOLUTION/(0x00000001L<<_writeResolution);
+	    uint = MAX_RESOLUTION/(0x00000001L<<PWM_RESOLUTION);
 	    mcpwm_SetWidth(mc, md, 1000L*SYSCLK, val*uint);
 	    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	    

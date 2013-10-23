@@ -2,7 +2,7 @@
 # AVR compile variables
 # --------------------- 
 
-name=Vortex86EX (32-bits) boards
+name=Vortex86EX (32-bits) Boards
 # Default "compiler.path" is correct, change only if you want to overidde the initial value
 #compiler.path={ide.path}/tools/avr/bin/..
 compiler.c.cmd=avr-gcc
@@ -59,17 +59,17 @@ tools.86upload.config.path.linux={runtime.ide.path}/hardware/tools/avrdude.conf
 
 tools.86upload.upload.params.verbose=-v -v -v -v
 tools.86upload.upload.params.quiet=-q -q
-tools.86upload.upload.pattern="{cmd.path}" "\\.\{serial.port}" "{build.path}/{build.project_name}.exe" {upload.verbose} -p{build.mcu} -c{upload.protocol} -P -b{upload.speed} -D
+tools.86upload.upload.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {upload.verbose} -p{build.mcu} -c{upload.protocol} -P -b{upload.speed} -D
 
-tools.avrdude.program.params.verbose=-v -v -v -v
-tools.avrdude.program.params.quiet=-q -q
-tools.avrdude.program.pattern="{cmd.path}" "-C{config.path}" {program.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
+tools.86upload.program.params.verbose=-v -v -v -v
+tools.86upload.program.params.quiet=-q -q
+tools.86upload.program.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {program.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
 
-tools.avrdude.erase.params.verbose=-v -v -v -v
-tools.avrdude.erase.params.quiet=-q -q
-tools.avrdude.erase.pattern="{cmd.path}" "-C{config.path}" {erase.verbose} -p{build.mcu} -c{protocol} {program.extra_params} -e -Ulock:w:{bootloader.unlock_bits}:m -Uefuse:w:{bootloader.extended_fuses}:m -Uhfuse:w:{bootloader.high_fuses}:m -Ulfuse:w:{bootloader.low_fuses}:m
+tools.86upload.erase.params.verbose=-v -v -v -v
+tools.86upload.erase.params.quiet=-q -q
+tools.86upload.erase.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {erase.verbose} -p{build.mcu} -c{protocol} {program.extra_params} -e -Ulock:w:{bootloader.unlock_bits}:m -Uefuse:w:{bootloader.extended_fuses}:m -Uhfuse:w:{bootloader.high_fuses}:m -Ulfuse:w:{bootloader.low_fuses}:m
 
-tools.avrdude.bootloader.params.verbose=-v -v -v -v
-tools.avrdude.bootloader.params.quiet=-q -q
-tools.avrdude.bootloader.pattern="{cmd.path}" "-C{config.path}" {bootloader.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{runtime.ide.path}/hardware/arduino/avr/bootloaders/{bootloader.file}:i" -Ulock:w:{bootloader.lock_bits}:m
+tools.86upload.bootloader.params.verbose=-v -v -v -v
+tools.86upload.bootloader.params.quiet=-q -q
+tools.86upload.bootloader.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {bootloader.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{runtime.ide.path}/hardware/arduino/avr/bootloaders/{bootloader.file}:i" -Ulock:w:{bootloader.lock_bits}:m
 

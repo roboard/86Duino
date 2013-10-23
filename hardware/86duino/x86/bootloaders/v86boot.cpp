@@ -10,7 +10,8 @@
 
 void init(void) {
 	int i;
-	if(io_Init()==false) {
+	if(io_Init() == false)
+	{
 	  printf("Init fail\n");
 	  return;
 	}
@@ -84,7 +85,6 @@ void* get_prospace(long pro_size) {
 		disk_freespace = (long) adisk.df_avail * (long) adisk.df_bsec * (long) adisk.df_sclus;
 	else
 		disk_freespace = (long) cdisk.df_avail * (long) cdisk.df_bsec * (long) cdisk.df_sclus;
-	//printf("Disk free space = %ld\n", disk_freespace);
 	
 	// Get memory free space
 	while((p = ker_Malloc(memsize)) != NULL)
@@ -110,8 +110,6 @@ void* get_prospace(long pro_size) {
 		else if(pro_size > disk_freespace)
 			return NULL;
 	}
-	//pro_size = (disk_freespace > memsize) ? memsize : disk_freespace;
-	//printf("malloc %ld.\n", pro_size);
 	
 	return p;
 }
@@ -133,7 +131,7 @@ int main(void)
 	unsigned char* p;
 	
 	/* For writing flash*/
-	#define SECTION    (8192L) // write size 8k to flash every time
+	#define SECTION    (8192L) // write size 8k to disk every time
 	unsigned long msize = 0L;
 	
 	// 0. Try to open 86duino.exe file in disk or flash
@@ -188,7 +186,7 @@ int main(void)
 				else
 				{
 					get_length = true;
-					total_l = length; //printf("Length = %ld\n", length);
+					total_l = length;
 					start_p = p;
 				}
 			}
@@ -213,15 +211,10 @@ int main(void)
 	
 	fp = NULL;	
 	if(type == BOOTLOADER)
-	{
-		//system("del ____86bt.$$$"); // force to delete this file
 		fp = fopen("____86bt.$$$", "wb");
-	}
 	else if(type == PROGRAM)
-	{
-		//system("del ____86pg.$$$"); // force to delete this file
 		fp = fopen("____86pg.$$$", "wb");
-	}
+
 	if(fp == NULL) {usb_Write(USBDEV, '4'); goto END;}
 		
 	// 3. Write file from memory to disk or flash
@@ -256,11 +249,8 @@ int main(void)
     // 3.5 switch filename
 	if(type == BOOTLOADER)
 	{
-		//system("del _86boot.$$$"); // force to delete this file
-		//system("ren v86boot.exe _86boot.$$$");
-    	system("del v86boot.exe");
-		system("ren ____86bt.$$$ v86boot.exe");
-    	//system("ren _86boot.$$$ ____86bt.$$$");
+    	remove("v86boot.exe");
+		rename("____86bt.$$$", "v86boot.exe");
     	usb_Write(USBDEV, '1');
 		if((fp = fopen("86duino.exe", "rb")) != NULL)
 			fclose(fp);
@@ -270,14 +260,11 @@ int main(void)
     else if(type == PROGRAM)
     {
     	if(empty_program == true)
-    		system("ren ____86pg.$$$ 86duino.exe");
+    		rename("____86pg.$$$", "86duino.exe");
     	else
     	{
-    		//system("del _86prog.$$$"); // force to delete this file
-	    	//system("ren 86duino.exe _86prog.$$$");
-	    	system("del 86duino.exe");
-			system("ren ____86pg.$$$ 86duino.exe");
-	    	//system("ren _86prog.$$$ ____86pg.$$$");
+	    	remove("86duino.exe");
+			rename("____86pg.$$$", "86duino.exe");
 	    }
     	usb_Write(USBDEV, '2');
 	}

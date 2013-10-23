@@ -13,11 +13,11 @@ menu.cpu=Processor
 86DuinoZERO.upload.use_1200bps_touch=true
 86DuinoZERO.upload.wait_for_upload_port=true
 
-86DuinoZERO.bootloader.tool=avrdude
+86DuinoZERO.bootloader.tool=86upload
 86DuinoZERO.bootloader.low_fuses=0xff
 86DuinoZERO.bootloader.high_fuses=0xd8
 86DuinoZERO.bootloader.extended_fuses=0xcb
-86DuinoZERO.bootloader.file=caterina/Caterina-Leonardo.hex
+86DuinoZERO.bootloader.file=v86boot.exe
 86DuinoZERO.bootloader.unlock_bits=0x3F
 86DuinoZERO.bootloader.lock_bits=0x2F
 
@@ -40,11 +40,11 @@ menu.cpu=Processor
 86DuinoONE.upload.use_1200bps_touch=true
 86DuinoONE.upload.wait_for_upload_port=true
 
-86DuinoONE.bootloader.tool=avrdude
+86DuinoONE.bootloader.tool=86upload
 86DuinoONE.bootloader.low_fuses=0xff
 86DuinoONE.bootloader.high_fuses=0xd8
 86DuinoONE.bootloader.extended_fuses=0xcb
-86DuinoONE.bootloader.file=caterina/Caterina-Leonardo.hex
+86DuinoONE.bootloader.file=v86boot.exe
 86DuinoONE.bootloader.unlock_bits=0x3F
 86DuinoONE.bootloader.lock_bits=0x2F
 
@@ -67,11 +67,11 @@ EduCake.upload.disable_flushing=true
 EduCake.upload.use_1200bps_touch=true
 EduCake.upload.wait_for_upload_port=true
 
-EduCake.bootloader.tool=avrdude
+EduCake.bootloader.tool=86upload
 EduCake.bootloader.low_fuses=0xff
 EduCake.bootloader.high_fuses=0xd8
 EduCake.bootloader.extended_fuses=0xcb
-EduCake.bootloader.file=caterina/Caterina-Leonardo.hex
+EduCake.bootloader.file=v86boot.exe
 EduCake.bootloader.unlock_bits=0x3F
 EduCake.bootloader.lock_bits=0x2F
 

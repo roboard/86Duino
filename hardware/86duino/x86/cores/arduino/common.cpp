@@ -251,7 +251,7 @@ static unsigned long getclocks(void) {
 DMPAPI(void) delay_us(unsigned long delaytime) { //delay in us
     unsigned long nowclocks;
 
-    #define CLOCKS_PER_MICROSEC (999UL) //only for RoBoard (RB-100)
+    #define CLOCKS_PER_MICROSEC (299UL) //only for RoBoard (RB-100)
     nowclocks = getclocks();
     while ((getclocks() - nowclocks)/CLOCKS_PER_MICROSEC < delaytime);
 }
