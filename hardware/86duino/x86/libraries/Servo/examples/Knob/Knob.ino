@@ -1,7 +1,7 @@
 // Controlling a servo position using a potentiometer (variable resistor) 
 // by Michal Rinott <http://people.interaction-ivrea.it/m.rinott> 
 
-#include <Servoabcde.h> 
+#include <Servo.h> 
  
 Servo myservo;  // create servo object to control a servo 
  

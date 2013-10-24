@@ -1113,7 +1113,7 @@ public class Editor extends JFrame implements RunnerListener {
     item = new JMenuItem(_("Reference"));
     item.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-          Base.showReference();
+           Base.openURL(_("http://www.86duino.com/?page_id=9"));
         }
       });
     menu.add(item);
@@ -1147,7 +1147,7 @@ public class Editor extends JFrame implements RunnerListener {
       });
     menu.add(item);
     
-    item = new JMenuItem(_("Visit 86duino.com"));
+    item = new JMenuItem(_("Visit 86Duino.com"));
     item.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
           Base.openURL(_("http://www.86duino.com/"));

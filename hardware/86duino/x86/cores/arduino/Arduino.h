@@ -10,6 +10,9 @@
 #include "binary.h"
 #include "stdint.h"
 
+#include "WChar.h"
+#include "WString.h"
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -95,7 +98,7 @@ void analogWriteResolution(int res);
 void Close_Pwm(uint8_t);
 
 unsigned long millis(void);
-unsigned long long int micros(void);
+unsigned long micros(void);
 void delay(unsigned long);
 void delayMicroseconds(unsigned long us);
 unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
@@ -117,6 +120,12 @@ void loop(void);
 
 extern void* USBDEV;
 #include "Hserial.h"
+
+uint16_t makeWord(uint16_t w);
+uint16_t makeWord(byte h, byte l);
+
+#define word(...) makeWord(__VA_ARGS__)
+unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout = 1000000L);
 
 void tone(uint8_t _pin, unsigned int frequency, unsigned long duration = 0);
 void noTone(uint8_t _pin);

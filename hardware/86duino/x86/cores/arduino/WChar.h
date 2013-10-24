@@ -20,8 +20,9 @@
 #ifndef Character_h
 #define Character_h
 
-#include <ctype.h>
-
+#include "ctype.h"
+#include "stdint.h"
+typedef uint8_t boolean;
 // WCharacter.h prototypes
 inline boolean isAlphaNumeric(int c) __attribute__((always_inline));
 inline boolean isAlpha(int c) __attribute__((always_inline));
@@ -68,7 +69,7 @@ inline boolean isAscii(int c)
 // Checks for a blank character, that is, a space or a tab.
 inline boolean isWhitespace(int c)
 {
-  return ( isblank (c) == 0 ? false : true);
+  return ( isspace (c) == 0 ? false : true);
 }
 
 

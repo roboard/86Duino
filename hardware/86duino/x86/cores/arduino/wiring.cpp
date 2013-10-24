@@ -13,7 +13,7 @@ void delay(unsigned long ms) {
 	delay_ms(ms);
 }
 
-unsigned long long int micros() {
+unsigned long micros() {
 	#define CLOCKS_PER_MICROSEC (299UL)
 	return (getclocks64()/CLOCKS_PER_MICROSEC);
 }

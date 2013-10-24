@@ -103,15 +103,19 @@ void mcpfau_SetCap3INT(int mc, int module, unsigned long interval)
 
 
 static void (*sifIntMode[3])(int, int, unsigned long) = {mcpfau_SetCapMode1, mcpfau_SetCapMode2, mcpfau_SetCapMode3}; 
-static bool mcm_init[4] = {false, false, false, false};
+static unsigned long (*readCapStat[3])(int, int) = {mcpfau_ReadCAPSTAT1, mcpfau_ReadCAPSTAT2, mcpfau_ReadCAPSTAT3};
+static unsigned long (*readCapFIFO[3])(int, int, unsigned long*) = {mcpfau_ReadCAPFIFO1, mcpfau_ReadCAPFIFO2, mcpfau_ReadCAPFIFO3};
+static volatile bool mcm_init[4] = {false, false, false, false};
+static unsigned long _usedMode[4][3];
 static int user_int(int irq, void* data) {
-	int i, m, n;
+	int i, m, n, evt = 0;
+	unsigned long capdata;
 	
 	// detect interrupt pin
 	for(i=0; i<EXTERNAL_NUM_INTERRUPTS; i++)
 	{
 		m = i/3; // sif mc
-		n = i%3; // offset
+		n = i%3; // offset (capture pin number 1/2/3)
 		if(mcm_init[m] == false) {i += 2; continue;}
 		if((mc_inp(m, 0x04) & ((0x20000000L)<<n)) != 0L)
 		{
@@ -121,12 +125,32 @@ static int user_int(int irq, void* data) {
 	}
 	
 	// execute user function for the pin
-	if(i < EXTERNAL_NUM_INTERRUPTS) _userfunc[i]();
+	if(i < EXTERNAL_NUM_INTERRUPTS)
+	{
+		switch(_usedMode[m][n])
+		{
+		case MCPFAU_CAP_BOTH:
+	    	while(readCapStat[n](m, MCSIF_MODULEB)!= MCENC_CAPFIFO_EMPTY)
+          		if(readCapFIFO[n](m, MCSIF_MODULEB, &capdata) != MCPFAU_CAP_CAPCNT_OVERFLOW) evt++;
+			break;
+		case MCPFAU_CAP_1TO0:
+			while(readCapStat[n](m, MCSIF_MODULEB)!= MCENC_CAPFIFO_EMPTY)
+          		if(readCapFIFO[n](m, MCSIF_MODULEB, &capdata) == MCPFAU_CAP_1TO0EDGE) evt++;
+          	break;
+		case MCPFAU_CAP_0TO1:
+			while(readCapStat[n](m, MCSIF_MODULEB)!= MCENC_CAPFIFO_EMPTY)
+          		if(readCapFIFO[n](m, MCSIF_MODULEB, &capdata) == MCPFAU_CAP_0TO1EDGE) evt++;
+          	break;
+		}
+		for(; evt > 0; evt--)
+			_userfunc[i]();
+	}
 	
 	return ISR_HANDLED;
 }
 
 static uint8_t used_irq = 0xff;
+static char* name = "attachInt";
 static bool interrupt_init(void) {
 	if(used_irq != 0xff) return true;
 	
@@ -135,16 +159,17 @@ static bool interrupt_init(void) {
         printf("irq_init fail\n"); return false;
     }
     
-    if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER) == false)
+    if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
     {
         printf("%s\n", __FUNCTION__); return false;
     }
     
-    if(irq_InstallISR(GetMCIRQ(), user_int, NULL) == false)
+    if(irq_InstallISR(GetMCIRQ(), user_int, (void*)name) == false)
 	{
 	    printf("irq_install fail\n"); return false;
 	}
 	
+	set_MMIO();
 	printf("BaseAddr = %08lxh irq = %d\n\n", mc_setbaseaddr(), GetMCIRQ());
 	//Master_DX2();
 	
@@ -157,11 +182,9 @@ static bool interrupt_init(void) {
 static void mcmsif_init(void) {
     if(mcm_init[mc] == true) return;
 	if(mc_SetMode(mc, MCMODE_PWM_SIFB) == false)
-    {
-    	printf("mc_SetMode() error\n"); return;
-	}
+    	printf("mc_SetMode() error\n");
     
-    mcsif_SetInputFilter(mc, md, 0L);
+    mcsif_SetInputFilter(mc, md, 20L);
     mcsif_SetSWDeadband(mc, md, 0L);
     mcsif_SetSWPOL(mc, md, MCSIF_SWPOL_REMAIN);
     mcsif_SetSamplWin(mc, md, MCSIF_SWSTART_DISABLE + MCSIF_SWEND_NOW);  // stop the current sampling window first
@@ -177,7 +200,7 @@ static void mcmsif_init(void) {
     mcpfau_SetRLDTRIG1(mc, md, MCPFAU_RLDTRIG_DISABLE);
     mcpfau_SetFAU1TRIG(mc, md, MCPFAU_FAUTRIG_INPUT1);
     mcpfau_SetFAU1RELS(mc, md, MCPFAU_FAURELS_INPUT0);
-
+	
     mcpfau_SetCapMode2(mc, md, MCPFAU_CAP_DISABLE);     // pin2 for RLDTRIG
     mcpfau_SetCapInterval2(mc, md, 1L);
     mcpfau_SetCap2INT(mc, md, 1L);
@@ -196,12 +219,16 @@ static void mcmsif_init(void) {
 	mcpfau_SetFAU3TRIG(mc, md, MCPFAU_FAUTRIG_INPUT1);
 	mcpfau_SetFAU3RELS(mc, md, MCPFAU_FAURELS_INPUT0);
 	
+	io_DisableINT();
 	mcm_init[mc] = true;
+	io_RestoreINT();
 }
 
 static void mcmsif_close(void) {
 	mcsif_Disable(mc, md);
+	io_DisableINT();
 	mcm_init[mc] = false;
+	io_RestoreINT();
 }
 
 void attachInterrupt(uint8_t interruptNum, void (*userFunc)(void), int mode) {
@@ -221,7 +248,7 @@ void attachInterrupt(uint8_t interruptNum, void (*userFunc)(void), int mode) {
 	mcmsif_init();
 	
     clear_INTSTATUS();
-	enable_MCINT(0xe0);
+	enable_MCINT(0xe0); // SIFB FAULT INT1/2/3
 	
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
     if (mc == 0)
@@ -239,17 +266,22 @@ void attachInterrupt(uint8_t interruptNum, void (*userFunc)(void), int mode) {
 	
 	mcsif_Disable(mc, md);
 
+	io_DisableINT();
 	_userfunc[interruptNum] = userFunc;
+	io_RestoreINT();
 	
 	switch (mode) {
 	case CHANGE:
 		sifIntMode[interruptNum%3](mc, md, MCPFAU_CAP_BOTH);
+		_usedMode[mc][interruptNum%3] = MCPFAU_CAP_BOTH;
 		break;
 	case FALLING:
 		sifIntMode[interruptNum%3](mc, md, MCPFAU_CAP_1TO0);
+		_usedMode[mc][interruptNum%3] = MCPFAU_CAP_1TO0;
 		break;	
 	case RISING:
 	    sifIntMode[interruptNum%3](mc, md, MCPFAU_CAP_0TO1);
+	    _usedMode[mc][interruptNum%3] = MCPFAU_CAP_0TO1;
 	    break;
 	default:
 		printf("No support this mode\n");
@@ -270,15 +302,23 @@ void detachInterrupt(uint8_t interruptNum) {
 	
 	mcsif_Disable(mc, md);
 	sifIntMode[interruptNum%3](mc, md, MCPFAU_CAP_DISABLE);
+	
+	io_DisableINT();
 	_userfunc[interruptNum] = NULL;
+	io_RestoreINT();
 	
 	for(i=0; i<3; i++)
 		if(_userfunc[mc*3+i] != NULL) break;
 	if(i == 3) mcmsif_close(); else mcsif_Enable(mc, md);
+	
 	for(i=0; i<EXTERNAL_NUM_INTERRUPTS; i++)
 		if(_userfunc[i] != NULL) break;
 	if(i == EXTERNAL_NUM_INTERRUPTS)
-		if(irq_UninstallISR(used_irq, NULL) == false)
+	{
+		if(irq_UninstallISR(used_irq, (void*)name) == false)
 		    printf("irq_install fail\n");
+		else
+			used_irq = 0xff;
+	}
 }
 
