@@ -112,6 +112,28 @@ HardwareSerial::operator bool() {
 	return true;
 } 
 
+void serialEvent() __attribute__((weak));
+void serialEvent1() __attribute__((weak));
+void serialEvent2() __attribute__((weak));
+void serialEvent3() __attribute__((weak));
+void serialEvent485() __attribute__((weak));
+void serialEvent4() __attribute__((weak));
+void serialEvent() {}
+void serialEvent1() {}
+void serialEvent2() {}
+void serialEvent3() {}
+void serialEvent485() {}
+void serialEvent4() {}
+void serialEventRun(void)
+{
+	if(USBDEV != NULL && Serial.available() > 0) serialEvent();
+	if(Serial1.handle != NULL && Serial1.available() > 0) serialEvent1();
+	if(Serial2.handle != NULL && Serial2.available() > 0) serialEvent2();
+	if(Serial3.handle != NULL && Serial3.available() > 0) serialEvent3();
+	if(Serial485.handle != NULL && Serial485.available() > 0) serialEvent485();
+	if(Serial4.handle != NULL && Serial4.available() > 0) serialEvent4();
+}
+
 HardwareSerial Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
 HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
 HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);

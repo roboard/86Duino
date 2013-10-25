@@ -23,30 +23,36 @@ void delayMicroseconds(unsigned long us) {
 }
 
 bool init() {
-	int i;
+	int i, crossbarBase, gpioBase;
 	if(io_Init() == false) return false;
 
 	//set corssbar Base Address
-	sb_Write16(0x64,0x0A01);
-	//printf("SB C0~C3 REG: 0x%08X\n", sb_Read(0xc0));
-	sb_Write(0xc0, sb_Read(0xc0) | 0x8000C000L);
-	//printf("SB C0~C3 REG: 0x%08X\n", sb_Read(0xc0));
-	//set GPIO Base Address
-	sb_Write16(0x62,0xf101);
-	// GPIO enable
-	io_outpdw(0xf100,0x00ff);
-	//set GPIO P0~9 dircetion & data Address
-	//io_outpdw(0xf100,0x03ff);
-	for(i=0;i<8;i++) {
-		io_outpdw(0xf100 + (i+1)*4,((0xf202 + i*4)<<16) + 0xf200 + i*4);
-		//io_outpb((sb_Read16(0x64)&0xfffe)+i,0x00);
+	crossbarBase = sb_Read16(SB_CROSSBASE) & 0xfffe;
+	if(crossbarBase == 0 || crossbarBase == 0xfffe)
+		sb_Write16(SB_CROSSBASE, CROSSBARBASE | 0x01);
+	
+	// Force set HIGH speed ISA on SB
+	sb_Write(SB_FCREG, sb_Read(SB_FCREG) | 0x8000C000L);
+	
+	//set SB GPIO Base Address
+	gpioBase = sb_Read16(SB_GPIOBASE) & 0xfffe;
+	if(gpioBase == 0 || gpioBase == 0xfffe)
+	{
+		sb_Write16(SB_GPIOBASE, GPIOCTRLBASE | 0x01);
+		gpioBase = GPIOCTRLBASE;
 	}
+	
+	// Enable GPIO 0 ~ 7 
+	io_outpdw(gpioBase, 0x00ff);
+	
+	//set GPIO Port 0~7 dircetion & data Address
+	for(i=0;i<8;i++)
+		io_outpdw(gpioBase + (i+1)*4,((GPIODIRBASE + i*4)<<16) + GPIODATABASE + i*4);
 	  
-	//setADC Base Address
+	//set ADC Base Address
 	sb_Write(0xbc, sb_Read(0xbc) & (~(1L<<28)));  // active adc
 	sb1_Write16(0xde, sb1_Read16(0xde) | 0x02);   // not Available for 8051A Access ADC
 	sb1_Write(0xe0, 0x0010fe00L); // baseaddr = 0xfe00, disable irq
-	
 	
 	//CDC
 	USBDEV = CreateUSBDevice();

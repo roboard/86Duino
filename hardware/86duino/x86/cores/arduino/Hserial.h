@@ -7,7 +7,6 @@
 class HardwareSerial : public Stream
 {
   private:
-    COMPort *handle;
 	int port;
     unsigned long baudrate;
     unsigned char format;
@@ -15,6 +14,7 @@ class HardwareSerial : public Stream
     bool peek_stored;
     uint8_t peek_val;
   public:
+    COMPort *handle;
     HardwareSerial(int com_port, unsigned long com_buadrate, unsigned char com_format, unsigned long com_timeout);
     void begin(unsigned long);
     void begin(unsigned long, uint8_t);
@@ -58,13 +58,13 @@ class HardwareSerial : public Stream
 #define SERIAL_7O2 (BYTESIZE7|ODDPARITY|STOPBIT2)
 #define SERIAL_8O2 (BYTESIZE8|ODDPARITY|STOPBIT2)
 
-#include "USBAPI.h" // It is Serial class on 86Duino
+#include "USBAPI.h"
 extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;
 extern HardwareSerial Serial3;
 extern HardwareSerial Serial485;
 extern HardwareSerial Serial4;
 
-//extern void serialEventRun(void) __attribute__((weak));
+extern void serialEventRun(void) __attribute__((weak));
 
 #endif

@@ -3,7 +3,7 @@
 #include "mcm.h"
 #include "irq.h"
 
-static int mc = 0, md = 0; // PWM PIN9 will interfere with it.
+static int mc = 3, md = 2; // PWM PIN9 will interfere with it.
 
 static int use_pin_tone  = 255;
 static int use_pin_times = 0;

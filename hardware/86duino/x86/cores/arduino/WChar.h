@@ -66,10 +66,10 @@ inline boolean isAscii(int c)
 }
 
 
-// Checks for a blank character, that is, a space or a tab.
+// Checks for a blank character, that is, a space=32 or a tab=9.
 inline boolean isWhitespace(int c)
 {
-  return ( isspace (c) == 0 ? false : true);
+  return ( c == 9 ? true : c == 32 ? true :true  );
 }
 
 

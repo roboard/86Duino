@@ -150,7 +150,7 @@ String::String(StringSumHelper &&rval)
 String::String(char c)
 {
 	init();
-	char buf[2];
+	char buf[24];
 	buf[0] = c;
 	buf[1] = 0;
 	*this = buf;
@@ -159,7 +159,7 @@ String::String(char c)
 String::String(unsigned char value, unsigned char base)
 {
 	init();
-	char buf[9];
+	char buf[24];
 	utoa(value, buf, base);
 	*this = buf;
 }
@@ -167,7 +167,7 @@ String::String(unsigned char value, unsigned char base)
 String::String(int value, unsigned char base)
 {
 	init();
-	char buf[18];
+	char buf[24];
 	itoa(value, buf, base);
 	*this = buf;
 }
@@ -175,7 +175,7 @@ String::String(int value, unsigned char base)
 String::String(unsigned int value, unsigned char base)
 {
 	init();
-	char buf[17];
+	char buf[24];
 	utoa(value, buf, base);
 	*this = buf;
 }
@@ -338,7 +338,7 @@ unsigned char String::concat(const char *cstr)
 
 unsigned char String::concat(char c)
 {
-	char buf[2];
+	char buf[24];
 	buf[0] = c;
 	buf[1] = 0;
 	return concat(buf, 1);
@@ -346,35 +346,35 @@ unsigned char String::concat(char c)
 
 unsigned char String::concat(unsigned char num)
 {
-	char buf[4];
+	char buf[24];
 	itoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(int num)
 {
-	char buf[7];
+	char buf[24];
 	itoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(unsigned int num)
 {
-	char buf[6];
+	char buf[24];
 	utoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(long num)
 {
-	char buf[12];
+	char buf[24];
 	ltoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(unsigned long num)
 {
-	char buf[11];
+	char buf[24];
 	ultoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
