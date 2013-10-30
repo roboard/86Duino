@@ -300,7 +300,7 @@ static unsigned char mmio_inpb(unsigned long offs) {
 
 static unsigned PWM_baseAddr = 0;
 unsigned long mc_setbaseaddr(void) {
-    if (MC_useMMIO == true)
+    if (MC_useMMIO == true && MMIO_baseAddr == 0L)
     {
         MMIO_baseAddr = read_mc_pcireg(0x14);
         #ifdef DJGPP
@@ -309,7 +309,7 @@ unsigned long mc_setbaseaddr(void) {
         #endif        
         return 0L;
     }
-    else
+    else if(PWM_baseAddr == 0L)
     {
         PWM_baseAddr = (unsigned)(read_mc_pcireg(0x10) & 0x0000fff0L);
         return (unsigned long)PWM_baseAddr;
@@ -1662,4 +1662,38 @@ unsigned long mcpfau_ReadCapStatREG(int mc, int module) {
     return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_PFAU_STATREG);
 }
 
+#define MCSIF_PFAU_CAPCTRLREG3  (0x14L)
+#define MCSIF_PFAU_CAPCTRLREG2  (0x20L)
+#define MCSIF_PFAU_CAPCTRLREG1  (0x2cL)
+void mcpfau_SetCap1INT(int mc, int module, unsigned long interval)
+{
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG1;
+	interval = (interval << 11L) & 0x0000f800L;
+    mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff07ffL) + interval);
+}
 
+void mcpfau_SetCap2INT(int mc, int module, unsigned long interval)
+{
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG2;
+	interval = (interval << 11L) & 0x0000f800L;
+    mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff07ffL) + interval);
+}
+
+void mcpfau_SetCap3INT(int mc, int module, unsigned long interval)
+{
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG3;
+	interval = (interval << 11L) & 0x0000f800L;
+    mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff07ffL) + interval);
+}
+
+
+// MCM INTERRUPT SETTING FUNCTION //
+static unsigned char int_routing_table[16] = {0xff, 0x08, 0xff, 0x02, 0x04, 0x05, 0x07, 0x06, 0xff, 0x01, 0x03, 0x09, 0x0b, 0xff, 0x0d, 0x0f};
+unsigned char GetMCIRQ(void) {  
+    return (unsigned char)(read_mc_pcireg(0x3c) & 0xffL);
+}
+
+void Set_MCIRQ(unsigned char irq) {
+    write_mc_pcireg(0x3c, (read_mc_pcireg(0x3c) & 0xffffff00L) | (unsigned long) irq);
+    sb1_Write8(0xb4, (sb1_Read8(0xb4) & 0xf0) | int_routing_table[irq]);
+}

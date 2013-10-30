@@ -59,7 +59,7 @@ tools.86upload.config.path.linux={runtime.ide.path}/hardware/tools/avrdude.conf
 
 tools.86upload.upload.params.verbose=-v -v -v -v
 tools.86upload.upload.params.quiet=-q -q
-tools.86upload.upload.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {upload.verbose} -p{build.mcu} -c{upload.protocol} -P -b{upload.speed} -D
+tools.86upload.upload.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" 
 
 tools.86upload.program.params.verbose=-v -v -v -v
 tools.86upload.program.params.quiet=-q -q

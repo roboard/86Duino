@@ -167,6 +167,9 @@ DMPAPI(void) uart_IntDisable(void *vport);
 DMPAPI(void) uart_SetLSRHandler(void *vport, void (*func)(SerialPort *));
 DMPAPI(void) uart_SetMSRHandler(void *vport, void (*func)(SerialPort *));
 
+DMPAPI(void) uart_EnableHalfDuplex(void *vport);
+DMPAPI(void) uart_EnableFullDuplex(void *vport);
+
 #ifdef __cplusplus
 }
 #endif

@@ -36,7 +36,7 @@ void analogWriteResolution(int res) {
 	_writeResolution = res;
 }
 
-static inline uint32_t mapResolution(uint32_t value, uint32_t from, uint32_t to) {
+static unsigned long mapResolution(unsigned long value, unsigned long from, unsigned long to) {
 	if (from == to)
 		return value;
 	if (from > to)
@@ -45,6 +45,7 @@ static inline uint32_t mapResolution(uint32_t value, uint32_t from, uint32_t to)
 		return value << (to-from);
 }
 
+/*
 void Close_Pwm(uint8_t pin){			
 	if(pin >= PINS) return;
 	if(mc_md_inuse[pin] == 0) return;
@@ -57,7 +58,7 @@ void Close_Pwm(uint8_t pin){
 	mcpwm_Disable(mc, md); 
 	mc_md_inuse[pin] = 0;   
 }
-
+*/
 int analogRead(uint8_t pin) {
 	unsigned long d;
 	unsigned long time;
@@ -94,8 +95,8 @@ int analogRead(uint8_t pin) {
 }
 
 #define MAX_RESOLUTION    (100000L)
-void analogWrite(uint8_t pin, uint32_t val) {
-	unsigned short crossbar_ioaddr = 0;
+static unsigned short crossbar_ioaddr = 0;
+void analogWrite(uint8_t pin, unsigned long val) {
 	float uint;
 	
 	if(pin >= PINS) return;
@@ -121,11 +122,6 @@ void analogWrite(uint8_t pin, uint32_t val) {
 	    // Init H/W PWM
 	    if(mc_md_inuse[pin] == 0)
 		{
-			set_MMIO();
-			mc_setbaseaddr();
-			if (mc_SetMode(mc, MCMODE_PWM_SIFB) == false)
-			    printf("ERROR: fail to change MC mode!\n");
-			
 			mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 			mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
 			mcpwm_SetDeadband(mc, md, 0L);
@@ -145,9 +141,9 @@ void analogWrite(uint8_t pin, uint32_t val) {
 		    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
 			else
 				io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
-			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
 	    }
 	    
+	    io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
 	    val = mapResolution(val, _writeResolution, PWM_RESOLUTION);
 	    uint = ((float)MAX_RESOLUTION)/((float)(0x00000001L<<PWM_RESOLUTION));
 	    mcpwm_SetWidth(mc, md, 1000L*SYSCLK, ((float)val)*uint);

@@ -806,6 +806,30 @@ DMPAPI(unsigned long) vx86_uart_MaxBPS(int com)
 		return 0L;
 }
 
+DMPAPI(void) vx86_uart_EnableHalfDuplex(int com)
+{
+	int cpuid = vx86_CpuID();
+	
+	if (cpuid == CPU_VORTEX86EX && com >= 0 && com <= 9) {
+		unsigned short uart_baseAddr = sb_Read16(0x60) & 0xfffe;
+		sb_Write16(0x60, sb_Read16(0x60) | 0x0001);
+
+		io_outpdw(uart_baseAddr + com*4, io_inpdw(uart_baseAddr + com*4) | 0x02000000L);
+	}
+}
+
+DMPAPI(void) vx86_uart_EnableFullDuplex(int com)
+{
+	int cpuid = vx86_CpuID();
+	
+	if (cpuid == CPU_VORTEX86EX && com >= 0 && com <= 9) {
+		unsigned short uart_baseAddr = sb_Read16(0x60) & 0xfffe;
+		sb_Write16(0x60, sb_Read16(0x60) | 0x0001);
+
+		io_outpdw(uart_baseAddr + com*4, io_inpdw(uart_baseAddr + com*4) & 0xFDFFFFFFL);
+	}
+}
+
 DMPAPI(unsigned short) vx86_GetUSBDevAddr(void)
 {
 	unsigned short addr = NULL;

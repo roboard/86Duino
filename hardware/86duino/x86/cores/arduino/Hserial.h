@@ -17,7 +17,9 @@ class HardwareSerial : public Stream
     COMPort *handle;
     HardwareSerial(int com_port, unsigned long com_buadrate, unsigned char com_format, unsigned long com_timeout);
     void begin(unsigned long);
+    void begin(unsigned long, int);
     void begin(unsigned long, uint8_t);
+    void begin(unsigned long , uint8_t, int);
     void end();
     virtual int available(void);
     virtual int peek(void);
@@ -59,6 +61,8 @@ class HardwareSerial : public Stream
 #define SERIAL_8O2 (BYTESIZE8|ODDPARITY|STOPBIT2)
 
 #include "USBAPI.h"
+#define COM_FullDuplex    (1000)
+#define COM_HalfDuplex    (2000)
 extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;
 extern HardwareSerial Serial3;

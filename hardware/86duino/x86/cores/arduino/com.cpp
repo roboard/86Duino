@@ -80,6 +80,8 @@ DMPAPI(COMPort *) CreateCOMPort(int com)
 	port->DisableStoreERROR  = NULL;
 	port->SetTxControl       = NULL;
 	port->GetRxControl       = NULL;
+	port->EnableHalfDuplex   = NULL;
+	port->EnableFullDuplex   = NULL;
 	
 	return port;
 }
@@ -129,6 +131,8 @@ DMPAPI(COMPort *) com_Init(int com)
 			port->SetMSRHandler      = uart_SetMSRHandler;
 			port->GetLSR             = uart_GetLSR;
 			port->GetMSR             = uart_GetMSR;
+			port->EnableHalfDuplex   = uart_EnableHalfDuplex;
+			port->EnableFullDuplex   = uart_EnableFullDuplex;
 			
 			return port;
 		}
@@ -502,6 +506,25 @@ DMPAPI(void) com_SetMSRHandler(COMPort *port, void (*func)(SerialPort *port))
 	port->SetMSRHandler(port->func, func);
 }
 
+DMPAPI(void) com_EnableHalfDuplex(COMPort *port)
+{
+	if (port->EnableHalfDuplex == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return;
+	}
+	port->EnableHalfDuplex(port->func);
+}
+
+DMPAPI(void) com_EnableFullDuplex(COMPort *port)
+{
+	if (port->EnableFullDuplex == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return;
+	}
+	port->EnableFullDuplex(port->func);
+}
 
 // for USB_COM
 DMPAPI(bool)  com_Ready(COMPort *port)

@@ -1062,6 +1062,7 @@ static int USB_ISR(int irq, void* data)
 		if(usb->ling_coding.dwDTERate == 1200 && (usb->control_line_state & 0x01) == 0)
 		{   
 			io_outpb(usb_on_off_data, io_inpb(usb_on_off_data) | (1 << usb_on_off_pin));
+			delay_ms(500);
 			io_outpb(0xf21A, 0x5a); // write soft reset key
 			io_outpb(0x64, 0xfe); // reboot
 		}

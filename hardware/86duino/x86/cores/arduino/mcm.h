@@ -923,6 +923,22 @@ unsigned long mcpfau_ReadCap3CtrlREG(int mc, int module);
 
 unsigned long mcpfau_ReadCapStatREG(int mc, int module);
 
+void mcpfau_SetCap1INT(int mc, int module, unsigned long interval);
+void mcpfau_SetCap2INT(int mc, int module, unsigned long interval);
+void mcpfau_SetCap3INT(int mc, int module, unsigned long interval);
+
+// MCM INTERRUPT FUNCTION 
+#define PULSE_END_INT    (0x01L)
+#define SC_END_INT       (0x02L)
+#define USER_EVT_INT     (0x04L)
+#define LDRDY_SERVO_INT  (0x08L)
+#define LDRDY_EV_INT     (0x10L)
+#define LDRDY_OCTRL_INT  (0x20L)
+#define PULSE_FB_INT     (0x40L)
+#define DDAFIFO_INT      (0x80L) // for EX
+unsigned char GetMCIRQ(void);
+void Set_MCIRQ(unsigned char irq);
+
 
 #ifdef __cplusplus
 }

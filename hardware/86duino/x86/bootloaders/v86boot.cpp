@@ -201,6 +201,7 @@ int main(void)
 			{
 				*p = (unsigned char)usb_Read(USBDEV);
 				p++;
+				time = timer_nowtime();
 			}
 			if(transfer == true) break;				
 		}
@@ -270,8 +271,7 @@ int main(void)
 	}
 	
 END: // 4. prepare to run user program
-	delay_ms(10);
-	usb_FlushWFIFO(USBDEV);
+	delay_ms(100);
 	ker_Mfree((void*)p);
 	usb_Close(USBDEV);
 	DisableLLED();

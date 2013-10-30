@@ -928,3 +928,19 @@ DMPAPI(void) uart_SetMSRHandler(void *vport, void (*func)(SerialPort *))
 	
 	port->msr_handler = func;
 }
+
+DMPAPI(void) uart_EnableHalfDuplex(void *vport)
+{
+	SerialPort *port = (SerialPort *)vport;
+	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
+	
+	vx86_uart_EnableHalfDuplex(port->com);
+}
+
+DMPAPI(void) uart_EnableFullDuplex(void *vport)
+{
+	SerialPort *port = (SerialPort *)vport;
+	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
+	
+	vx86_uart_EnableFullDuplex(port->com);
+}

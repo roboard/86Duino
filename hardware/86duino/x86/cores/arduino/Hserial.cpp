@@ -24,10 +24,18 @@ HardwareSerial::HardwareSerial(int com_port, unsigned long com_baudrate, unsigne
 
 
 void HardwareSerial::begin(unsigned long baud) {
-	begin(baud, format);
+	begin(baud, format, COM_FullDuplex);
 }
 
-void HardwareSerial::begin(unsigned long baud, byte config) {
+void HardwareSerial::begin(unsigned long baud, int comtype) {
+	begin(baud, format, comtype);
+}
+
+void HardwareSerial::begin(unsigned long baud, uint8_t config) {
+    begin(baud, config, COM_FullDuplex);
+}
+
+void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
     unsigned short crossbar_ioaddr = 0;
 	if(handle != NULL) return;
 	if ((handle = com_Init(port)) == NULL) 
@@ -44,16 +52,19 @@ void HardwareSerial::begin(unsigned long baud, byte config) {
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
 	if(port == COM1)
 	{
+		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 		io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
 		io_outpb(crossbar_ioaddr + COM1_RX, 0x08);
 	}
 	else if(port == COM2)
 	{
+		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 		io_outpb(crossbar_ioaddr + COM2_TX, 0x08);
 		io_outpb(crossbar_ioaddr + COM2_RX, 0x08);
 	}
 	else if(port == COM3)
 	{
+		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 		io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
 		io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
 	}
@@ -134,9 +145,9 @@ void serialEventRun(void)
 	if(Serial4.handle != NULL && Serial4.available() > 0) serialEvent4();
 }
 
-HardwareSerial Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
-HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
-HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
-HardwareSerial Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
-HardwareSerial Serial4(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 100L);
+HardwareSerial Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
+HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
+HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
+HardwareSerial Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
+HardwareSerial Serial4(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 // Preinstantiate Objects //////////////////////////////////////////////////////

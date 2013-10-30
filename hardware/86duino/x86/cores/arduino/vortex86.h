@@ -29,6 +29,8 @@ DMPAPI(void) vx86_uart_SetFIFO32(int com);
 DMPAPI(int) vx86_uart_GetIRQ(int com);
 
 DMPAPI(unsigned long) vx86_uart_MaxBPS(int com);
+DMPAPI(void) vx86_uart_EnableHalfDuplex(int com);
+DMPAPI(void) vx86_uart_EnableFullDuplex(int com);
 
 
 // ---------------------------------------------------

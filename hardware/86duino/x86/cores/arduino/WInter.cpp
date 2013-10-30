@@ -3,61 +3,8 @@
 #include "mcm.h"
 #include "irq.h"
 
-
-// MCM INTERRUPT SETTING FUNCTION //
+static int mc = 0, md = 1;
 static int mcint_offset[2] = {0, 24};
-static unsigned char int_routing_table[16] = {0xff, 0x08, 0xff, 0x02, 0x04, 0x05, 0x07, 0x06, 0xff, 0x01, 0x03, 0x09, 0x0b, 0xff, 0x0d, 0x0f};
-
-#define PULSE_END_INT    (0x01L)
-#define SC_END_INT       (0x02L)
-#define USER_EVT_INT     (0x04L)
-#define LDRDY_SERVO_INT  (0x08L)
-#define LDRDY_EV_INT     (0x10L)
-#define LDRDY_OCTRL_INT  (0x20L)
-#define PULSE_FB_INT     (0x40L)
-#define DDAFIFO_INT      (0x80L) // for EX
-
-static unsigned long MCM_baseaddr = 0L;
-int mc = 0, md = 1;
-
-static void write_mc_pcireg(unsigned idx, unsigned long val) {
-    unsigned long cf8 = (0x01L << 31)  // Type-1 PCI configuration
-                      + (0x00L << 16)  // Bus 0x00
-                      + (DEVICE << 11) // Device 0x01
-                      + (0x00L << 8)   // Fun 0x00;
-                      + idx;
-
-    io_DisableINT();
-	io_outpdw(0x0cf8, cf8 & 0xfffffffcL);
-	io_outpdw(0x0cfc, val);
-    io_RestoreINT();
-}
-
-static unsigned long read_mc_pcireg(unsigned idx) {
-    unsigned long tmp;
-    unsigned long cf8 = (0x01L << 31)  // Type-1 PCI configuration
-                      + (0x00L << 16)  // Bus 0x00
-                      + (DEVICE << 11)  // Device 0x01
-                      + (0x00L << 8)   // Fun 0x00;
-                      + idx;
-
-    io_DisableINT();
-	io_outpdw(0x0cf8, cf8 & 0xfffffffcL);
-    tmp = io_inpdw(0x0cfc);
-    io_RestoreINT();
-
-    return tmp;
-}
-
-static unsigned char GetMCIRQ(void) {  
-    return (unsigned char)(read_mc_pcireg(0x3c) & 0xffL);
-}
-
-static void Set_MCIRQ(unsigned char irq) {
-    write_mc_pcireg(0x3c, (read_mc_pcireg(0x3c) & 0xffffff00L) | (unsigned long) irq);
-    sb1_Write8(0xb4, (sb1_Read8(0xb4) & 0xf0) | int_routing_table[irq]);
-}
-
 static void clear_INTSTATUS(void) {
     mc_outp(mc, 0x04, 0xff0000ffL); //for EX
 }
@@ -71,36 +18,6 @@ static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
 	mc_outp(mc, 0x00, used_int<<mcint_offset[md]);
 }
-
-#define MCSIF_PFAU_CAPCTRLREG3  (0x14L)
-#define MCSIF_PFAU_CAPCTRLREG2  (0x20L)
-#define MCSIF_PFAU_CAPCTRLREG1  (0x2cL)
-static unsigned long MCSIF_modOffset[2] = {0x08L, 0x8cL};
-void mcpfau_SetCap1INT(int mc, int module, unsigned long interval)
-{
-    unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG1;
-	interval = (interval << 11L) & 0x0000f800L;
-    mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff07ffL) + interval);
-}
-
-void mcpfau_SetCap2INT(int mc, int module, unsigned long interval)
-{
-    unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG2;
-	interval = (interval << 11L) & 0x0000f800L;
-    mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff07ffL) + interval);
-}
-
-void mcpfau_SetCap3INT(int mc, int module, unsigned long interval)
-{
-    unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG3;
-	interval = (interval << 11L) & 0x0000f800L;
-    mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff07ffL) + interval);
-}
-
-
-
-
-
 
 static void (*sifIntMode[3])(int, int, unsigned long) = {mcpfau_SetCapMode1, mcpfau_SetCapMode2, mcpfau_SetCapMode3}; 
 static unsigned long (*readCapStat[3])(int, int) = {mcpfau_ReadCAPSTAT1, mcpfau_ReadCAPSTAT2, mcpfau_ReadCAPSTAT3};
@@ -168,9 +85,7 @@ static bool interrupt_init(void) {
 	{
 	    printf("irq_install fail\n"); return false;
 	}
-	
-	set_MMIO();
-	printf("BaseAddr = %08lxh irq = %d\n\n", mc_setbaseaddr(), GetMCIRQ());
+	//printf("BaseAddr = %08lxh irq = %d\n\n", mc_setbaseaddr(), GetMCIRQ());
 	//Master_DX2();
 	
 	used_irq = GetMCIRQ();
@@ -181,8 +96,6 @@ static bool interrupt_init(void) {
 
 static void mcmsif_init(void) {
     if(mcm_init[mc] == true) return;
-	if(mc_SetMode(mc, MCMODE_PWM_SIFB) == false)
-    	printf("mc_SetMode() error\n");
     
     mcsif_SetInputFilter(mc, md, 20L);
     mcsif_SetSWDeadband(mc, md, 0L);

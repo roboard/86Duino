@@ -48,75 +48,6 @@ static int md = 2;
 
 /************************************ MCM ************************************/
 static int mcint_offset[3] = {0, 8, 16};
-static unsigned char int_routing_table[16] = {0xff, 0x08, 0xff, 0x02, 0x04, 0x05, 0x07, 0x06, 0xff, 0x01, 0x03, 0x09, 0x0b, 0xff, 0x0d, 0x0f};
-
-#define PULSE_END_INT    (0x01L)
-#define SC_END_INT       (0x02L)
-#define USER_EVT_INT     (0x04L)
-#define LDRDY_SERVO_INT  (0x08L)
-#define LDRDY_EV_INT     (0x10L)
-#define LDRDY_OCTRL_INT  (0x20L)
-#define PULSE_FB_INT     (0x40L)
-#define DDAFIFO_INT      (0x80L) // for EX
-
-static unsigned long MCM_baseaddr = 0L;
-static unsigned char read_sbf1_regb(unsigned char idx) {
-    unsigned char tmp;
-
-    io_DisableINT();
-	io_outpdw(0x0cf8, (0x80003900L+(unsigned long)idx) & 0xfffffffcL);
-    tmp = 0xff & (unsigned char)(io_inpdw(0x0cfc) >> ((idx & 0x03) * 8));
-    io_RestoreINT();
-
-    return tmp;
-}
-
-static void write_sbf1_regb(unsigned char idx, unsigned char val) {
-	int i = (idx & 0x03) * 8;
-
-    io_DisableINT();
-	io_outpdw(0x0cf8, (0x80003900L+(unsigned long)idx) & 0xfffffffcL);
-	io_outpdw(0x0cfc, (io_inpdw(0x0cfc) & (~(0x000000ffL << i))) | ((unsigned long)val << i));
-    io_RestoreINT();
-}
-
-static void write_mc_pcireg(unsigned idx, unsigned long val) {
-    unsigned long cf8 = (0x01L << 31)  // Type-1 PCI configuration
-                      + (0x00L << 16)  // Bus 0x00
-                      + (DEVICE << 11) // Device 0x01
-                      + (0x00L << 8)   // Fun 0x00;
-                      + idx;
-
-    io_DisableINT();
-	io_outpdw(0x0cf8, cf8 & 0xfffffffcL);
-	io_outpdw(0x0cfc, val);
-    io_RestoreINT();
-}
-static unsigned long read_mc_pcireg(unsigned idx) {
-    unsigned long tmp;
-    unsigned long cf8 = (0x01L << 31)  // Type-1 PCI configuration
-                      + (0x00L << 16)  // Bus 0x00
-                      + (DEVICE << 11)  // Device 0x01
-                      + (0x00L << 8)   // Fun 0x00;
-                      + idx;
-                                                            
-    io_DisableINT();
-	io_outpdw(0x0cf8, cf8 & 0xfffffffcL);
-    tmp = io_inpdw(0x0cfc);
-    io_RestoreINT();
-
-    return tmp;
-}
-
-static unsigned char GetMCIRQ(void) {  
-    return (unsigned char)(read_mc_pcireg(0x3c) & 0xffL);
-}
-
-static void Set_MCIRQ(unsigned char irq) {
-    write_mc_pcireg(0x3c, (read_mc_pcireg(0x3c) & 0xffffff00L) | (unsigned long) irq);
-    write_sbf1_regb(0xb4, (read_sbf1_regb(0xb4) & 0xf0) | int_routing_table[irq]);
-}
-
 static void clear_INTSTATUS(void) {
     mc_outp(mc, 0x04, 0x00ffffffL); //for EX
 }
@@ -138,12 +69,7 @@ static volatile int evtnumber; // It is a excess variable, but can read the code
 static void pulse_init(bool mcm_init) {
 	if(mcm_init == true)
 	{  
-		set_MMIO();
-		Set_MCIRQ(GetMCIRQ());    
-		MCM_baseaddr = mc_setbaseaddr();          
-		
-		mc_SetMode(mc, MCMODE_PWM_SIFB);
-		
+		Set_MCIRQ(GetMCIRQ());
 		mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 		mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
 		mcpwm_SetDeadband(mc, md, 0L);
@@ -449,8 +375,8 @@ uint8_t Servo::attach(int pin, int min, int max) {
 		}
 		else
 		{
-			if(mcpwm_ReadSCLAST(arduino_to_mc_md[0][pin], arduino_to_mc_md[1][pin]) != 0L)
-				mcpwm_ClearSCLAST(arduino_to_mc_md[0][pin], arduino_to_mc_md[1][pin]);
+			if(mcpwm_ReadReloadOUT(arduino_to_mc_md[0][pin], arduino_to_mc_md[1][pin]) != 0L)
+				mcpwm_ReloadOUT_Unsafe(arduino_to_mc_md[0][pin], arduino_to_mc_md[1][pin], MCPWM_RELOAD_CANCEL);
 		}
 		servos[this->servoIndex].Pin.isActive = true;  // this must be set after the check for isISRActive
 	} 
@@ -459,6 +385,8 @@ uint8_t Servo::attach(int pin, int min, int max) {
 
 void Servo::detach() {
 	uint8_t pin = servos[this->servoIndex].Pin.nbr;
+	int mc_pwm, md_pwm;
+	
 	if(servos[this->servoIndex].Pin.isActive == false) return; // if pin have been inactive, ingore sort process
 	servos[this->servoIndex].Pin.isActive = false;
 	if(isPWMPin(pin) == false)
@@ -468,7 +396,10 @@ void Servo::detach() {
 	}
 	else
 	{
-		mcpwm_SetSCLAST(arduino_to_mc_md[0][pin], arduino_to_mc_md[1][pin]);
+		mc_pwm = arduino_to_mc_md[0][pin];
+		md_pwm = arduino_to_mc_md[1][pin];
+		mcpwm_SetOutMask(mc_pwm, md_pwm, MCPWM_HMASK_INACTIVE); // Low sigh is sensor interface
+		mcpwm_ReloadOUT_Unsafe(mc_pwm, md_pwm, MCPWM_RELOAD_PEREND);
 		mc_md_inuse[pin] = 0;
 	}
 }
@@ -561,9 +492,6 @@ static void sendPWM(uint8_t pin, unsigned int val) {
     // Init H/W PWM
     if(mc_md_inuse[pin] == 0)
 	{
-		set_MMIO();
-		mc_setbaseaddr();
-		mc_SetMode(mc_pwm, MCMODE_PWM_SIFB);
 		mcpwm_SetOutMask(mc_pwm, md_pwm, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 		mcpwm_SetOutPolarity(mc_pwm, md_pwm, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
 		mcpwm_SetDeadband(mc_pwm, md_pwm, 0L);

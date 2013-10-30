@@ -3,6 +3,7 @@
 #define USE_COMMON
 #include "common.h"
 #include "usb.h"
+#include "mcm.h"
 
 void *USBDEV = NULL;
 unsigned long millis() {
@@ -45,14 +46,20 @@ bool init() {
 	// Enable GPIO 0 ~ 7 
 	io_outpdw(gpioBase, 0x00ff);
 	
-	//set GPIO Port 0~7 dircetion & data Address
+	// set GPIO Port 0~7 dircetion & data Address
 	for(i=0;i<8;i++)
 		io_outpdw(gpioBase + (i+1)*4,((GPIODIRBASE + i*4)<<16) + GPIODATABASE + i*4);
 	  
-	//set ADC Base Address
+	// set ADC Base Address
 	sb_Write(0xbc, sb_Read(0xbc) & (~(1L<<28)));  // active adc
 	sb1_Write16(0xde, sb1_Read16(0xde) | 0x02);   // not Available for 8051A Access ADC
 	sb1_Write(0xe0, 0x0010fe00L); // baseaddr = 0xfe00, disable irq
+	
+	// set MCM Base Address
+	set_MMIO();
+	mc_setbaseaddr();
+	for(i=0; i<4; i++)
+		mc_SetMode(i, MCMODE_PWM_SIFB);
 	
 	//CDC
 	USBDEV = CreateUSBDevice();
@@ -61,6 +68,7 @@ bool init() {
         printf("init error\n");
         return false;
     }
+    
     usb_SetUSBPins(USBDEV, 7, 0, 7, 1);
     if(usb_Init(USBDEV) == false)
     {

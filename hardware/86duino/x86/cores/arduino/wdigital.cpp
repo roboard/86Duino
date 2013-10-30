@@ -69,7 +69,7 @@ void digitalWrite(uint8_t pin, uint8_t val) {
     
 	if((crossbar_ioaddr + 0x90 + crossbar_bit) != 0x01)
 	{
-		Close_Pwm(pin);
+		//Close_Pwm(pin);
 		io_outpb(crossbar_ioaddr + 0x90 + crossbar_bit, 0x01);
     }
     
@@ -89,7 +89,7 @@ int digitalRead(uint8_t pin) {
 	
 	if((crossbar_ioaddr + 0x90 + crossbar_bit) != 0x01)
 	{
-		Close_Pwm(pin);
+		//Close_Pwm(pin);
 		io_outpb(crossbar_ioaddr + 0x90 + crossbar_bit, 0x01);
 	}  
 	

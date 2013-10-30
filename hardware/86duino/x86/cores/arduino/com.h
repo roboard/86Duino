@@ -48,6 +48,8 @@ typedef struct
 	DMPAPI(void) (*SetMSRHandler)(void *, void (*)(SerialPort *));
 	DMPAPI(unsigned char) (*GetLSR)(void *);
 	DMPAPI(unsigned char) (*GetMSR)(void *);
+	DMPAPI(void) (*EnableHalfDuplex)(void *);
+	DMPAPI(void) (*EnableFullDuplex)(void *);
 	
 	/* only for USB device */
 	DMPAPI(bool) (*Ready)(void *);
@@ -168,6 +170,8 @@ DMPAPI(unsigned char) com_GetMSR(COMPort *port);
 #define MSR_TERI           (0x04)
 #define MSR_DDSR           (0x02)
 #define MSR_DCTS           (0x01)
+DMPAPI(void) com_EnableHalfDuplex(COMPort *port);
+DMPAPI(void) com_EnableFullDuplex(COMPort *port);
 
 /* only for USB device */
 DMPAPI(bool) com_Ready(COMPort *port);
