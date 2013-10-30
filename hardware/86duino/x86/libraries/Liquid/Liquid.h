@@ -82,8 +82,8 @@ public:
   virtual size_t write(uint8_t);
   void command(uint8_t);
   
-  using Print::write;
-private:
+  //using Print::write;  //BUG 會讓編譯器搞混不知道要用Liquid還是Print裡的write
+private:   
   void send(uint8_t, uint8_t);
   void write4bits(uint8_t);
   void write8bits(uint8_t);
