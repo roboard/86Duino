@@ -88,6 +88,7 @@ public class DuinoCompiler implements MessageConsumer {
   String ofile_path;
   TargetPlatform tp;
   String idepath;
+  String idepath_nochande;
   MessageConsumer consumer;
   /**
    * Compile sketch.
@@ -123,7 +124,7 @@ public class DuinoCompiler implements MessageConsumer {
     standlibrariepath ="/hardware/86duino/"+tp.getName()+"/libraries";
     
     chngeIncludeData(idepath+djgpppath);
-    
+    idepath_nochande=idepath;
     idepath=idepath.replace("\\","/");
     
     if (prefs.get("build.variant.path").length() != 0)
@@ -653,11 +654,19 @@ public class DuinoCompiler implements MessageConsumer {
       File outputFolder = new File(outputPath, libraryFolder.getName());
       File utilityFolder = new File(libraryFolder, "utility");
       createFolder(outputFolder);
-    
+      
+      //判斷是否為共同library     
+      String aaa= libraryFolder.getAbsolutePath();
+      String[] strArray0 = aaa.split("work");
+      String[] strArray1 = strArray0[1].split(libraryFolder.getName());
+                              
       // this library can use includes in its utility/ folder
       includePaths.add(utilityFolder.getAbsolutePath());
       ofile_path="d:/"+libraryFolder.getName()+"/";
-      dosbox_mount="g:/"+libraryFolder.getName()+"/";
+      if(strArray1[0].compareTo("\\libraries\\") == 0)
+        dosbox_mount="f:/"+libraryFolder.getName()+"/";
+      else
+        dosbox_mount="g:/"+libraryFolder.getName()+"/";
       makefilesourcepath=makefilesourcepath+"-I"+dosbox_mount+" -I"+dosbox_mount+"utility ";
       objectFiles.addAll(compileFiles(outputFolder.getAbsolutePath(),
                                       libraryFolder, false, includePaths));
@@ -665,7 +674,10 @@ public class DuinoCompiler implements MessageConsumer {
       createFolder(outputFolder);
       
       ofile_path="d:/"+libraryFolder.getName()+"/utility/";
-      dosbox_mount="g:/"+libraryFolder.getName()+"/utility/";
+      if(strArray1[0].compareTo("\\libraries\\") == 0)
+        dosbox_mount="f:/"+libraryFolder.getName()+"/utility/";
+      else
+        dosbox_mount="g:/"+libraryFolder.getName()+"/utility/";
       objectFiles.addAll(compileFiles(outputFolder.getAbsolutePath(),
                                       utilityFolder, false, includePaths));
       // other libraries should not see this library's utility/ folder
@@ -790,6 +802,7 @@ public class DuinoCompiler implements MessageConsumer {
         out.write("z:mount d \""+buildPath+"\"\n");
         out.write("z:mount h \""+idepath+standapipath+"\"\n");
         out.write("z:mount g \""+idepath+standlibrariepath+"\"\n");
+        out.write("z:mount f \""+idepath+"/libraries\"\n");
         out.write("z:mount e \""+idepath+"/hardware/86duino/x86/variants/"+prefs.get("build.variant")+"\"\n");
         out.write("z:mount c \""+idepath+djgpppath+"\"\n");
         out.write("CLS\n");
@@ -892,7 +905,8 @@ public class DuinoCompiler implements MessageConsumer {
           if(readoneline   !=  null ){     
             readoneline=readoneline.replace("d:/",tmppath.replace("\\","/")+"/");
             readoneline=readoneline.replace("h:/",idepath+standapipath+"/");
-            readoneline=readoneline.replace("g:/",idepath+standapipath+"/");
+            readoneline=readoneline.replace("g:/",idepath+standlibrariepath+"/");
+            readoneline=readoneline.replace("f:/",idepath+"/libraries/");
             readoneline=readoneline.replace("e:/",idepath+"/hardware/86duino/x86/variants/"+prefs.get("build.variant")+"/");
             readoneline=readoneline.replace("c:/",idepath+djgpppath+"/");
             readoneline=readoneline.replace("name_8",primaryClassName);

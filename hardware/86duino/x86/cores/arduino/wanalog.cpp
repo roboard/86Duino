@@ -100,6 +100,7 @@ void analogWrite(uint8_t pin, unsigned long val) {
 	float uint;
 	
 	if(pin >= PINS) return;
+	pinMode(pin, OUTPUT);
 	
 	if (val == 0L)
 		digitalWrite(pin, LOW);
