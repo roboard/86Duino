@@ -35,13 +35,7 @@ void pinMode(uint8_t pin, uint8_t mode) {
 		pinmode_init = true;
 	} 
 	
-	// start pinMode()
 	crossbar_bit = pinMap[pin];
-	
-	if(crossbar_bit <= 31)
-		io_outpb(crossbar_ioaddr + 0x90 + crossbar_bit, 0x01);
-	else
-		io_outpb(crossbar_ioaddr + 0x80 + (crossbar_bit/8), 0x01);
 	
 	if (mode == INPUT)
 	{
@@ -67,10 +61,12 @@ void digitalWrite(uint8_t pin, uint8_t val) {
     port = GPIODATABASE + 4*(crossbar_bit/8);
     value = 1<<(crossbar_bit%8);
     
-	if((crossbar_ioaddr + 0x90 + crossbar_bit) != 0x01)
+	if(crossbar_bit > 31)
+		io_outpb(crossbar_ioaddr + 0x80 + (crossbar_bit/8), 0x01);
+	else if(crossbar_bit <= 31 && (crossbar_ioaddr + 0x90 + crossbar_bit) != 0x01)
 	{
-		//Close_Pwm(pin);
 		io_outpb(crossbar_ioaddr + 0x90 + crossbar_bit, 0x01);
+		Close_Pwm(pin);
     }
     
     io_DisableINT();
@@ -87,10 +83,12 @@ int digitalRead(uint8_t pin) {
 	
 	crossbar_bit = pinMap[pin];
 	
-	if((crossbar_ioaddr + 0x90 + crossbar_bit) != 0x01)
+	if(crossbar_bit > 31)
+		io_outpb(crossbar_ioaddr + 0x80 + (crossbar_bit/8), 0x01);
+	else if(crossbar_bit <= 31 && (crossbar_ioaddr + 0x90 + crossbar_bit) != 0x01)
 	{
-		//Close_Pwm(pin);
 		io_outpb(crossbar_ioaddr + 0x90 + crossbar_bit, 0x01);
+		Close_Pwm(pin);
 	}  
 	
 	if(io_inpb(GPIODATABASE + 4*(crossbar_bit/8))&(1<<(crossbar_bit%8))) return HIGH;

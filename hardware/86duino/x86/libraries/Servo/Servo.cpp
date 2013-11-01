@@ -105,7 +105,7 @@ static int isr_handler(int irq, void* data) {
     
     do
     	val = mcpwm_ReadSTATREG2(mc, md);
-    while(val>=100L && val<EVTPOINT);
+    while(val>=80L && val<EVTPOINT);
 	
 	
 	if(evtnumber > 0)
@@ -499,7 +499,6 @@ static void sendPWM(uint8_t pin, unsigned int val) {
 		
 		mcpwm_SetWaveform(mc_pwm, md_pwm, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc_pwm, md_pwm, 0L);
-		io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
     }
    
     mcpwm_SetWidth(mc_pwm, md_pwm, 20000L*SYSCLK, val);
@@ -508,6 +507,7 @@ static void sendPWM(uint8_t pin, unsigned int val) {
     if(mc_md_inuse[pin] == 0)
 	{
 		mcpwm_Enable(mc_pwm, md_pwm);
+		io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
 		mc_md_inuse[pin] = 1;
     }  
 }

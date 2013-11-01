@@ -2255,7 +2255,7 @@ public class Editor extends JFrame implements RunnerListener {
     // Set the title of the window to "sketch_070752a - Processing 0126"
     setTitle(
       I18n.format(
-	_("{0} | 86duino {1}"),
+	_("{0} | 86Duino {1}"),
 	sketch.getName(),
 	Base.VERSION_NAME
       )

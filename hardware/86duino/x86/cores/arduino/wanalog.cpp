@@ -45,20 +45,15 @@ static unsigned long mapResolution(unsigned long value, unsigned long from, unsi
 		return value << (to-from);
 }
 
-/*
+
 void Close_Pwm(uint8_t pin){			
 	if(pin >= PINS) return;
-	if(mc_md_inuse[pin] == 0) return;
-	
-	mc = arduino_to_mc_md[MCM_MC][pin];
-	md = arduino_to_mc_md[MCM_MD][pin];
-	
-	if(mc == NOPWM || md == NOPWM) return;	
+	if(mc_md_inuse[pin] == 0) return;	
 	
 	mcpwm_Disable(mc, md); 
 	mc_md_inuse[pin] = 0;   
 }
-*/
+
 int analogRead(uint8_t pin) {
 	unsigned long d;
 	unsigned long time;
@@ -123,6 +118,7 @@ void analogWrite(uint8_t pin, unsigned long val) {
 	    // Init H/W PWM
 	    if(mc_md_inuse[pin] == 0)
 		{
+			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 			mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
 			mcpwm_SetDeadband(mc, md, 0L);
@@ -130,10 +126,6 @@ void analogWrite(uint8_t pin, unsigned long val) {
 			
 			mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 			mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-			
-			mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
-			mcpwm_SetDeadband(mc, md, 0L);
-			mcpwm_ReloadOUT_Unsafe(mc, md, MCPWM_RELOAD_NOW);
 			
 			crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
 			if (pin <= 9)
@@ -144,7 +136,6 @@ void analogWrite(uint8_t pin, unsigned long val) {
 				io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 	    }
 	    
-	    io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
 	    val = mapResolution(val, _writeResolution, PWM_RESOLUTION);
 	    uint = ((float)MAX_RESOLUTION)/((float)(0x00000001L<<PWM_RESOLUTION));
 	    mcpwm_SetWidth(mc, md, 1000L*SYSCLK, ((float)val)*uint);
@@ -153,6 +144,7 @@ void analogWrite(uint8_t pin, unsigned long val) {
 	    if(mc_md_inuse[pin] == 0)
 		{
 			mcpwm_Enable(mc, md);
+			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
 			mc_md_inuse[pin] = 1;
 	    }  
 	}

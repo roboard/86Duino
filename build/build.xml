@@ -101,7 +101,7 @@
     <unzip dest="${target.path}" src="shared/reference.zip" overwrite="false"/>
     
     <!-- Write the revision file! -->
-    <echo file="${target.path}/lib/version.txt" message="Coding 080" />
+    <echo file="${target.path}/lib/version.txt" message="Coding 100" />
   </target>
 
   
