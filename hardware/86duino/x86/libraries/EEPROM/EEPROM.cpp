@@ -1,6 +1,6 @@
 /*
-  EEPROM.cpp - EEPROM library
-  Copyright (c) 2006 David A. Mellis.  All right reserved.
+  EEPROM.cpp - EEPROM library for 86Duino
+  Copyright (c) 2013 Vic Chen <vic@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -15,6 +15,9 @@
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  
+  (If you need a commercial license, please contact soc@dmp.com.tw 
+   to get more information.)
 */
 
 /******************************************************************************

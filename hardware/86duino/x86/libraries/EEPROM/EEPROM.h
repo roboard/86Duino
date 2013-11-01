@@ -1,6 +1,6 @@
 /*
-  EEPROM.h - EEPROM library
-  Copyright (c) 2006 David A. Mellis.  All right reserved.
+  EEPROM.h - EEPROM library for 86Duino
+  Copyright (c) 2013 Vic Chen <vic@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public

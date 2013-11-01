@@ -1,54 +1,21 @@
 /*
+  SD - SD Card library for 86Duino
+  Copyright (c) 2013 Vic Chen <vic@dmp.com.tw>. All right reserved.
 
- SD - a slightly more friendly wrapper for sdfatlib
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
 
- This library aims to expose a subset of SD card functionality
- in the form of a higher level "wrapper" object.
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
 
- License: GNU General Public License V3
-          (Because sdfatlib is licensed with this.)
-
- (C) Copyright 2010 SparkFun Electronics
-
-
- This library provides four key benefits:
-
-   * Including `SD.h` automatically creates a global
-     `SD` object which can be interacted with in a similar
-     manner to other standard global objects like `Serial` and `Ethernet`.
-
-   * Boilerplate initialisation code is contained in one method named 
-     `begin` and no further objects need to be created in order to access
-     the SD card.
-
-   * Calls to `open` can supply a full path name including parent 
-     directories which simplifies interacting with files in subdirectories.
-
-   * Utility methods are provided to determine whether a file exists
-     and to create a directory heirarchy.
-
-
-  Note however that not all functionality provided by the underlying
-  sdfatlib library is exposed.
-
- */
-
-/*
-
-  Implementation Notes
-
-  In order to handle multi-directory path traversal, functionality that 
-  requires this ability is implemented as callback functions.
-
-  Individual methods call the `walkPath` function which performs the actual
-  directory traversal (swapping between two different directory/file handles
-  along the way) and at each level calls the supplied callback function.
-
-  Some types of functionality will take an action at each level (e.g. exists
-  or make directory) which others will only take an action at the bottom
-  level (e.g. open).
-
- */
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
 
 #include "SD.h"
 #include <unistd.h>

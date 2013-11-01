@@ -2,7 +2,9 @@
 
 /*
   Part of the Processing project - http://processing.org
-
+   and of the 86Duino project - http://www.86duino.com/
+   
+  Copyright (c) 2013    Oswald Kuo <oswald@dmp.com.tw>
   Copyright (c) 2005-06 Ben Fry and Casey Reas
 
   This program is free software; you can redistribute it and/or modify

@@ -2,7 +2,10 @@
 
 /*
   Part of the Processing project - http://processing.org
+   and of the 86Duino project - http://www.86duino.com/
 
+  Copyright (c) 2013    Oswald Kuo <oswald@dmp.com.tw>
+                        Android Lin <acen@dmp.com.tw>
   Copyright (c) 2004-10 Ben Fry and Casey Reas
   Copyright (c) 2001-04 Massachusetts Institute of Technology
 

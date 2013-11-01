@@ -3,9 +3,13 @@
 /*
   Uploader - abstract uploading baseclass (common to both uisp and avrdude)
   Part of the Arduino project - http://www.arduino.cc/
+   and of the 86Duino project - http://www.86duino.com/
 
   Copyright (c) 2004-05
   Hernando Barragan
+  Copyright (c) 2013
+  Oswald Kuo <oswald@dmp.com.tw>
+  Android Lin <acen@dmp.com.tw>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by

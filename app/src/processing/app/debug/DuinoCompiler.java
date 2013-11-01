@@ -1,10 +1,9 @@
 /* -*- mode: java; c-basic-offset: 2; indent-tabs-mode: nil -*- */
 
 /*
-  Part of the Processing project - http://processing.org
+  Part of the 86Duino project - http://www.86duino.com/
 
-  Copyright (c) 2004-08 Ben Fry and Casey Reas
-  Copyright (c) 2001-04 Massachusetts Institute of Technology
+  Copyright (c) 2013    Oswald Kuo <oswald@dmp.com.tw>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by

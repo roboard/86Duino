@@ -8,6 +8,8 @@
   version 2.1 of the License, or (at your option) any later version.
 
   See file LICENSE.txt for further informations on licensing terms.
+  
+  Modified 01 November 2013 by Hellion Chuang
 */
 
 //******************************************************************************
