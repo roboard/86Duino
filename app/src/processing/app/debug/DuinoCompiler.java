@@ -164,7 +164,7 @@ public class DuinoCompiler implements MessageConsumer {
     if(!compileSusses(_buildPath))
       Verbord=false;
     else{
-      String[] cmdd={idepath+dosboxpath+"upx309w\\upx.exe", tmppath+"\\86duino.exe"};
+      String[] cmdd={idepath+dosboxpath+"upx309w/upx.exe", tmppath+"/86duino.exe"};
       execAsynchronously(cmdd);
     }
      
@@ -654,18 +654,21 @@ public class DuinoCompiler implements MessageConsumer {
       File utilityFolder = new File(libraryFolder, "utility");
       createFolder(outputFolder);
       
-      //判斷是否為共同library     
+        
       String aaa= libraryFolder.getAbsolutePath();
-      String[] strArray0 = aaa.split("work");
-      String[] strArray1 = strArray0[1].split(libraryFolder.getName());
-                              
+      String lib_same=idepath_nochande+"\\libraries\\";
+      String[] strArray0 = aaa.split(libraryFolder.getName());
+                             
       // this library can use includes in its utility/ folder
       includePaths.add(utilityFolder.getAbsolutePath());
+      
       ofile_path="d:/"+libraryFolder.getName()+"/";
-      if(strArray1[0].compareTo("\\libraries\\") == 0)
+      
+      if(strArray0[0].compareTo(lib_same) == 0)
         dosbox_mount="f:/"+libraryFolder.getName()+"/";
       else
         dosbox_mount="g:/"+libraryFolder.getName()+"/";
+        
       makefilesourcepath=makefilesourcepath+"-I"+dosbox_mount+" -I"+dosbox_mount+"utility ";
       objectFiles.addAll(compileFiles(outputFolder.getAbsolutePath(),
                                       libraryFolder, false, includePaths));
@@ -673,7 +676,7 @@ public class DuinoCompiler implements MessageConsumer {
       createFolder(outputFolder);
       
       ofile_path="d:/"+libraryFolder.getName()+"/utility/";
-      if(strArray1[0].compareTo("\\libraries\\") == 0)
+      if(strArray0[0].compareTo(lib_same) == 0)
         dosbox_mount="f:/"+libraryFolder.getName()+"/utility/";
       else
         dosbox_mount="g:/"+libraryFolder.getName()+"/utility/";
@@ -878,17 +881,32 @@ public class DuinoCompiler implements MessageConsumer {
     }  
   }
   void mainHave(String buildPath) throws RunnerException {
-    String filePath = buildPath + File.separator + "86duino.exe";
+    String filePath = buildPath + File.separator + "86DUINO.EXE";
     File file = new File(filePath);
     if(file.exists()){
       file.delete();
     }
+    if(Base.isLinux() || Base.isMacOS()){
+      filePath = buildPath + File.separator + "86duino.exe";
+      file = new File(filePath);
+      if(file.exists()){
+        file.delete();
+      }
+    }
   }
   boolean compileSusses(String buildPath) throws RunnerException {
-    String filePath = buildPath + File.separator + "86duino.exe";
+    String filePath = buildPath + File.separator + "86DUINO.EXE";
+    String filePath1 = buildPath + File.separator + "86duino.exe";
     File file = new File(filePath);
+    File file1 = new File(filePath1);
     if(file.exists()){
-      return true;
+      if(Base.isLinux() || Base.isMacOS()){
+        if(file.renameTo(file1)==true) 
+          return true;
+        else
+          return false;
+      }  
+      return true; 
     }
     else{
       return false;
@@ -908,7 +926,7 @@ public class DuinoCompiler implements MessageConsumer {
             readoneline=readoneline.replace("f:/",idepath+"/libraries/");
             readoneline=readoneline.replace("e:/",idepath+"/hardware/86duino/x86/variants/"+prefs.get("build.variant")+"/");
             readoneline=readoneline.replace("c:/",idepath+djgpppath+"/");
-            readoneline=readoneline.replace("name_8",primaryClassName);
+            readoneline=readoneline.replace("_eman_8",primaryClassName);
             String[] ary_readoneline = readoneline.split(" ");
             if(ary_readoneline[0].compareTo("gcc")==0 || ary_readoneline[0].compareTo("strip")==0 || ary_readoneline[0].compareTo("copy")==0){
               if(preferences.getBoolean("build.verbose"))

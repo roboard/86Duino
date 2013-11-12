@@ -52,24 +52,24 @@ recipe.size.regex=Total\s+([0-9]+).*
 # AVR Uploader/Programmers tools
 # -------------------
 
-tools.86upload.cmd.path={runtime.ide.path}/hardware/tools/avr/bin/86upload
+tools.86upload.cmd.path={runtime.ide.path}/hardware/tools/avr/bin/86upload.exe
 tools.86upload.config.path={runtime.ide.path}/hardware/tools/avr/etc/avrdude.conf
-tools.86upload.cmd.path.linux={runtime.ide.path}/hardware/tools/86upload
+tools.86upload.cmd.path.linux={runtime.ide.path}/hardware/tools/avr/bin/86upload.exe
 tools.86upload.config.path.linux={runtime.ide.path}/hardware/tools/avrdude.conf
 
 tools.86upload.upload.params.verbose=-v -v -v -v
 tools.86upload.upload.params.quiet=-q -q
-tools.86upload.upload.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" 
+tools.86upload.upload.pattern="{cmd.path}" "{serial.port}" {type} "{build.path}/{build.project_name}.exe" 
 
 tools.86upload.program.params.verbose=-v -v -v -v
 tools.86upload.program.params.quiet=-q -q
-tools.86upload.program.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {program.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
+tools.86upload.program.pattern="{cmd.path}" "{serial.port}" {type} "{build.path}/{build.project_name}.exe" {program.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
 
 tools.86upload.erase.params.verbose=-v -v -v -v
 tools.86upload.erase.params.quiet=-q -q
-tools.86upload.erase.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {erase.verbose} -p{build.mcu} -c{protocol} {program.extra_params} -e -Ulock:w:{bootloader.unlock_bits}:m -Uefuse:w:{bootloader.extended_fuses}:m -Uhfuse:w:{bootloader.high_fuses}:m -Ulfuse:w:{bootloader.low_fuses}:m
+tools.86upload.erase.pattern="{cmd.path}" "{serial.port}" {type} "{build.path}/{build.project_name}.exe" {erase.verbose} -p{build.mcu} -c{protocol} {program.extra_params} -e -Ulock:w:{bootloader.unlock_bits}:m -Uefuse:w:{bootloader.extended_fuses}:m -Uhfuse:w:{bootloader.high_fuses}:m -Ulfuse:w:{bootloader.low_fuses}:m
 
 tools.86upload.bootloader.params.verbose=-v -v -v -v
 tools.86upload.bootloader.params.quiet=-q -q
-tools.86upload.bootloader.pattern="{cmd.path}" "\\.\{serial.port}" {type} "{build.path}/{build.project_name}.exe" {bootloader.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{runtime.ide.path}/hardware/arduino/avr/bootloaders/{bootloader.file}:i" -Ulock:w:{bootloader.lock_bits}:m
+tools.86upload.bootloader.pattern="{cmd.path}" "{serial.port}" {type} "{build.path}/{build.project_name}.exe" {bootloader.verbose} -p{build.mcu} -c{protocol} {program.extra_params} "-Uflash:w:{runtime.ide.path}/hardware/arduino/avr/bootloaders/{bootloader.file}:i" -Ulock:w:{bootloader.lock_bits}:m
 

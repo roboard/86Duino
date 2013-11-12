@@ -3,7 +3,9 @@
 /*
   PdePreprocessor - wrapper for default ANTLR-generated parser
   Part of the Wiring project - http://wiring.org.co
+   and of the 86Duino project - http://www.86duino.com/
 
+  Copyright (c) 2013    Oswald Kuo <oswald@dmp.com.tw>
   Copyright (c) 2004-05 Hernando Barragan
 
   Processing version Copyright (c) 2004-05 Ben Fry and Casey Reas
@@ -183,7 +185,7 @@ public class PdePreprocessor {
     String packageName = prefs.get("target_package");
     File streamFile;
     if(packageName.compareTo("86duino") == 0)
-      streamFile = new File(buildPath, /*name +*/ "name_8.cpp");
+      streamFile = new File(buildPath, /*name +*/ "_eman_8.cpp");
     else 
       streamFile = new File(buildPath, name + ".cpp");
     stream = new PrintStream(new FileOutputStream(streamFile));
