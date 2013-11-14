@@ -1,0 +1,198 @@
+
+
+
+GOZILLA(1)                                             GOZILLA(1)
+
+
+NNAAMMEE
+       gozilla  - force mozilla to display specified source file.
+
+SSYYNNOOPPSSIISS
+       ggoozziillllaa [-b browser][-p][+no] file
+       ggoozziillllaa [-b browser][-p] -d name
+
+DDEESSCCRRIIPPTTIIOONN
+       GGoozziillllaa force mozilla to display specified source file  as
+       a  hypertext. GGoozziillllaa can be used with other browsers like
+       firefox and epiphany.
+
+       In  advance  of  using  this  command,  you  must  execute
+       ggttaaggss(1)  and hhttaaggss(1) at the root directory of the source
+       tree to make tag files.  Then you can execute  gozilla  at
+       anywhere in the source tree.
+
+       First form:
+       You  can  specify  source file and the line number option-
+       ally.
+
+       Second form:
+       You can specify definition name directly. Definition  name
+       must exist in 'GTAGS' tag file.
+
+       Some  browsers  require  you  to  load it before executing
+       ggoozziillllaa.  Whether or not  ggoozziillllaa  waits  for  exiting  of
+       browser depends on browser.
+
+OOPPTTIIOONNSS
+       The following options are available:
+
+       ++nnoo    line  number.  It  must be a line on which function
+              definition or function reference is exist.  If  you
+              execute  hhttaaggss(1)  with  --ll option, you can specify
+              any line.
+
+       --bb _b_r_o_w_s_e_r
+              browser to use. By default, it is assumed  mmoozziillllaa.
+
+       --pp     just print generated target URL.
+
+       _f_i_l_e   path of source file or alias name.
+
+       --dd _n_a_m_e
+              print function.
+
+       --qq, ----qquuiieett
+              Quiet mode.
+
+       --vv, ----vveerrbboossee
+              Verbose mode.
+
+
+
+
+
+GNU Project                 July 2006                           1
+
+
+
+
+
+GOZILLA(1)                                             GOZILLA(1)
+
+
+       ----vveerrssiioonn
+              Show version number.
+
+       ----hheellpp Show help.
+
+FFIILLEESS
+       'HTML/'
+              hypertext of source tree.
+
+       'GTAGS/'
+              tags file for function definitions.
+
+       '$HOME/.gozillarc'
+              alias file. Please read source code for the detail.
+
+EENNVVIIRROONNMMEENNTT
+       GGTTAAGGSSRROOOOTT
+              The directory which is the root of source tree.
+
+       GGTTAAGGSSDDBBPPAATTHH
+              The directory on which gtags database exist.   This
+              value is ignored when GGTTAAGGSSRROOOOTT is not defined.
+
+       BBRROOWWSSEERR
+              browser  to use. By default, it is assumed mozilla.
+
+EEXXAAMMPPLLEESS
+            $ gtags
+            $ htags
+            $ global -x main
+            main              82 ctags.c          main(argc, argv)
+            $ mozilla &
+            $ gozilla +82 ctags.c
+
+            $ firefox &
+            $ gozilla -b firefox +82 ctags.c
+
+            $ setenv BROWSER 'epiphany --new-tab'
+            $ epiphany &
+            $ gozilla +82 ctags.c
+
+DDIIAAGGNNOOSSTTIICCSS
+       GGoozziillllaa exits with a non 0 value if an error  occurred,  0
+       otherwise.
+
+SSEEEE AALLSSOO
+       gglloobbaall(1),  ggttaaggss(1),  hhttaaggss(1),  ffiirreeffooxx(1), eeppiipphhaannyy(1),
+       mmoozziillllaa(1).
+
+       GNU GLOBAL source code tag system
+       (http://www.gnu.org/software/global/).
+
+NNOOTTEESS
+       GGoozziillllaa means 'Global for mozilla'.
+
+
+
+GNU Project                 July 2006                           2
+
+
+
+
+
+GOZILLA(1)                                             GOZILLA(1)
+
+
+BBUUGGSS
+       GGoozziillllaa can treat not only source  file  but  also  normal
+       file,  directory,  HTML  file  and even URL, because it is
+       omnivorous.
+
+AAUUTTHHOORRSS
+       Tama Communications Corporation.
+
+HHIISSTTOORRYY
+       The ggoozziillllaa command appeared in FreeBSD 2.2.2 but did  not
+       installed by default.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU Project                 July 2006                           3
+
+

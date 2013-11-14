@@ -54,7 +54,7 @@ recipe.size.regex=Total\s+([0-9]+).*
 
 tools.86upload.cmd.path={runtime.ide.path}/hardware/tools/avr/bin/86upload.exe
 tools.86upload.config.path={runtime.ide.path}/hardware/tools/avr/etc/avrdude.conf
-tools.86upload.cmd.path.linux={runtime.ide.path}/hardware/tools/avr/bin/86upload.exe
+tools.86upload.cmd.path.linux={runtime.ide.path}/hardware/tools/86upload.exe
 tools.86upload.config.path.linux={runtime.ide.path}/hardware/tools/avrdude.conf
 
 tools.86upload.upload.params.verbose=-v -v -v -v

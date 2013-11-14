@@ -1,0 +1,62 @@
+#
+# DSM for GLOBAL 5.6.1 binaries.
+# Written by Jason Hood <jadoxa@yahoo.com.au> 2007-08-17
+#
+
+dsm-file-version: 5.6.1
+dsm-version: 0.6.1
+dsm-name: glo561b
+
+dsm-author: Jason Hood
+dsm-author-email: jadoxa@yahoo.com.au
+dsm-author-web-site: http://www.geocities.com/jadoxa/
+
+name: global
+version: 5.6.1
+type: binaries
+license: GNU GPL
+manifest: glo561b
+sources-dsm: glo561s
+
+short-description: GNU GLOBAL source code tag system.
+long-description:\
+GNU GLOBAL is a source code tag system that works the same way across diverse\n\
+environments. It supports C, C++, Yacc, Java, PHP4 and assembler source code.
+
+author: Shigio Yamaguchi
+author-email: shigio@gnu.org
+web-site: http://www.gnu.org/software/global/
+organisation: Tama Communications Corporation
+
+mailing-list: global@gnu.org
+mailing-list-description: Main GLOBAL mailing list
+mailing-list-web-site: http://mail.gnu.org/mailman/listinfo/global
+
+mailing-list: bug-global@gnu.org
+mailing-list-description: List to send bug reports to
+mailing-list-web-site: http://mail.gnu.org/mailman/listinfo/bug-global
+
+mailing-list: djgpp@delorie.com
+mailing-list-description: DOS-specific bug reports
+
+porter: Jason Hood
+porter-email: jadoxa@yahoo.com.au
+
+simtelnet-path: v2gnu/
+zip: glo561b.zip
+pre-install-readme: share/gtags/README.djgpp
+
+replaces: global < 5.6.1
+
+# For GloBash.
+depends-on: bash
+depends-on: fileutils
+
+# For run-time options.
+depends-on: id-utils
+depends-on: grep
+
+# For reading the docs.
+depends-on: info-reader
+depends-on: man
+depends-on: less

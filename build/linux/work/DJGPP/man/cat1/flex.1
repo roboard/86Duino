@@ -1,0 +1,3630 @@
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+NNAAMMEE
+       flex - fast lexical analyzer generator
+
+SSYYNNOOPPSSIISS
+       fflleexx  [[--bbccddffhhiillnnppssttvvwwBBFFIILLTTVV7788++?? --CC[[aaeeffFFmmrr]] --oooouuttppuutt --PPpprree--
+       ffiixx --SSsskkeelleettoonn]] [[----hheellpp ----vveerrssiioonn]] _[_f_i_l_e_n_a_m_e _._._._]
+
+OOVVEERRVVIIEEWW
+       This manual describes _f_l_e_x_, a tool for generating programs
+       that   perform   pattern-matching  on  text.   The  manual
+       includes both tutorial and reference sections:
+
+           Description
+               a brief overview of the tool
+
+           Some Simple Examples
+
+           Format Of The Input File
+
+           Patterns
+               the extended regular expressions used by flex
+
+           How The Input Is Matched
+               the rules for determining what has been matched
+
+           Actions
+               how to specify what to do when a pattern is matched
+
+           The Generated Scanner
+               details regarding the scanner that flex produces;
+               how to control the input source
+
+           Start Conditions
+               introducing context into your scanners, and
+               managing "mini-scanners"
+
+           Multiple Input Buffers
+               how to manipulate multiple input sources; how to
+               scan from strings instead of files
+
+           End-of-file Rules
+               special rules for matching the end of the input
+
+           Miscellaneous Macros
+               a summary of macros available to the actions
+
+           Values Available To The User
+               a summary of values available to the actions
+
+           Interfacing With Yacc
+               connecting flex scanners together with yacc parsers
+
+           Options
+               flex command-line options, and the "%option"
+
+
+
+Version 2.5                 April 1995                          1
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+               directive
+
+           Performance Considerations
+               how to make your scanner go as fast as possible
+
+           Generating C++ Scanners
+               the (experimental) facility for generating C++
+               scanner classes
+
+           Incompatibilities With Lex And POSIX
+               how flex differs from AT&T lex and the POSIX lex
+               standard
+
+           Diagnostics
+               those error messages produced by flex (or scanners
+               it generates) whose meanings might not be apparent
+
+           Files
+               files used by flex
+
+           Deficiencies / Bugs
+               known problems with flex
+
+           See Also
+               other documentation, related tools
+
+           Author
+               includes contact information
+
+
+DDEESSCCRRIIPPTTIIOONN
+       _f_l_e_x is a tool for  generating  _s_c_a_n_n_e_r_s_:  programs  which
+       recognized lexical patterns in text.  _f_l_e_x reads the given
+       input files, or its standard input if no  file  names  are
+       given,  for  a  description of a scanner to generate.  The
+       description is in the form of pairs of regular expressions
+       and  C  code,  called  _r_u_l_e_s_. _f_l_e_x generates as output a C
+       source file, lleexx..yyyy..cc,, which defines  a  routine  yyyylleexx(())..
+       This  file is compiled and linked with the --llffll library to
+       produce an executable.  When the  executable  is  run,  it
+       analyzes  its input for occurrences of the regular expres-
+       sions.  Whenever it finds one, it executes the correspond-
+       ing C code.
+
+SSOOMMEE SSIIMMPPLLEE EEXXAAMMPPLLEESS
+       First  some  simple  examples to get the flavor of how one
+       uses _f_l_e_x_.  The following _f_l_e_x input specifies  a  scanner
+       which  whenever  it  encounters the string "username" will
+       replace it with the user's login name:
+
+           %%
+           username    printf( "%s", getlogin() );
+
+       By default, any text not matched  by  a  _f_l_e_x  scanner  is
+
+
+
+Version 2.5                 April 1995                          2
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       copied to the output, so the net effect of this scanner is
+       to copy its input file to its output with each  occurrence
+       of  "username" expanded.  In this input, there is just one
+       rule.  "username" is the _p_a_t_t_e_r_n and the "printf"  is  the
+       _a_c_t_i_o_n_.  The "%%" marks the beginning of the rules.
+
+       Here's another simple example:
+
+                   int num_lines = 0, num_chars = 0;
+
+           %%
+           \n      ++num_lines; ++num_chars;
+           .       ++num_chars;
+
+           %%
+           main()
+                   {
+                   yylex();
+                   printf( "# of lines = %d, # of chars = %d\n",
+                           num_lines, num_chars );
+                   }
+
+       This  scanner counts the number of characters and the num-
+       ber of lines in its input (it  produces  no  output  other
+       than  the  final  report  on  the counts).  The first line
+       declares two globals, "num_lines" and  "num_chars",  which
+       are  accessible both inside yyyylleexx(()) and in the mmaaiinn(()) rou-
+       tine declared after the second "%%".  There are two rules,
+       one which matches a newline ("\n") and increments both the
+       line count and the character count, and one which  matches
+       any  character  other than a newline (indicated by the "."
+       regular expression).
+
+       A somewhat more complicated example:
+
+           /* scanner for a toy Pascal-like language */
+
+           %{
+           /* need this for the call to atof() below */
+           #include <math.h>
+           %}
+
+           DIGIT    [0-9]
+           ID       [a-z][a-z0-9]*
+
+           %%
+
+           {DIGIT}+    {
+                       printf( "An integer: %s (%d)\n", yytext,
+                               atoi( yytext ) );
+                       }
+
+           {DIGIT}+"."{DIGIT}*        {
+                       printf( "A float: %s (%g)\n", yytext,
+
+
+
+Version 2.5                 April 1995                          3
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+                               atof( yytext ) );
+                       }
+
+           if|then|begin|end|procedure|function        {
+                       printf( "A keyword: %s\n", yytext );
+                       }
+
+           {ID}        printf( "An identifier: %s\n", yytext );
+
+           "+"|"-"|"*"|"/"   printf( "An operator: %s\n", yytext );
+
+           "{"[^}\n]*"}"     /* eat up one-line comments */
+
+           [ \t\n]+          /* eat up whitespace */
+
+           .           printf( "Unrecognized character: %s\n", yytext );
+
+           %%
+
+           main( argc, argv )
+           int argc;
+           char **argv;
+               {
+               ++argv, --argc;  /* skip over program name */
+               if ( argc > 0 )
+                       yyin = fopen( argv[0], "r" );
+               else
+                       yyin = stdin;
+
+               yylex();
+               }
+
+       This is the beginnings of a simple scanner for a  language
+       like  Pascal.  It identifies different types of _t_o_k_e_n_s and
+       reports on what it has seen.
+
+       The details of this example will be explained in the  fol-
+       lowing sections.
+
+FFOORRMMAATT OOFF TTHHEE IINNPPUUTT FFIILLEE
+       The  _f_l_e_x input file consists of three sections, separated
+       by a line with just %%%% in it:
+
+           definitions
+           %%
+           rules
+           %%
+           user code
+
+       The _d_e_f_i_n_i_t_i_o_n_s section contains  declarations  of  simple
+       _n_a_m_e  definitions  to  simplify the scanner specification,
+       and declarations of _s_t_a_r_t _c_o_n_d_i_t_i_o_n_s_, which are  explained
+       in a later section.
+
+
+
+
+Version 2.5                 April 1995                          4
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       Name definitions have the form:
+
+           name definition
+
+       The  "name" is a word beginning with a letter or an under-
+       score ('_') followed by zero or more letters, digits, '_',
+       or  '-'  (dash).   The definition is taken to begin at the
+       first non-white-space character  following  the  name  and
+       continuing  to  the  end  of the line.  The definition can
+       subsequently be referred to  using  "{name}",  which  will
+       expand to "(definition)".  For example,
+
+           DIGIT    [0-9]
+           ID       [a-z][a-z0-9]*
+
+       defines "DIGIT" to be a regular expression which matches a
+       single digit, and "ID" to be a  regular  expression  which
+       matches  a letter followed by zero-or-more letters-or-dig-
+       its.  A subsequent reference to
+
+           {DIGIT}+"."{DIGIT}*
+
+       is identical to
+
+           ([0-9])+"."([0-9])*
+
+       and matches one-or-more digits followed by a '.'  followed
+       by zero-or-more digits.
+
+       The  _r_u_l_e_s  section of the _f_l_e_x input contains a series of
+       rules of the form:
+
+           pattern   action
+
+       where the pattern must be unindented and the  action  must
+       begin on the same line.
+
+       See  below  for  a  further  description  of  patterns and
+       actions.
+
+       Finally,  the  user  code  section  is  simply  copied  to
+       lleexx..yyyy..cc  verbatim.   It  is  used  for companion routines
+       which call or are called by the scanner.  The presence  of
+       this  section is optional; if it is missing, the second %%%%
+       in the input file may be skipped, too.
+
+       In the definitions and rules sections, any  _i_n_d_e_n_t_e_d  text
+       or  text  enclosed  in %%{{ and %%}} is copied verbatim to the
+       output (with the %{}'s removed).  The  %{}'s  must  appear
+       unindented on lines by themselves.
+
+       In  the  rules section, any indented or %{} text appearing
+       before the first rule may be  used  to  declare  variables
+       which  are  local  to  the scanning routine and (after the
+
+
+
+Version 2.5                 April 1995                          5
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       declarations) code which is to be  executed  whenever  the
+       scanning  routine  is entered.  Other indented or %{} text
+       in the rule section is still copied to the output, but its
+       meaning is not well-defined and it may well cause compile-
+       time errors (this feature is present for _P_O_S_I_X compliance;
+       see below for other such features).
+
+       In the definitions section (but not in the rules section),
+       an unindented comment (i.e., a line beginning  with  "/*")
+       is also copied verbatim to the output up to the next "*/".
+
+PPAATTTTEERRNNSS
+       The patterns in the input are written  using  an  extended
+       set of regular expressions.  These are:
+
+           x          match the character 'x'
+           .          any character (byte) except newline
+           [xyz]      a "character class"; in this case, the pattern
+                        matches either an 'x', a 'y', or a 'z'
+           [abj-oZ]   a "character class" with a range in it; matches
+                        an 'a', a 'b', any letter from 'j' through 'o',
+                        or a 'Z'
+           [^A-Z]     a "negated character class", i.e., any character
+                        but those in the class.  In this case, any
+                        character EXCEPT an uppercase letter.
+           [^A-Z\n]   any character EXCEPT an uppercase letter or
+                        a newline
+           r*         zero or more r's, where r is any regular expression
+           r+         one or more r's
+           r?         zero or one r's (that is, "an optional r")
+           r{2,5}     anywhere from two to five r's
+           r{2,}      two or more r's
+           r{4}       exactly 4 r's
+           {name}     the expansion of the "name" definition
+                      (see above)
+           "[xyz]\"foo"
+                      the literal string: [xyz]"foo
+           \X         if X is an 'a', 'b', 'f', 'n', 'r', 't', or 'v',
+                        then the ANSI-C interpretation of \x.
+                        Otherwise, a literal 'X' (used to escape
+                        operators such as '*')
+           \0         a NUL character (ASCII code 0)
+           \123       the character with octal value 123
+           \x2a       the character with hexadecimal value 2a
+           (r)        match an r; parentheses are used to override
+                        precedence (see below)
+
+
+           rs         the regular expression r followed by the
+                        regular expression s; called "concatenation"
+
+
+           r|s        either an r or an s
+
+
+
+
+Version 2.5                 April 1995                          6
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           r/s        an r but only if it is followed by an s.  The
+                        text matched by s is included when determining
+                        whether this rule is the "longest match",
+                        but is then returned to the input before
+                        the action is executed.  So the action only
+                        sees the text matched by r.  This type
+                        of pattern is called trailing context".
+                        (There are some combinations of r/s that flex
+                        cannot match correctly; see notes in the
+                        Deficiencies / Bugs section below regarding
+                        "dangerous trailing context".)
+           ^r         an r, but only at the beginning of a line (i.e.,
+                        which just starting to scan, or right after a
+                        newline has been scanned).
+           r$         an r, but only at the end of a line (i.e., just
+                        before a newline).  Equivalent to "r/\n".
+
+                      Note that flex's notion of "newline" is exactly
+                      whatever the C compiler used to compile flex
+                      interprets '\n' as; in particular, on some DOS
+                      systems you must either filter out \r's in the
+                      input yourself, or explicitly use r/\r\n for "r$".
+
+
+           <s>r       an r, but only in start condition s (see
+                        below for discussion of start conditions)
+           <s1,s2,s3>r
+                      same, but in any of start conditions s1,
+                        s2, or s3
+           <*>r       an r in any start condition, even an exclusive one.
+
+
+           <<EOF>>    an end-of-file
+           <s1,s2><<EOF>>
+                      an end-of-file when in start condition s1 or s2
+
+       Note that inside of a character class, all regular expres-
+       sion operators lose their special  meaning  except  escape
+       ('\') and the character class operators, '-', ']', and, at
+       the beginning of the class, '^'.
+
+       The regular expressions listed above are grouped according
+       to  precedence, from highest precedence at the top to low-
+       est at the bottom.   Those  grouped  together  have  equal
+       precedence.  For example,
+
+           foo|bar*
+
+       is the same as
+
+           (foo)|(ba(r*))
+
+       since the '*' operator has higher precedence than concate-
+       nation, and concatenation higher than  alternation  ('|').
+
+
+
+Version 2.5                 April 1995                          7
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       This  pattern therefore matches _e_i_t_h_e_r the string "foo" _o_r
+       the string "ba" followed by zero-or-more  r's.   To  match
+       "foo" or zero-or-more "bar"'s, use:
+
+           foo|(bar)*
+
+       and to match zero-or-more "foo"'s-or-"bar"'s:
+
+           (foo|bar)*
+
+
+       In  addition to characters and ranges of characters, char-
+       acter classes can also  contain  character  class  _e_x_p_r_e_s_-
+       _s_i_o_n_s_.   These  are  expressions enclosed inside [[:: and ::]]
+       delimiters (which themselves must appear between  the  '['
+       and  ']'  of the character class; other elements may occur
+       inside the character class, too).  The  valid  expressions
+       are:
+
+           [:alnum:] [:alpha:] [:blank:]
+           [:cntrl:] [:digit:] [:graph:]
+           [:lower:] [:print:] [:punct:]
+           [:space:] [:upper:] [:xdigit:]
+
+       These expressions all designate a set of characters equiv-
+       alent to the corresponding standard C iissXXXXXX function.  For
+       example,  [[::aallnnuumm::]]  designates those characters for which
+       iissaallnnuumm(()) returns true - i.e., any alphabetic or  numeric.
+       Some  systems  don't  provide  iissbbllaannkk(()),,  so flex defines
+       [[::bbllaannkk::]] as a blank or a tab.
+
+       For example,  the  following  character  classes  are  all
+       equivalent:
+
+           [[:alnum:]]
+           [[:alpha:][:digit:]
+           [[:alpha:]0-9]
+           [a-zA-Z0-9]
+
+       If  your  scanner  is case-insensitive (the --ii flag), then
+       [[::uuppppeerr::]] and [[::lloowweerr::]] are equivalent to [[::aallpphhaa::]]..
+
+       Some notes on patterns:
+
+       -      A negated character class such as the example "[^A-
+              Z]"  above  _w_i_l_l _m_a_t_c_h _a _n_e_w_l_i_n_e unless "\n" (or an
+              equivalent escape sequence) is one of  the  charac-
+              ters  explicitly  present  in the negated character
+              class (e.g., "[^A-Z\n]").  This is unlike how  many
+              other  regular expression tools treat negated char-
+              acter classes, but unfortunately the  inconsistency
+              is   historically  entrenched.   Matching  newlines
+              means that a  pattern  like  [^"]*  can  match  the
+              entire  input  unless  there's another quote in the
+
+
+
+Version 2.5                 April 1995                          8
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              input.
+
+       -      A rule can have at most one  instance  of  trailing
+              context  (the  '/'  operator  or the '$' operator).
+              The start condition, '^',  and  "<<EOF>>"  patterns
+              can  only occur at the beginning of a pattern, and,
+              as well as with '/'  and  '$',  cannot  be  grouped
+              inside  parentheses.  A '^' which does not occur at
+              the beginning of a rule or a  '$'  which  does  not
+              occur  at the end of a rule loses its special prop-
+              erties and is treated as a normal character.
+
+              The following are illegal:
+
+                  foo/bar$
+                  <sc1>foo<sc2>bar
+
+              Note that  the  first  of  these,  can  be  written
+              "foo/bar\n".
+
+              The  following  will  result  in  '$'  or '^' being
+              treated as a normal character:
+
+                  foo|(bar$)
+                  foo|^bar
+
+              If what's wanted is a "foo" or a bar-followed-by-a-
+              newline,  the  following could be used (the special
+              '|' action is explained below):
+
+                  foo      |
+                  bar$     /* action goes here */
+
+              A similar trick will work for matching a foo  or  a
+              bar-at-the-beginning-of-a-line.
+
+HHOOWW TTHHEE IINNPPUUTT IISS MMAATTCCHHEEDD
+       When  the  generated scanner is run, it analyzes its input
+       looking for strings which match any of its  patterns.   If
+       it  finds  more  than one match, it takes the one matching
+       the most text (for trailing context rules,  this  includes
+       the  length of the trailing part, even though it will then
+       be returned to the  input).   If  it  finds  two  or  more
+       matches  of  the same length, the rule listed first in the
+       _f_l_e_x input file is chosen.
+
+       Once the match is determined, the  text  corresponding  to
+       the  match  (called  the  _t_o_k_e_n_)  is made available in the
+       global character pointer yyyytteexxtt,, and  its  length  in  the
+       global  integer  yyyylleenngg..   The _a_c_t_i_o_n corresponding to the
+       matched pattern is then executed (a more detailed descrip-
+       tion  of actions follows), and then the remaining input is
+       scanned for another match.
+
+
+
+
+Version 2.5                 April 1995                          9
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       If no match is found, then the _d_e_f_a_u_l_t _r_u_l_e  is  executed:
+       the  next character in the input is considered matched and
+       copied to the standard output.  Thus, the  simplest  legal
+       _f_l_e_x input is:
+
+           %%
+
+       which  generates  a  scanner  that simply copies its input
+       (one character at a time) to its output.
+
+       Note that yyyytteexxtt can be defined  in  two  different  ways:
+       either  as  a  character  _p_o_i_n_t_e_r or as a character _a_r_r_a_y_.
+       You can control which definition _f_l_e_x  uses  by  including
+       one  of  the  special directives %%ppooiinntteerr or %%aarrrraayy in the
+       first (definitions)  section  of  your  flex  input.   The
+       default is %%ppooiinntteerr,, unless you use the --ll lex compatibil-
+       ity option, in which case yyyytteexxtt will be  an  array.   The
+       advantage  of using %%ppooiinntteerr is substantially faster scan-
+       ning and no  buffer  overflow  when  matching  very  large
+       tokens (unless you run out of dynamic memory).  The disad-
+       vantage is that you are restricted in how your actions can
+       modify  yyyytteexxtt  (see  the  next section), and calls to the
+       uunnppuutt(()) function destroys the present contents of  yyyytteexxtt,,
+       which  can  be a considerable porting headache when moving
+       between different _l_e_x versions.
+
+       The advantage of %%aarrrraayy is that you can then modify yyyytteexxtt
+       to  your  heart's  content,  and  calls  to uunnppuutt(()) do not
+       destroy yyyytteexxtt (see  below).   Furthermore,  existing  _l_e_x
+       programs sometimes access yyyytteexxtt externally using declara-
+       tions of the form:
+           extern char yytext[];
+       This definition is erroneous when used with %%ppooiinntteerr,,  but
+       correct for %%aarrrraayy..
+
+       %%aarrrraayy defines yyyytteexxtt to be an array of YYYYLLMMAAXX characters,
+       which defaults to a fairly large value.   You  can  change
+       the size by simply #define'ing YYYYLLMMAAXX to a different value
+       in the first section of your  _f_l_e_x  input.   As  mentioned
+       above,  with %%ppooiinntteerr yytext grows dynamically to accommo-
+       date large tokens.  While this means your %%ppooiinntteerr scanner
+       can accommodate very large tokens (such as matching entire
+       blocks of comments), bear in mind that each time the scan-
+       ner  must  resize  yyyytteexxtt  it  also must rescan the entire
+       token from the beginning,  so  matching  such  tokens  can
+       prove slow.  yyyytteexxtt presently does _n_o_t dynamically grow if
+       a call to uunnppuutt(()) results in too much  text  being  pushed
+       back; instead, a run-time error results.
+
+       Also  note  that  you  cannot  use %%aarrrraayy with C++ scanner
+       classes (the cc++++ option; see below).
+
+AACCTTIIOONNSS
+       Each pattern in a rule has a corresponding  action,  which
+
+
+
+Version 2.5                 April 1995                         10
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       can be any arbitrary C statement.  The pattern ends at the
+       first non-escaped whitespace character; the  remainder  of
+       the line is its action.  If the action is empty, then when
+       the pattern is matched the  input  token  is  simply  dis-
+       carded.  For example, here is the specification for a pro-
+       gram which deletes all occurrences of "zap  me"  from  its
+       input:
+
+           %%
+           "zap me"
+
+       (It  will  copy  all  other characters in the input to the
+       output since they will be matched by the default rule.)
+
+       Here is a program which  compresses  multiple  blanks  and
+       tabs  down  to  a single blank, and throws away whitespace
+       found at the end of a line:
+
+           %%
+           [ \t]+        putchar( ' ' );
+           [ \t]+$       /* ignore this token */
+
+
+       If the action contains a '{', then the action  spans  till
+       the  balancing '}' is found, and the action may cross mul-
+       tiple lines.  _f_l_e_x knows about C strings and comments  and
+       won't  be  fooled  by  braces  found within them, but also
+       allows actions to begin with  %%{{  and  will  consider  the
+       action to be all the text up to the next %%}} (regardless of
+       ordinary braces inside the action).
+
+       An action consisting solely of a vertical bar ('|')  means
+       "same  as the action for the next rule."  See below for an
+       illustration.
+
+       Actions can include arbitrary  C  code,  including  rreettuurrnn
+       statements  to  return  a value to whatever routine called
+       yyyylleexx(())..  Each time yyyylleexx(()) is called  it  continues  pro-
+       cessing tokens from where it last left off until it either
+       reaches the end of the file or executes a return.
+
+       Actions are free to modify yyyytteexxtt except  for  lengthening
+       it  (adding  characters  to  its end--these will overwrite
+       later characters in the input stream).  This however  does
+       not  apply  when  using  %%aarrrraayy (see above); in that case,
+       yyyytteexxtt may be freely modified in any way.
+
+       Actions are free to modify yyyylleenngg except they  should  not
+       do  so  if  the  action also includes use of yyyymmoorree(()) (see
+       below).
+
+       There are a number of  special  directives  which  can  be
+       included within an action:
+
+
+
+
+Version 2.5                 April 1995                         11
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       -      EECCHHOO copies yytext to the scanner's output.
+
+       -      BBEEGGIINN  followed  by  the  name of a start condition
+              places the scanner in the corresponding start  con-
+              dition (see below).
+
+       -      RREEJJEECCTT  directs  the  scanner  to proceed on to the
+              "second best" rule which matched the  input  (or  a
+              prefix  of  the  input).   The  rule  is  chosen as
+              described above in "How the Input is Matched",  and
+              yyyytteexxtt  and  yyyylleenngg  set  up appropriately.  It may
+              either be one which matched as  much  text  as  the
+              originally  chosen  rule but came later in the _f_l_e_x
+              input file, or one which matched  less  text.   For
+              example, the following will both count the words in
+              the input and call the routine  special()  whenever
+              "frob" is seen:
+
+                          int word_count = 0;
+                  %%
+
+                  frob        special(); REJECT;
+                  [^ \t\n]+   ++word_count;
+
+              Without the RREEJJEECCTT,, any "frob"'s in the input would
+              not be counted as words, since the scanner normally
+              executes  only  one  action  per  token.   Multiple
+              RREEJJEECCTT''ss are allowed, each  one  finding  the  next
+              best  choice  to  the  currently  active rule.  For
+              example, when the following scanner scans the token
+              "abcd", it will write "abcdabcaba" to the output:
+
+                  %%
+                  a        |
+                  ab       |
+                  abc      |
+                  abcd     ECHO; REJECT;
+                  .|\n     /* eat up any unmatched character */
+
+              (The  first  three  rules share the fourth's action
+              since they use the special '|' action.)  RREEJJEECCTT  is
+              a  particularly expensive feature in terms of scan-
+              ner performance; if it is used in _a_n_y of the  scan-
+              ner's  actions  it  will slow down _a_l_l of the scan-
+              ner's matching.  Furthermore, RREEJJEECCTT cannot be used
+              with the _-_C_f or _-_C_F options (see below).
+
+              Note  also  that  unlike the other special actions,
+              RREEJJEECCTT is a _b_r_a_n_c_h_; code immediately  following  it
+              in the action will _n_o_t be executed.
+
+       -      yyyymmoorree(())  tells  the  scanner that the next time it
+              matches a rule, the corresponding token  should  be
+              _a_p_p_e_n_d_e_d  onto  the  current value of yyyytteexxtt rather
+
+
+
+Version 2.5                 April 1995                         12
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              than replacing it.  For example,  given  the  input
+              "mega-kludge"  the following will write "mega-mega-
+              kludge" to the output:
+
+                  %%
+                  mega-    ECHO; yymore();
+                  kludge   ECHO;
+
+              First "mega-" is matched and echoed to the  output.
+              Then  "kludge" is matched, but the previous "mega-"
+              is still hanging around at the beginning of  yyyytteexxtt
+              so  the  EECCHHOO  for  the "kludge" rule will actually
+              write "mega-kludge".
+
+       Two notes regarding  use  of  yyyymmoorree(())..   First,  yyyymmoorree(())
+       depends  on  the  value of _y_y_l_e_n_g correctly reflecting the
+       size of the current token, so you must not  modify  _y_y_l_e_n_g
+       if  you  are  using  yyyymmoorree(())..   Second,  the  presence of
+       yyyymmoorree(()) in the scanner's action entails a  minor  perfor-
+       mance penalty in the scanner's matching speed.
+
+       -      yyyylleessss((nn)) returns all but the first _n characters of
+              the current token back to the input  stream,  where
+              they  will  be rescanned when the scanner looks for
+              the next match.  yyyytteexxtt  and  yyyylleenngg  are  adjusted
+              appropriately  (e.g., yyyylleenngg will now be equal to _n
+              ).  For example, on the input "foobar" the  follow-
+              ing will write out "foobarbar":
+
+                  %%
+                  foobar    ECHO; yyless(3);
+                  [a-z]+    ECHO;
+
+              An  argument  of  0 to yyyylleessss will cause the entire
+              current input string to be scanned  again.   Unless
+              you've  changed  how  the scanner will subsequently
+              process its input (using BBEEGGIINN,, for example),  this
+              will result in an endless loop.
+
+       Note  that  yyyylleessss  is a macro and can only be used in the
+       flex input file, not from other source files.
+
+       -      uunnppuutt((cc)) puts the character _c back onto  the  input
+              stream.   It  will  be  the next character scanned.
+              The following action will take  the  current  token
+              and  cause it to be rescanned enclosed in parenthe-
+              ses.
+
+                  {
+                  int i;
+                  /* Copy yytext because unput() trashes yytext */
+                  char *yycopy = strdup( yytext );
+                  unput( ')' );
+                  for ( i = yyleng - 1; i >= 0; --i )
+
+
+
+Version 2.5                 April 1995                         13
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+                      unput( yycopy[i] );
+                  unput( '(' );
+                  free( yycopy );
+                  }
+
+              Note that since each uunnppuutt(()) puts the given charac-
+              ter  back  at  the  _b_e_g_i_n_n_i_n_g  of the input stream,
+              pushing back strings must be done back-to-front.
+
+       An important potential problem when using uunnppuutt(()) is  that
+       if you are using %%ppooiinntteerr (the default), a call to uunnppuutt(())
+       _d_e_s_t_r_o_y_s the contents of _y_y_t_e_x_t_, starting with its  right-
+       most  character  and  devouring  one character to the left
+       with each call.  If you need the value of yytext preserved
+       after  a  call  to  uunnppuutt(()) (as in the above example), you
+       must either first copy it elsewhere, or build your scanner
+       using %%aarrrraayy instead (see How The Input Is Matched).
+
+       Finally,  note  that you cannot put back EEOOFF to attempt to
+       mark the input stream with an end-of-file.
+
+       -      iinnppuutt(()) reads the next  character  from  the  input
+              stream.   For  example, the following is one way to
+              eat up C comments:
+
+                  %%
+                  "/*"        {
+                              register int c;
+
+                              for ( ; ; )
+                                  {
+                                  while ( (c = input()) != '*' &&
+                                          c != EOF )
+                                      ;    /* eat up text of comment */
+
+                                  if ( c == '*' )
+                                      {
+                                      while ( (c = input()) == '*' )
+                                          ;
+                                      if ( c == '/' )
+                                          break;    /* found the end */
+                                      }
+
+                                  if ( c == EOF )
+                                      {
+                                      error( "EOF in comment" );
+                                      break;
+                                      }
+                                  }
+                              }
+
+              (Note that if the scanner is  compiled  using  CC++++,,
+              then  iinnppuutt(())  is instead referred to as yyyyiinnppuutt(()),,
+              in order to avoid a name clash with the CC++++  stream
+
+
+
+Version 2.5                 April 1995                         14
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              by the name of _i_n_p_u_t_._)
+
+       -      YYYY__FFLLUUSSHH__BBUUFFFFEERR   flushes  the  scanner's  internal
+              buffer so that the next time the  scanner  attempts
+              to  match  a token, it will first refill the buffer
+              using YYYY__IINNPPUUTT (see The Generated Scanner,  below).
+              This  action  is a special case of the more general
+              yyyy__fflluusshh__bbuuffffeerr(()) function, described below in  the
+              section Multiple Input Buffers.
+
+       -      yyyytteerrmmiinnaattee(())  can  be  used  in  lieu  of a return
+              statement in an action.  It terminates the  scanner
+              and returns a 0 to the scanner's caller, indicating
+              "all done".   By  default,  yyyytteerrmmiinnaattee(())  is  also
+              called when an end-of-file is encountered.  It is a
+              macro and may be redefined.
+
+TTHHEE GGEENNEERRAATTEEDD SSCCAANNNNEERR
+       The output of _f_l_e_x is the file  lleexx..yyyy..cc,,  which  contains
+       the  scanning  routine yyyylleexx(()),, a number of tables used by
+       it for matching tokens, and a number of auxiliary routines
+       and macros.  By default, yyyylleexx(()) is declared as follows:
+
+           int yylex()
+               {
+               ... various definitions and the actions in here ...
+               }
+
+       (If your environment supports function prototypes, then it
+       will be "int yylex( void  )".)   This  definition  may  be
+       changed by defining the "YY_DECL" macro.  For example, you
+       could use:
+
+           #define YY_DECL float lexscan( a, b ) float a, b;
+
+       to give the scanning routine the name _l_e_x_s_c_a_n_, returning a
+       float,  and  taking two floats as arguments.  Note that if
+       you give arguments to the scanning routine  using  a  K&R-
+       style/non-prototyped function declaration, you must termi-
+       nate the definition with a semi-colon (;).
+
+       Whenever yyyylleexx(()) is  called,  it  scans  tokens  from  the
+       global input file _y_y_i_n (which defaults to stdin).  It con-
+       tinues until it either reaches an  end-of-file  (at  which
+       point  it  returns the value 0) or one of its actions exe-
+       cutes a _r_e_t_u_r_n statement.
+
+       If the scanner reaches an  end-of-file,  subsequent  calls
+       are undefined unless either _y_y_i_n is pointed at a new input
+       file (in which case scanning continues from that file), or
+       yyyyrreessttaarrtt(())  is called.  yyyyrreessttaarrtt(()) takes one argument, a
+       FFIILLEE ** pointer  (which  can  be  nil,  if  you've  set  up
+       YYYY__IINNPPUUTT  to scan from a source other than _y_y_i_n_)_, and ini-
+       tializes _y_y_i_n for scanning from  that  file.   Essentially
+
+
+
+Version 2.5                 April 1995                         15
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       there  is  no  difference between just assigning _y_y_i_n to a
+       new input file or using yyyyrreessttaarrtt(()) to do so;  the  latter
+       is  available  for compatibility with previous versions of
+       _f_l_e_x_, and because it can be used to switch input files  in
+       the middle of scanning.  It can also be used to throw away
+       the current input buffer, by calling it with  an  argument
+       of _y_y_i_n_; but better is to use YYYY__FFLLUUSSHH__BBUUFFFFEERR (see above).
+       Note that yyyyrreessttaarrtt(()) does _n_o_t reset the  start  condition
+       to IINNIITTIIAALL (see Start Conditions, below).
+
+       If yyyylleexx(()) stops scanning due to executing a _r_e_t_u_r_n state-
+       ment in one of the actions, the scanner may then be called
+       again and it will resume scanning where it left off.
+
+       By  default  (and for purposes of efficiency), the scanner
+       uses block-reads rather than simple _g_e_t_c_(_) calls  to  read
+       characters from _y_y_i_n_.  The nature of how it gets its input
+       can  be  controlled  by  defining  the   YYYY__IINNPPUUTT   macro.
+       YY_INPUT's           calling          sequence          is
+       "YY_INPUT(buf,result,max_size)".  Its action is  to  place
+       up  to  _m_a_x___s_i_z_e characters in the character array _b_u_f and
+       return in the integer variable _r_e_s_u_l_t either the number of
+       characters  read  or  the constant YY_NULL (0 on Unix sys-
+       tems) to indicate EOF.  The default  YY_INPUT  reads  from
+       the global file-pointer "yyin".
+
+       A  sample  definition of YY_INPUT (in the definitions sec-
+       tion of the input file):
+
+           %{
+           #define YY_INPUT(buf,result,max_size) \
+               { \
+               int c = getchar(); \
+               result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \
+               }
+           %}
+
+       This definition will change the input processing to  occur
+       one character at a time.
+
+       When  the  scanner receives an end-of-file indication from
+       YY_INPUT,  it  then  checks  the  yyyywwrraapp(())  function.   If
+       yyyywwrraapp(()) returns false (zero), then it is assumed that the
+       function has gone ahead  and  set  up  _y_y_i_n  to  point  to
+       another input file, and scanning continues.  If it returns
+       true (non-zero), then the scanner terminates, returning  0
+       to its caller.  Note that in either case, the start condi-
+       tion remains unchanged; it does _n_o_t revert to IINNIITTIIAALL..
+
+       If you do not supply your own version  of  yyyywwrraapp(()),,  then
+       you  must  either  use %%ooppttiioonn nnooyyyywwrraapp (in which case the
+       scanner behaves as though yyyywwrraapp(())  returned  1),  or  you
+       must  link  with --llffll to obtain the default version of the
+       routine, which always returns 1.
+
+
+
+Version 2.5                 April 1995                         16
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       Three routines are available for scanning  from  in-memory
+       buffers     rather     than    files:    yyyy__ssccaann__ssttrriinngg(()),,
+       yyyy__ssccaann__bbyytteess(()),, and yyyy__ssccaann__bbuuffffeerr(())..  See the discussion
+       of them below in the section Multiple Input Buffers.
+
+       The  scanner  writes  its  EECCHHOO output to the _y_y_o_u_t global
+       (default, stdout), which may be redefined by the user sim-
+       ply by assigning it to some other FFIILLEE pointer.
+
+SSTTAARRTT CCOONNDDIITTIIOONNSS
+       _f_l_e_x  provides  a  mechanism  for conditionally activating
+       rules.  Any rule whose pattern  is  prefixed  with  "<sc>"
+       will  only be active when the scanner is in the start con-
+       dition named "sc".  For example,
+
+           <STRING>[^"]*        { /* eat up the string body ... */
+                       ...
+                       }
+
+       will be active only when the scanner is  in  the  "STRING"
+       start condition, and
+
+           <INITIAL,STRING,QUOTE>\.        { /* handle an escape ... */
+                       ...
+                       }
+
+       will  be  active  only when the current start condition is
+       either "INITIAL", "STRING", or "QUOTE".
+
+       Start conditions are declared in the  definitions  (first)
+       section of the input using unindented lines beginning with
+       either %%ss or %%xx followed by a list of names.   The  former
+       declares  _i_n_c_l_u_s_i_v_e start conditions, the latter _e_x_c_l_u_s_i_v_e
+       start conditions.  A start condition  is  activated  using
+       the  BBEEGGIINN  action.   Until  the next BBEEGGIINN action is exe-
+       cuted, rules with the given start condition will be active
+       and  rules  with  other start conditions will be inactive.
+       If the start condition is _i_n_c_l_u_s_i_v_e_, then  rules  with  no
+       start  conditions  at  all  will also be active.  If it is
+       _e_x_c_l_u_s_i_v_e_, then _o_n_l_y rules qualified with the start condi-
+       tion  will  be  active.   A set of rules contingent on the
+       same exclusive start condition describe a scanner which is
+       independent  of  any of the other rules in the _f_l_e_x input.
+       Because of this, exclusive start conditions make  it  easy
+       to  specify  "mini-scanners"  which  scan  portions of the
+       input that  are  syntactically  different  from  the  rest
+       (e.g., comments).
+
+       If  the  distinction between inclusive and exclusive start
+       conditions is still a little vague, here's a simple  exam-
+       ple  illustrating the connection between the two.  The set
+       of rules:
+
+           %s example
+
+
+
+Version 2.5                 April 1995                         17
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           %%
+
+           <example>foo   do_something();
+
+           bar            something_else();
+
+       is equivalent to
+
+           %x example
+           %%
+
+           <example>foo   do_something();
+
+           <INITIAL,example>bar    something_else();
+
+       Without the <<IINNIITTIIAALL,,eexxaammppllee>> qualifier, the  _b_a_r  pattern
+       in  the  second example wouldn't be active (i.e., couldn't
+       match) when in start condition eexxaammppllee..  If we  just  used
+       <<eexxaammppllee>>  to  qualify  _b_a_r_, though, then it would only be
+       active in eexxaammppllee and not in IINNIITTIIAALL,, while in  the  first
+       example  it's active in both, because in the first example
+       the eexxaammppllee startion condition is an _i_n_c_l_u_s_i_v_e ((%%ss))  start
+       condition.
+
+       Also  note  that the special start-condition specifier <<**>>
+       matches every start condition.  Thus,  the  above  example
+       could also have been written;
+
+           %x example
+           %%
+
+           <example>foo   do_something();
+
+           <*>bar    something_else();
+
+
+       The default rule (to EECCHHOO any unmatched character) remains
+       active in start conditions.  It is equivalent to:
+
+           <*>.|\n     ECHO;
+
+
+       BBEEGGIINN((00)) returns to the  original  state  where  only  the
+       rules with no start conditions are active.  This state can
+       also be referred to as the start-condition  "INITIAL",  so
+       BBEEGGIINN((IINNIITTIIAALL))  is equivalent to BBEEGGIINN((00))..  (The parenthe-
+       ses around the start condition name are not  required  but
+       are considered good style.)
+
+       BBEEGGIINN  actions  can  also be given as indented code at the
+       beginning of the rules section.  For example, the  follow-
+       ing  will  cause  the scanner to enter the "SPECIAL" start
+       condition whenever yyyylleexx(()) is called and the global  vari-
+       able _e_n_t_e_r___s_p_e_c_i_a_l is true:
+
+
+
+Version 2.5                 April 1995                         18
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+                   int enter_special;
+
+           %x SPECIAL
+           %%
+                   if ( enter_special )
+                       BEGIN(SPECIAL);
+
+           <SPECIAL>blahblahblah
+           ...more rules follow...
+
+
+       To  illustrate  the  uses  of  start conditions, here is a
+       scanner which provides two different interpretations of  a
+       string  like  "123.456".   By  default it will treat it as
+       three tokens, the integer "123",  a  dot  ('.'),  and  the
+       integer  "456".   But if the string is preceded earlier in
+       the line by the string "expect-floats" it will treat it as
+       a single token, the floating-point number 123.456:
+
+           %{
+           #include <math.h>
+           %}
+           %s expect
+
+           %%
+           expect-floats        BEGIN(expect);
+
+           <expect>[0-9]+"."[0-9]+      {
+                       printf( "found a float, = %f\n",
+                               atof( yytext ) );
+                       }
+           <expect>\n           {
+                       /* that's the end of the line, so
+                        * we need another "expect-number"
+                        * before we'll recognize any more
+                        * numbers
+                        */
+                       BEGIN(INITIAL);
+                       }
+
+           [0-9]+      {
+                       printf( "found an integer, = %d\n",
+                               atoi( yytext ) );
+                       }
+
+           "."         printf( "found a dot\n" );
+
+       Here  is  a scanner which recognizes (and discards) C com-
+       ments while maintaining a count of the current input line.
+
+           %x comment
+           %%
+                   int line_num = 1;
+
+
+
+
+Version 2.5                 April 1995                         19
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           "/*"         BEGIN(comment);
+
+           <comment>[^*\n]*        /* eat anything that's not a '*' */
+           <comment>"*"+[^*/\n]*   /* eat up '*'s not followed by '/'s */
+           <comment>\n             ++line_num;
+           <comment>"*"+"/"        BEGIN(INITIAL);
+
+       This  scanner  goes  to  a bit of trouble to match as much
+       text  as  possible  with  each  rule.   In  general,  when
+       attempting  to  write a high-speed scanner try to match as
+       much possible in each rule, as it's a big win.
+
+       Note that start-conditions names are really integer values
+       and  can  be  stored  as  such.   Thus, the above could be
+       extended in the following fashion:
+
+           %x comment foo
+           %%
+                   int line_num = 1;
+                   int comment_caller;
+
+           "/*"         {
+                        comment_caller = INITIAL;
+                        BEGIN(comment);
+                        }
+
+           ...
+
+           <foo>"/*"    {
+                        comment_caller = foo;
+                        BEGIN(comment);
+                        }
+
+           <comment>[^*\n]*        /* eat anything that's not a '*' */
+           <comment>"*"+[^*/\n]*   /* eat up '*'s not followed by '/'s */
+           <comment>\n             ++line_num;
+           <comment>"*"+"/"        BEGIN(comment_caller);
+
+       Furthermore, you can access the  current  start  condition
+       using the integer-valued YYYY__SSTTAARRTT macro.  For example, the
+       above assignments to _c_o_m_m_e_n_t___c_a_l_l_e_r could instead be writ-
+       ten
+
+           comment_caller = YY_START;
+
+       Flex provides YYYYSSTTAATTEE as an alias for YYYY__SSTTAARRTT (since that
+       is what's used by AT&T _l_e_x_)_.
+
+       Note that start conditions do not  have  their  own  name-
+       space;  %s's and %x's declare names in the same fashion as
+       #define's.
+
+       Finally, here's an example of how to match C-style  quoted
+       strings   using   exclusive  start  conditions,  including
+
+
+
+Version 2.5                 April 1995                         20
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       expanded escape sequences (but not including checking  for
+       a string that's too long):
+
+           %x str
+
+           %%
+                   char string_buf[MAX_STR_CONST];
+                   char *string_buf_ptr;
+
+
+           \"      string_buf_ptr = string_buf; BEGIN(str);
+
+           <str>\"        { /* saw closing quote - all done */
+                   BEGIN(INITIAL);
+                   *string_buf_ptr = '\0';
+                   /* return string constant token type and
+                    * value to parser
+                    */
+                   }
+
+           <str>\n        {
+                   /* error - unterminated string constant */
+                   /* generate error message */
+                   }
+
+           <str>\\[0-7]{1,3} {
+                   /* octal escape sequence */
+                   int result;
+
+                   (void) sscanf( yytext + 1, "%o", &result );
+
+                   if ( result > 0xff )
+                           /* error, constant is out-of-bounds */
+
+                   *string_buf_ptr++ = result;
+                   }
+
+           <str>\\[0-9]+ {
+                   /* generate error - bad escape sequence; something
+                    * like '\48' or '\0777777'
+                    */
+                   }
+
+           <str>\\n  *string_buf_ptr++ = '\n';
+           <str>\\t  *string_buf_ptr++ = '\t';
+           <str>\\r  *string_buf_ptr++ = '\r';
+           <str>\\b  *string_buf_ptr++ = '\b';
+           <str>\\f  *string_buf_ptr++ = '\f';
+
+           <str>\\(.|\n)  *string_buf_ptr++ = yytext[1];
+
+           <str>[^\\\n\"]+        {
+                   char *yptr = yytext;
+
+
+
+
+Version 2.5                 April 1995                         21
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+                   while ( *yptr )
+                           *string_buf_ptr++ = *yptr++;
+                   }
+
+
+       Often,  such as in some of the examples above, you wind up
+       writing a whole bunch of rules all preceded  by  the  same
+       start  condition(s).   Flex makes this a little easier and
+       cleaner by introducing a notion of start condition  _s_c_o_p_e_.
+       A start condition scope is begun with:
+
+           <SCs>{
+
+       where  _S_C_s  is  a  list  of  one or more start conditions.
+       Inside the start condition scope, every rule automatically
+       has  the  prefix  _<_S_C_s_>  applied  to it, until a _'_}_' which
+       matches the initial _'_{_'_.  So, for example,
+
+           <ESC>{
+               "\\n"   return '\n';
+               "\\r"   return '\r';
+               "\\f"   return '\f';
+               "\\0"   return '\0';
+           }
+
+       is equivalent to:
+
+           <ESC>"\\n"  return '\n';
+           <ESC>"\\r"  return '\r';
+           <ESC>"\\f"  return '\f';
+           <ESC>"\\0"  return '\0';
+
+       Start condition scopes may be nested.
+
+       Three routines are available for  manipulating  stacks  of
+       start conditions:
+
+       vvooiidd yyyy__ppuusshh__ssttaattee((iinntt nneeww__ssttaattee))
+              pushes  the current start condition onto the top of
+              the start condition stack and switches to _n_e_w___s_t_a_t_e
+              as though you had used BBEEGGIINN nneeww__ssttaattee (recall that
+              start condition names are also integers).
+
+       vvooiidd yyyy__ppoopp__ssttaattee(())
+              pops the top of the stack and switches  to  it  via
+              BBEEGGIINN..
+
+       iinntt yyyy__ttoopp__ssttaattee(())
+              returns  the  top of the stack without altering the
+              stack's contents.
+
+       The start condition stack grows dynamically and so has  no
+       built-in size limitation.  If memory is exhausted, program
+       execution aborts.
+
+
+
+Version 2.5                 April 1995                         22
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       To use start condition stacks, your scanner must include a
+       %%ooppttiioonn ssttaacckk directive (see Options below).
+
+MMUULLTTIIPPLLEE IINNPPUUTT BBUUFFFFEERRSS
+       Some  scanners  (such  as  those  which  support "include"
+       files) require reading from  several  input  streams.   As
+       _f_l_e_x  scanners  do a large amount of buffering, one cannot
+       control where the next input will be read from  by  simply
+       writing a YYYY__IINNPPUUTT which is sensitive to the scanning con-
+       text.  YYYY__IINNPPUUTT is only called when  the  scanner  reaches
+       the  end  of  its  buffer,  which may be a long time after
+       scanning a statement such as an "include"  which  requires
+       switching the input source.
+
+       To  negotiate  these  sorts  of  problems, _f_l_e_x provides a
+       mechanism for  creating  and  switching  between  multiple
+       input buffers.  An input buffer is created by using:
+
+           YY_BUFFER_STATE yy_create_buffer( FILE *file, int size )
+
+       which takes a _F_I_L_E pointer and a size and creates a buffer
+       associated with the given file and large  enough  to  hold
+       _s_i_z_e  characters  (when  in doubt, use YYYY__BBUUFF__SSIIZZEE for the
+       size).  It returns a  YYYY__BBUUFFFFEERR__SSTTAATTEE  handle,  which  may
+       then  be  passed  to  other  routines  (see  below).   The
+       YYYY__BBUUFFFFEERR__SSTTAATTEE type is a  pointer  to  an  opaque  ssttrruucctt
+       yyyy__bbuuffffeerr__ssttaattee  structure,  so  you may safely initialize
+       YY_BUFFER_STATE variables to ((((YYYY__BBUUFFFFEERR__SSTTAATTEE)) 00)) if  you
+       wish,  and  also refer to the opaque structure in order to
+       correctly declare input buffers in source files other than
+       that  of  your scanner.  Note that the _F_I_L_E pointer in the
+       call to yyyy__ccrreeaattee__bbuuffffeerr is only used as the value of _y_y_i_n
+       seen by YYYY__IINNPPUUTT;; if you redefine YYYY__IINNPPUUTT so it no longer
+       uses _y_y_i_n_, then you can safely pass a nil _F_I_L_E pointer  to
+       yyyy__ccrreeaattee__bbuuffffeerr..   You select a particular buffer to scan
+       from using:
+
+           void yy_switch_to_buffer( YY_BUFFER_STATE new_buffer )
+
+       switches the scanner's input buffer so  subsequent  tokens
+       will      come     from     _n_e_w___b_u_f_f_e_r_.      Note     that
+       yyyy__sswwiittcchh__ttoo__bbuuffffeerr(()) may  be  used  by  yywrap()  to  set
+       things up for continued scanning, instead of opening a new
+       file and pointing _y_y_i_n at it.  Note  also  that  switching
+       input sources via either yyyy__sswwiittcchh__ttoo__bbuuffffeerr(()) or yyyywwrraapp(())
+       does _n_o_t change the start condition.
+
+           void yy_delete_buffer( YY_BUFFER_STATE buffer )
+
+       is used to reclaim the storage associated with  a  buffer.
+       (  bbuuffffeerr can be nil, in which case the routine does noth-
+       ing.)  You can also clear the current contents of a buffer
+       using:
+
+
+
+
+Version 2.5                 April 1995                         23
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           void yy_flush_buffer( YY_BUFFER_STATE buffer )
+
+       This  function discards the buffer's contents, so the next
+       time the scanner  attempts  to  match  a  token  from  the
+       buffer, it will first fill the buffer anew using YYYY__IINNPPUUTT..
+
+       yyyy__nneeww__bbuuffffeerr(()) is an alias for  yyyy__ccrreeaattee__bbuuffffeerr(()),,  pro-
+       vided for compatibility with the C++ use of _n_e_w and _d_e_l_e_t_e
+       for creating and destroying dynamic objects.
+
+       Finally,   the   YYYY__CCUURRRREENNTT__BBUUFFFFEERR   macro    returns    a
+       YYYY__BBUUFFFFEERR__SSTTAATTEE handle to the current buffer.
+
+       Here  is  an example of using these features for writing a
+       scanner which expands include files (the  <<<<EEOOFF>>>>  feature
+       is discussed below):
+
+           /* the "incl" state is used for picking up the name
+            * of an include file
+            */
+           %x incl
+
+           %{
+           #define MAX_INCLUDE_DEPTH 10
+           YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+           int include_stack_ptr = 0;
+           %}
+
+           %%
+           include             BEGIN(incl);
+
+           [a-z]+              ECHO;
+           [^a-z\n]*\n?        ECHO;
+
+           <incl>[ \t]*      /* eat the whitespace */
+           <incl>[^ \t\n]+   { /* got the include file name */
+                   if ( include_stack_ptr >= MAX_INCLUDE_DEPTH )
+                       {
+                       fprintf( stderr, "Includes nested too deeply" );
+                       exit( 1 );
+                       }
+
+                   include_stack[include_stack_ptr++] =
+                       YY_CURRENT_BUFFER;
+
+                   yyin = fopen( yytext, "r" );
+
+                   if ( ! yyin )
+                       error( ... );
+
+                   yy_switch_to_buffer(
+                       yy_create_buffer( yyin, YY_BUF_SIZE ) );
+
+                   BEGIN(INITIAL);
+
+
+
+Version 2.5                 April 1995                         24
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+                   }
+
+           <<EOF>> {
+                   if ( --include_stack_ptr < 0 )
+                       {
+                       yyterminate();
+                       }
+
+                   else
+                       {
+                       yy_delete_buffer( YY_CURRENT_BUFFER );
+                       yy_switch_to_buffer(
+                            include_stack[include_stack_ptr] );
+                       }
+                   }
+
+       Three  routines are available for setting up input buffers
+       for scanning in-memory strings instead of files.   All  of
+       them  create  a  new input buffer for scanning the string,
+       and return a corresponding YYYY__BBUUFFFFEERR__SSTTAATTEE  handle  (which
+       you  should  delete with yyyy__ddeelleettee__bbuuffffeerr(()) when done with
+       it).   They  also  switch  to   the   new   buffer   using
+       yyyy__sswwiittcchh__ttoo__bbuuffffeerr(()),,  so  the  next call to yyyylleexx(()) will
+       start scanning the string.
+
+       yyyy__ssccaann__ssttrriinngg((ccoonnsstt cchhaarr **ssttrr))
+              scans a NUL-terminated string.
+
+       yyyy__ssccaann__bbyytteess((ccoonnsstt cchhaarr **bbyytteess,, iinntt lleenn))
+              scans _l_e_n bytes (including possibly NUL's) starting
+              at location _b_y_t_e_s_.
+
+       Note  that  both of these functions create and scan a _c_o_p_y
+       of the string or bytes.  (This  may  be  desirable,  since
+       yyyylleexx(())  modifies  the  contents of the buffer it is scan-
+       ning.)  You can avoid the copy by using:
+
+       yyyy__ssccaann__bbuuffffeerr((cchhaarr **bbaassee,, yyyy__ssiizzee__tt ssiizzee))
+              which scans in place the buffer starting  at  _b_a_s_e_,
+              consisting  of  _s_i_z_e  bytes,  the last two bytes of
+              which _m_u_s_t be  YYYY__EENNDD__OOFF__BBUUFFFFEERR__CCHHAARR  (ASCII  NUL).
+              These  last  two bytes are not scanned; thus, scan-
+              ning  consists  of  bbaassee[[00]]  through  bbaassee[[ssiizzee--22]],,
+              inclusive.
+
+              If  you  fail  to set up _b_a_s_e in this manner (i.e.,
+              forget the final two YYYY__EENNDD__OOFF__BBUUFFFFEERR__CCHHAARR  bytes),
+              then yyyy__ssccaann__bbuuffffeerr(()) returns a nil pointer instead
+              of creating a new input buffer.
+
+              The type yyyy__ssiizzee__tt is an integral type to which you
+              can  cast an integer expression reflecting the size
+              of the buffer.
+
+
+
+
+Version 2.5                 April 1995                         25
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+EENNDD--OOFF--FFIILLEE RRUULLEESS
+       The special rule "<<EOF>>" indicates actions which are  to
+       be  taken  when an end-of-file is encountered and yywrap()
+       returns non-zero (i.e., indicates no further files to pro-
+       cess).   The  action  must  finish  by  doing  one of four
+       things:
+
+       -      assigning _y_y_i_n to a new  input  file  (in  previous
+              versions  of  flex,  after doing the assignment you
+              had to call the special action YYYY__NNEEWW__FFIILLEE;; this is
+              no longer necessary);
+
+       -      executing a _r_e_t_u_r_n statement;
+
+       -      executing the special yyyytteerrmmiinnaattee(()) action;
+
+       -      or,    switching    to    a    new   buffer   using
+              yyyy__sswwiittcchh__ttoo__bbuuffffeerr(())  as  shown  in  the   example
+              above.
+
+       <<EOF>>  rules  may  not be used with other patterns; they
+       may only be qualified with a list of start conditions.  If
+       an  unqualified  <<EOF>>  rule is given, it applies to _a_l_l
+       start  conditions  which  do  not  already  have   <<EOF>>
+       actions.   To specify an <<EOF>> rule for only the initial
+       start condition, use
+
+           <INITIAL><<EOF>>
+
+
+       These rules are useful for catching things  like  unclosed
+       comments.  An example:
+
+           %x quote
+           %%
+
+           ...other rules for dealing with quotes...
+
+           <quote><<EOF>>   {
+                    error( "unterminated quote" );
+                    yyterminate();
+                    }
+           <<EOF>>  {
+                    if ( *++filelist )
+                        yyin = fopen( *filelist, "r" );
+                    else
+                       yyterminate();
+                    }
+
+
+MMIISSCCEELLLLAANNEEOOUUSS MMAACCRROOSS
+       The  macro  YYYY__UUSSEERR__AACCTTIIOONN  can  be  defined to provide an
+       action which is  always  executed  prior  to  the  matched
+       rule's action.  For example, it could be #define'd to call
+
+
+
+Version 2.5                 April 1995                         26
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       a  routine  to  convert  yytext   to   lower-case.    When
+       YYYY__UUSSEERR__AACCTTIIOONN  is  invoked, the variable _y_y___a_c_t gives the
+       number of the matched rule (rules  are  numbered  starting
+       with  1).   Suppose  you want to profile how often each of
+       your rules is matched.  The following would do the trick:
+
+           #define YY_USER_ACTION ++ctr[yy_act]
+
+       where _c_t_r is an array to hold the counts for the different
+       rules.   Note  that the macro YYYY__NNUUMM__RRUULLEESS gives the total
+       number of rules (including the default rule, even  if  you
+       use --ss)),, so a correct declaration for _c_t_r is:
+
+           int ctr[YY_NUM_RULES];
+
+
+       The macro YYYY__UUSSEERR__IINNIITT may be defined to provide an action
+       which is always executed before the first scan (and before
+       the  scanner's  internal  initializations  are done).  For
+       example, it could be used to call a routine to read  in  a
+       data table or open a logging file.
+
+       The  macro  yyyy__sseett__iinntteerraaccttiivvee((iiss__iinntteerraaccttiivvee)) can be used
+       to control whether the current buffer is considered _i_n_t_e_r_-
+       _a_c_t_i_v_e_.   An  interactive buffer is processed more slowly,
+       but must be used when the scanner's input source is indeed
+       interactive  to  avoid  problems  due  to  waiting to fill
+       buffers (see the discussion of the --II flag below).  A non-
+       zero  value  in  the  macro invocation marks the buffer as
+       interactive, a zero value as non-interactive.   Note  that
+       use  of this macro overrides %%ooppttiioonn aallwwaayyss--iinntteerraaccttiivvee or
+       %%ooppttiioonn    nneevveerr--iinntteerraaccttiivvee    (see    Options    below).
+       yyyy__sseett__iinntteerraaccttiivvee(()) must be invoked prior to beginning to
+       scan the buffer that is  (or  is  not)  to  be  considered
+       interactive.
+
+       The  macro  yyyy__sseett__bbooll((aatt__bbooll))  can  be  used  to  control
+       whether the current buffer's scanning context for the next
+       token  match is done as though at the beginning of a line.
+       A non-zero macro argument makes rules anchored with
+
+       The macro YYYY__AATT__BBOOLL(())  returns  true  if  the  next  token
+       scanned  from  the  current  buffer  will  have  '^' rules
+       active, false otherwise.
+
+       In the generated scanner, the actions are all gathered  in
+       one  large  switch statement and separated using YYYY__BBRREEAAKK,,
+       which may be  redefined.   By  default,  it  is  simply  a
+       "break", to separate each rule's action from the following
+       rule's.  Redefining  YYYY__BBRREEAAKK  allows,  for  example,  C++
+       users  to #define YY_BREAK to do nothing (while being very
+       careful  that  every  rule  ends  with  a  "break"  or   a
+       "return"!)  to  avoid suffering from unreachable statement
+       warnings where because a rule's action ends with "return",
+
+
+
+Version 2.5                 April 1995                         27
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       the YYYY__BBRREEAAKK is inaccessible.
+
+VVAALLUUEESS AAVVAAIILLAABBLLEE TTOO TTHHEE UUSSEERR
+       This  section  summarizes  the various values available to
+       the user in the rule actions.
+
+       -      cchhaarr **yyyytteexxtt holds the text of the  current  token.
+              It  may  be modified but not lengthened (you cannot
+              append characters to the end).
+
+              If the special  directive  %%aarrrraayy  appears  in  the
+              first  section  of  the  scanner  description, then
+              yyyytteexxtt is  instead  declared  cchhaarr  yyyytteexxtt[[YYYYLLMMAAXX]],,
+              where  YYYYLLMMAAXX  is  a  macro definition that you can
+              redefine in the first section if you don't like the
+              default   value   (generally  8KB).   Using  %%aarrrraayy
+              results in somewhat slower scanners, but the  value
+              of  yyyytteexxtt  becomes  immune to calls to _i_n_p_u_t_(_) and
+              _u_n_p_u_t_(_)_, which potentially destroy its  value  when
+              yyyytteexxtt  is  a  character  pointer.  The opposite of
+              %%aarrrraayy is %%ppooiinntteerr,, which is the default.
+
+              You cannot use %%aarrrraayy when generating  C++  scanner
+              classes (the --++ flag).
+
+       -      iinntt yyyylleenngg holds the length of the current token.
+
+       -      FFIILLEE  **yyyyiinn is the file which by default _f_l_e_x reads
+              from.  It may be redefined but doing so only  makes
+              sense  before  scanning  begins or after an EOF has
+              been encountered.  Changing  it  in  the  midst  of
+              scanning  will  have  unexpected results since _f_l_e_x
+              buffers its input; use yyyyrreessttaarrtt(())  instead.   Once
+              scanning terminates because an end-of-file has been
+              seen, you can assign _y_y_i_n at the new input file and
+              then call the scanner again to continue scanning.
+
+       -      vvooiidd  yyyyrreessttaarrtt((  FFIILLEE **nneeww__ffiillee )) may be called to
+              point _y_y_i_n at the new input file.  The  switch-over
+              to  the  new  file  is  immediate  (any  previously
+              buffered-up input  is  lost).   Note  that  calling
+              yyyyrreessttaarrtt(())  with  _y_y_i_n  as an argument thus throws
+              away the current input buffer and  continues  scan-
+              ning the same input file.
+
+       -      FFIILLEE  **yyyyoouutt  is the file to which EECCHHOO actions are
+              done.  It can be reassigned by the user.
+
+       -      YYYY__CCUURRRREENNTT__BBUUFFFFEERR returns a YYYY__BBUUFFFFEERR__SSTTAATTEE  handle
+              to the current buffer.
+
+       -      YYYY__SSTTAARRTT  returns an integer value corresponding to
+              the current start condition.  You can  subsequently
+              use  this  value with BBEEGGIINN to return to that start
+
+
+
+Version 2.5                 April 1995                         28
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              condition.
+
+IINNTTEERRFFAACCIINNGG WWIITTHH YYAACCCC
+       One of the main uses of _f_l_e_x is as a companion to the _y_a_c_c
+       parser-generator.   _y_a_c_c  parsers expect to call a routine
+       named yyyylleexx(()) to find the next input token.   The  routine
+       is  supposed  to return the type of the next token as well
+       as putting any associated value in the global yyyyllvvaall..   To
+       use _f_l_e_x with _y_a_c_c_, one specifies the --dd option to _y_a_c_c to
+       instruct it to generate the file yy..ttaabb..hh containing  defi-
+       nitions  of  all  the %%ttookkeennss appearing in the _y_a_c_c input.
+       This file is then included in the _f_l_e_x scanner.  For exam-
+       ple,  if  one  of  the tokens is "TOK_NUMBER", part of the
+       scanner might look like:
+
+           %{
+           #include "y.tab.h"
+           %}
+
+           %%
+
+           [0-9]+        yylval = atoi( yytext ); return TOK_NUMBER;
+
+
+OOPPTTIIOONNSS
+       _f_l_e_x has the following options:
+
+       --bb     Generate  backing-up  information  to   _l_e_x_._b_a_c_k_u_p_.
+              This  is  a  list  of  scanner states which require
+              backing up and the input characters on  which  they
+              do  so.   By adding rules one can remove backing-up
+              states.  If _a_l_l backing-up  states  are  eliminated
+              and  --CCff or --CCFF is used, the generated scanner will
+              run faster (see the --pp flag).  Only users who  wish
+              to  squeeze  every last cycle out of their scanners
+              need worry about this option.  (See the section  on
+              Performance Considerations below.)
+
+       --cc     is  a  do-nothing,  deprecated  option included for
+              POSIX compliance.
+
+       --dd     makes the generated  scanner  run  in  _d_e_b_u_g  mode.
+              Whenever  a  pattern  is  recognized and the global
+              yyyy__fflleexx__ddeebbuugg is non-zero (which is  the  default),
+              the  scanner  will  write  to  _s_t_d_e_r_r a line of the
+              form:
+
+                  --accepting rule at line 53 ("the matched text")
+
+              The line number refers to the location of the  rule
+              in  the  file  defining the scanner (i.e., the file
+              that was fed to flex).  Messages are also generated
+              when  the  scanner  backs  up,  accepts the default
+              rule, reaches the  end  of  its  input  buffer  (or
+
+
+
+Version 2.5                 April 1995                         29
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              encounters  a  NUL; at this point, the two look the
+              same as far as the scanner's concerned), or reaches
+              an end-of-file.
+
+       --ff     specifies  _f_a_s_t  _s_c_a_n_n_e_r_.   No table compression is
+              done and stdio is bypassed.  The  result  is  large
+              but  fast.   This option is equivalent to --CCffrr (see
+              below).
+
+       --hh     generates a "help" summary  of  _f_l_e_x_'_s  options  to
+              _s_t_d_o_u_t and then exits.  --??  and ----hheellpp are synonyms
+              for --hh..
+
+       --ii     instructs _f_l_e_x to generate a _c_a_s_e_-_i_n_s_e_n_s_i_t_i_v_e scan-
+              ner.   The  case of letters given in the _f_l_e_x input
+              patterns will be ignored, and tokens in  the  input
+              will  be  matched  regardless of case.  The matched
+              text given in _y_y_t_e_x_t will have the  preserved  case
+              (i.e., it will not be folded).
+
+       --ll     turns  on  maximum  compatibility with the original
+              AT&T _l_e_x implementation.  Note that this  does  not
+              mean  _f_u_l_l compatibility.  Use of this option costs
+              a considerable amount of performance, and it cannot
+              be  used  with the --++,, --ff,, --FF,, --CCff,, or --CCFF options.
+              For details on the compatibilities it provides, see
+              the  section "Incompatibilities With Lex And POSIX"
+              below.   This  option  also  results  in  the  name
+              YYYY__FFLLEEXX__LLEEXX__CCOOMMPPAATT being #define'd in the generated
+              scanner.
+
+       --nn     is another do-nothing, deprecated  option  included
+              only for POSIX compliance.
+
+       --pp     generates  a  performance  report  to  stderr.  The
+              report consists of comments regarding  features  of
+              the _f_l_e_x input file which will cause a serious loss
+              of performance in the resulting  scanner.   If  you
+              give  the  flag  twice,  you will also get comments
+              regarding features that lead to  minor  performance
+              losses.
+
+              Note  that the use of RREEJJEECCTT,, %%ooppttiioonn yyyylliinneennoo,, and
+              variable trailing context (see the  Deficiencies  /
+              Bugs  section  below) entails a substantial perfor-
+              mance penalty; use of _y_y_m_o_r_e_(_)_, the ^^ operator, and
+              the --II flag entail minor performance penalties.
+
+       --ss     causes  the  _d_e_f_a_u_l_t  _r_u_l_e  (that unmatched scanner
+              input is echoed to _s_t_d_o_u_t_) to  be  suppressed.   If
+              the  scanner  encounters  input that does not match
+              any of its rules, it aborts with  an  error.   This
+              option  is  useful for finding holes in a scanner's
+              rule set.
+
+
+
+Version 2.5                 April 1995                         30
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       --tt     instructs _f_l_e_x to write the scanner it generates to
+              standard output instead of lleexx..yyyy..cc..
+
+       --vv     specifies  that  _f_l_e_x should write to _s_t_d_e_r_r a sum-
+              mary of statistics regarding the scanner it  gener-
+              ates.   Most  of  the statistics are meaningless to
+              the casual _f_l_e_x user, but the first line identifies
+              the  version  of _f_l_e_x (same as reported by --VV)),, and
+              the next line the flags used  when  generating  the
+              scanner, including those that are on by default.
+
+       --ww     suppresses warning messages.
+
+       --BB     instructs  _f_l_e_x  to  generate  a _b_a_t_c_h scanner, the
+              opposite of _i_n_t_e_r_a_c_t_i_v_e scanners  generated  by  --II
+              (see  below).   In general, you use --BB when you are
+              _c_e_r_t_a_i_n that your scanner will never be used inter-
+              actively,  and  you  want  to squeeze a _l_i_t_t_l_e more
+              performance out of it.  If your goal is instead  to
+              squeeze  out a _l_o_t more performance, you should  be
+              using the --CCff or  --CCFF  options  (discussed  below),
+              which turn on --BB automatically anyway.
+
+       --FF     specifies  that  the _f_a_s_t scanner table representa-
+              tion should be used  (and  stdio  bypassed).   This
+              representation  is  about as fast as the full table
+              representation ((--ff)),, and for some sets of  patterns
+              will  be  considerably  smaller  (and  for  others,
+              larger).  In general, if the pattern  set  contains
+              both "keywords" and a catch-all, "identifier" rule,
+              such as in the set:
+
+                  "case"    return TOK_CASE;
+                  "switch"  return TOK_SWITCH;
+                  ...
+                  "default" return TOK_DEFAULT;
+                  [a-z]+    return TOK_ID;
+
+              then you're better off using the full table  repre-
+              sentation.   If  only the "identifier" rule is pre-
+              sent and you then use a hash table or some such  to
+              detect the keywords, you're better off using --FF..
+
+              This  option is equivalent to --CCFFrr (see below).  It
+              cannot be used with --++..
+
+       --II     instructs _f_l_e_x to generate an _i_n_t_e_r_a_c_t_i_v_e  scanner.
+              An interactive scanner is one that only looks ahead
+              to decide what token has been matched if  it  abso-
+              lutely  must.  It turns out that always looking one
+              extra character ahead,  even  if  the  scanner  has
+              already  seen  enough text to disambiguate the cur-
+              rent token, is a bit faster than only looking ahead
+              when  necessary.   But  scanners  that  always look
+
+
+
+Version 2.5                 April 1995                         31
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              ahead give dreadful  interactive  performance;  for
+              example,  when  a  user  types a newline, it is not
+              recognized as a  newline  token  until  they  enter
+              _a_n_o_t_h_e_r  token, which often means typing in another
+              whole line.
+
+              _F_l_e_x scanners default to _i_n_t_e_r_a_c_t_i_v_e unless you use
+              the  --CCff  or  --CCFF  table-compression  options  (see
+              below).  That's because if you're looking for high-
+              performance  you  should  be  using  one  of  these
+              options, so  if  you  didn't,  _f_l_e_x  assumes  you'd
+              rather  trade off a bit of run-time performance for
+              intuitive interactive behavior.  Note also that you
+              _c_a_n_n_o_t  use  --II  in  conjunction  with  --CCff or --CCFF..
+              Thus, this option is not really needed; it is on by
+              default for all those cases in which it is allowed.
+
+              You can force a scanner to _n_o_t  be  interactive  by
+              using --BB (see above).
+
+       --LL     instructs  _f_l_e_x  not  to generate ##lliinnee directives.
+              Without this option,  _f_l_e_x  peppers  the  generated
+              scanner  with #line directives so error messages in
+              the actions will be correctly located with  respect
+              to  either  the  original  _f_l_e_x  input file (if the
+              errors are due to  code  in  the  input  file),  or
+              lleexx..yyyy..cc  (if  the  errors  are _f_l_e_x_'_s fault -- you
+              should report these sorts of errors  to  the  email
+              address given below).
+
+       --TT     makes  _f_l_e_x  run in _t_r_a_c_e mode.  It will generate a
+              lot of messages to _s_t_d_e_r_r concerning  the  form  of
+              the  input  and the resultant non-deterministic and
+              deterministic  finite  automata.   This  option  is
+              mostly for use in maintaining _f_l_e_x_.
+
+       --VV     prints  the  version  number  to  _s_t_d_o_u_t and exits.
+              ----vveerrssiioonn is a synonym for --VV..
+
+       --77     instructs _f_l_e_x to generate a 7-bit  scanner,  i.e.,
+              one  which  can only recognized 7-bit characters in
+              its input.  The advantage of using --77 is  that  the
+              scanner's  tables  can  be  up  to half the size of
+              those generated using the --88  option  (see  below).
+              The  disadvantage  is that such scanners often hang
+              or crash if their input contains an  8-bit  charac-
+              ter.
+
+              Note,  however, that unless you generate your scan-
+              ner using the --CCff or --CCFF table compression options,
+              use  of  --77  will save only a small amount of table
+              space, and  make  your  scanner  considerably  less
+              portable.   _F_l_e_x_'_s  default behavior is to generate
+              an 8-bit scanner unless you use the --CCff or --CCFF,,  in
+
+
+
+Version 2.5                 April 1995                         32
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              which  case _f_l_e_x defaults to generating 7-bit scan-
+              ners unless your site was always configured to gen-
+              erate  8-bit  scanners  (as  will often be the case
+              with non-USA sites).  You  can  tell  whether  flex
+              generated a 7-bit or an 8-bit scanner by inspecting
+              the flag summary in  the  --vv  output  as  described
+              above.
+
+              Note that if you use --CCffee or --CCFFee (those table com-
+              pression  options,  but  also   using   equivalence
+              classes   as   discussed  see  below),  flex  still
+              defaults to generating an 8-bit scanner, since usu-
+              ally  with  these  compression  options  full 8-bit
+              tables are  not  much  more  expensive  than  7-bit
+              tables.
+
+       --88     instructs  _f_l_e_x to generate an 8-bit scanner, i.e.,
+              one which can  recognize  8-bit  characters.   This
+              flag  is  only  needed for scanners generated using
+              --CCff or --CCFF,, as otherwise flex defaults to  generat-
+              ing an 8-bit scanner anyway.
+
+              See  the  discussion of --77 above for flex's default
+              behavior and the tradeoffs between 7-bit and  8-bit
+              scanners.
+
+       --++     specifies  that  you  want  flex  to generate a C++
+              scanner class.  See the section on  Generating  C++
+              Scanners below for details.
+
+       --CC[[aaeeffFFmmrr]]
+              controls  the degree of table compression and, more
+              generally, trade-offs between  small  scanners  and
+              fast scanners.
+
+              --CCaa  ("align")  instructs  flex to trade off larger
+              tables in the generated scanner for faster  perfor-
+              mance because the elements of the tables are better
+              aligned for memory access and computation.  On some
+              RISC architectures, fetching and manipulating long-
+              words is more  efficient  than  with  smaller-sized
+              units  such  as shortwords.  This option can double
+              the size of the tables used by your scanner.
+
+              --CCee directs _f_l_e_x to construct _e_q_u_i_v_a_l_e_n_c_e  _c_l_a_s_s_e_s_,
+              i.e., sets of characters which have identical lexi-
+              cal properties (for example, if the only appearance
+              of  digits  in  the  _f_l_e_x input is in the character
+              class "[0-9]" then the digits '0',  '1',  ...,  '9'
+              will  all  be  put  in the same equivalence class).
+              Equivalence classes usually  give  dramatic  reduc-
+              tions  in  the final table/object file sizes (typi-
+              cally a factor of 2-5) and are pretty cheap perfor-
+              mance-wise   (one   array   look-up  per  character
+
+
+
+Version 2.5                 April 1995                         33
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              scanned).
+
+              --CCff specifies that the _f_u_l_l scanner  tables  should
+              be  generated - _f_l_e_x should not compress the tables
+              by taking advantages of  similar  transition  func-
+              tions for different states.
+
+              --CCFF  specifies that the alternate fast scanner rep-
+              resentation (described above  under  the  --FF  flag)
+              should  be  used.   This option cannot be used with
+              --++..
+
+              --CCmm  directs  _f_l_e_x  to  construct  _m_e_t_a_-_e_q_u_i_v_a_l_e_n_c_e
+              _c_l_a_s_s_e_s_,  which are sets of equivalence classes (or
+              characters, if equivalence classes  are  not  being
+              used) that are commonly used together.  Meta-equiv-
+              alence classes are often a big win when using  com-
+              pressed  tables,  but  they have a moderate perfor-
+              mance impact (one or two "if" tests and  one  array
+              look-up per character scanned).
+
+              --CCrr  causes  the generated scanner to _b_y_p_a_s_s use of
+              the  standard  I/O  library  (stdio)   for   input.
+              Instead  of  calling ffrreeaadd(()) or ggeettcc(()),, the scanner
+              will use the rreeaadd(()) system  call,  resulting  in  a
+              performance  gain  which varies from system to sys-
+              tem, but in general is probably  negligible  unless
+              you are also using --CCff or --CCFF..  Using --CCrr can cause
+              strange behavior if, for  example,  you  read  from
+              _y_y_i_n  using  stdio  prior  to  calling  the scanner
+              (because the scanner will miss whatever  text  your
+              previous reads left in the stdio input buffer).
+
+              --CCrr  has  no effect if you define YYYY__IINNPPUUTT (see The
+              Generated Scanner above).
+
+              A lone --CC specifies that the scanner tables  should
+              be  compressed  but neither equivalence classes nor
+              meta-equivalence classes should be used.
+
+              The options --CCff or --CCFF and --CCmm do  not  make  sense
+              together - there is no opportunity for meta-equiva-
+              lence classes if the table is not being compressed.
+              Otherwise  the options may be freely mixed, and are
+              cumulative.
+
+              The default setting is --CCeemm,, which  specifies  that
+              _f_l_e_x  should generate equivalence classes and meta-
+              equivalence classes.   This  setting  provides  the
+              highest degree of table compression.  You can trade
+              off faster-executing scanners at the cost of larger
+              tables with the following generally being true:
+
+                  slowest & smallest
+
+
+
+Version 2.5                 April 1995                         34
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+                        -Cem
+                        -Cm
+                        -Ce
+                        -C
+                        -C{f,F}e
+                        -C{f,F}
+                        -C{f,F}a
+                  fastest & largest
+
+              Note  that  scanners  with  the smallest tables are
+              usually generated and  compiled  the  quickest,  so
+              during development you will usually want to use the
+              default, maximal compression.
+
+              --CCffee is often a good compromise between  speed  and
+              size for production scanners.
+
+       --oooouuttppuutt
+              directs  flex to write the scanner to the file oouutt--
+              ppuutt instead of lleexx..yyyy..cc..  If you  combine  --oo  with
+              the  --tt option, then the scanner is written to _s_t_d_-
+              _o_u_t but its ##lliinnee directives  (see  the  --LL  option
+              above) refer to the file oouuttppuutt..
+
+       --PPpprreeffiixx
+              changes  the default _y_y prefix used by _f_l_e_x for all
+              globally-visible variable  and  function  names  to
+              instead  be _p_r_e_f_i_x_.  For example, --PPffoooo changes the
+              name of yyyytteexxtt to ffooootteexxtt..   It  also  changes  the
+              name  of  the  default output file from lleexx..yyyy..cc to
+              lleexx..ffoooo..cc..  Here are all of the names affected:
+
+                  yy_create_buffer
+                  yy_delete_buffer
+                  yy_flex_debug
+                  yy_init_buffer
+                  yy_flush_buffer
+                  yy_load_buffer_state
+                  yy_switch_to_buffer
+                  yyin
+                  yyleng
+                  yylex
+                  yylineno
+                  yyout
+                  yyrestart
+                  yytext
+                  yywrap
+
+              (If you are using a C++ scanner, then  only  yyyywwrraapp
+              and yyyyFFlleexxLLeexxeerr are affected.)  Within your scanner
+              itself, you can still refer to the global variables
+              and  functions  using either version of their name;
+              but externally, they have the modified name.
+
+
+
+
+Version 2.5                 April 1995                         35
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              This option lets you easily link together  multiple
+              _f_l_e_x  programs  into  the  same  executable.  Note,
+              though,  that  using  this  option   also   renames
+              yyyywwrraapp(()),,  so  you now _m_u_s_t either provide your own
+              (appropriately-named) version of  the  routine  for
+              your  scanner,  or use %%ooppttiioonn nnooyyyywwrraapp,, as linking
+              with  --llffll  no  longer  provides  one  for  you  by
+              default.
+
+       --SSsskkeelleettoonn__ffiillee
+              overrides the default skeleton file from which _f_l_e_x
+              constructs its scanners.  You'll  never  need  this
+              option  unless  you  are  doing _f_l_e_x maintenance or
+              development.
+
+       _f_l_e_x also provides a  mechanism  for  controlling  options
+       within  the scanner specification itself, rather than from
+       the flex command-line.  This is done by including  %%ooppttiioonn
+       directives  in the first section of the scanner specifica-
+       tion.  You can specify  multiple  options  with  a  single
+       %%ooppttiioonn  directive,  and  multiple directives in the first
+       section of your flex input file.
+
+       Most options are given simply as  names,  optionally  pre-
+       ceded by the word "no" (with no intervening whitespace) to
+       negate their meaning.  A number  are  equivalent  to  flex
+       flags or their negation:
+
+           7bit            -7 option
+           8bit            -8 option
+           align           -Ca option
+           backup          -b option
+           batch           -B option
+           c++             -+ option
+
+           caseful or
+           case-sensitive  opposite of -i (default)
+
+           case-insensitive or
+           caseless        -i option
+
+           debug           -d option
+           default         opposite of -s option
+           ecs             -Ce option
+           fast            -F option
+           full            -f option
+           interactive     -I option
+           lex-compat      -l option
+           meta-ecs        -Cm option
+           perf-report     -p option
+           read            -Cr option
+           stdout          -t option
+           verbose         -v option
+           warn            opposite of -w option
+
+
+
+Version 2.5                 April 1995                         36
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+                           (use "%option nowarn" for -w)
+
+           array           equivalent to "%array"
+           pointer         equivalent to "%pointer" (default)
+
+       Some %%ooppttiioonn''ss provide features otherwise not available:
+
+       aallwwaayyss--iinntteerraaccttiivvee
+              instructs  flex  to generate a scanner which always
+              considers its input  "interactive".   Normally,  on
+              each  new  input file the scanner calls iissaattttyy(()) in
+              an attempt to determine whether the scanner's input
+              source  is  interactive  and  thus should be read a
+              character at a time.  When  this  option  is  used,
+              however, then no such call is made.
+
+       mmaaiinn   directs  flex  to  provide a default mmaaiinn(()) program
+              for the scanner, which simply calls yyyylleexx(())..   This
+              option implies nnooyyyywwrraapp (see below).
+
+       nneevveerr--iinntteerraaccttiivvee
+              instructs  flex  to  generate a scanner which never
+              considers its input "interactive" (again,  no  call
+              made to iissaattttyy(())))..  This is the opposite of aallwwaayyss--
+              iinntteerraaccttiivvee..
+
+       ssttaacckk  enables the use  of  start  condition  stacks  (see
+              Start Conditions above).
+
+       ssttddiinniitt
+              if set (i.e., %%ooppttiioonn ssttddiinniitt)) initializes _y_y_i_n and
+              _y_y_o_u_t to _s_t_d_i_n and _s_t_d_o_u_t_, instead of  the  default
+              of  _n_i_l_.  Some existing _l_e_x programs depend on this
+              behavior, even though it is not compliant with ANSI
+              C,  which  does  not require _s_t_d_i_n and _s_t_d_o_u_t to be
+              compile-time constant.
+
+       yyyylliinneennoo
+              directs _f_l_e_x to generate a scanner  that  maintains
+              the  number of the current line read from its input
+              in the global variable yyyylliinneennoo..   This  option  is
+              implied by %%ooppttiioonn lleexx--ccoommppaatt..
+
+       yyyywwrraapp if  unset (i.e., %%ooppttiioonn nnooyyyywwrraapp)),, makes the scan-
+              ner not call yyyywwrraapp(()) upon an end-of-file, but sim-
+              ply  assume  that  there  are no more files to scan
+              (until the user points _y_y_i_n at a new file and calls
+              yyyylleexx(()) again).
+
+       _f_l_e_x  scans your rule actions to determine whether you use
+       the RREEJJEECCTT or yyyymmoorree(()) features.  The  rreejjeecctt  and  yyyymmoorree
+       options  are  available  to  override  its  decision as to
+       whether you use the options, either by setting them (e.g.,
+       %%ooppttiioonn rreejjeecctt)) to indicate the feature is indeed used, or
+
+
+
+Version 2.5                 April 1995                         37
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       unsetting them to indicate it actually is not used  (e.g.,
+       %%ooppttiioonn nnooyyyymmoorree))..
+
+       Three  options  take  string-delimited values, offset with
+       '=':
+
+           %option outfile="ABC"
+
+       is equivalent to --ooAABBCC,, and
+
+           %option prefix="XYZ"
+
+       is equivalent to --PPXXYYZZ..  Finally,
+
+           %option yyclass="foo"
+
+       only applies when generating a C++ scanner (  --++  option).
+       It informs _f_l_e_x that you have derived ffoooo as a subclass of
+       yyyyFFlleexxLLeexxeerr,, so _f_l_e_x will place your actions in the member
+       function ffoooo::::yyyylleexx(()) instead of yyyyFFlleexxLLeexxeerr::::yyyylleexx(())..  It
+       also generates a yyyyFFlleexxLLeexxeerr::::yyyylleexx(()) member function that
+       emits  a  run-time  error (by invoking yyyyFFlleexxLLeexxeerr::::LLeexxeerr--
+       EErrrroorr(()))) if called.  See Generating C++  Scanners,  below,
+       for additional information.
+
+       A  number  of  options  are available for lint purists who
+       want to suppress the appearance of  unneeded  routines  in
+       the  generated  scanner.   Each of the following, if unset
+       (e.g., %%ooppttiioonn nnoouunnppuutt ),  results  in  the  corresponding
+       routine not appearing in the generated scanner:
+
+           input, unput
+           yy_push_state, yy_pop_state, yy_top_state
+           yy_scan_buffer, yy_scan_bytes, yy_scan_string
+
+       (though  yyyy__ppuusshh__ssttaattee(())  and  friends won't appear anyway
+       unless you use %%ooppttiioonn ssttaacckk))..
+
+PPEERRFFOORRMMAANNCCEE CCOONNSSIIDDEERRAATTIIOONNSS
+       The main design goal of _f_l_e_x is that it generate high-per-
+       formance scanners.  It has been optimized for dealing well
+       with large sets of rules.  Aside from the effects on scan-
+       ner  speed  of  the  table compression --CC options outlined
+       above, there are a number of options/actions which degrade
+       performance.  These are, from most expensive to least:
+
+           REJECT
+           %option yylineno
+           arbitrary trailing context
+
+           pattern sets that require backing up
+           %array
+           %option interactive
+           %option always-interactive
+
+
+
+Version 2.5                 April 1995                         38
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           '^' beginning-of-line operator
+           yymore()
+
+       with  the  first  three  all being quite expensive and the
+       last two being quite cheap.  Note  also  that  uunnppuutt(())  is
+       implemented  as a routine call that potentially does quite
+       a bit of work, while yyyylleessss(()) is a quite-cheap  macro;  so
+       if  just  putting  back  some excess text you scanned, use
+       yyyylleessss(())..
+
+       RREEJJEECCTT should be avoided at all costs when performance  is
+       important.  It is a particularly expensive option.
+
+       Getting  rid  of  backing  up is messy and often may be an
+       enormous amount of work for  a  complicated  scanner.   In
+       principal,  one  begins by using the --bb flag to generate a
+       _l_e_x_._b_a_c_k_u_p file.  For example, on the input
+
+           %%
+           foo        return TOK_KEYWORD;
+           foobar     return TOK_KEYWORD;
+
+       the file looks like:
+
+           State #6 is non-accepting -
+            associated rule line numbers:
+                  2       3
+            out-transitions: [ o ]
+            jam-transitions: EOF [ \001-n  p-\177 ]
+
+           State #8 is non-accepting -
+            associated rule line numbers:
+                  3
+            out-transitions: [ a ]
+            jam-transitions: EOF [ \001-`  b-\177 ]
+
+           State #9 is non-accepting -
+            associated rule line numbers:
+                  3
+            out-transitions: [ r ]
+            jam-transitions: EOF [ \001-q  s-\177 ]
+
+           Compressed tables always back up.
+
+       The first few lines tell us that there's a  scanner  state
+       in which it can make a transition on an 'o' but not on any
+       other character, and that  in  that  state  the  currently
+       scanned  text  does  not match any rule.  The state occurs
+       when trying to match the rules found at lines 2 and  3  in
+       the  input file.  If the scanner is in that state and then
+       reads something other than an 'o', it will have to back up
+       to  find  a  rule  which  is matched.  With a bit of head-
+       scratching one can see that this must be the state it's in
+       when  it  has  seen  "fo".   When  this  has  happened, if
+
+
+
+Version 2.5                 April 1995                         39
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       anything other than another 'o' is seen, the scanner  will
+       have  to  back  up to simply match the 'f' (by the default
+       rule).
+
+       The comment regarding State #8 indicates there's a problem
+       when  "foob"  has  been scanned.  Indeed, on any character
+       other than an 'a', the scanner will have  to  back  up  to
+       accept  "foo".   Similarly,  the comment for State #9 con-
+       cerns when "fooba" has been scanned and an  'r'  does  not
+       follow.
+
+       The  final  comment reminds us that there's no point going
+       to all the trouble of removing backing up from  the  rules
+       unless  we're  using  --CCff or --CCFF,, since there's no perfor-
+       mance gain doing so with compressed scanners.
+
+       The way to remove the backing up is to add "error" rules:
+
+           %%
+           foo         return TOK_KEYWORD;
+           foobar      return TOK_KEYWORD;
+
+           fooba       |
+           foob        |
+           fo          {
+                       /* false alarm, not really a keyword */
+                       return TOK_ID;
+                       }
+
+
+       Eliminating backing up among a list of keywords  can  also
+       be done using a "catch-all" rule:
+
+           %%
+           foo         return TOK_KEYWORD;
+           foobar      return TOK_KEYWORD;
+
+           [a-z]+      return TOK_ID;
+
+       This is usually the best solution when appropriate.
+
+       Backing  up  messages tend to cascade.  With a complicated
+       set of rules it's not uncommon to  get  hundreds  of  mes-
+       sages.   If  one  can decipher them, though, it often only
+       takes a dozen or so rules  to  eliminate  the  backing  up
+       (though it's easy to make a mistake and have an error rule
+       accidentally match a valid token.  A possible future  _f_l_e_x
+       feature  will  be  to automatically add rules to eliminate
+       backing up).
+
+       It's important to keep in mind that you gain the  benefits
+       of  eliminating  backing  up  only  if you eliminate _e_v_e_r_y
+       instance of backing up.  Leaving just one means  you  gain
+       nothing.
+
+
+
+Version 2.5                 April 1995                         40
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       _V_a_r_i_a_b_l_e  trailing  context  (where  both  the leading and
+       trailing parts do not have a fixed length) entails  almost
+       the  same  performance loss as RREEJJEECCTT (i.e., substantial).
+       So when possible a rule like:
+
+           %%
+           mouse|rat/(cat|dog)   run();
+
+       is better written:
+
+           %%
+           mouse/cat|dog         run();
+           rat/cat|dog           run();
+
+       or as
+
+           %%
+           mouse|rat/cat         run();
+           mouse|rat/dog         run();
+
+       Note that here the special '|' action does _n_o_t provide any
+       savings,  and can even make things worse (see Deficiencies
+       / Bugs below).
+
+       Another area where the user can increase a scanner's  per-
+       formance  (and one that's easier to implement) arises from
+       the fact that the longer the tokens  matched,  the  faster
+       the  scanner  will  run.  This is because with long tokens
+       the processing of most input characters takes place in the
+       (short) inner scanning loop, and does not often have to go
+       through the additional work of  setting  up  the  scanning
+       environment  (e.g.,  yyyytteexxtt))  for  the action.  Recall the
+       scanner for C comments:
+
+           %x comment
+           %%
+                   int line_num = 1;
+
+           "/*"         BEGIN(comment);
+
+           <comment>[^*\n]*
+           <comment>"*"+[^*/\n]*
+           <comment>\n             ++line_num;
+           <comment>"*"+"/"        BEGIN(INITIAL);
+
+       This could be sped up by writing it as:
+
+           %x comment
+           %%
+                   int line_num = 1;
+
+           "/*"         BEGIN(comment);
+
+           <comment>[^*\n]*
+
+
+
+Version 2.5                 April 1995                         41
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           <comment>[^*\n]*\n      ++line_num;
+           <comment>"*"+[^*/\n]*
+           <comment>"*"+[^*/\n]*\n ++line_num;
+           <comment>"*"+"/"        BEGIN(INITIAL);
+
+       Now instead of each newline requiring  the  processing  of
+       another  action, recognizing the newlines is "distributed"
+       over the other rules to keep the matched text as  long  as
+       possible.   Note  that _a_d_d_i_n_g rules does _n_o_t slow down the
+       scanner!  The speed of the scanner is independent  of  the
+       number of rules or (modulo the considerations given at the
+       beginning of this section) how complicated the  rules  are
+       with regard to operators such as '*' and '|'.
+
+       A final example in speeding up a scanner: suppose you want
+       to scan through a file  containing  identifiers  and  key-
+       words,  one  per line and with no other extraneous charac-
+       ters, and recognize all the  keywords.   A  natural  first
+       approach is:
+
+           %%
+           asm      |
+           auto     |
+           break    |
+           ... etc ...
+           volatile |
+           while    /* it's a keyword */
+
+           .|\n     /* it's not a keyword */
+
+       To  eliminate  the  back-tracking,  introduce  a catch-all
+       rule:
+
+           %%
+           asm      |
+           auto     |
+           break    |
+           ... etc ...
+           volatile |
+           while    /* it's a keyword */
+
+           [a-z]+   |
+           .|\n     /* it's not a keyword */
+
+       Now, if it's guaranteed that there's exactly one word  per
+       line,  then we can reduce the total number of matches by a
+       half by merging in the recognition of newlines  with  that
+       of the other tokens:
+
+           %%
+           asm\n    |
+           auto\n   |
+           break\n  |
+           ... etc ...
+
+
+
+Version 2.5                 April 1995                         42
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           volatile\n |
+           while\n  /* it's a keyword */
+
+           [a-z]+\n |
+           .|\n     /* it's not a keyword */
+
+       One  has  to  be careful here, as we have now reintroduced
+       backing up into the scanner.  In particular, while _w_e know
+       that  there  will  never  be  any  characters in the input
+       stream other than letters or newlines, _f_l_e_x  can't  figure
+       this out, and it will plan for possibly needing to back up
+       when it has scanned a token like "auto" and then the  next
+       character  is  something other than a newline or a letter.
+       Previously it would then just match the "auto" rule and be
+       done, but now it has no "auto" rule, only a "auto\n" rule.
+       To eliminate the  possibility  of  backing  up,  we  could
+       either duplicate all rules but without final newlines, or,
+       since we never expect  to  encounter  such  an  input  and
+       therefore  don't how it's classified, we can introduce one
+       more catch-all rule, this one which doesn't include a new-
+       line:
+
+           %%
+           asm\n    |
+           auto\n   |
+           break\n  |
+           ... etc ...
+           volatile\n |
+           while\n  /* it's a keyword */
+
+           [a-z]+\n |
+           [a-z]+   |
+           .|\n     /* it's not a keyword */
+
+       Compiled  with --CCff,, this is about as fast as one can get a
+       _f_l_e_x scanner to go for this particular problem.
+
+       A final note: _f_l_e_x is slow when matching  NUL's,  particu-
+       larly  when a token contains multiple NUL's.  It's best to
+       write rules which match _s_h_o_r_t  amounts  of  text  if  it's
+       anticipated that the text will often include NUL's.
+
+       Another  final  note  regarding  performance: as mentioned
+       above in the section How the Input is Matched, dynamically
+       resizing  yyyytteexxtt to accommodate huge tokens is a slow pro-
+       cess because it presently requires that the  (huge)  token
+       be  rescanned  from the beginning.  Thus if performance is
+       vital, you should attempt to match "large"  quantities  of
+       text  but  not "huge" quantities, where the cutoff between
+       the two is at about 8K characters/token.
+
+GGEENNEERRAATTIINNGG CC++++ SSCCAANNNNEERRSS
+       _f_l_e_x provides two different ways to generate scanners  for
+       use  with  C++.   The  first  way  is  to simply compile a
+
+
+
+Version 2.5                 April 1995                         43
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       scanner generated by _f_l_e_x using a C++ compiler instead  of
+       a  C  compiler.  You should not encounter any compilations
+       errors (please report any you find to  the  email  address
+       given  in the Author section below).  You can then use C++
+       code in your rule actions instead of C  code.   Note  that
+       the  default  input  source for your scanner remains _y_y_i_n_,
+       and default echoing is still done to _y_y_o_u_t_.  Both of these
+       remain _F_I_L_E _* variables and not C++ _s_t_r_e_a_m_s_.
+
+       You  can  also  use  _f_l_e_x to generate a C++ scanner class,
+       using the --++ option (or, equivalently, %%ooppttiioonn cc++++)),, which
+       is  automatically  specified  if the name of the flex exe-
+       cutable ends in a '+', such as _f_l_e_x_+_+_.   When  using  this
+       option,  flex  defaults  to  generating the scanner to the
+       file lleexx..yyyy..cccc instead of lleexx..yyyy..cc..  The generated scanner
+       includes  the  header  file _F_l_e_x_L_e_x_e_r_._h_, which defines the
+       interface to two C++ classes.
+
+       The first class,  FFlleexxLLeexxeerr,,  provides  an  abstract  base
+       class  defining  the  general scanner class interface.  It
+       provides the following member functions:
+
+       ccoonnsstt cchhaarr** YYYYTTeexxtt(())
+              returns the  text  of  the  most  recently  matched
+              token, the equivalent of yyyytteexxtt..
+
+       iinntt YYYYLLeenngg(())
+              returns  the  length  of  the most recently matched
+              token, the equivalent of yyyylleenngg..
+
+       iinntt lliinneennoo(()) ccoonnsstt
+              returns the current input line number (see  %%ooppttiioonn
+              yyyylliinneennoo)),, or 11 if %%ooppttiioonn yyyylliinneennoo was not used.
+
+       vvooiidd sseett__ddeebbuugg(( iinntt ffllaagg ))
+              sets the debugging flag for the scanner, equivalent
+              to assigning to yyyy__fflleexx__ddeebbuugg (see the Options sec-
+              tion  above).  Note that you must build the scanner
+              using %%ooppttiioonn ddeebbuugg to include  debugging  informa-
+              tion in it.
+
+       iinntt ddeebbuugg(()) ccoonnsstt
+              returns  the current setting of the debugging flag.
+
+       Also  provided  are   member   functions   equivalent   to
+       yyyy__sswwiittcchh__ttoo__bbuuffffeerr(()),,   yyyy__ccrreeaattee__bbuuffffeerr(())   (though  the
+       first argument is an iissttrreeaamm** object  pointer  and  not  a
+       FFIILLEE**)),,    yyyy__fflluusshh__bbuuffffeerr(()),,    yyyy__ddeelleettee__bbuuffffeerr(()),,   and
+       yyyyrreessttaarrtt(()) (again,  the  first  argument  is  a  iissttrreeaamm**
+       object pointer).
+
+       The  second  class  defined in _F_l_e_x_L_e_x_e_r_._h is yyyyFFlleexxLLeexxeerr,,
+       which is derived from FFlleexxLLeexxeerr..  It defines the following
+       additional member functions:
+
+
+
+Version 2.5                 April 1995                         44
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       yyyyFFlleexxLLeexxeerr(( iissttrreeaamm** aarrgg__yyyyiinn == 00,, oossttrreeaamm** aarrgg__yyyyoouutt == 00
+              ))
+              constructs a yyyyFFlleexxLLeexxeerr  object  using  the  given
+              streams  for  input  and output.  If not specified,
+              the streams default to cciinn and ccoouutt,,  respectively.
+
+       vviirrttuuaall iinntt yyyylleexx(())
+              performs the same role is yyyylleexx(()) does for ordinary
+              flex scanners: it scans the input stream, consuming
+              tokens,  until a rule's action returns a value.  If
+              you derive a subclass SS from yyyyFFlleexxLLeexxeerr  and  want
+              to  access  the member functions and variables of SS
+              inside  yyyylleexx(()),,  then  you  need  to  use  %%ooppttiioonn
+              yyyyccllaassss==""SS""  to  inform _f_l_e_x that you will be using
+              that subclass  instead  of  yyyyFFlleexxLLeexxeerr..   In  this
+              case,  rather than generating yyyyFFlleexxLLeexxeerr::::yyyylleexx(()),,
+              _f_l_e_x generates SS::::yyyylleexx(())  (and  also  generates  a
+              dummy      yyyyFFlleexxLLeexxeerr::::yyyylleexx(())      that     calls
+              yyyyFFlleexxLLeexxeerr::::LLeexxeerrEErrrroorr(()) if called).
+
+       vviirrttuuaall vvooiidd sswwiittcchh__ssttrreeaammss((iissttrreeaamm** nneeww__iinn == 00,,
+              oossttrreeaamm** nneeww__oouutt == 00)) reassigns yyyyiinn to nneeww__iinn  (if
+              non-nil) and yyyyoouutt to nneeww__oouutt (ditto), deleting the
+              previous input buffer if yyyyiinn is reassigned.
+
+       iinntt yyyylleexx(( iissttrreeaamm** nneeww__iinn,, oossttrreeaamm** nneeww__oouutt == 00 ))
+              first    switches    the    input    streams    via
+              sswwiittcchh__ssttrreeaammss((  nneeww__iinn,, nneeww__oouutt )) and then returns
+              the value of yyyylleexx(())..
+
+       In addition, yyyyFFlleexxLLeexxeerr defines the  following  protected
+       virtual  functions  which  you  can  redefine  in  derived
+       classes to tailor the scanner:
+
+       vviirrttuuaall iinntt LLeexxeerrIInnppuutt(( cchhaarr** bbuuff,, iinntt mmaaxx__ssiizzee ))
+              reads  up  to  mmaaxx__ssiizzee  characters  into  bbuuff  and
+              returns the number of characters read.  To indicate
+              end-of-input,  return  0  characters.   Note   that
+              "interactive"  scanners  (see  the --BB and --II flags)
+              define the macro YYYY__IINNTTEERRAACCTTIIVVEE..  If  you  redefine
+              LLeexxeerrIInnppuutt(())  and  need  to  take different actions
+              depending on whether or not the  scanner  might  be
+              scanning  an interactive input source, you can test
+              for the presence of this name via ##iiffddeeff..
+
+       vviirrttuuaall vvooiidd LLeexxeerrOOuuttppuutt(( ccoonnsstt cchhaarr** bbuuff,, iinntt ssiizzee ))
+              writes out ssiizzee characters  from  the  buffer  bbuuff,,
+              which,   while  NUL-terminated,  may  also  contain
+              "internal" NUL's if the scanner's rules  can  match
+              text with NUL's in them.
+
+       vviirrttuuaall vvooiidd LLeexxeerrEErrrroorr(( ccoonnsstt cchhaarr** mmssgg ))
+              reports a fatal error message.  The default version
+              of this function writes the message to  the  stream
+
+
+
+Version 2.5                 April 1995                         45
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              cceerrrr and exits.
+
+       Note  that  a yyyyFFlleexxLLeexxeerr object contains its _e_n_t_i_r_e scan-
+       ning state.  Thus you can use such objects to create reen-
+       trant scanners.  You can instantiate multiple instances of
+       the same yyyyFFlleexxLLeexxeerr class, and you can also combine  mul-
+       tiple  C++  scanner  classes  together in the same program
+       using the --PP option discussed above.
+
+       Finally, note that the %%aarrrraayy feature is not available  to
+       C++  scanner classes; you must use %%ppooiinntteerr (the default).
+
+       Here is an example of a simple C++ scanner:
+
+               // An example of using the flex C++ scanner class.
+
+           %{
+           int mylineno = 0;
+           %}
+
+           string  \"[^\n"]+\"
+
+           ws      [ \t]+
+
+           alpha   [A-Za-z]
+           dig     [0-9]
+           name    ({alpha}|{dig}|\$)({alpha}|{dig}|[_.\-/$])*
+           num1    [-+]?{dig}+\.?([eE][-+]?{dig}+)?
+           num2    [-+]?{dig}*\.{dig}+([eE][-+]?{dig}+)?
+           number  {num1}|{num2}
+
+           %%
+
+           {ws}    /* skip blanks and tabs */
+
+           "/*"    {
+                   int c;
+
+                   while((c = yyinput()) != 0)
+                       {
+                       if(c == '\n')
+                           ++mylineno;
+
+                       else if(c == '*')
+                           {
+                           if((c = yyinput()) == '/')
+                               break;
+                           else
+                               unput(c);
+                           }
+                       }
+                   }
+
+           {number}  cout << "number " << YYText() << '\n';
+
+
+
+Version 2.5                 April 1995                         46
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+           \n        mylineno++;
+
+           {name}    cout << "name " << YYText() << '\n';
+
+           {string}  cout << "string " << YYText() << '\n';
+
+           %%
+
+           int main( int /* argc */, char** /* argv */ )
+               {
+               FlexLexer* lexer = new yyFlexLexer;
+               while(lexer->yylex() != 0)
+                   ;
+               return 0;
+               }
+       If you want to create multiple (different) lexer  classes,
+       you use the --PP flag (or the pprreeffiixx== option) to rename each
+       yyyyFFlleexxLLeexxeerr to  some  other  xxxxFFlleexxLLeexxeerr..   You  then  can
+       include <<FFlleexxLLeexxeerr..hh>> in your other sources once per lexer
+       class, first renaming yyyyFFlleexxLLeexxeerr as follows:
+
+           #undef yyFlexLexer
+           #define yyFlexLexer xxFlexLexer
+           #include <FlexLexer.h>
+
+           #undef yyFlexLexer
+           #define yyFlexLexer zzFlexLexer
+           #include <FlexLexer.h>
+
+       if, for example, you used %%ooppttiioonn pprreeffiixx==""xxxx"" for  one  of
+       your scanners and %%ooppttiioonn pprreeffiixx==""zzzz"" for the other.
+
+       IMPORTANT:  the  present  form  of  the  scanning class is
+       _e_x_p_e_r_i_m_e_n_t_a_l and may  change  considerably  between  major
+       releases.
+
+IINNCCOOMMPPAATTIIBBIILLIITTIIEESS WWIITTHH LLEEXX AANNDD PPOOSSIIXX
+       _f_l_e_x  is  a  rewrite  of  the  AT&T Unix _l_e_x tool (the two
+       implementations do not share any code, though), with  some
+       extensions  and  incompatibilities,  both  of which are of
+       concern to those who wish to write scanners acceptable  to
+       either  implementation.   Flex is fully compliant with the
+       POSIX _l_e_x specification, except that when  using  %%ppooiinntteerr
+       (the  default), a call to uunnppuutt(()) destroys the contents of
+       yyyytteexxtt,, which is counter to the POSIX specification.
+
+       In this section we discuss  all  of  the  known  areas  of
+       incompatibility  between  flex,  AT&T  lex,  and the POSIX
+       specification.
+
+       _f_l_e_x_'_s --ll option turns on maximum compatibility  with  the
+       original  AT&T  _l_e_x implementation, at the cost of a major
+       loss in the  generated  scanner's  performance.   We  note
+       below which incompatibilities can be overcome using the --ll
+
+
+
+Version 2.5                 April 1995                         47
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       option.
+
+       _f_l_e_x is fully  compatible  with  _l_e_x  with  the  following
+       exceptions:
+
+       -      The  undocumented  _l_e_x  scanner  internal  variable
+              yyyylliinneennoo is not  supported  unless  --ll  or  %%ooppttiioonn
+              yyyylliinneennoo is used.
+
+              yyyylliinneennoo  should  be  maintained  on  a  per-buffer
+              basis, rather than  a  per-scanner  (single  global
+              variable) basis.
+
+              yyyylliinneennoo is not part of the POSIX specification.
+
+       -      The  iinnppuutt(())  routine is not redefinable, though it
+              may be called to read characters following whatever
+              has  been matched by a rule.  If iinnppuutt(()) encounters
+              an end-of-file the normal  yyyywwrraapp(())  processing  is
+              done.    A  ``real''  end-of-file  is  returned  by
+              iinnppuutt(()) as _E_O_F_.
+
+              Input  is  instead  controlled  by   defining   the
+              YYYY__IINNPPUUTT macro.
+
+              The  _f_l_e_x  restriction that iinnppuutt(()) cannot be rede-
+              fined is in accordance with  the  POSIX  specifica-
+              tion, which simply does not specify any way of con-
+              trolling the scanner's input other than  by  making
+              an initial assignment to _y_y_i_n_.
+
+       -      The  uunnppuutt(())  routine  is  not  redefinable.   This
+              restriction is in accordance with POSIX.
+
+       -      _f_l_e_x scanners are not as reentrant as _l_e_x scanners.
+              In  particular,  if you have an interactive scanner
+              and an interrupt handler which  long-jumps  out  of
+              the scanner, and the scanner is subsequently called
+              again, you may get the following message:
+
+                  fatal flex scanner internal error--end of buffer missed
+
+              To reenter the scanner, first use
+
+                  yyrestart( yyin );
+
+              Note that this call will throw  away  any  buffered
+              input;  usually this isn't a problem with an inter-
+              active scanner.
+
+              Also note that flex C++ scanner classes  _a_r_e  reen-
+              trant,  so  if  using C++ is an option for you, you
+              should use them instead.  See "Generating C++ Scan-
+              ners" above for details.
+
+
+
+Version 2.5                 April 1995                         48
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       -      oouuttppuutt(())  is  not  supported.  Output from the EECCHHOO
+              macro is done to the  file-pointer  _y_y_o_u_t  (default
+              _s_t_d_o_u_t_)_.
+
+              oouuttppuutt(()) is not part of the POSIX specification.
+
+       -      _l_e_x  does  not  support  exclusive start conditions
+              (%x), though they are in the POSIX specification.
+
+       -      When definitions are expanded, _f_l_e_x  encloses  them
+              in parentheses.  With lex, the following:
+
+                  NAME    [A-Z][A-Z0-9]*
+                  %%
+                  foo{NAME}?      printf( "Found it\n" );
+                  %%
+
+              will  not  match  the string "foo" because when the
+              macro is expanded the rule is equivalent to "foo[A-
+              Z][A-Z0-9]*?"   and the precedence is such that the
+              '?' is associated with "[A-Z0-9]*".  With _f_l_e_x_, the
+              rule will be expanded to "foo([A-Z][A-Z0-9]*)?" and
+              so the string "foo" will match.
+
+              Note that if the definition begins with ^^  or  ends
+              with $$ then it is _n_o_t expanded with parentheses, to
+              allow these  operators  to  appear  in  definitions
+              without  losing  their  special  meanings.  But the
+              <<ss>>,, //,, and <<<<EEOOFF>>>> operators cannot be used  in  a
+              _f_l_e_x definition.
+
+              Using  --ll  results in the _l_e_x behavior of no paren-
+              theses around the definition.
+
+              The POSIX specification is that the  definition  be
+              enclosed in parentheses.
+
+       -      Some  implementations  of _l_e_x allow a rule's action
+              to begin on a separate line, if the rule's  pattern
+              has trailing whitespace:
+
+                  %%
+                  foo|bar<space here>
+                    { foobar_action(); }
+
+              _f_l_e_x does not support this feature.
+
+       -      The  _l_e_x  %%rr  (generate a Ratfor scanner) option is
+              not supported.  It is not part of the POSIX  speci-
+              fication.
+
+       -      After  a call to uunnppuutt(()),, _y_y_t_e_x_t is undefined until
+              the next token is matched, unless the  scanner  was
+              built  using %%aarrrraayy..  This is not the case with _l_e_x
+
+
+
+Version 2.5                 April 1995                         49
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+              or the POSIX specification.   The  --ll  option  does
+              away with this incompatibility.
+
+       -      The  precedence  of the {{}} (numeric range) operator
+              is different.  _l_e_x interprets "abc{1,3}" as  "match
+              one,  two,  or three occurrences of 'abc'", whereas
+              _f_l_e_x interprets it as "match 'ab' followed by  one,
+              two,  or  three occurrences of 'c'".  The latter is
+              in agreement with the POSIX specification.
+
+       -      The precedence of the ^^ operator is different.  _l_e_x
+              interprets "^foo|bar" as "match either 'foo' at the
+              beginning of a line, or  'bar'  anywhere",  whereas
+              _f_l_e_x  interprets it as "match either 'foo' or 'bar'
+              if they come at the beginning of a line".  The lat-
+              ter is in agreement with the POSIX specification.
+
+       -      The special table-size declarations such as %%aa sup-
+              ported by _l_e_x are not required  by  _f_l_e_x  scanners;
+              _f_l_e_x ignores them.
+
+       -      The  name FLEX_SCANNER is #define'd so scanners may
+              be written for use with either _f_l_e_x or _l_e_x_.   Scan-
+              ners   also   include   YYYY__FFLLEEXX__MMAAJJOORR__VVEERRSSIIOONN   and
+              YYYY__FFLLEEXX__MMIINNOORR__VVEERRSSIIOONN indicating which  version  of
+              _f_l_e_x  generated  the  scanner (for example, for the
+              2.5 release, these defines would be 2 and 5 respec-
+              tively).
+
+       The following _f_l_e_x features are not included in _l_e_x or the
+       POSIX specification:
+
+           C++ scanners
+           %option
+           start condition scopes
+           start condition stacks
+           interactive/non-interactive scanners
+           yy_scan_string() and friends
+           yyterminate()
+           yy_set_interactive()
+           yy_set_bol()
+           YY_AT_BOL()
+           <<EOF>>
+           <*>
+           YY_DECL
+           YY_START
+           YY_USER_ACTION
+           YY_USER_INIT
+           #line directives
+           %{}'s around actions
+           multiple actions on a line
+
+       plus almost all of the flex flags.  The  last  feature  in
+       the  list  refers  to  the fact that with _f_l_e_x you can put
+
+
+
+Version 2.5                 April 1995                         50
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       multiple actions on the same line,  separated  with  semi-
+       colons, while with _l_e_x_, the following
+
+           foo    handle_foo(); ++num_foos_seen;
+
+       is (rather surprisingly) truncated to
+
+           foo    handle_foo();
+
+       _f_l_e_x  does  not truncate the action.  Actions that are not
+       enclosed in braces are simply terminated at the end of the
+       line.
+
+DDIIAAGGNNOOSSTTIICCSS
+       _w_a_r_n_i_n_g_,  _r_u_l_e  _c_a_n_n_o_t _b_e _m_a_t_c_h_e_d indicates that the given
+       rule cannot be matched because it follows other rules that
+       will  always  match  the same text as it.  For example, in
+       the following "foo" cannot be  matched  because  it  comes
+       after an identifier "catch-all" rule:
+
+           [a-z]+    got_identifier();
+           foo       got_foo();
+
+       Using RREEJJEECCTT in a scanner suppresses this warning.
+
+       _w_a_r_n_i_n_g_,  --ss  _o_p_t_i_o_n _g_i_v_e_n _b_u_t _d_e_f_a_u_l_t _r_u_l_e _c_a_n _b_e _m_a_t_c_h_e_d
+       means that it is possible (perhaps only  in  a  particular
+       start  condition)  that the default rule (match any single
+       character) is the only one that will  match  a  particular
+       input.   Since  --ss  was  given,  presumably  this  is  not
+       intended.
+
+       _r_e_j_e_c_t___u_s_e_d___b_u_t___n_o_t___d_e_t_e_c_t_e_d         _u_n_d_e_f_i_n_e_d          or
+       _y_y_m_o_r_e___u_s_e_d___b_u_t___n_o_t___d_e_t_e_c_t_e_d  _u_n_d_e_f_i_n_e_d _- These errors can
+       occur at compile time.  They  indicate  that  the  scanner
+       uses RREEJJEECCTT or yyyymmoorree(()) but that _f_l_e_x failed to notice the
+       fact, meaning that _f_l_e_x scanned  the  first  two  sections
+       looking  for  occurrences  of  these actions and failed to
+       find any, but somehow you snuck some in  (via  a  #include
+       file,  for example).  Use %%ooppttiioonn rreejjeecctt or %%ooppttiioonn yyyymmoorree
+       to indicate to flex that you really do use these features.
+
+       _f_l_e_x  _s_c_a_n_n_e_r  _j_a_m_m_e_d  _-  a  scanner  compiled with --ss has
+       encountered an input string which wasn't matched by any of
+       its  rules.   This  error  can  also occur due to internal
+       problems.
+
+       _t_o_k_e_n _t_o_o _l_a_r_g_e_, _e_x_c_e_e_d_s _Y_Y_L_M_A_X _- your scanner uses %%aarrrraayy
+       and one of its rules matched a string longer than the YYYYLL--
+       MMAAXX constant (8K bytes by default).  You can increase  the
+       value  by #define'ing YYYYLLMMAAXX in the definitions section of
+       your _f_l_e_x input.
+
+       _s_c_a_n_n_e_r _r_e_q_u_i_r_e_s _-_8 _f_l_a_g _t_o _u_s_e _t_h_e _c_h_a_r_a_c_t_e_r _'_x_'  _-  Your
+
+
+
+Version 2.5                 April 1995                         51
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       scanner specification includes recognizing the 8-bit char-
+       acter _'_x_' and you did not specify the -8  flag,  and  your
+       scanner defaulted to 7-bit because you used the --CCff or --CCFF
+       table compression options.  See the discussion of  the  --77
+       flag for details.
+
+       _f_l_e_x _s_c_a_n_n_e_r _p_u_s_h_-_b_a_c_k _o_v_e_r_f_l_o_w _- you used uunnppuutt(()) to push
+       back so much text that the scanner's buffer could not hold
+       both the pushed-back text and the current token in yyyytteexxtt..
+       Ideally the scanner should dynamically resize  the  buffer
+       in this case, but at present it does not.
+
+       _i_n_p_u_t  _b_u_f_f_e_r _o_v_e_r_f_l_o_w_, _c_a_n_'_t _e_n_l_a_r_g_e _b_u_f_f_e_r _b_e_c_a_u_s_e _s_c_a_n_-
+       _n_e_r _u_s_e_s _R_E_J_E_C_T _- the scanner was working on  matching  an
+       extremely  large  token  and  needed  to  expand the input
+       buffer.  This doesn't work with scanners that use  RREEJJEECCTT..
+
+       _f_a_t_a_l  _f_l_e_x _s_c_a_n_n_e_r _i_n_t_e_r_n_a_l _e_r_r_o_r_-_-_e_n_d _o_f _b_u_f_f_e_r _m_i_s_s_e_d _-
+       This can occur in an scanner which is  reentered  after  a
+       long-jump  has  jumped out (or over) the scanner's activa-
+       tion frame.  Before reentering the scanner, use:
+
+           yyrestart( yyin );
+
+       or, as noted above, switch to using the C++ scanner class.
+
+       _t_o_o  _m_a_n_y  _s_t_a_r_t  _c_o_n_d_i_t_i_o_n_s _i_n _<_> _c_o_n_s_t_r_u_c_t_! _- you listed
+       more start conditions in a <> construct than exist (so you
+       must have listed at least one of them twice).
+
+FFIILLEESS
+       --llffll   library with which scanners must be linked.
+
+       _l_e_x_._y_y_._c
+              generated scanner (called _l_e_x_y_y_._c on some systems).
+
+       _l_e_x_._y_y_._c_c
+              generated C++ scanner class, when using --++..
+
+       _<_F_l_e_x_L_e_x_e_r_._h_>
+              header file defining the C++  scanner  base  class,
+              FFlleexxLLeexxeerr,, and its derived class, yyyyFFlleexxLLeexxeerr..
+
+       _f_l_e_x_._s_k_l
+              skeleton  scanner.   This  file  is  only used when
+              building flex, not when flex executes.
+
+       _l_e_x_._b_a_c_k_u_p
+              backing-up information for --bb flag (called  _l_e_x_._b_c_k
+              on some systems).
+
+DDEEFFIICCIIEENNCCIIEESS // BBUUGGSS
+       Some  trailing context patterns cannot be properly matched
+       and  generate  warning   messages   ("dangerous   trailing
+
+
+
+Version 2.5                 April 1995                         52
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       context").   These  are  patterns  where the ending of the
+       first part of the rule matches the beginning of the second
+       part, such as "zx*/xy*", where the 'x*' matches the 'x' at
+       the beginning of the trailing  context.   (Note  that  the
+       POSIX  draft states that the text matched by such patterns
+       is undefined.)
+
+       For some trailing context rules, parts which are  actually
+       fixed-length  are  not  recognized as such, leading to the
+       abovementioned performance  loss.   In  particular,  parts
+       using  '|' or {n} (such as "foo{3}") are always considered
+       variable-length.
+
+       Combining trailing context with the special '|' action can
+       result  in  _f_i_x_e_d  trailing  context being turned into the
+       more expensive _v_a_r_i_a_b_l_e trailing context.  For example, in
+       the following:
+
+           %%
+           abc      |
+           xyz/def
+
+
+       Use  of  uunnppuutt(()) invalidates yytext and yyleng, unless the
+       %%aarrrraayy directive or the --ll option has been used.
+
+       Pattern-matching of NUL's  is  substantially  slower  than
+       matching other characters.
+
+       Dynamic  resizing  of  the  input  buffer  is  slow, as it
+       entails rescanning all the text matched so far by the cur-
+       rent (generally huge) token.
+
+       Due  to both buffering of input and read-ahead, you cannot
+       intermix calls to <stdio.h> routines, such as,  for  exam-
+       ple,  ggeettcchhaarr(()),,  with  _f_l_e_x  rules and expect it to work.
+       Call iinnppuutt(()) instead.
+
+       The total table entries listed by the --vv flag excludes the
+       number  of table entries needed to determine what rule has
+       been matched.  The number of entries is equal to the  num-
+       ber  of DFA states if the scanner does not use RREEJJEECCTT,, and
+       somewhat greater than the number of states if it does.
+
+       RREEJJEECCTT cannot be used with the --ff or --FF options.
+
+       The _f_l_e_x internal algorithms need documentation.
+
+SSEEEE AALLSSOO
+       lex(1), yacc(1), sed(1), awk(1).
+
+       John Levine, Tony Mason,  and  Doug  Brown,  _L_e_x  _&  _Y_a_c_c_,
+       O'Reilly  and Associates.  Be sure to get the 2nd edition.
+
+
+
+
+Version 2.5                 April 1995                         53
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       M. E. Lesk and E. Schmidt, _L_E_X _- _L_e_x_i_c_a_l _A_n_a_l_y_z_e_r  _G_e_n_e_r_a_-
+       _t_o_r
+
+       Alfred  Aho,  Ravi  Sethi  and  Jeffrey Ullman, _C_o_m_p_i_l_e_r_s_:
+       _P_r_i_n_c_i_p_l_e_s_, _T_e_c_h_n_i_q_u_e_s _a_n_d _T_o_o_l_s_,  Addison-Wesley  (1986).
+       Describes  the  pattern-matching  techniques  used by _f_l_e_x
+       (deterministic finite automata).
+
+AAUUTTHHOORR
+       Vern Paxson, with the help of many ideas and much inspira-
+       tion   from   Van   Jacobson.   Original  version  by  Jef
+       Poskanzer.  The fast table  representation  is  a  partial
+       implementation  of  a  design  done  by Van Jacobson.  The
+       implementation was done by Kevin Gong and Vern Paxson.
+
+       Thanks to the many  _f_l_e_x  beta-testers,  feedbackers,  and
+       contributors,  especially  Francois  Pinard, Casey Leedom,
+       Robert  Abramovitz,  Stan  Adermann,  Terry  Allen,  David
+       Barker-Plummer,  John  Basrai,  Neal  Becker,  Nelson H.F.
+       Beebe, benson@odi.com, Karl Berry, Peter A.  Bigot,  Simon
+       Blanchard,  Keith  Bostic,  Frederic Brehm, Ian Brockbank,
+       Kin Cho, Nick Christopher, Brian  Clapper,  J.T.  Conklin,
+       Jason Coughlin, Bill Cox, Nick Cropper, Dave Curtis, Scott
+       David Daniels, Chris G. Demetriou, Theo Deraadt, Mike Don-
+       ahue,  Chuck  Doucette, Tom Epperly, Leo Eskin, Chris Fay-
+       lor, Chris Flatters,  Jon  Forrest,  Jeffrey  Friedl,  Joe
+       Gayda,  Kaveh  R.  Ghazi,  Wolfgang  Glunz,  Eric Goldman,
+       Christopher M. Gould, Ulrich  Grepel,  Peer  Griebel,  Jan
+       Hajic,  Charles  Hemphill,  NORO Hideo, Jarkko Hietaniemi,
+       Scott Hofmann, Jeff Honig, Dana Hudes, Eric  Hughes,  John
+       Interrante, Ceriel Jacobs, Michal Jaegermann, Sakari Jalo-
+       vaara, Jeffrey R.  Jones,  Henry  Juengst,  Klaus  Kaempf,
+       Jonathan   I.   Kamens,   Terrence   O  Kane,  Amir  Katz,
+       ken@ken.hilco.com, Kevin B. Kenny, Steve Kirsch,  Winfried
+       Koenig,  Marq  Kole,  Ronald  Lamprecht,  Greg  Lee, Rohan
+       Lenard, Craig Leres, John Levine, Steve Liddle, David Lof-
+       fredo,  Mike  Long,  Mohamed el Lozy, Brian Madsen, Malte,
+       Joe Marshall, Bengt Martensson, Chris Metcalf,  Luke  Mew-
+       burn,  Jim  Meyering,  R. Alexander Milowski, Erik Naggum,
+       G.T.  Nicol,  Landon  Noll,  James  Nordby,  Marc  Nozell,
+       Richard Ohnemus, Karsten Pahnke, Sven Panne, Roland Pesch,
+       Walter  Pelissero,  Gaumond  Pierre,  Esmond   Pitt,   Jef
+       Poskanzer,  Joe  Rahmeh,  Jarmo Raiha, Frederic Raimbault,
+       Pat Rankin, Rick Richardson, Kevin Rodgers, Kai  Uwe  Rom-
+       mel,  Jim  Roskind, Alberto Santini, Andreas Scherer, Dar-
+       rell Schiebel, Raf Schietekat, Doug Schmidt, Philippe Sch-
+       noebelen,  Andreas  Schwab,  Larry Schwimmer, Alex Siegel,
+       Eckehard Stolz, Jan-Erik Strvmquist, Mike Stump, Paul Stu-
+       art,  Dave  Tallman,  Ian  Lance  Taylor,  Chris  Thewalt,
+       Richard M. Timoney, Jodi Tsai, Paul Tuinenga,  Gary  Weik,
+       Frank  Whaley,  Gerhard  Wilhelms, Kent Williams, Ken Yap,
+       Ron Zellar, Nathan Zelle,  David  Zuhn,  and  those  whose
+       names  have  slipped my marginal mail-archiving skills but
+       whose contributions are appreciated all the same.
+
+
+
+Version 2.5                 April 1995                         54
+
+
+
+
+
+FLEX(1)                                                   FLEX(1)
+
+
+       Thanks to Keith Bostic, Jon Forrest, Noah  Friedman,  John
+       Gilmore,  Craig  Leres,  John  Levine,  Bob  Mulcahy, G.T.
+       Nicol, Francois Pinard, Rich Salz,  and  Richard  Stallman
+       for help with various distribution headaches.
+
+       Thanks to Esmond Pitt and Earle Horton for 8-bit character
+       support; to Benson Margulies and Fred Burke for  C++  sup-
+       port;  to Kent Williams and Tom Epperly for C++ class sup-
+       port; to Ove Ewerlid for support of  NUL's;  and  to  Eric
+       Hughes for support of multiple buffers.
+
+       This work was primarily done when I was with the Real Time
+       Systems Group  at  the  Lawrence  Berkeley  Laboratory  in
+       Berkeley,  CA.  Many thanks to all there for the support I
+       received.
+
+       Send comments to vern@ee.lbl.gov.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Version 2.5                 April 1995                         55
+
+

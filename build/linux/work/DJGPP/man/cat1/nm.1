@@ -1,0 +1,396 @@
+
+
+
+NM(1)                 GNU Development Tools                 NM(1)
+
+
+NNAAMMEE
+       nm - list symbols from object files
+
+SSYYNNOOPPSSIISS
+       nm [--aa|----ddeebbuugg--ssyymmss] [--gg|----eexxtteerrnn--oonnllyy]
+          [--BB] [--CC|----ddeemmaannggllee[=_s_t_y_l_e]] [--DD|----ddyynnaammiicc]
+          [--SS|----pprriinntt--ssiizzee] [--ss|----pprriinntt--aarrmmaapp]
+          [--AA|--oo|----pprriinntt--ffiillee--nnaammee][----ssppeecciiaall--ssyymmss]
+          [--nn|--vv|----nnuummeerriicc--ssoorrtt] [--pp|----nnoo--ssoorrtt]
+          [--rr|----rreevveerrssee--ssoorrtt] [----ssiizzee--ssoorrtt] [--uu|----uunnddeeffiinneedd--oonnllyy]
+          [--tt _r_a_d_i_x|----rraaddiixx==_r_a_d_i_x] [--PP|----ppoorrttaabbiilliittyy]
+          [----ttaarrggeett==_b_f_d_n_a_m_e] [--ff_f_o_r_m_a_t|----ffoorrmmaatt==_f_o_r_m_a_t]
+          [----ddeeffiinneedd--oonnllyy] [--ll|----lliinnee--nnuummbbeerrss] [----nnoo--ddeemmaannggllee]
+          [--VV|----vveerrssiioonn] [--XX 3322__6644] [----hheellpp]  [_o_b_j_f_i_l_e...]
+
+DDEESSCCRRIIPPTTIIOONN
+       GNU nnmm lists the symbols from object files _o_b_j_f_i_l_e....  If
+       no  object  files  are listed as arguments, nnmm assumes the
+       file _a_._o_u_t.
+
+       For each symbol, nnmm shows:
+
+       +o   The symbol value, in the  radix  selected  by  options
+           (see below), or hexadecimal by default.
+
+       +o   The  symbol  type.   At  least the following types are
+           used; others are, as well,  depending  on  the  object
+           file  format.   If  lowercase, the symbol is local; if
+           uppercase, the symbol is global (external).
+
+           "A" The symbol's value is absolute, and  will  not  be
+               changed by further linking.
+
+           "B"
+           "b" The  symbol  is  in the uninitialized data section
+               (known as BSS).
+
+           "C" The  symbol  is  common.    Common   symbols   are
+               uninitialized data.  When linking, multiple common
+               symbols may appear with the  same  name.   If  the
+               symbol is defined anywhere, the common symbols are
+               treated as undefined references.
+
+           "D"
+           "d" The symbol is in the initialized data section.
+
+           "G"
+           "g" The symbol is in an initialized data  section  for
+               small  objects.   Some  object file formats permit
+               more efficient access to small data objects,  such
+               as  a  global  int  variable as opposed to a large
+               global array.
+
+           "I" The symbol is an  indirect  reference  to  another
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+NM(1)                 GNU Development Tools                 NM(1)
+
+
+               symbol.   This  is  a  GNU  extension to the a.out
+               object file format which is rarely used.
+
+           "i" The  symbol  is  in  a  section  specific  to  the
+               implementation of DLLs.
+
+           "N" The symbol is a debugging symbol.
+
+           "p" The symbols is in a stack unwind section.
+
+           "R"
+           "r" The symbol is in a read only data section.
+
+           "S"
+           "s" The symbol is in an uninitialized data section for
+               small objects.
+
+           "T"
+           "t" The symbol is in the text (code) section.
+
+           "U" The symbol is undefined.
+
+           "V"
+           "v" The symbol is a weak object.  When a weak  defined
+               symbol is linked with a normal defined symbol, the
+               normal defined symbol is used with no error.  When
+               a  weak  undefined symbol is linked and the symbol
+               is not defined,  the  value  of  the  weak  symbol
+               becomes  zero  with  no  error.   On some systems,
+               uppercase indicates that a default value has  been
+               specified.
+
+           "W"
+           "w" The  symbol  is  a  weak  symbol that has not been
+               specifically tagged as a weak object symbol.  When
+               a  weak  defined  symbol  is  linked with a normal
+               defined symbol, the normal defined symbol is  used
+               with  no  error.   When a weak undefined symbol is
+               linked and the symbol is not defined, the value of
+               the  symbol  is  determined  in  a system-specific
+               manner without error.  On some systems,  uppercase
+               indicates that a default value has been specified.
+
+           "-" The symbol is a stabs symbol in  an  a.out  object
+               file.   In  this case, the next values printed are
+               the stabs other field, the stabs desc  field,  and
+               the  stab  type.   Stabs  symbols are used to hold
+               debugging information.
+
+           "?" The symbol type is unknown, or object file  format
+               specific.
+
+       +o   The symbol name.
+
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+NM(1)                 GNU Development Tools                 NM(1)
+
+
+OOPPTTIIOONNSS
+       The  long  and  short  forms  of  options,  shown  here as
+       alternatives, are equivalent.
+
+       --AA
+       --oo
+       ----pprriinntt--ffiillee--nnaammee
+           Precede each symbol by the name of the input file  (or
+           archive  member)  in  which  it was found, rather than
+           identifying the input file once only,  before  all  of
+           its symbols.
+
+       --aa
+       ----ddeebbuugg--ssyymmss
+           Display   all  symbols,  even  debugger-only  symbols;
+           normally these are not listed.
+
+       --BB  The same as ----ffoorrmmaatt==bbssdd (for compatibility  with  the
+           MIPS nnmm).
+
+       --CC
+       ----ddeemmaannggllee[[==_s_t_y_l_e]]
+           Decode  (_d_e_m_a_n_g_l_e)  low-level  symbol names into user-
+           level names.  Besides removing any initial  underscore
+           prepended by the system, this makes C++ function names
+           readable. Different compilers have different  mangling
+           styles.  The optional demangling style argument can be
+           used to choose an  appropriate  demangling  style  for
+           your compiler.
+
+       ----nnoo--ddeemmaannggllee
+           Do  not  demangle low-level symbol names.  This is the
+           default.
+
+       --DD
+       ----ddyynnaammiicc
+           Display the dynamic symbols  rather  than  the  normal
+           symbols.  This is only meaningful for dynamic objects,
+           such as certain types of shared libraries.
+
+       --ff _f_o_r_m_a_t
+       ----ffoorrmmaatt==_f_o_r_m_a_t
+           Use the output format  _f_o_r_m_a_t,  which  can  be  "bsd",
+           "sysv",  or  "posix".  The default is "bsd".  Only the
+           first character of _f_o_r_m_a_t is significant;  it  can  be
+           either upper or lower case.
+
+       --gg
+       ----eexxtteerrnn--oonnllyy
+           Display only external symbols.
+
+       --ll
+       ----lliinnee--nnuummbbeerrss
+           For  each  symbol, use debugging information to try to
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+
+
+
+
+NM(1)                 GNU Development Tools                 NM(1)
+
+
+           find a  filename  and  line  number.   For  a  defined
+           symbol, look for the line number of the address of the
+           symbol.  For an undefined symbol, look  for  the  line
+           number  of  a  relocation  entry  which  refers to the
+           symbol.  If line  number  information  can  be  found,
+           print it after the other symbol information.
+
+       --nn
+       --vv
+       ----nnuummeerriicc--ssoorrtt
+           Sort  symbols  numerically  by their addresses, rather
+           than alphabetically by their names.
+
+       --pp
+       ----nnoo--ssoorrtt
+           Do not bother to sort the symbols in any order;  print
+           them in the order encountered.
+
+       --PP
+       ----ppoorrttaabbiilliittyy
+           Use  the POSIX.2 standard output format instead of the
+           default format.  Equivalent to --ff ppoossiixx.
+
+       --SS
+       ----pprriinntt--ssiizzee
+           Print size, not the value, of defined symbols for  the
+           "bsd" output format.
+
+       --ss
+       ----pprriinntt--aarrmmaapp
+           When listing symbols from archive members, include the
+           index: a mapping (stored  in  the  archive  by  aarr  or
+           rraannlliibb) of which modules contain definitions for which
+           names.
+
+       --rr
+       ----rreevveerrssee--ssoorrtt
+           Reverse the order of  the  sort  (whether  numeric  or
+           alphabetic); let the last come first.
+
+       ----ssiizzee--ssoorrtt
+           Sort  symbols  by  size.   The size is computed as the
+           difference between the value of  the  symbol  and  the
+           value  of  the  symbol with the next higher value.  If
+           the "bsd" output format is used the size of the symbol
+           is printed, rather than the value, and --SS must be used
+           in order both size and value to be printed.
+
+       ----ssppeecciiaall--ssyymmss
+           Display symbols which have a  target-specific  special
+           meaning.  These symbols are usually used by the target
+           for some  special  processing  and  are  not  normally
+           helpful  when  included  included in the normal symbol
+           lists.  For example for ARM targets this option  would
+
+
+
+binutils-2.18.90            2008-09-10                          4
+
+
+
+
+
+NM(1)                 GNU Development Tools                 NM(1)
+
+
+           skip  the  mapping  symbols  used  to mark transitions
+           between ARM code, THUMB code and data.
+
+       --tt _r_a_d_i_x
+       ----rraaddiixx==_r_a_d_i_x
+           Use _r_a_d_i_x as the radix for printing the symbol values.
+           It  must  be  dd  for  decimal,  oo  for octal, or xx for
+           hexadecimal.
+
+       ----ttaarrggeett==_b_f_d_n_a_m_e
+           Specify an object code format other than your system's
+           default format.
+
+       --uu
+       ----uunnddeeffiinneedd--oonnllyy
+           Display only undefined symbols (those external to each
+           object file).
+
+       ----ddeeffiinneedd--oonnllyy
+           Display only defined symbols for each object file.
+
+       --VV
+       ----vveerrssiioonn
+           Show the version number of nnmm and exit.
+
+       --XX  This option is ignored for compatibility with the  AIX
+           version  of  nnmm.  It takes one parameter which must be
+           the  string  3322__6644.   The  default  mode  of  AIX   nnmm
+           corresponds  to  --XX  3322, which is not supported by GNU
+           nnmm.
+
+       ----hheellpp
+           Show a summary of the options to nnmm and exit.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       _a_r(1), _o_b_j_d_u_m_p(1), _r_a_n_l_i_b(1), and  the  Info  entries  for
+       _b_i_n_u_t_i_l_s.
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          5
+
+
+
+
+
+NM(1)                 GNU Development Tools                 NM(1)
+
+
+CCOOPPYYRRIIGGHHTT
+       Copyright  (c)  1991,  1992, 1993, 1994, 1995, 1996, 1997,
+       1998, 1999, 2000, 2001,  2002,  2003,  2004,  2005,  2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+       Documentation  License,  Version  1.2 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          6
+
+

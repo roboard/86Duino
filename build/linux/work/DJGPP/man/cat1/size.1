@@ -1,0 +1,198 @@
+
+
+
+SIZE(1)               GNU Development Tools               SIZE(1)
+
+
+NNAAMMEE
+       size - list section sizes and total size.
+
+SSYYNNOOPPSSIISS
+       size [--AA|--BB|----ffoorrmmaatt==_c_o_m_p_a_t_i_b_i_l_i_t_y]
+            [----hheellpp]
+            [--dd|--oo|--xx|----rraaddiixx==_n_u_m_b_e_r]
+            [----ccoommmmoonn]
+            [--tt|----ttoottaallss]
+            [----ttaarrggeett==_b_f_d_n_a_m_e] [--VV|----vveerrssiioonn]
+            [_o_b_j_f_i_l_e...]
+
+DDEESSCCRRIIPPTTIIOONN
+       The  GNU  ssiizzee  utility  lists the section sizes---and the
+       total size---for each  of  the  object  or  archive  files
+       _o_b_j_f_i_l_e  in  its  argument  list.  By default, one line of
+       output is generated for each object file or each module in
+       an archive.
+
+       _o_b_j_f_i_l_e...  are  the object files to be examined.  If none
+       are specified, the file "a.out" will be used.
+
+OOPPTTIIOONNSS
+       The command line options have the following meanings:
+
+       --AA
+       --BB
+       ----ffoorrmmaatt==_c_o_m_p_a_t_i_b_i_l_i_t_y
+           Using one of these options, you can choose whether the
+           output  from  GNU  ssiizzee resembles output from System V
+           ssiizzee (using --AA, or ----ffoorrmmaatt==ssyyssvv),  or  Berkeley  ssiizzee
+           (using  --BB, or ----ffoorrmmaatt==bbeerrkkeelleeyy).  The default is the
+           one-line format similar to Berkeley's.
+
+           Here is an example of the Berkeley (default) format of
+           output from ssiizzee:
+
+                   $ size --format=Berkeley ranlib size
+                   text    data    bss     dec     hex     filename
+                   294880  81920   11592   388392  5ed28   ranlib
+                   294880  81920   11888   388688  5ee50   size
+
+           This  is the same data, but displayed closer to System
+           V conventions:
+
+                   $ size --format=SysV ranlib size
+                   ranlib  :
+                   section         size         addr
+                   .text         294880         8192
+                   .data          81920       303104
+                   .bss           11592       385024
+                   Total         388392
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+SIZE(1)               GNU Development Tools               SIZE(1)
+
+
+                   size  :
+                   section         size         addr
+                   .text         294880         8192
+                   .data          81920       303104
+                   .bss           11888       385024
+                   Total         388688
+
+       ----hheellpp
+           Show a summary of acceptable arguments and options.
+
+       --dd
+       --oo
+       --xx
+       ----rraaddiixx==_n_u_m_b_e_r
+           Using one of these options, you  can  control  whether
+           the  size  of each section is given in decimal (--dd, or
+           ----rraaddiixx==1100); octal (--oo, or ----rraaddiixx==88); or  hexadecimal
+           (--xx,  or  ----rraaddiixx==1166).   In  ----rraaddiixx==_n_u_m_b_e_r,  only the
+           three values (8, 10, 16)  are  supported.   The  total
+           size  is  always  given  in  two  radices; decimal and
+           hexadecimal  for  --dd  or  --xx  output,  or  octal   and
+           hexadecimal if you're using --oo.
+
+       ----ccoommmmoonn
+           Print total size of common symbols in each file.  When
+           using Berkeley format these are included  in  the  bss
+           size.
+
+       --tt
+       ----ttoottaallss
+           Show  totals  of  all  objects listed (Berkeley format
+           listing mode only).
+
+       ----ttaarrggeett==_b_f_d_n_a_m_e
+           Specify that the object-code  format  for  _o_b_j_f_i_l_e  is
+           _b_f_d_n_a_m_e.   This  option may not be necessary; ssiizzee can
+           automatically recognize many formats.
+
+       --VV
+       ----vveerrssiioonn
+           Display the version number of ssiizzee.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+SIZE(1)               GNU Development Tools               SIZE(1)
+
+
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       _a_r(1), _o_b_j_d_u_m_p(1), _r_e_a_d_e_l_f(1), and the  Info  entries  for
+       _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright  (c)  1991,  1992, 1993, 1994, 1995, 1996, 1997,
+       1998, 1999, 2000, 2001,  2002,  2003,  2004,  2005,  2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+       Documentation  License,  Version  1.2 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+

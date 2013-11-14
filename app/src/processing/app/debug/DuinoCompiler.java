@@ -656,7 +656,7 @@ public class DuinoCompiler implements MessageConsumer {
       
         
       String aaa= libraryFolder.getAbsolutePath();
-      String lib_same=idepath_nochande+"\\libraries\\";
+      String lib_same=idepath+"/libraries/";
       String[] strArray0 = aaa.split(libraryFolder.getName());
                              
       // this library can use includes in its utility/ folder
@@ -857,7 +857,8 @@ public class DuinoCompiler implements MessageConsumer {
         out.write("\n");
         out.write("EXEFILES  = 86duino.exe\n");
         out.write("OBJFILES  = c:/compile/main.o\n");
-        out.write("LIBFILES  = -lstd~1\n");
+        out.write("LIBFILES  = -lstd~1 \n");
+        //out.write("LIBFILES  = -lstd~1 -L g:/ethernet/utility -lwatt\n");
         out.write("\n");
         out.write(".PHONY : everything all clean \n\n");
         out.write("everything : $(INIFILES) $(EXEFILES)\n\n");

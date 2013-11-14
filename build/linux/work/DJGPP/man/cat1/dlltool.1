@@ -1,0 +1,396 @@
+
+
+
+DLLTOOL(1)            GNU Development Tools            DLLTOOL(1)
+
+
+NNAAMMEE
+       dlltool - Create files needed to build and use DLLs.
+
+SSYYNNOOPPSSIISS
+       dlltool [--dd|----iinnppuutt--ddeeff _d_e_f_-_f_i_l_e_-_n_a_m_e]
+               [--bb|----bbaassee--ffiillee _b_a_s_e_-_f_i_l_e_-_n_a_m_e]
+               [--ee|----oouuttppuutt--eexxpp _e_x_p_o_r_t_s_-_f_i_l_e_-_n_a_m_e]
+               [--zz|----oouuttppuutt--ddeeff _d_e_f_-_f_i_l_e_-_n_a_m_e]
+               [--ll|----oouuttppuutt--lliibb _l_i_b_r_a_r_y_-_f_i_l_e_-_n_a_m_e]
+               [----eexxppoorrtt--aallll--ssyymmbboollss] [----nnoo--eexxppoorrtt--aallll--ssyymmbboollss]
+               [----eexxcclluuddee--ssyymmbboollss _l_i_s_t]
+               [----nnoo--ddeeffaauulltt--eexxcclluuddeess]
+               [--SS|----aass     _p_a_t_h_-_t_o_-_a_s_s_e_m_b_l_e_r]     [--ff|----aass--ffllaaggss
+       _o_p_t_i_o_n_s]
+               [--DD|----ddllllnnaammee _n_a_m_e] [--mm|----mmaacchhiinnee _m_a_c_h_i_n_e]
+               [--aa|----aadddd--iinnddiirreecctt]
+               [--UU|----aadddd--uunnddeerrssccoorree] [----aadddd--ssttddccaallll--uunnddeerrssccoorree]
+               [--kk|----kkiillll--aatt] [--AA|----aadddd--ssttddccaallll--aalliiaass]
+               [--pp|----eexxtt--pprreeffiixx--aalliiaass _p_r_e_f_i_x]
+               [--xx|----nnoo--iiddaattaa44] [--cc|----nnoo--iiddaattaa55] [--ii|----iinntteerrwwoorrkk]
+               [--nn|----nnooddeelleettee] [--tt|----tteemmpp--pprreeffiixx _p_r_e_f_i_x]
+               [--vv|----vveerrbboossee]
+               [--hh|----hheellpp] [--VV|----vveerrssiioonn]
+               [object-file ...]
+
+DDEESSCCRRIIPPTTIIOONN
+       ddllllttooooll  reads  its inputs, which can come from the --dd and
+       --bb options as  well  as  object  files  specified  on  the
+       command  line.   It then processes these inputs and if the
+       --ee option has been specified it creates  a  exports  file.
+       If  the  --ll option has been specified it creates a library
+       file and if the --zz option has been specified it creates  a
+       def  file.  Any or all of the --ee, --ll and --zz options can be
+       present in one invocation of dlltool.
+
+       When creating a DLL, along with the source for the DLL, it
+       is  necessary to have three other files.  ddllllttooooll can help
+       with the creation of these files.
+
+       The first file  is  a  _._d_e_f  file  which  specifies  which
+       functions  are  exported from the DLL, which functions the
+       DLL imports, and so on.  This is a text file  and  can  be
+       created by hand, or ddllllttooooll can be used to create it using
+       the --zz option.  In this case ddllllttooooll will scan the  object
+       files  specified  on  its  command  line looking for those
+       functions  which  have  been  specially  marked  as  being
+       exported  and  put  entries  for  them in the _._d_e_f file it
+       creates.
+
+       In order to mark a function as being exported from a  DLL,
+       it  needs  to  have an --eexxppoorrtt::<<nnaammee__ooff__ffuunnccttiioonn>> entry in
+       the ..ddrreeccttvvee section of the object file.  This can be done
+       in C by using the _a_s_m_(_) operator:
+
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+DLLTOOL(1)            GNU Development Tools            DLLTOOL(1)
+
+
+                 asm (".section .drectve");
+                 asm (".ascii \"-export:my_func\"");
+
+                 int my_func (void) { ... }
+
+       The  second  file  needed  for  DLL creation is an exports
+       file.  This file is linked with the object files that make
+       up  the  body  of  the  DLL  and  it handles the interface
+       between the DLL and the outside world.  This is  a  binary
+       file  and  it  can  be  created by giving the --ee option to
+       ddllllttooooll when it is creating or reading in a _._d_e_f file.
+
+       The third file needed for DLL creation is the library file
+       that  programs  will  link  with  in  order  to access the
+       functions in the DLL.  This file can be created by  giving
+       the --ll option to dlltool when it is creating or reading in
+       a _._d_e_f file.
+
+       ddllllttooooll builds the library file by hand, but it builds the
+       exports   file  by  creating  temporary  files  containing
+       assembler statements and then assembling  these.   The  --SS
+       command line option can be used to specify the path to the
+       assembler that dlltool will use, and the --ff option can  be
+       used to pass specific flags to that assembler.  The --nn can
+       be used to prevent dlltool from deleting  these  temporary
+       assembler  files  when  it is done, and if --nn is specified
+       twice then this will prevent  dlltool  from  deleting  the
+       temporary object files it used to build the library.
+
+       Here  is  an  example of creating a DLL from a source file
+       ddllll..cc and also creating a program  (from  an  object  file
+       called pprrooggrraamm..oo) that uses that DLL:
+
+                 gcc -c dll.c
+                 dlltool -e exports.o -l dll.lib dll.o
+                 gcc dll.o exports.o -o dll.dll
+                 gcc program.o dll.lib -o program
+
+OOPPTTIIOONNSS
+       The command line options have the following meanings:
+
+       --dd _f_i_l_e_n_a_m_e
+       ----iinnppuutt--ddeeff _f_i_l_e_n_a_m_e
+           Specifies  the  name  of a _._d_e_f file to be read in and
+           processed.
+
+       --bb _f_i_l_e_n_a_m_e
+       ----bbaassee--ffiillee _f_i_l_e_n_a_m_e
+           Specifies the name of a base file to be  read  in  and
+           processed.  The contents of this file will be added to
+           the relocation section in the exports  file  generated
+           by dlltool.
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+DLLTOOL(1)            GNU Development Tools            DLLTOOL(1)
+
+
+       --ee _f_i_l_e_n_a_m_e
+       ----oouuttppuutt--eexxpp _f_i_l_e_n_a_m_e
+           Specifies the name of the export file to be created by
+           dlltool.
+
+       --zz _f_i_l_e_n_a_m_e
+       ----oouuttppuutt--ddeeff _f_i_l_e_n_a_m_e
+           Specifies the name of the _._d_e_f file to be  created  by
+           dlltool.
+
+       --ll _f_i_l_e_n_a_m_e
+       ----oouuttppuutt--lliibb _f_i_l_e_n_a_m_e
+           Specifies  the  name of the library file to be created
+           by dlltool.
+
+       ----eexxppoorrtt--aallll--ssyymmbboollss
+           Treat all global and weak defined symbols found in the
+           input  object  files as symbols to be exported.  There
+           is a small list of symbols which are not  exported  by
+           default;  see  the  ----nnoo--ddeeffaauulltt--eexxcclluuddeess option.  You
+           may add to the list of symbols to not export by  using
+           the ----eexxcclluuddee--ssyymmbboollss option.
+
+       ----nnoo--eexxppoorrtt--aallll--ssyymmbboollss
+           Only export symbols explicitly listed in an input _._d_e_f
+           file or in  ..ddrreeccttvvee  sections  in  the  input  object
+           files.   This  is the default behaviour.  The ..ddrreeccttvvee
+           sections are created by ddlllleexxppoorrtt  attributes  in  the
+           source code.
+
+       ----eexxcclluuddee--ssyymmbboollss _l_i_s_t
+           Do  not export the symbols in _l_i_s_t.  This is a list of
+           symbol names separated by comma or  colon  characters.
+           The   symbol   names  should  not  contain  a  leading
+           underscore.    This   is    only    meaningful    when
+           ----eexxppoorrtt--aallll--ssyymmbboollss is used.
+
+       ----nnoo--ddeeffaauulltt--eexxcclluuddeess
+           When  ----eexxppoorrtt--aallll--ssyymmbboollss is used, it will by default
+           avoid exporting certain special symbols.  The  current
+           list  of  symbols  to  avoid  exporting is DDllllMMaaiinn@@1122,
+           DDllllEEnnttrryyPPooiinntt@@00,  iimmppuurree__ppttrr.    You   may   use   the
+           ----nnoo--ddeeffaauulltt--eexxcclluuddeess  option  to  go ahead and export
+           these special symbols.  This is only  meaningful  when
+           ----eexxppoorrtt--aallll--ssyymmbboollss is used.
+
+       --SS _p_a_t_h
+       ----aass _p_a_t_h
+           Specifies  the  path,  including  the filename, of the
+           assembler to be used to create the exports file.
+
+       --ff _o_p_t_i_o_n_s
+       ----aass--ffllaaggss _o_p_t_i_o_n_s
+           Specifies any specific  command  line  options  to  be
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+
+
+
+
+DLLTOOL(1)            GNU Development Tools            DLLTOOL(1)
+
+
+           passed  to  the  assembler  when  building the exports
+           file.  This option will work even if the --SS option  is
+           not used.  This option only takes one argument, and if
+           it occurs more than once on  the  command  line,  then
+           later  occurrences  will override earlier occurrences.
+           So if it is necessary to pass multiple options to  the
+           assembler they should be enclosed in double quotes.
+
+       --DD _n_a_m_e
+       ----ddllll--nnaammee _n_a_m_e
+           Specifies  the  name  to be stored in the _._d_e_f file as
+           the name of the DLL when the --ee option  is  used.   If
+           this option is not present, then the filename given to
+           the --ee option will be used as the name of the DLL.
+
+       --mm _m_a_c_h_i_n_e
+       --mmaacchhiinnee _m_a_c_h_i_n_e
+           Specifies the type of machine for  which  the  library
+           file  should be built.  ddllllttooooll has a built in default
+           type, depending upon how  it  was  created,  but  this
+           option can be used to override that.  This is normally
+           only useful when creating DLLs for an  ARM  processor,
+           when the contents of the DLL are actually encode using
+           Thumb instructions.
+
+       --aa
+       ----aadddd--iinnddiirreecctt
+           Specifies that when ddllllttooooll is  creating  the  exports
+           file it should add a section which allows the exported
+           functions to be referenced without  using  the  import
+           library.  Whatever the hell that means!
+
+       --UU
+       ----aadddd--uunnddeerrssccoorree
+           Specifies  that  when  ddllllttooooll is creating the exports
+           file it should prepend an underscore to the  names  of
+           _a_l_l exported symbols.
+
+       ----aadddd--ssttddccaallll--uunnddeerrssccoorree
+           Specifies  that  when  ddllllttooooll is creating the exports
+           file it should prepend an underscore to the  names  of
+           exported  _s_t_d_c_a_l_l  functions.  Variable names and non-
+           stdcall function names are not modified.  This  option
+           is useful when creating GNU-compatible import libs for
+           third party  DLLs  that  were  built  with  MS-Windows
+           tools.
+
+       --kk
+       ----kkiillll--aatt
+           Specifies  that  when  ddllllttooooll is creating the exports
+           file it should  not  append  the  string  @@  <<nnuummbbeerr>>.
+           These  numbers  are  called  ordinal  numbers and they
+           represent another way of accessing the function  in  a
+           DLL, other than by name.
+
+
+
+binutils-2.18.90            2008-09-10                          4
+
+
+
+
+
+DLLTOOL(1)            GNU Development Tools            DLLTOOL(1)
+
+
+       --AA
+       ----aadddd--ssttddccaallll--aalliiaass
+           Specifies  that  when  ddllllttooooll is creating the exports
+           file it should add aliases for stdcall symbols without
+           @@ <<nnuummbbeerr>> in addition to the symbols with @@ <<nnuummbbeerr>>.
+
+       --pp
+       ----eexxtt--pprreeffiixx--aalliiaass _p_r_e_f_i_x
+           Causes ddllllttooooll to create external aliases for all  DLL
+           imports  with  the  specified prefix.  The aliases are
+           created for both external and import symbols  with  no
+           leading underscore.
+
+       --xx
+       ----nnoo--iiddaattaa44
+           Specifies  that  when  ddllllttooooll is creating the exports
+           and  library  files  it  should  omit  the   ".idata4"
+           section.   This  is  for  compatibility  with  certain
+           operating systems.
+
+       --cc
+       ----nnoo--iiddaattaa55
+           Specifies that when ddllllttooooll is  creating  the  exports
+           and   library  files  it  should  omit  the  ".idata5"
+           section.   This  is  for  compatibility  with  certain
+           operating systems.
+
+       --ii
+       ----iinntteerrwwoorrkk
+           Specifies  that ddllllttooooll should mark the objects in the
+           library file and exports  file  that  it  produces  as
+           supporting interworking between ARM and Thumb code.
+
+       --nn
+       ----nnooddeelleettee
+           Makes  ddllllttooooll  preserve the temporary assembler files
+           it used to create the exports file.  If this option is
+           repeated then dlltool will also preserve the temporary
+           object files it uses to create the library file.
+
+       --tt _p_r_e_f_i_x
+       ----tteemmpp--pprreeffiixx _p_r_e_f_i_x
+           Makes ddllllttooooll use _p_r_e_f_i_x when constructing  the  names
+           of  temporary assembler and object files.  By default,
+           the temp file prefix is generated from the pid.
+
+       --vv
+       ----vveerrbboossee
+           Make dlltool describe what it is doing.
+
+       --hh
+       ----hheellpp
+           Displays a list  of  command  line  options  and  then
+           exits.
+
+
+
+binutils-2.18.90            2008-09-10                          5
+
+
+
+
+
+DLLTOOL(1)            GNU Development Tools            DLLTOOL(1)
+
+
+       --VV
+       ----vveerrssiioonn
+           Displays dlltool's version number and then exits.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are inserted in place of the  original  @_f_i_l_e  option.
+           If  _f_i_l_e  does  not exist, or cannot be read, then the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace  character  may be included in an option by
+           surrounding the entire  option  in  either  single  or
+           double  quotes.  Any character (including a backslash)
+           may be included  by  prefixing  the  character  to  be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain additional @_f_i_l_e  options;  any  such  options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       The Info pages for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright  (c)  1991,  1992, 1993, 1994, 1995, 1996, 1997,
+       1998, 1999, 2000, 2001,  2002,  2003,  2004,  2005,  2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+       Documentation  License,  Version  1.2 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          6
+
+

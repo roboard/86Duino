@@ -1,0 +1,264 @@
+
+
+
+BISON(1)                                                 BISON(1)
+
+
+NNAAMMEE
+       bison - GNU Project parser generator (yacc replacement)
+
+SSYYNNOOPPSSIISS
+       bbiissoonn  [  --bb _f_i_l_e_-_p_r_e_f_i_x ] [ ----ffiillee--pprreeffiixx==_f_i_l_e_-_p_r_e_f_i_x ] [
+       --dd ] [ ----ddeeffiinneess==_d_e_f_i_n_e_s_-_f_i_l_e ] [ --gg  ]  [  ----ggrraapphh==_g_r_a_p_h_-
+       _f_i_l_e ] [ --kk ] [ ----ttookkeenn--ttaabbllee ] [ --ll ] [ ----nnoo--lliinneess ] [ --nn
+       ] [ ----nnoo--ppaarrsseerr ] [ --oo _o_u_t_f_i_l_e ] [ ----oouuttppuutt--ffiillee==_o_u_t_f_i_l_e ]
+       [  --pp _p_r_e_f_i_x ] [ ----nnaammee--pprreeffiixx==_p_r_e_f_i_x ] [ --tt ] [ ----ddeebbuugg ]
+       [ --vv ] [ ----vveerrbboossee ] [ --VV ] [ ----vveerrssiioonn ] [ --yy ] [  ----yyaacccc
+       ] [ --hh ] [ ----hheellpp ] [ ----ffiixxeedd--oouuttppuutt--ffiilleess ] file
+       yyaacccc [ _s_i_m_i_l_a_r _o_p_t_i_o_n_s _a_n_d _o_p_e_r_a_n_d_s ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _B_i_s_o_n  is  a parser generator in the style of _y_a_c_c(1).  It
+       should be upwardly compatible with  input  files  designed
+       for _y_a_c_c.
+
+       Input files should follow the _y_a_c_c convention of ending in
+       ..yy.  Unlike _y_a_c_c, the generated files do  not  have  fixed
+       names,  but  instead  use  the  prefix  of the input file.
+       Moreover, if you need to put _C_+_+ code in the  input  file,
+       you  can  end  his  name  by a C++-like extension (.ypp or
+       .y++), then bison will follow your extension to  name  the
+       output  file  (.cpp  or  .c++).   For  instance, a grammar
+       description file named ppaarrssee..yyxxxx would produce the  gener-
+       ated  parser  in  a  file  named ppaarrssee..ttaabb..ccxxxx, instead of
+       _y_a_c_c's yy..ttaabb..cc or old _B_i_s_o_n version's ppaarrssee..ttaabb..cc.
+
+       This description of the options that can be given to _b_i_s_o_n
+       is  adapted  from the node IInnvvooccaattiioonn in the bbiissoonn..tteexxiinnffoo
+       manual, which should be taken as authoritative.
+
+       _B_i_s_o_n supports both traditional single-letter options  and
+       mnemonic  long  option names.  Long option names are indi-
+       cated with ---- instead  of  --.   Abbreviations  for  option
+       names are allowed as long as they are unique.  When a long
+       option takes an argument, like ----ffiillee--pprreeffiixx, connect  the
+       option name and the argument with ==.
+
+   OOPPTTIIOONNSS
+       --bb _f_i_l_e_-_p_r_e_f_i_x
+       ----ffiillee--pprreeffiixx==_f_i_l_e_-_p_r_e_f_i_x
+              Specify  a  prefix to use for all _b_i_s_o_n output file
+              names.  The names are chosen as if the  input  file
+              were named _f_i_l_e_-_p_r_e_f_i_x..cc.
+
+       --dd
+              Write an extra output file containing macro defini-
+              tions for the token type names defined in the gram-
+              mar and the semantic value type YYYYSSTTYYPPEE, as well as
+              a few eexxtteerrnn variable declarations.
+
+              If the parser output file is named _n_a_m_e..cc then this
+
+
+
+                              local                             1
+
+
+
+
+
+BISON(1)                                                 BISON(1)
+
+
+              file is named _n_a_m_e..hh.
+
+              This  output  file  is essential if you wish to put
+              the definition of yyyylleexx in a separate source  file,
+              because  yyyylleexx  needs  to be able to refer to token
+              type codes and the variable yyyyllvvaall.
+
+       ----ddeeffiinneess==_d_e_f_i_n_e_s_-_f_i_l_e
+              The behavior of  ----ddeeffiinneess  is  the  same  than  --dd
+              option.   The  only  difference  is  that it has an
+              optional argument which is the name of  the  output
+              filename.
+
+       --gg
+              Output  a  VCG  definition  of  the LALR(1) grammar
+              automaton computed by Bison.  If the  grammar  file
+              is ffoooo..yy , the VCG output file will be ffoooo..vvccgg.
+
+       ----ggrraapphh==_g_r_a_p_h_-_f_i_l_e
+              The behavior of ----ggrraapphh is the same than --gg option.
+              The only difference is  that  it  has  an  optional
+              argument  which  is  the  name  of the output graph
+              filename.
+
+       --kk
+       ----ttookkeenn--ttaabbllee
+              This switch causes the _n_a_m_e..ttaabb..cc output to include
+              a  list of token names in order by their token num-
+              bers; this is defined in the array  _y_y_t_n_a_m_e.   Also
+              generated  are #defines for _Y_Y_N_T_O_K_E_N_S, _Y_Y_N_N_T_S, _Y_Y_N_-
+              _R_U_L_E_S, and _Y_Y_N_S_T_A_T_E_S.
+
+       --ll
+       ----nnoo--lliinneess
+              Don't put any ##lliinnee preprocessor  commands  in  the
+              parser  file.   Ordinarily  _b_i_s_o_n  puts them in the
+              parser file so that the C  compiler  and  debuggers
+              will  associate  errors  with your source file, the
+              grammar file.  This option causes them to associate
+              errors  with  the parser file, treating it an inde-
+              pendent source file in its own right.
+
+       --nn
+       ----nnoo--ppaarrsseerr
+              Do not generate the parser code  into  the  output;
+              generate    only   declarations.    The   generated
+              _n_a_m_e..ttaabb..cc file will have  only  constant  declara-
+              tions.   In  addition, a _n_a_m_e..aacctt file is generated
+              containing a switch statement body  containing  all
+              the translated actions.
+
+       --oo _o_u_t_f_i_l_e
+       ----oouuttppuutt--ffiillee==_o_u_t_f_i_l_e
+              Specify the name _o_u_t_f_i_l_e for the parser file.
+
+
+
+                              local                             2
+
+
+
+
+
+BISON(1)                                                 BISON(1)
+
+
+              The  other output files' names are constructed from
+              _o_u_t_f_i_l_e as described under the --vv and --dd  switches.
+
+       --pp _p_r_e_f_i_x
+       ----nnaammee--pprreeffiixx==_p_r_e_f_i_x
+              Rename  the  external symbols used in the parser so
+              that they start with _p_r_e_f_i_x  instead  of  yyyy.   The
+              precise  list of symbols renamed is yyyyppaarrssee, yyyylleexx,
+              yyyyeerrrroorr, yyyyllvvaall, yyyycchhaarr, and yyyyddeebbuugg.
+
+              For example, if you use  --pp  cc,  the  names  become
+              ccppaarrssee, cclleexx, and so on.
+
+       --tt
+       ----ddeebbuugg
+              In  the  parser file, define the macro YYYYDDEEBBUUGG to 1
+              if it is not already defined, so that the debugging
+              facilities are compiled.
+
+       --vv
+       ----vveerrbboossee
+              Write  an  extra  output  file  containing  verbose
+              descriptions of the parser states and what is  done
+              for each type of look-ahead token in that state.
+
+              This  file  also  describes all the conflicts, both
+              those resolved by operator precedence and the unre-
+              solved ones.
+
+              The  file's  name  is made by removing ..ttaabb..cc or ..cc
+              from the parser output file name, and adding  ..oouutt--
+              ppuutt instead.
+
+              Therefore,  if  the  input  file is ffoooo..yy, then the
+              parser file is called ffoooo..ttaabb..cc by default.   As  a
+              consequence,  the  verbose  output  file  is called
+              ffoooo..oouuttppuutt.
+
+       --VV
+       ----vveerrssiioonn
+              Print the version number of _b_i_s_o_n and exit.
+
+       --hh
+       ----hheellpp Print a summary of the options to _b_i_s_o_n and exit.
+
+       --yy
+       ----yyaacccc
+       ----ffiixxeedd--oouuttppuutt--ffiilleess
+              Equivalent to --oo yy..ttaabb..cc; the parser output file is
+              called  yy..ttaabb..cc,  and  the other outputs are called
+              yy..oouuttppuutt and yy..ttaabb..hh.  The purpose of  this  switch
+              is  to imitate _y_a_c_c's output file name conventions.
+              Thus, the following shell script can substitute for
+              _y_a_c_c and is often installed as _y_a_c_c:
+
+
+
+                              local                             3
+
+
+
+
+
+BISON(1)                                                 BISON(1)
+
+
+              bbiissoonn --yy ""$$@@""
+
+
+SSEEEE AALLSSOO
+       _y_a_c_c(1)
+       The   _B_i_s_o_n   _R_e_f_e_r_e_n_c_e   _M_a_n_u_a_l,  included  as  the  file
+       bbiissoonn..tteexxiinnffoo in the _b_i_s_o_n source distribution.
+
+DDIIAAGGNNOOSSTTIICCSS
+       Self explanatory.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             4
+
+

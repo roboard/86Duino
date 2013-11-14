@@ -1,0 +1,396 @@
+
+
+
+AR(1)                 GNU Development Tools                 AR(1)
+
+
+NNAAMMEE
+       ar - create, modify, and extract from archives
+
+SSYYNNOOPPSSIISS
+       ar    [--XX3322__6644]   [--]_p[_m_o_d   [_r_e_l_p_o_s]   [_c_o_u_n_t]]   _a_r_c_h_i_v_e
+       [_m_e_m_b_e_r...]
+
+DDEESSCCRRIIPPTTIIOONN
+       The GNU aarr program creates, modifies,  and  extracts  from
+       archives.    An   _a_r_c_h_i_v_e  is  a  single  file  holding  a
+       collection of other files in a  structure  that  makes  it
+       possible to retrieve the original individual files (called
+       _m_e_m_b_e_r_s of the archive).
+
+       The  original   files'   contents,   mode   (permissions),
+       timestamp,  owner, and group are preserved in the archive,
+       and can be restored on extraction.
+
+       GNU aarr can maintain archives whose members have  names  of
+       any  length; however, depending on how aarr is configured on
+       your system, a limit on member-name length may be  imposed
+       for  compatibility  with  archive  formats maintained with
+       other  tools.   If  it  exists,  the  limit  is  often  15
+       characters  (typical  of  formats  related to a.out) or 16
+       characters (typical of formats related to coff).
+
+       aarr is considered a binary utility because archives of this
+       sort  are  most  often  used as _l_i_b_r_a_r_i_e_s holding commonly
+       needed subroutines.
+
+       aarr creates an index to the symbols defined in  relocatable
+       object  modules  in  the  archive  when  you  specify  the
+       modifier ss.  Once created, this index is  updated  in  the
+       archive  whenever  aarr makes a change to its contents (save
+       for the qq update operation).   An  archive  with  such  an
+       index  speeds  up  linking  to  the  library,  and  allows
+       routines in the library to call each other without  regard
+       to their placement in the archive.
+
+       You  may  use nnmm --ss or nnmm ----pprriinntt--aarrmmaapp to list this index
+       table.  If an archive lacks the table, another form of  aarr
+       called rraannlliibb can be used to add just the table.
+
+       GNU  aarr  can  optionally  create  a  _t_h_i_n  archive,  which
+       contains a symbol index and  references  to  the  original
+       copies  of  the  member  files  of  the archives.  Such an
+       archive is useful for building libraries for use within  a
+       local build, where the relocatable objects are expected to
+       remain available, and copying the contents of each  object
+       would  only  waste time and space.  Thin archives are also
+       _f_l_a_t_t_e_n_e_d, so that adding one or more archives to  a  thin
+       archive  will  add  the  elements  of  the  nested archive
+       individually.  The paths to the elements  of  the  archive
+       are stored relative to the archive itself.
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+AR(1)                 GNU Development Tools                 AR(1)
+
+
+       GNU  aarr  is  designed  to be compatible with two different
+       facilities.  You can control its activity  using  command-
+       line  options,  like the different varieties of aarr on Unix
+       systems; or, if you specify the single command-line option
+       --MM, you can control it with a script supplied via standard
+       input, like the MRI "librarian" program.
+
+OOPPTTIIOONNSS
+       GNU aarr allows you to mix the operation code _p and modifier
+       flags  _m_o_d  in  any  order,  within the first command-line
+       argument.
+
+       If you wish, you may begin the first command-line argument
+       with a dash.
+
+       The  _p  keyletter  specifies what operation to execute; it
+       may be any of the following, but you must specify only one
+       of them:
+
+       dd   _D_e_l_e_t_e modules from the archive.  Specify the names of
+           modules to be deleted as  _m_e_m_b_e_r...;  the  archive  is
+           untouched if you specify no files to delete.
+
+           If you specify the vv modifier, aarr lists each module as
+           it is deleted.
+
+       mm   Use this operation to _m_o_v_e members in an archive.
+
+           The ordering of members  in  an  archive  can  make  a
+           difference  in  how  programs  are  linked  using  the
+           library, if a symbol  is  defined  in  more  than  one
+           member.
+
+           If  no  modifiers  are  used with "m", any members you
+           name in the _m_e_m_b_e_r arguments are moved to the  _e_n_d  of
+           the  archive;  you can use the aa, bb, or ii modifiers to
+           move them to a specified place instead.
+
+       pp   _P_r_i_n_t the specified members of  the  archive,  to  the
+           standard output file.  If the vv modifier is specified,
+           show the member name before copying  its  contents  to
+           standard output.
+
+           If  you  specify no _m_e_m_b_e_r arguments, all the files in
+           the archive are printed.
+
+       qq   _Q_u_i_c_k _a_p_p_e_n_d; Historically, add the files _m_e_m_b_e_r... to
+           the  end of _a_r_c_h_i_v_e, without checking for replacement.
+
+           The  modifiers  aa,  bb,  and  ii  do  _n_o_t  affect   this
+           operation; new members are always placed at the end of
+           the archive.
+
+           The modifier vv makes  aarr  list  each  file  as  it  is
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+AR(1)                 GNU Development Tools                 AR(1)
+
+
+           appended.
+
+           Since  the  point  of  this  operation  is  speed, the
+           archive's symbol table index is not updated,  even  if
+           it  already  existed;  you  can  use  aarr  ss  or rraannlliibb
+           explicitly to update the symbol table index.
+
+           However,  too  many  different  systems  assume  quick
+           append rebuilds the index, so GNU aarr implements qq as a
+           synonym for rr.
+
+       rr   Insert  the  files  _m_e_m_b_e_r...   into   _a_r_c_h_i_v_e   (with
+           _r_e_p_l_a_c_e_m_e_n_t).  This  operation  differs from qq in that
+           any previously existing members are deleted  if  their
+           names match those being added.
+
+           If one of the files named in _m_e_m_b_e_r... does not exist,
+           aarr displays an error message, and  leaves  undisturbed
+           any  existing  members  of  the  archive matching that
+           name.
+
+           By default, new members are added at the  end  of  the
+           file;  but you may use one of the modifiers aa, bb, or ii
+           to request placement relative to some existing member.
+
+           The modifier vv used with this operation elicits a line
+           of output for each file inserted, along  with  one  of
+           the  letters  aa  or rr to indicate whether the file was
+           appended (no old member deleted) or replaced.
+
+       tt   Display a _t_a_b_l_e listing the contents  of  _a_r_c_h_i_v_e,  or
+           those  of  the  files  listed  in  _m_e_m_b_e_r...  that are
+           present in the archive.  Normally only the member name
+           is   shown;   if  you  also  want  to  see  the  modes
+           (permissions), timestamp, owner, group, and size,  you
+           can request that by also specifying the vv modifier.
+
+           If  you  do  not  specify  a  _m_e_m_b_e_r, all files in the
+           archive are listed.
+
+           If there is more than one  file  with  the  same  name
+           (say, ffiiee) in an archive (say bb..aa), aarr tt bb..aa ffiiee lists
+           only the first instance; to see them all, you must ask
+           for a complete listing---in our example, aarr tt bb..aa.
+
+       xx   _E_x_t_r_a_c_t  members (named _m_e_m_b_e_r) from the archive.  You
+           can use the vv modifier with this operation, to request
+           that aarr list each name as it extracts it.
+
+           If  you  do  not  specify  a  _m_e_m_b_e_r, all files in the
+           archive are extracted.
+
+           Files cannot be extracted from a thin archive.
+
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+
+
+
+
+AR(1)                 GNU Development Tools                 AR(1)
+
+
+       A number of modifiers (_m_o_d) may immediately follow  the  _p
+       keyletter,   to   specify  variations  on  an  operation's
+       behavior:
+
+       aa   Add new files _a_f_t_e_r an existing member of the archive.
+           If  you  use  the  modifier aa, the name of an existing
+           archive member must be present as the _r_e_l_p_o_s argument,
+           before the _a_r_c_h_i_v_e specification.
+
+       bb   Add  new  files  _b_e_f_o_r_e  an  existing  member  of  the
+           archive.  If you use the modifier bb, the  name  of  an
+           existing  archive member must be present as the _r_e_l_p_o_s
+           argument, before the _a_r_c_h_i_v_e specification.  (same  as
+           ii).
+
+       cc   _C_r_e_a_t_e  the  archive.  The specified _a_r_c_h_i_v_e is always
+           created if it did  not  exist,  when  you  request  an
+           update.  But a warning is issued unless you specify in
+           advance that you expect to create it,  by  using  this
+           modifier.
+
+       ff   Truncate  names  in the archive.  GNU aarr will normally
+           permit file names of any length.  This will  cause  it
+           to  create  archives which are not compatible with the
+           native aarr program on  some  systems.   If  this  is  a
+           concern,  the  ff modifier may be used to truncate file
+           names when putting them in the archive.
+
+       ii   Insert new files _b_e_f_o_r_e  an  existing  member  of  the
+           archive.   If  you  use the modifier ii, the name of an
+           existing archive member must be present as the  _r_e_l_p_o_s
+           argument,  before the _a_r_c_h_i_v_e specification.  (same as
+           bb).
+
+       ll   This modifier is accepted but not used.
+
+       NN   Uses the _c_o_u_n_t parameter.  This is used if  there  are
+           multiple  entries  in  the archive with the same name.
+           Extract or delete instance _c_o_u_n_t  of  the  given  name
+           from the archive.
+
+       oo   Preserve the _o_r_i_g_i_n_a_l dates of members when extracting
+           them.  If you do  not  specify  this  modifier,  files
+           extracted  from  the archive are stamped with the time
+           of extraction.
+
+       PP   Use the full path name  when  matching  names  in  the
+           archive.  GNU aarr can not create an archive with a full
+           path name (such archives are not POSIX complaint), but
+           other  archive  creators  can.  This option will cause
+           GNU aarr to match file names using a complete path name,
+           which  can be convenient when extracting a single file
+           from an archive created by another tool.
+
+
+
+
+binutils-2.18.90            2008-09-10                          4
+
+
+
+
+
+AR(1)                 GNU Development Tools                 AR(1)
+
+
+       ss   Write an object-file index into the archive, or update
+           an  existing  one,  even if no other change is made to
+           the archive.  You may use this  modifier  flag  either
+           with  any  operation,  or  alone.   Running aarr ss on an
+           archive is equivalent to running rraannlliibb on it.
+
+       SS   Do not generate an archive  symbol  table.   This  can
+           speed  up  building  a large library in several steps.
+           The resulting archive can not be used with the linker.
+           In  order to build a symbol table, you must omit the SS
+           modifier on the last execution of aarr, or you must  run
+           rraannlliibb on the archive.
+
+       TT   Make  the  specified  _a_r_c_h_i_v_e  a  _t_h_i_n archive.  If it
+           already exists and is a regular archive, the  existing
+           members  must  be  present  in  the  same directory as
+           _a_r_c_h_i_v_e.
+
+       uu   Normally, aarr rr... inserts all files  listed  into  the
+           archive.   If  you  would like to insert _o_n_l_y those of
+           the files  you  list  that  are  newer  than  existing
+           members  of  the same names, use this modifier.  The uu
+           modifier  is  allowed  only  for   the   operation   rr
+           (replace).   In  particular, the combination qquu is not
+           allowed, since checking the timestamps would lose  any
+           speed advantage from the operation qq.
+
+       vv   This  modifier  requests  the  _v_e_r_b_o_s_e  version  of an
+           operation.    Many   operations   display   additional
+           information,  such  as  filenames  processed, when the
+           modifier vv is appended.
+
+       VV   This modifier shows the version number of aarr.
+
+       aarr  ignores  an  initial   option   spelt   --XX3322__6644,   for
+       compatibility  with  AIX.   The behaviour produced by this
+       option is the default for GNU aarr.  aarr does not support any
+       of  the  other  --XX  options;  in  particular,  it does not
+       support --XX3322 which is the default for AIX aarr.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+
+
+binutils-2.18.90            2008-09-10                          5
+
+
+
+
+
+AR(1)                 GNU Development Tools                 AR(1)
+
+
+SSEEEE AALLSSOO
+       _n_m(1), _r_a_n_l_i_b(1), and the Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1991, 1992, 1993, 1994,  1995,  1996,  1997,
+       1998,  1999,  2000,  2001,  2002,  2003, 2004, 2005, 2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission is granted to copy,  distribute  and/or  modify
+       this   document   under   the   terms   of  the  GNU  Free
+       Documentation License, Version 1.2 or  any  later  version
+       published   by  the  Free  Software  Foundation;  with  no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover  Texts.   A  copy of the license is included in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          6
+
+

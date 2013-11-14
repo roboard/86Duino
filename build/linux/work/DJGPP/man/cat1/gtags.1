@@ -1,0 +1,264 @@
+
+
+
+GTAGS(1)                                                 GTAGS(1)
+
+
+NNAAMMEE
+       gtags - create tag files for global.
+
+SSYYNNOOPPSSIISS
+       ggttaaggss [-iIqvw][-f _f_i_l_e][-n _n_u_m_b_e_r][_d_b_p_a_t_h]
+
+DDEESSCCRRIIPPTTIIOONN
+       GGttaaggss  recursively collect the source files under the cur-
+       rent directory, pickup symbols and write the  cross-refer-
+       ence  data  into tag files ('GTAGS', 'GRTAGS', 'GSYMS' and
+       'GPATH').  You should execute this command at the root  of
+       the source tree.
+
+       C, C++, yacc, java, PHP and Assembly source files are sup-
+       ported.  Files whose names end in '.c' or '.h' are assumed
+       to  be C source files and are searched for C style routine
+       and macro definitions.  Files whose names  end  in  '.c++'
+       '.cc' '.cpp' '.cxx' '.hxx' '.hpp' '.C' '.H' are assumed to
+       be C++ source files.  Files whose names end  in  '.y'  are
+       assumed to be YACC source files.  Files whose names end in
+       '.java' are assumed to be Java source files.  Files  whose
+       names end in '.php' '.php3' '.phtml' are assumed to be PHP
+       source files.  Files whose names end in '.s' or  '.S'  are
+       assumed  to  be  Assembler  source files.  Other files are
+       searched for C style definitions.
+
+OOPPTTIIOONNSS
+       The following options are available:
+
+       ----ccoonnffiigg[=_n_a_m_e]
+              Show the value of config variable _n_a_m_e.  If _n_a_m_e is
+              not specified then show whole of config entry.
+
+       --ff, ----ffiillee _f_i_l_e
+              Read from _f_i_l_e a list of file names which should be
+              considered as the candidate of  source  files.   By
+              default,  all files under the current directory are
+              considered as the candidate.  If _f_i_l_e is '-',  read
+              from  standard input.  File names must be separated
+              by newline.
+
+       ----ggttaaggssccoonnff _f_i_l_e
+              Load user's configuration from _f_i_l_e.
+
+       ----ggttaaggssllaabbeell _l_a_b_e_l
+              _l_a_b_e_l is used as the label of  configuration  file.
+              The default is default.
+
+       --ii, ----iinnccrreemmeennttaall
+              Update  tag files incrementally. You had better use
+              gglloobbaall(1) with the -u option.
+
+       --II, ----iidduuttiillss
+              Make index files for iidduuttiillss(1).
+
+
+
+GNU Project                January 2007                         1
+
+
+
+
+
+GTAGS(1)                                                 GTAGS(1)
+
+
+       --nn, ----mmaaxx--aarrggss _n_u_m_b_e_r
+              Maximum number of  arguments  for  ggttaaggss--ppaarrsseerr(1).
+              By default, gtags invokes the parser with arguments
+              as a lot as possible to decrease the  frequency  of
+              invoking.
+
+       --qq, ----qquuiieett
+              Quiet mode.
+
+       --vv, ----vveerrbboossee
+              Verbose mode.
+
+       --ww, ----wwaarrnniinngg
+              Print warning messages.
+
+       _d_b_p_a_t_h The  directory  in  which  tag files are generated.
+              The default is the current directory.  It is useful
+              when your source directory is on a read only device
+              like CDROM.
+
+EEXXAAMMPPLLEESS
+            $ ls -F
+            Makefile      src/    lib/
+            $ gtags -v
+            $ global -x main
+            main              10 src/main.c  main (argc, argv) {
+
+FFIILLEESS
+       'GTAGS'
+              Tag file for function definitions.
+
+       'GRTAGS'
+              Tag file for function references.
+
+       'GSYMS'
+              Tag file for other symbols.
+
+       'GPATH'
+              Tag file for path of source files.
+
+       '/etc/gtags.conf', '$HOME/.globalrc'
+              Configuration file.
+
+EENNVVIIRROONNMMEENNTT
+       The following environment variables affect  the  execution
+       of ggttaaggss:
+
+       GGTTAAGGSSCCOONNFF
+              If  this  variable is set, its value is used as the
+              configuration file. The  default  is  '$HOME/.glob-
+              alrc'.
+
+       GGTTAAGGSSLLAABBEELL
+              If  this  variable is set, its value is used as the
+
+
+
+GNU Project                January 2007                         2
+
+
+
+
+
+GTAGS(1)                                                 GTAGS(1)
+
+
+              label  of  configuration  file.  The   default   is
+              default.
+
+       GGTTAAGGSSCCAACCHHEE
+              If  this  variable is set, its value is used as the
+              size of btree cache. The default is 500000 (bytes).
+
+CCOONNFFIIGGUURRAATTIIOONN
+       The following configuration variables affect the execution
+       of ggttaaggss.  You can see the default value for each variable
+       with the ----ccoonnffiigg option.
+
+       GTAGS(string)
+              If  this  variable is set, its value is used as the
+              command line of parser for GTAGS.  The  default  is
+              'gtags-parser -dt %s'.
+
+       GRTAGS(string)
+              If  this  variable is set, its value is used as the
+              command line of parser for GRTAGS. The  default  is
+              'gtags-parser -dtr %s'.
+
+       GSYMS(string)
+              If  this  variable is set, its value is used as the
+              command line of parser for GSYMS.  The  default  is
+              'gtags-parser -dts %s'.
+
+       skip(comma separated list)
+              GGttaaggss  skips files which listed in this list.  As a
+              special exception, ggttaaggss collect values from multi-
+              ple skip variables.  If the value ends with '/', it
+              assumed as a directory and ggttaaggss  skips  all  files
+              under  it.  If the value start with '/', it assumed
+              relative path from the root of source directory.
+
+       suffixes(comma separated list)
+              Suffixes of  target  source  file.   As  a  special
+              exception,  ggttaaggss collect values from multiple suf-
+              fixes variables.  This variable  is  obsoleted.  If
+              the  langmap  variable  is  defined ggttaaggss no longer
+              refers this.
+
+       icase_path(boolean)
+              Ignore case distinctions  in  the  path.   Suffixes
+              check are affected by this capability.
+
+       langmap(comma separated list)
+              Language mapping. Each comma-separated map consists
+              of the language name, a colon, and a list  of  file
+              extensions.         Default        mapping       is
+              'c:.c.h,yacc:.y,asm:.s.S,java:.java,cpp:.c++.cc.cpp.cxx.hxx.hpp.C.H,php:.php.php3.phtml'.
+
+DDIIAAGGNNOOSSTTIICCSS
+       GGttaaggss  exits  with  a  non 0 value if an error occurred, 0
+
+
+
+GNU Project                January 2007                         3
+
+
+
+
+
+GTAGS(1)                                                 GTAGS(1)
+
+
+       otherwise.
+
+MMEESSSSAAGGEE FFOORRMMAATT
+       Verbose message has important level.  The  most  important
+       level is 0, the second is 1 and so on. All the message has
+       level numbers leading blanks.
+
+SSEEEE AALLSSOO
+       ggttaaggss--ppaarrsseerr(1), gglloobbaall(1), hhttaaggss(1).
+
+       GNU GLOBAL source code tag system
+       (http://www.gnu.org/software/global/).
+
+BBUUGG
+       'GTAGS', 'GRTAGS' and 'GSYMS' are very large.  In  advance
+       of using this command, check the space of your disk.
+
+       Assembler  support is far from complete.  It extracts only
+       ENTRY() and ALTENTRY() from source file.   Probably  valid
+       only for FreeBSD and Linux kernel source.
+
+       There is no concurrency control about tag files.
+
+       Symbols  in  Assembly  source  files are not extracted for
+       'GSYMS'.
+
+AAUUTTHHOORR
+       Tama Communications Corporation.
+
+HHIISSTTOORRYY
+       The ggttaaggss command appeared in FreeBSD 2.2.2.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU Project                January 2007                         4
+
+

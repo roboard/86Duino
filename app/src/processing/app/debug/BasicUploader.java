@@ -341,7 +341,7 @@ public class BasicUploader extends Uploader  {
           if (!Base.isMacOS())
             Thread.sleep(300);
           
-          uploadPort = waitForUploadPort(uploadPort, before);
+          //uploadPort = waitForUploadPort(uploadPort, before);
         } else {
           Thread.sleep(400);
         }
@@ -357,7 +357,7 @@ public class BasicUploader extends Uploader  {
         prefs.put("serial.port.file", uploadPort);
     }
     
-    prefs.put("build.path", prefs.get("runtime.ide.path")+"\\hardware\\86duino\\x86\\bootloaders");
+    prefs.put("build.path", prefs.get("runtime.ide.path")+"/hardware/86duino/x86/bootloaders");
     
     String packageName = prefs.get("target_package");
     if(packageName.compareTo("86duino") == 0){

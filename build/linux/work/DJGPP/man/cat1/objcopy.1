@@ -1,0 +1,858 @@
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+NNAAMMEE
+       objcopy - copy and translate object files
+
+SSYYNNOOPPSSIISS
+       objcopy [--FF _b_f_d_n_a_m_e|----ttaarrggeett==_b_f_d_n_a_m_e]
+               [--II _b_f_d_n_a_m_e|----iinnppuutt--ttaarrggeett==_b_f_d_n_a_m_e]
+               [--OO _b_f_d_n_a_m_e|----oouuttppuutt--ttaarrggeett==_b_f_d_n_a_m_e]
+               [--BB _b_f_d_a_r_c_h|----bbiinnaarryy--aarrcchhiitteeccttuurree==_b_f_d_a_r_c_h]
+               [--SS|----ssttrriipp--aallll]
+               [--gg|----ssttrriipp--ddeebbuugg]
+               [--KK _s_y_m_b_o_l_n_a_m_e|----kkeeeepp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+               [--NN _s_y_m_b_o_l_n_a_m_e|----ssttrriipp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+               [----ssttrriipp--uunnnneeeeddeedd--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+               [--GG _s_y_m_b_o_l_n_a_m_e|----kkeeeepp--gglloobbaall--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+               [----llooccaalliizzee--hhiiddddeenn]
+               [--LL _s_y_m_b_o_l_n_a_m_e|----llooccaalliizzee--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+               [----gglloobbaalliizzee--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+               [--WW _s_y_m_b_o_l_n_a_m_e|----wweeaakkeenn--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+               [--ww|----wwiillddccaarrdd]
+               [--xx|----ddiissccaarrdd--aallll]
+               [--XX|----ddiissccaarrdd--llooccaallss]
+               [--bb _b_y_t_e|----bbyyttee==_b_y_t_e]
+               [--ii _i_n_t_e_r_l_e_a_v_e|----iinntteerrlleeaavvee==_i_n_t_e_r_l_e_a_v_e]
+               [--jj _s_e_c_t_i_o_n_n_a_m_e|----oonnllyy--sseeccttiioonn==_s_e_c_t_i_o_n_n_a_m_e]
+               [--RR _s_e_c_t_i_o_n_n_a_m_e|----rreemmoovvee--sseeccttiioonn==_s_e_c_t_i_o_n_n_a_m_e]
+               [--pp|----pprreesseerrvvee--ddaatteess]
+               [----ddeebbuuggggiinngg]
+               [----ggaapp--ffiillll==_v_a_l]
+               [----ppaadd--ttoo==_a_d_d_r_e_s_s]
+               [----sseett--ssttaarrtt==_v_a_l]
+               [----aaddjjuusstt--ssttaarrtt==_i_n_c_r]
+               [----cchhaannggee--aaddddrreesssseess==_i_n_c_r]
+               [----cchhaannggee--sseeccttiioonn--aaddddrreessss _s_e_c_t_i_o_n{=,+,-}_v_a_l]
+               [----cchhaannggee--sseeccttiioonn--llmmaa _s_e_c_t_i_o_n{=,+,-}_v_a_l]
+               [----cchhaannggee--sseeccttiioonn--vvmmaa _s_e_c_t_i_o_n{=,+,-}_v_a_l]
+               [----cchhaannggee--wwaarrnniinnggss] [----nnoo--cchhaannggee--wwaarrnniinnggss]
+               [----sseett--sseeccttiioonn--ffllaaggss _s_e_c_t_i_o_n=_f_l_a_g_s]
+               [----aadddd--sseeccttiioonn _s_e_c_t_i_o_n_n_a_m_e=_f_i_l_e_n_a_m_e]
+               [----rreennaammee--sseeccttiioonn _o_l_d_n_a_m_e=_n_e_w_n_a_m_e[,_f_l_a_g_s]]
+               [----cchhaannggee--lleeaaddiinngg--cchhaarr] [----rreemmoovvee--lleeaaddiinngg--cchhaarr]
+               [----rreevveerrssee--bbyytteess==_n_u_m]
+               [----ssrreecc--lleenn==_i_v_a_l] [----ssrreecc--ffoorrcceeSS33]
+               [----rreeddeeffiinnee--ssyymm _o_l_d=_n_e_w]
+               [----rreeddeeffiinnee--ssyymmss==_f_i_l_e_n_a_m_e]
+               [----wweeaakkeenn]
+               [----kkeeeepp--ssyymmbboollss==_f_i_l_e_n_a_m_e]
+               [----ssttrriipp--ssyymmbboollss==_f_i_l_e_n_a_m_e]
+               [----ssttrriipp--uunnnneeeeddeedd--ssyymmbboollss==_f_i_l_e_n_a_m_e]
+               [----kkeeeepp--gglloobbaall--ssyymmbboollss==_f_i_l_e_n_a_m_e]
+               [----llooccaalliizzee--ssyymmbboollss==_f_i_l_e_n_a_m_e]
+               [----gglloobbaalliizzee--ssyymmbboollss==_f_i_l_e_n_a_m_e]
+               [----wweeaakkeenn--ssyymmbboollss==_f_i_l_e_n_a_m_e]
+               [----aalltt--mmaacchhiinnee--ccooddee==_i_n_d_e_x]
+               [----pprreeffiixx--ssyymmbboollss==_s_t_r_i_n_g]
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+               [----pprreeffiixx--sseeccttiioonnss==_s_t_r_i_n_g]
+               [----pprreeffiixx--aalllloocc--sseeccttiioonnss==_s_t_r_i_n_g]
+               [----aadddd--ggnnuu--ddeebbuugglliinnkk==_p_a_t_h_-_t_o_-_f_i_l_e]
+               [----kkeeeepp--ffiillee--ssyymmbboollss]
+               [----oonnllyy--kkeeeepp--ddeebbuugg]
+               [----eexxttrraacctt--ssyymmbbooll]
+               [----wwrriittaabbllee--tteexxtt]
+               [----rreeaaddoonnllyy--tteexxtt]
+               [----ppuurree]
+               [----iimmppuurree]
+               [--vv|----vveerrbboossee]
+               [--VV|----vveerrssiioonn]
+               [----hheellpp] [----iinnffoo]
+               _i_n_f_i_l_e [_o_u_t_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+       The  GNU  oobbjjccooppyy utility copies the contents of an object
+       file to another.  oobbjjccooppyy uses the GNU BFD Library to read
+       and  write the object files.  It can write the destination
+       object file in a format different from that of the  source
+       object  file.  The exact behavior of oobbjjccooppyy is controlled
+       by command-line options.  Note that oobbjjccooppyy should be able
+       to  copy  a  fully  linked  file  between any two formats.
+       However, copying a relocatable object file between any two
+       formats may not work as expected.
+
+       oobbjjccooppyy creates temporary files to do its translations and
+       deletes them afterward.  oobbjjccooppyy uses BFD to  do  all  its
+       translation  work;  it  has  access  to  all  the  formats
+       described in BFD  and  thus  is  able  to  recognize  most
+       formats without being told explicitly.
+
+       oobbjjccooppyy  can  be  used  to  generate S-records by using an
+       output target of ssrreecc (e.g., use --OO ssrreecc).
+
+       oobbjjccooppyy can be used to generate a raw binary file by using
+       an  output  target  of bbiinnaarryy (e.g., use --OO bbiinnaarryy).  When
+       oobbjjccooppyy generates a raw binary file, it  will  essentially
+       produce  a memory dump of the contents of the input object
+       file.  All symbols  and  relocation  information  will  be
+       discarded.  The memory dump will start at the load address
+       of the lowest section copied into the output file.
+
+       When generating an S-record or a raw binary file,  it  may
+       be  helpful  to  use  --SS  to  remove  sections  containing
+       debugging information.  In some cases --RR will be useful to
+       remove  sections  which  contain  information  that is not
+       needed by the binary file.
+
+       Note---oobbjjccooppyy is not able to change the endianness of its
+       input  files.  If the input format has an endianness (some
+       formats do not), oobbjjccooppyy can only  copy  the  inputs  into
+       file  formats  that have the same endianness or which have
+       no   endianness   (e.g.,   ssrreecc).    (However,   see   the
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+       ----rreevveerrssee--bbyytteess option.)
+
+OOPPTTIIOONNSS
+       _i_n_f_i_l_e
+       _o_u_t_f_i_l_e
+           The  input  and output files, respectively.  If you do
+           not specify _o_u_t_f_i_l_e, oobbjjccooppyy creates a temporary  file
+           and  destructively renames the result with the name of
+           _i_n_f_i_l_e.
+
+       --II _b_f_d_n_a_m_e
+       ----iinnppuutt--ttaarrggeett==_b_f_d_n_a_m_e
+           Consider  the  source  file's  object  format  to   be
+           _b_f_d_n_a_m_e, rather than attempting to deduce it.
+
+       --OO _b_f_d_n_a_m_e
+       ----oouuttppuutt--ttaarrggeett==_b_f_d_n_a_m_e
+           Write the output file using the object format _b_f_d_n_a_m_e.
+
+       --FF _b_f_d_n_a_m_e
+       ----ttaarrggeett==_b_f_d_n_a_m_e
+           Use _b_f_d_n_a_m_e as the object format for  both  the  input
+           and  the  output file; i.e., simply transfer data from
+           source to destination with no translation.
+
+       --BB _b_f_d_a_r_c_h
+       ----bbiinnaarryy--aarrcchhiitteeccttuurree==_b_f_d_a_r_c_h
+           Useful when transforming a raw binary input file  into
+           an  object file.  In this case the output architecture
+           can be set to _b_f_d_a_r_c_h. This option will be ignored  if
+           the  input  file  has  a known _b_f_d_a_r_c_h. You can access
+           this binary data inside a program by  referencing  the
+           special  symbols  that  are  created by the conversion
+           process.       These      symbols      are      called
+           _binary__o_b_j_f_i_l_e_start,     _binary__o_b_j_f_i_l_e_end     and
+           _binary__o_b_j_f_i_l_e_size.   e.g.  you  can   transform   a
+           picture file into an object file and then access it in
+           your code using these symbols.
+
+       --jj _s_e_c_t_i_o_n_n_a_m_e
+       ----oonnllyy--sseeccttiioonn==_s_e_c_t_i_o_n_n_a_m_e
+           Copy only the named section from the input file to the
+           output file.  This option may be given more than once.
+           Note that using this option inappropriately  may  make
+           the output file unusable.
+
+       --RR _s_e_c_t_i_o_n_n_a_m_e
+       ----rreemmoovvee--sseeccttiioonn==_s_e_c_t_i_o_n_n_a_m_e
+           Remove  any  section named _s_e_c_t_i_o_n_n_a_m_e from the output
+           file.  This option may be given more than once.   Note
+           that  using  this  option inappropriately may make the
+           output file unusable.
+
+       --SS
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+       ----ssttrriipp--aallll
+           Do not copy relocation and symbol information from the
+           source file.
+
+       --gg
+       ----ssttrriipp--ddeebbuugg
+           Do  not  copy  debugging  symbols or sections from the
+           source file.
+
+       ----ssttrriipp--uunnnneeeeddeedd
+           Strip all symbols that are not needed  for  relocation
+           processing.
+
+       --KK _s_y_m_b_o_l_n_a_m_e
+       ----kkeeeepp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           When stripping symbols, keep symbol _s_y_m_b_o_l_n_a_m_e even if
+           it would normally be stripped.   This  option  may  be
+           given more than once.
+
+       --NN _s_y_m_b_o_l_n_a_m_e
+       ----ssttrriipp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           Do  not  copy  symbol _s_y_m_b_o_l_n_a_m_e from the source file.
+           This option may be given more than once.
+
+       ----ssttrriipp--uunnnneeeeddeedd--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           Do not copy symbol _s_y_m_b_o_l_n_a_m_e  from  the  source  file
+           unless  it is needed by a relocation.  This option may
+           be given more than once.
+
+       --GG _s_y_m_b_o_l_n_a_m_e
+       ----kkeeeepp--gglloobbaall--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           Keep only symbol _s_y_m_b_o_l_n_a_m_e global.   Make  all  other
+           symbols  local  to  the  file,  so  that  they are not
+           visible externally.  This option  may  be  given  more
+           than once.
+
+       ----llooccaalliizzee--hhiiddddeenn
+           In an ELF object, mark all symbols that have hidden or
+           internal visibility as local.  This option applies  on
+           top  of  symbol-specific  localization options such as
+           --LL.
+
+       --LL _s_y_m_b_o_l_n_a_m_e
+       ----llooccaalliizzee--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           Make symbol _s_y_m_b_o_l_n_a_m_e local to the file, so  that  it
+           is  not  visible externally.  This option may be given
+           more than once.
+
+       --WW _s_y_m_b_o_l_n_a_m_e
+       ----wweeaakkeenn--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           Make symbol _s_y_m_b_o_l_n_a_m_e weak. This option may be  given
+           more than once.
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          4
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+       ----gglloobbaalliizzee--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           Give  symbol  _s_y_m_b_o_l_n_a_m_e  global scoping so that it is
+           visible outside of the file in which  it  is  defined.
+           This option may be given more than once.
+
+       --ww
+       ----wwiillddccaarrdd
+           Permit  regular  expressions  in  _s_y_m_b_o_l_n_a_m_es  used in
+           other command line options.  The  question  mark  (?),
+           asterisk  (*),  backslash (\) and square brackets ([])
+           operators can be used anywhere in the symbol name.  If
+           the   first  character  of  the  symbol  name  is  the
+           exclamation point (!) then the sense of the switch  is
+           reversed for that symbol.  For example:
+
+                     -w -W !foo -W fo*
+
+           would  cause  objcopy to weaken all symbols that start
+           with "fo" except for the symbol "foo".
+
+       --xx
+       ----ddiissccaarrdd--aallll
+           Do not copy non-global symbols from the source file.
+
+       --XX
+       ----ddiissccaarrdd--llooccaallss
+           Do not copy compiler-generated local symbols.   (These
+           usually start with LL or ...)
+
+       --bb _b_y_t_e
+       ----bbyyttee==_b_y_t_e
+           Keep  only every _b_y_t_eth byte of the input file (header
+           data is not affected).  _b_y_t_e can be in the range  from
+           0 to _i_n_t_e_r_l_e_a_v_e-1, where _i_n_t_e_r_l_e_a_v_e is given by the --ii
+           or ----iinntteerrlleeaavvee option, or the  default  of  4.   This
+           option  is  useful  for creating files to program ROM.
+           It is typically used with an "srec" output target.
+
+       --ii _i_n_t_e_r_l_e_a_v_e
+       ----iinntteerrlleeaavvee==_i_n_t_e_r_l_e_a_v_e
+           Only copy one out of every _i_n_t_e_r_l_e_a_v_e  bytes.   Select
+           which  byte to copy with the --bb or ----bbyyttee option.  The
+           default is 4.  oobbjjccooppyy ignores this option if  you  do
+           not specify either --bb or ----bbyyttee.
+
+       --pp
+       ----pprreesseerrvvee--ddaatteess
+           Set  the  access  and modification dates of the output
+           file to be the same as those of the input file.
+
+       ----ddeebbuuggggiinngg
+           Convert debugging information, if possible.   This  is
+           not the default because only certain debugging formats
+           are supported, and the conversion process can be  time
+
+
+
+binutils-2.18.90            2008-09-10                          5
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+           consuming.
+
+       ----ggaapp--ffiillll _v_a_l
+           Fill  gaps  between sections with _v_a_l.  This operation
+           applies to the _l_o_a_d _a_d_d_r_e_s_s (LMA) of the sections.  It
+           is done by increasing the size of the section with the
+           lower address, and filling in the extra space  created
+           with _v_a_l.
+
+       ----ppaadd--ttoo _a_d_d_r_e_s_s
+           Pad  the  output  file up to the load address _a_d_d_r_e_s_s.
+           This is done  by  increasing  the  size  of  the  last
+           section.   The extra space is filled in with the value
+           specified by ----ggaapp--ffiillll (default zero).
+
+       ----sseett--ssttaarrtt _v_a_l
+           Set the start address of the new file to _v_a_l.  Not all
+           object file formats support setting the start address.
+
+       ----cchhaannggee--ssttaarrtt _i_n_c_r
+       ----aaddjjuusstt--ssttaarrtt _i_n_c_r
+           Change the start address  by  adding  _i_n_c_r.   Not  all
+           object file formats support setting the start address.
+
+       ----cchhaannggee--aaddddrreesssseess _i_n_c_r
+       ----aaddjjuusstt--vvmmaa _i_n_c_r
+           Change the VMA and LMA addresses of all  sections,  as
+           well  as  the  start  address,  by  adding _i_n_c_r.  Some
+           object file formats do not permit section addresses to
+           be  changed  arbitrarily.   Note  that  this  does not
+           relocate the sections; if the program expects sections
+           to  be loaded at a certain address, and this option is
+           used to change the sections such that they are  loaded
+           at a different address, the program may fail.
+
+       ----cchhaannggee--sseeccttiioonn--aaddddrreessss _s_e_c_t_i_o_n{{==,,++,,--}}_v_a_l
+       ----aaddjjuusstt--sseeccttiioonn--vvmmaa _s_e_c_t_i_o_n{{==,,++,,--}}_v_a_l
+           Set or change both the VMA address and the LMA address
+           of the named _s_e_c_t_i_o_n.   If  ==  is  used,  the  section
+           address  is set to _v_a_l.  Otherwise, _v_a_l is added to or
+           subtracted from the section address.  See the comments
+           under  ----cchhaannggee--aaddddrreesssseess,  above. If _s_e_c_t_i_o_n does not
+           exist in the input file, a  warning  will  be  issued,
+           unless ----nnoo--cchhaannggee--wwaarrnniinnggss is used.
+
+       ----cchhaannggee--sseeccttiioonn--llmmaa _s_e_c_t_i_o_n{{==,,++,,--}}_v_a_l
+           Set  or  change  the LMA address of the named _s_e_c_t_i_o_n.
+           The LMA address is the address where the section  will
+           be  loaded into memory at program load time.  Normally
+           this is the same as the  VMA  address,  which  is  the
+           address  of  the  section  at program run time, but on
+           some systems, especially those where a program is held
+           in  ROM,  the two can be different.  If == is used, the
+           section address is set  to  _v_a_l.   Otherwise,  _v_a_l  is
+
+
+
+binutils-2.18.90            2008-09-10                          6
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+           added  to or subtracted from the section address.  See
+           the  comments  under  ----cchhaannggee--aaddddrreesssseess,  above.   If
+           _s_e_c_t_i_o_n  does  not  exist in the input file, a warning
+           will be issued, unless ----nnoo--cchhaannggee--wwaarrnniinnggss is used.
+
+       ----cchhaannggee--sseeccttiioonn--vvmmaa _s_e_c_t_i_o_n{{==,,++,,--}}_v_a_l
+           Set or change the VMA address of  the  named  _s_e_c_t_i_o_n.
+           The  VMA address is the address where the section will
+           be located once the  program  has  started  executing.
+           Normally this is the same as the LMA address, which is
+           the address where the  section  will  be  loaded  into
+           memory,  but on some systems, especially those where a
+           program is held in ROM, the two can be different.   If
+           ==  is  used,  the  section  address  is  set  to  _v_a_l.
+           Otherwise, _v_a_l is added  to  or  subtracted  from  the
+           section    address.     See    the    comments   under
+           ----cchhaannggee--aaddddrreesssseess, above.  If _s_e_c_t_i_o_n does not  exist
+           in  the  input  file, a warning will be issued, unless
+           ----nnoo--cchhaannggee--wwaarrnniinnggss is used.
+
+       ----cchhaannggee--wwaarrnniinnggss
+       ----aaddjjuusstt--wwaarrnniinnggss
+           If ----cchhaannggee--sseeccttiioonn--aaddddrreessss or ----cchhaannggee--sseeccttiioonn--llmmaa or
+           ----cchhaannggee--sseeccttiioonn--vvmmaa  is  used,  and the named section
+           does not exist, issue a warning.  This is the default.
+
+       ----nnoo--cchhaannggee--wwaarrnniinnggss
+       ----nnoo--aaddjjuusstt--wwaarrnniinnggss
+           Do  not issue a warning if ----cchhaannggee--sseeccttiioonn--aaddddrreessss or
+           ----aaddjjuusstt--sseeccttiioonn--llmmaa or ----aaddjjuusstt--sseeccttiioonn--vvmmaa is  used,
+           even if the named section does not exist.
+
+       ----sseett--sseeccttiioonn--ffllaaggss _s_e_c_t_i_o_n==_f_l_a_g_s
+           Set  the  flags  for  the  named  section.   The _f_l_a_g_s
+           argument is a comma separated string  of  flag  names.
+           The   recognized  names  are  aalllloocc,  ccoonntteennttss,  llooaadd,
+           nnoollooaadd, rreeaaddoonnllyy, ccooddee, ddaattaa, rroomm, sshhaarree,  and  ddeebbuugg.
+           You can set the ccoonntteennttss flag for a section which does
+           not have contents, but it is not meaningful  to  clear
+           the  ccoonntteennttss  flag  of  a  section  which  does  have
+           contents--just remove the section  instead.   Not  all
+           flags are meaningful for all object file formats.
+
+       ----aadddd--sseeccttiioonn _s_e_c_t_i_o_n_n_a_m_e==_f_i_l_e_n_a_m_e
+           Add  a new section named _s_e_c_t_i_o_n_n_a_m_e while copying the
+           file.  The contents of the new section are taken  from
+           the  file  _f_i_l_e_n_a_m_e.   The size of the section will be
+           the size of the file.  This option only works on  file
+           formats  which  can  support  sections  with arbitrary
+           names.
+
+       ----rreennaammee--sseeccttiioonn _o_l_d_n_a_m_e==_n_e_w_n_a_m_e[[,,_f_l_a_g_s]]
+           Rename a section from _o_l_d_n_a_m_e to  _n_e_w_n_a_m_e,  optionally
+           changing  the section's flags to _f_l_a_g_s in the process.
+
+
+
+binutils-2.18.90            2008-09-10                          7
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+           This has the advantage over usng a  linker  script  to
+           perform  the  rename  in  that  the output stays as an
+           object file and does not become a linked executable.
+
+           This option is particularly  helpful  when  the  input
+           format  is  binary,  since  this  will always create a
+           section called .data.   If  for  example,  you  wanted
+           instead  to create a section called .rodata containing
+           binary data you could use the following  command  line
+           to achieve it:
+
+                     objcopy -I binary -O <output_format> -B <architecture> \
+                      --rename-section .data=.rodata,alloc,load,readonly,data,contents \
+                      <input_binary_file> <output_object_file>
+
+       ----cchhaannggee--lleeaaddiinngg--cchhaarr
+           Some object file formats use special characters at the
+           start of symbols.  The most common such  character  is
+           underscore,  which  compilers  often  add before every
+           symbol.  This  option  tells  oobbjjccooppyy  to  change  the
+           leading  character  of  every  symbol when it converts
+           between object  file  formats.   If  the  object  file
+           formats  use  the  same leading character, this option
+           has no effect.  Otherwise, it will add a character, or
+           remove   a   character,  or  change  a  character,  as
+           appropriate.
+
+       ----rreemmoovvee--lleeaaddiinngg--cchhaarr
+           If the first character of a global symbol is a special
+           symbol  leading  character  used  by  the  object file
+           format, remove the character.  The most common  symbol
+           leading  character  is  underscore.   This option will
+           remove a leading underscore from all  global  symbols.
+           This  can  be  useful  if  you  want  to link together
+           objects  of  different  file  formats  with  different
+           conventions  for symbol names.  This is different from
+           ----cchhaannggee--lleeaaddiinngg--cchhaarr because it  always  changes  the
+           symbol name when appropriate, regardless of the object
+           file format of the output file.
+
+       ----rreevveerrssee--bbyytteess==_n_u_m
+           Reverse the bytes in a section with  output  contents.
+           A section length must be evenly divisible by the value
+           given in order for the swap to be able to take  place.
+           Reversing  takes  place  before  the  interleaving  is
+           performed.
+
+           This option is used typically in generating ROM images
+           for  problematic target systems.  For example, on some
+           target boards, the 32-bit  words  fetched  from  8-bit
+           ROMs  are  re-assembled  in  little-endian  byte order
+           regardless of the CPU byte order.   Depending  on  the
+           programming  model, the endianness of the ROM may need
+           to be modified.
+
+
+
+binutils-2.18.90            2008-09-10                          8
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+           Consider a simple file with a section  containing  the
+           following eight bytes:  12345678.
+
+           Using  ----rreevveerrssee--bbyytteess==22  for  the  above example, the
+           bytes in the output file would be ordered 21436587.
+
+           Using ----rreevveerrssee--bbyytteess==44 for  the  above  example,  the
+           bytes in the output file would be ordered 43218765.
+
+           By  using  ----rreevveerrssee--bbyytteess==22  for  the  above example,
+           followed by ----rreevveerrssee--bbyytteess==44 on the output file,  the
+           bytes  in  the  second  output  file  would be ordered
+           34127856.
+
+       ----ssrreecc--lleenn==_i_v_a_l
+           Meaningful only for  srec  output.   Set  the  maximum
+           length  of  the Srecords being produced to _i_v_a_l.  This
+           length covers both address, data and crc fields.
+
+       ----ssrreecc--ffoorrcceeSS33
+           Meaningful only for srec output.  Avoid generation  of
+           S1/S2 records, creating S3-only record format.
+
+       ----rreeddeeffiinnee--ssyymm _o_l_d==_n_e_w
+           Change  the name of a symbol _o_l_d, to _n_e_w.  This can be
+           useful when one is trying link two things together for
+           which   you   have  no  source,  and  there  are  name
+           collisions.
+
+       ----rreeddeeffiinnee--ssyymmss==_f_i_l_e_n_a_m_e
+           Apply ----rreeddeeffiinnee--ssyymm to each  symbol  pair  "_o_l_d  _n_e_w"
+           listed  in  the  file  _f_i_l_e_n_a_m_e.  _f_i_l_e_n_a_m_e is simply a
+           flat file,  with  one  symbol  pair  per  line.   Line
+           comments  may  be  introduced  by  the hash character.
+           This option may be given more than once.
+
+       ----wweeaakkeenn
+           Change all global symbols in  the  file  to  be  weak.
+           This  can be useful when building an object which will
+           be linked against other objects using the --RR option to
+           the  linker.  This option is only effective when using
+           an object file format which supports weak symbols.
+
+       ----kkeeeepp--ssyymmbboollss==_f_i_l_e_n_a_m_e
+           Apply ----kkeeeepp--ssyymmbbooll option to each  symbol  listed  in
+           the  file  _f_i_l_e_n_a_m_e.   _f_i_l_e_n_a_m_e is simply a flat file,
+           with one symbol name per line.  Line comments  may  be
+           introduced  by the hash character.  This option may be
+           given more than once.
+
+       ----ssttrriipp--ssyymmbboollss==_f_i_l_e_n_a_m_e
+           Apply ----ssttrriipp--ssyymmbbooll option to each symbol  listed  in
+           the  file  _f_i_l_e_n_a_m_e.   _f_i_l_e_n_a_m_e is simply a flat file,
+           with one symbol name per line.  Line comments  may  be
+
+
+
+binutils-2.18.90            2008-09-10                          9
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+           introduced  by the hash character.  This option may be
+           given more than once.
+
+       ----ssttrriipp--uunnnneeeeddeedd--ssyymmbboollss==_f_i_l_e_n_a_m_e
+           Apply ----ssttrriipp--uunnnneeeeddeedd--ssyymmbbooll option  to  each  symbol
+           listed  in  the  file  _f_i_l_e_n_a_m_e.  _f_i_l_e_n_a_m_e is simply a
+           flat file,  with  one  symbol  name  per  line.   Line
+           comments  may  be  introduced  by  the hash character.
+           This option may be given more than once.
+
+       ----kkeeeepp--gglloobbaall--ssyymmbboollss==_f_i_l_e_n_a_m_e
+           Apply  ----kkeeeepp--gglloobbaall--ssyymmbbooll  option  to  each   symbol
+           listed  in  the  file  _f_i_l_e_n_a_m_e.  _f_i_l_e_n_a_m_e is simply a
+           flat file,  with  one  symbol  name  per  line.   Line
+           comments  may  be  introduced  by  the hash character.
+           This option may be given more than once.
+
+       ----llooccaalliizzee--ssyymmbboollss==_f_i_l_e_n_a_m_e
+           Apply ----llooccaalliizzee--ssyymmbbooll option to each  symbol  listed
+           in the file _f_i_l_e_n_a_m_e.  _f_i_l_e_n_a_m_e is simply a flat file,
+           with one symbol name per line.  Line comments  may  be
+           introduced  by the hash character.  This option may be
+           given more than once.
+
+       ----gglloobbaalliizzee--ssyymmbboollss==_f_i_l_e_n_a_m_e
+           Apply ----gglloobbaalliizzee--ssyymmbbooll option to each symbol  listed
+           in the file _f_i_l_e_n_a_m_e.  _f_i_l_e_n_a_m_e is simply a flat file,
+           with one symbol name per line.  Line comments  may  be
+           introduced  by the hash character.  This option may be
+           given more than once.
+
+       ----wweeaakkeenn--ssyymmbboollss==_f_i_l_e_n_a_m_e
+           Apply ----wweeaakkeenn--ssyymmbbooll option to each symbol listed  in
+           the  file  _f_i_l_e_n_a_m_e.   _f_i_l_e_n_a_m_e is simply a flat file,
+           with one symbol name per line.  Line comments  may  be
+           introduced  by the hash character.  This option may be
+           given more than once.
+
+       ----aalltt--mmaacchhiinnee--ccooddee==_i_n_d_e_x
+           If  the  output  architecture  has  alternate  machine
+           codes,  use  the  _i_n_d_e_xth  code instead of the default
+           one.  This is useful in case a machine is assigned  an
+           official  code and the tool-chain adopts the new code,
+           but other applications still depend  on  the  original
+           code  being  used.  For ELF based architectures if the
+           _i_n_d_e_x alternative does not exist  then  the  value  is
+           treated  as  an  absolute  number  to be stored in the
+           e_machine field of the ELF header.
+
+       ----wwrriittaabbllee--tteexxtt
+           Mark the output text as writable.  This  option  isn't
+           meaningful for all object file formats.
+
+
+
+
+
+binutils-2.18.90            2008-09-10                         10
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+       ----rreeaaddoonnllyy--tteexxtt
+           Make  the  output  text  write protected.  This option
+           isn't meaningful for all object file formats.
+
+       ----ppuurree
+           Mark the output file as  demand  paged.   This  option
+           isn't meaningful for all object file formats.
+
+       ----iimmppuurree
+           Mark  the  output  file  as impure.  This option isn't
+           meaningful for all object file formats.
+
+       ----pprreeffiixx--ssyymmbboollss==_s_t_r_i_n_g
+           Prefix all symbols in the output file with _s_t_r_i_n_g.
+
+       ----pprreeffiixx--sseeccttiioonnss==_s_t_r_i_n_g
+           Prefix all section  names  in  the  output  file  with
+           _s_t_r_i_n_g.
+
+       ----pprreeffiixx--aalllloocc--sseeccttiioonnss==_s_t_r_i_n_g
+           Prefix  all the names of all allocated sections in the
+           output file with _s_t_r_i_n_g.
+
+       ----aadddd--ggnnuu--ddeebbuugglliinnkk==_p_a_t_h_-_t_o_-_f_i_l_e
+           Creates a  .gnu_debuglink  section  which  contains  a
+           reference  to  _p_a_t_h_-_t_o_-_f_i_l_e  and adds it to the output
+           file.
+
+       ----kkeeeepp--ffiillee--ssyymmbboollss
+           When stripping a file, perhaps with  ----ssttrriipp--ddeebbuugg  or
+           ----ssttrriipp--uunnnneeeeddeedd, retain any symbols specifying source
+           file names, which would otherwise get stripped.
+
+       ----oonnllyy--kkeeeepp--ddeebbuugg
+           Strip a file, removing contents of any  sections  that
+           would not be stripped by ----ssttrriipp--ddeebbuugg and leaving the
+           debugging  sections  intact.   In  ELF   files,   this
+           preserves all note sections in the output.
+
+           The  intention  is  that  this  option will be used in
+           conjunction with ----aadddd--ggnnuu--ddeebbuugglliinnkk to create  a  two
+           part  executable.   One  a  stripped binary which will
+           occupy less space in RAM and in a distribution and the
+           second  a  debugging  information  file  which is only
+           needed  if  debugging  abilities  are  required.   The
+           suggested  procedure  to  create  these  files  is  as
+           follows:
+
+           1.<Link the executable as normal.  Assuming that is is
+           called>
+               "foo" then...
+
+           1.<Run "objcopy --only-keep-debug foo foo.dbg" to>
+               create a file containing the debugging info.
+
+
+
+binutils-2.18.90            2008-09-10                         11
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+           1.<Run "objcopy --strip-debug foo" to create a>
+               stripped executable.
+
+           1.<Run "objcopy --add-gnu-debuglink=foo.dbg foo">
+               to  add  a  link  to  the  debugging info into the
+               stripped executable.
+
+           Note---the choice of ".dbg" as an  extension  for  the
+           debug    info    file    is   arbitrary.    Also   the
+           "--only-keep-debug"  step  is  optional.   You   could
+           instead do this:
+
+           1.<Link the executable as normal.>
+           1.<Copy "foo" to  "foo.full">
+           1.<Run "objcopy --strip-debug foo">
+           1.<Run "objcopy --add-gnu-debuglink=foo.full foo">
+
+           i.e.,  the  file pointed to by the ----aadddd--ggnnuu--ddeebbuugglliinnkk
+           can be the full executable.  It does not have to be  a
+           file created by the ----oonnllyy--kkeeeepp--ddeebbuugg switch.
+
+           Note---this  switch  is only intended for use on fully
+           linked files.  It does not make sense  to  use  it  on
+           object  files  where  the debugging information may be
+           incomplete.    Besides   the   gnu_debuglink   feature
+           currently  only  supports the presence of one filename
+           containing   debugging   information,   not   multiple
+           filenames on a one-per-object-file basis.
+
+       ----eexxttrraacctt--ssyymmbbooll
+           Keep  the  file's section flags and symbols but remove
+           all section data.  Specifically, the option:
+
+           *<removes the contents of all sections;>
+           *<sets the size of every section to zero; and>
+           *<sets the file's start address to zero.>
+
+           This option is used to build a _._s_y_m file for a VxWorks
+           kernel.   It  can also be a useful way of reducing the
+           size of a ----jjuusstt--ssyymmbboollss linker input file.
+
+       --VV
+       ----vveerrssiioonn
+           Show the version number of oobbjjccooppyy.
+
+       --vv
+       ----vveerrbboossee
+           Verbose output: list all object  files  modified.   In
+           the  case of archives, oobbjjccooppyy --VV lists all members of
+           the archive.
+
+       ----hheellpp
+           Show a summary of the options to oobbjjccooppyy.
+
+
+
+
+binutils-2.18.90            2008-09-10                         12
+
+
+
+
+
+OBJCOPY(1)            GNU Development Tools            OBJCOPY(1)
+
+
+       ----iinnffoo
+           Display a list showing all  architectures  and  object
+           formats available.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are inserted in place of the  original  @_f_i_l_e  option.
+           If  _f_i_l_e  does  not exist, or cannot be read, then the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace  character  may be included in an option by
+           surrounding the entire  option  in  either  single  or
+           double  quotes.  Any character (including a backslash)
+           may be included  by  prefixing  the  character  to  be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain additional @_f_i_l_e  options;  any  such  options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       _l_d(1), _o_b_j_d_u_m_p(1), and the Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright  (c)  1991,  1992, 1993, 1994, 1995, 1996, 1997,
+       1998, 1999, 2000, 2001,  2002,  2003,  2004,  2005,  2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+       Documentation  License,  Version  1.2 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                         13
+
+

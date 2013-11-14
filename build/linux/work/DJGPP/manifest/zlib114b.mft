@@ -1,0 +1,9 @@
+contrib/zlib-1.14/ChangeLog
+contrib/zlib-1.14/faq
+contrib/zlib-1.14/readme
+include/zconf.h
+include/zlib.h
+lib/libz.a
+manifest/zlib114b.dsm
+manifest/zlib114b.mft
+manifest/zlib114b.ver

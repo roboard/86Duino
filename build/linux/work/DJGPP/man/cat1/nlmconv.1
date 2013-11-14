@@ -1,0 +1,132 @@
+
+
+
+NLMCONV(1)            GNU Development Tools            NLMCONV(1)
+
+
+NNAAMMEE
+       nlmconv - converts object code into an NLM.
+
+SSYYNNOOPPSSIISS
+       nlmconv [--II _b_f_d_n_a_m_e|----iinnppuutt--ttaarrggeett==_b_f_d_n_a_m_e]
+               [--OO _b_f_d_n_a_m_e|----oouuttppuutt--ttaarrggeett==_b_f_d_n_a_m_e]
+               [--TT _h_e_a_d_e_r_f_i_l_e|----hheeaaddeerr--ffiillee==_h_e_a_d_e_r_f_i_l_e]
+               [--dd|----ddeebbuugg] [--ll _l_i_n_k_e_r|----lliinnkkeerr==_l_i_n_k_e_r]
+               [--hh|----hheellpp] [--VV|----vveerrssiioonn]
+               _i_n_f_i_l_e _o_u_t_f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+       nnllmmccoonnvv  converts  the relocatable ii338866 object file _i_n_f_i_l_e
+       into  the  NetWare  Loadable  Module  _o_u_t_f_i_l_e,  optionally
+       reading   _h_e_a_d_e_r_f_i_l_e  for  NLM  header  information.   For
+       instructions on writing the NLM command file language used
+       in  header  files,  see  the  lliinnkkeerrss  section, NNLLMMLLIINNKK in
+       particular, of the _N_L_M  _D_e_v_e_l_o_p_m_e_n_t  _a_n_d  _T_o_o_l_s  _O_v_e_r_v_i_e_w,
+       which  is  part  of the NLM Software Developer's Kit ("NLM
+       SDK"), available from Novell, Inc.  nnllmmccoonnvv uses  the  GNU
+       Binary File Descriptor library to read _i_n_f_i_l_e;
+
+       nnllmmccoonnvv  can perform a link step.  In other words, you can
+       list more than one object file for input if you list  them
+       in the definitions file (rather than simply specifying one
+       input file on the command line).  In  this  case,  nnllmmccoonnvv
+       calls the linker for you.
+
+OOPPTTIIOONNSS
+       --II _b_f_d_n_a_m_e
+       ----iinnppuutt--ttaarrggeett==_b_f_d_n_a_m_e
+           Object  format of the input file.  nnllmmccoonnvv can usually
+           determine the format of a given file (so no default is
+           necessary).
+
+       --OO _b_f_d_n_a_m_e
+       ----oouuttppuutt--ttaarrggeett==_b_f_d_n_a_m_e
+           Object  format of the output file.  nnllmmccoonnvv infers the
+           output format based on the input format,  e.g.  for  a
+           ii338866 input file the output format is nnllmm3322--ii338866.
+
+       --TT _h_e_a_d_e_r_f_i_l_e
+       ----hheeaaddeerr--ffiillee==_h_e_a_d_e_r_f_i_l_e
+           Reads  _h_e_a_d_e_r_f_i_l_e  for  NLM  header  information.  For
+           instructions on writing the NLM command file  language
+           used  in header files, see see the lliinnkkeerrss section, of
+           the _N_L_M _D_e_v_e_l_o_p_m_e_n_t _a_n_d _T_o_o_l_s _O_v_e_r_v_i_e_w, which is  part
+           of  the  NLM  Software Developer's Kit, available from
+           Novell, Inc.
+
+       --dd
+       ----ddeebbuugg
+           Displays (on standard error) the linker  command  line
+           used by nnllmmccoonnvv.
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+NLMCONV(1)            GNU Development Tools            NLMCONV(1)
+
+
+       --ll _l_i_n_k_e_r
+       ----lliinnkkeerr==_l_i_n_k_e_r
+           Use _l_i_n_k_e_r for any linking.  _l_i_n_k_e_r can be an absolute
+           or a relative pathname.
+
+       --hh
+       ----hheellpp
+           Prints a usage summary.
+
+       --VV
+       ----vveerrssiioonn
+           Prints the version number for nnllmmccoonnvv.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       the Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1991, 1992, 1993, 1994,  1995,  1996,  1997,
+       1998,  1999,  2000,  2001,  2002,  2003, 2004, 2005, 2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission is granted to copy,  distribute  and/or  modify
+       this   document   under   the   terms   of  the  GNU  Free
+       Documentation License, Version 1.2 or  any  later  version
+       published   by  the  Free  Software  Foundation;  with  no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover  Texts.   A  copy of the license is included in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+

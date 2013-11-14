@@ -1,0 +1,1188 @@
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+NNAAMMEE
+       AS - the portable GNU assembler.
+
+SSYYNNOOPPSSIISS
+       as [--aa[ccddgghhllnnss][=_f_i_l_e]] [----aalltteerrnnaattee] [--DD]
+        [----ddeebbuugg--pprreeffiixx--mmaapp _o_l_d=_n_e_w]
+        [----ddeeffssyymm _s_y_m=_v_a_l] [--ff] [--gg] [----ggssttaabbss]
+        [----ggssttaabbss++] [----ggddwwaarrff--22] [----hheellpp] [--II _d_i_r] [--JJ]
+        [--KK] [--LL] [----lliissttiinngg--llhhss--wwiiddtthh=_N_U_M]
+        [----lliissttiinngg--llhhss--wwiiddtthh22=_N_U_M] [----lliissttiinngg--rrhhss--wwiiddtthh=_N_U_M]
+        [----lliissttiinngg--ccoonntt--lliinneess=_N_U_M] [----kkeeeepp--llooccaallss] [--oo
+        _o_b_j_f_i_l_e] [--RR] [----rreedduuccee--mmeemmoorryy--oovveerrhheeaaddss] [----ssttaattiissttiiccss]
+        [--vv] [--vveerrssiioonn] [----vveerrssiioonn] [--WW] [----wwaarrnn]
+        [----ffaattaall--wwaarrnniinnggss] [--ww] [--xx] [--ZZ] [@@_F_I_L_E]
+        [----ttaarrggeett--hheellpp] [_t_a_r_g_e_t_-_o_p_t_i_o_n_s]
+        [----|_f_i_l_e_s ...]
+
+       _T_a_r_g_e_t _A_l_p_h_a _o_p_t_i_o_n_s_:
+          [--mm_c_p_u]
+          [--mmddeebbuugg | --nnoo--mmddeebbuugg]
+          [--rreellaaxx] [--gg] [--GG_s_i_z_e]
+          [--FF] [--3322aaddddrr]
+
+       _T_a_r_g_e_t _A_R_C _o_p_t_i_o_n_s_:
+          [--mmaarrcc[[55||66||77||88]]]
+          [--EEBB|--EELL]
+
+       _T_a_r_g_e_t _A_R_M _o_p_t_i_o_n_s_:
+          [--mmccppuu=_p_r_o_c_e_s_s_o_r[+_e_x_t_e_n_s_i_o_n...]]
+          [--mmaarrcchh=_a_r_c_h_i_t_e_c_t_u_r_e[+_e_x_t_e_n_s_i_o_n...]]
+          [--mmffppuu=_f_l_o_a_t_i_n_g_-_p_o_i_n_t_-_f_o_r_m_a_t]
+          [--mmffllooaatt--aabbii=_a_b_i]
+          [--mmeeaabbii=_v_e_r]
+          [--mmtthhuummbb]
+          [--EEBB|--EELL]
+          [--mmaappccss--3322|--mmaappccss--2266|--mmaappccss--ffllooaatt|
+           --mmaappccss--rreeeennttrraanntt]
+          [--mmtthhuummbb--iinntteerrwwoorrkk] [--kk]
+
+       _T_a_r_g_e_t _C_R_I_S _o_p_t_i_o_n_s_:
+          [----uunnddeerrssccoorree | ----nnoo--uunnddeerrssccoorree]
+          [----ppiicc] [--NN]
+          [----eemmuullaattiioonn==ccrriisseellff | ----eemmuullaattiioonn==ccrriissaaoouutt]
+          [----mmaarrcchh==vv00__vv1100   |   ----mmaarrcchh==vv1100   |   ----mmaarrcchh==vv3322   |
+       ----mmaarrcchh==ccoommmmoonn__vv1100__vv3322]
+
+       _T_a_r_g_e_t _D_1_0_V _o_p_t_i_o_n_s_:
+          [--OO]
+
+       _T_a_r_g_e_t _D_3_0_V _o_p_t_i_o_n_s_:
+          [--OO|--nn|--NN]
+
+       _T_a_r_g_e_t _H_8_/_3_0_0 _o_p_t_i_o_n_s_:
+          [-h-tick-hex]
+
+
+
+binutils-2.18.92            2008-10-02                          1
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       _T_a_r_g_e_t _i_3_8_6 _o_p_t_i_o_n_s_:
+          [----3322|----6644] [--nn]
+          [--mmaarrcchh=_C_P_U[+_E_X_T_E_N_S_I_O_N...]] [--mmttuunnee=_C_P_U]
+
+       _T_a_r_g_e_t _i_9_6_0 _o_p_t_i_o_n_s_:
+          [--AACCAA|--AACCAA__AA|--AACCBB|--AACCCC|--AAKKAA|--AAKKBB|
+           --AAKKCC|--AAMMCC]
+          [--bb] [--nnoo--rreellaaxx]
+
+       _T_a_r_g_e_t _I_A_-_6_4 _o_p_t_i_o_n_s_:
+          [--mmccoonnssttaanntt--ggpp|--mmaauuttoo--ppiicc]
+          [--mmiillpp3322|--mmiillpp6644|--mmllpp6644|--mmpp6644]
+          [--mmllee|mmbbee]
+          [--mmttuunnee==iittaanniiuumm11|--mmttuunnee==iittaanniiuumm22]
+          [--mmuunnwwiinndd--cchheecckk==wwaarrnniinngg|--mmuunnwwiinndd--cchheecckk==eerrrroorr]
+          [--mmhhiinntt..bb==ookk|--mmhhiinntt..bb==wwaarrnniinngg|--mmhhiinntt..bb==eerrrroorr]
+          [--xx|--xxeexxpplliicciitt] [--xxaauuttoo] [--xxddeebbuugg]
+
+       _T_a_r_g_e_t _I_P_2_K _o_p_t_i_o_n_s_:
+          [--mmiipp22002222|--mmiipp22002222eexxtt]
+
+       _T_a_r_g_e_t _M_3_2_C _o_p_t_i_o_n_s_:
+          [--mm3322cc|--mm1166cc] [-relax] [-h-tick-hex]
+
+       _T_a_r_g_e_t _M_3_2_R _o_p_t_i_o_n_s_:
+          [----mm3322rrxx|----[[nnoo--]]wwaarrnn--eexxpplliicciitt--ppaarraalllleell--ccoonnfflliiccttss|
+          ----WW[[nn]]pp]
+
+       _T_a_r_g_e_t _M_6_8_0_X_0 _o_p_t_i_o_n_s_:
+          [--ll] [--mm6688000000|--mm6688001100|--mm6688002200|...]
+
+       _T_a_r_g_e_t _M_6_8_H_C_1_1 _o_p_t_i_o_n_s_:
+          [--mm6688hhcc1111|--mm6688hhcc1122|--mm6688hhccss1122]
+          [--mmsshhoorrtt|--mmlloonngg]
+          [--mmsshhoorrtt--ddoouubbllee|--mmlloonngg--ddoouubbllee]
+          [----ffoorrccee--lloonngg--bbrraanncchheess] [----sshhoorrtt--bbrraanncchheess]
+          [----ssttrriicctt--ddiirreecctt--mmooddee] [----pprriinntt--iinnssnn--ssyynnttaaxx]
+          [----pprriinntt--ooppccooddeess] [----ggeenneerraattee--eexxaammppllee]
+
+       _T_a_r_g_e_t _M_C_O_R_E _o_p_t_i_o_n_s_:
+          [--jjssrrii22bbssrr] [--ssiiffiilltteerr] [--rreellaaxx]
+          [--mmccppuu==[[221100||334400]]]
+
+       _T_a_r_g_e_t _M_I_P_S _o_p_t_i_o_n_s_:
+          [--nnooccpppp] [--EELL] [--EEBB] [--OO[_o_p_t_i_m_i_z_a_t_i_o_n _l_e_v_e_l]]
+          [--gg[_d_e_b_u_g _l_e_v_e_l]] [--GG _n_u_m] [--KKPPIICC] [--ccaallll__sshhaarreedd]
+          [--nnoonn__sshhaarreedd] [--xxggoott [--mmvvxxwwoorrkkss--ppiicc]
+          [--mmaabbii=_A_B_I] [--3322] [--nn3322] [--6644] [--mmffpp3322] [--mmggpp3322]
+          [--mmaarrcchh=_C_P_U] [--mmttuunnee=_C_P_U] [--mmiippss11] [--mmiippss22]
+          [--mmiippss33] [--mmiippss44] [--mmiippss55] [--mmiippss3322] [--mmiippss3322rr22]
+          [--mmiippss6644] [--mmiippss6644rr22]
+          [--ccoonnssttrruucctt--ffllooaattss] [--nnoo--ccoonnssttrruucctt--ffllooaattss]
+          [--ttrraapp] [--nnoo--bbrreeaakk] [--bbrreeaakk] [--nnoo--ttrraapp]
+          [--mmffiixx77000000] [--mmnnoo--ffiixx77000000]
+
+
+
+binutils-2.18.92            2008-10-02                          2
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+          [--mmiippss1166] [--nnoo--mmiippss1166]
+          [--mmssmmaarrttmmiippss] [--mmnnoo--ssmmaarrttmmiippss]
+          [--mmiippss33dd] [--nnoo--mmiippss33dd]
+          [--mmddmmxx] [--nnoo--mmddmmxx]
+          [--mmddsspp] [--mmnnoo--ddsspp]
+          [--mmddsspprr22] [--mmnnoo--ddsspprr22]
+          [--mmmmtt] [--mmnnoo--mmtt]
+          [--mmddeebbuugg] [--nnoo--mmddeebbuugg]
+          [--mmppddrr] [--mmnnoo--ppddrr]
+
+       _T_a_r_g_e_t _M_M_I_X _o_p_t_i_o_n_s_:
+          [----ffiixxeedd--ssppeecciiaall--rreeggiisstteerr--nnaammeess] [----gglloobbaalliizzee--ssyymmbboollss]
+          [----ggnnuu--ssyynnttaaxx] [----rreellaaxx] [----nnoo--pprreeddeeffiinneedd--ssyymmbboollss]
+          [----nnoo--eexxppaanndd] [----nnoo--mmeerrggee--ggrreeggss] [--xx]
+          [----lliinnkkeerr--aallllooccaatteedd--ggrreeggss]
+
+       _T_a_r_g_e_t _P_D_P_1_1 _o_p_t_i_o_n_s_:
+          [--mmppiicc|--mmnnoo--ppiicc] [--mmaallll] [--mmnnoo--eexxtteennssiioonnss]
+          [--mm_e_x_t_e_n_s_i_o_n|--mmnnoo--_e_x_t_e_n_s_i_o_n]
+          [--mm_c_p_u] [--mm_m_a_c_h_i_n_e]
+
+       _T_a_r_g_e_t _p_i_c_o_J_a_v_a _o_p_t_i_o_n_s_:
+          [--mmbb|--mmee]
+
+       _T_a_r_g_e_t _P_o_w_e_r_P_C _o_p_t_i_o_n_s_:
+          [--mmppwwrrxx|--mmppwwrr22|--mmppwwrr|--mm660011|--mmppppcc|--mmppppcc3322|--mm660033|--mm660044|
+           --mm440033|--mm440055|--mmppppcc6644|--mm662200|--mmppppcc6644bbrriiddggee|--mmbbooookkee|
+           --mmbbooookkee3322|--mmbbooookkee6644]
+          [--mmccoomm|--mmaannyy|--mmaallttiivveecc|--mmvvssxx] [--mmeemmbb]
+          [--mmrreeggnnaammeess|--mmnnoo--rreeggnnaammeess]
+          [--mmrreellooccaattaabbllee|--mmrreellooccaattaabbllee--lliibb]
+          [--mmlliittttllee|--mmlliittttllee--eennddiiaann|--mmbbiigg|--mmbbiigg--eennddiiaann]
+          [--mmssoollaarriiss|--mmnnoo--ssoollaarriiss]
+
+       _T_a_r_g_e_t _S_P_A_R_C _o_p_t_i_o_n_s_:
+          [--AAvv66|--AAvv77|--AAvv88|--AAssppaarrcclleett|--AAssppaarrcclliittee
+           --AAvv88pplluuss|--AAvv88pplluussaa|--AAvv99|--AAvv99aa]
+          [--xxaarrcchh==vv88pplluuss|--xxaarrcchh==vv88pplluussaa] [--bbuummpp]
+          [--3322|--6644]
+
+       _T_a_r_g_e_t _T_I_C_5_4_X _o_p_t_i_o_n_s_:
+        [--mmccppuu==5544[[112233558899]]|--mmccppuu==5544[[5566]]llpp] [--mmffaarr--mmooddee|--mmff]
+        [--mmeerrrroorrss--ttoo--ffiillee _<_f_i_l_e_n_a_m_e_>|--mmee _<_f_i_l_e_n_a_m_e_>]
+
+       _T_a_r_g_e_t _Z_8_0 _o_p_t_i_o_n_s_:
+         [--zz8800] [--rr880000]
+         [ --iiggnnoorree--uunnddooccuummeenntteedd--iinnssttrruuccttiioonnss] [--WWnnuudd]
+         [ --iiggnnoorree--uunnppoorrttaabbllee--iinnssttrruuccttiioonnss] [--WWnnuupp]
+         [ --wwaarrnn--uunnddooccuummeenntteedd--iinnssttrruuccttiioonnss] [--WWuudd]
+         [ --wwaarrnn--uunnppoorrttaabbllee--iinnssttrruuccttiioonnss] [--WWuupp]
+         [ --ffoorrbbiidd--uunnddooccuummeenntteedd--iinnssttrruuccttiioonnss] [--FFuudd]
+         [ --ffoorrbbiidd--uunnppoorrttaabbllee--iinnssttrruuccttiioonnss] [--FFuupp]
+
+       _T_a_r_g_e_t _X_t_e_n_s_a _o_p_t_i_o_n_s_:
+
+
+
+binutils-2.18.92            2008-10-02                          3
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+        [----[[nnoo--]]tteexxtt--sseeccttiioonn--lliitteerraallss] [----[[nnoo--]]aabbssoolluuttee--lliitteerraallss]
+        [----[[nnoo--]]ttaarrggeett--aalliiggnn] [----[[nnoo--]]lloonnggccaallllss]
+        [----[[nnoo--]]ttrraannssffoorrmm]
+        [----rreennaammee--sseeccttiioonn _o_l_d_n_a_m_e=_n_e_w_n_a_m_e]
+
+DDEESSCCRRIIPPTTIIOONN
+       GNU  aass  is really a family of assemblers.  If you use (or
+       have used) the GNU  assembler  on  one  architecture,  you
+       should  find  a fairly similar environment when you use it
+       on another architecture.  Each version has much in  common
+       with  the  others,  including  object  file  formats, most
+       assembler  directives  (often   called   _p_s_e_u_d_o_-_o_p_s)   and
+       assembler syntax.
+
+       aass is primarily intended to assemble the output of the GNU
+       C  compiler  "gcc"   for   use   by   the   linker   "ld".
+       Nevertheless,  we've  tried  to make aass assemble correctly
+       everything that other  assemblers  for  the  same  machine
+       would assemble.  Any exceptions are documented explicitly.
+       This doesn't mean  aass  always  uses  the  same  syntax  as
+       another  assembler for the same architecture; for example,
+       we know of several incompatible versions of 680x0 assembly
+       language syntax.
+
+       Each  time  you  run  aass  it  assembles exactly one source
+       program.  The source program is made up  of  one  or  more
+       files.  (The standard input is also a file.)
+
+       You  give  aass  a  command line that has zero or more input
+       file names.  The input files are read (from left file name
+       to right).  A command line argument (in any position) that
+       has no special meaning is taken to be an input file  name.
+
+       If you give aass no file names it attempts to read one input
+       file from the aass standard input, which  is  normally  your
+       terminal.   You may have to type ccttll--DD to tell aass there is
+       no more program to assemble.
+
+       Use ---- if you need to explicitly name the  standard  input
+       file in your command line.
+
+       If  the source is empty, aass produces a small, empty object
+       file.
+
+       aass may write warnings and error messages to  the  standard
+       error  file  (usually  your  terminal).   This  should not
+       happen when  a compiler runs aass  automatically.   Warnings
+       report an assumption made so that aass could keep assembling
+       a flawed program; errors report a grave problem that stops
+       the assembly.
+
+       If you are invoking aass via the GNU C compiler, you can use
+       the --WWaa option to pass arguments through to the assembler.
+       The  assembler arguments must be separated from each other
+
+
+
+binutils-2.18.92            2008-10-02                          4
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       (and the --WWaa) by commas.  For example:
+
+               gcc -c -g -O -Wa,-alh,-L file.c
+
+       This passes two options to the  assembler:  --aallhh  (emit  a
+       listing  to  standard  output with high-level and assembly
+       source) and --LL (retain local symbols in the symbol table).
+
+       Usually  you  do not need to use this --WWaa mechanism, since
+       many  compiler  command-line  options  are   automatically
+       passed  to  the  assembler by the compiler.  (You can call
+       the  GNU  compiler  driver  with  the  --vv  option  to  see
+       precisely what options it passes to each compilation pass,
+       including the assembler.)
+
+OOPPTTIIOONNSS
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+       --aa[[ccddgghhllmmnnss]]
+           Turn on listings, in any of a variety of ways:
+
+           --aacc omit false conditionals
+
+           --aadd omit debugging directives
+
+           --aagg include general information, like as  version  and
+               options passed
+
+           --aahh include high-level source
+
+           --aall include assembly
+
+           --aamm include macro expansions
+
+           --aann omit forms processing
+
+           --aass include symbols
+
+           ==ffiillee
+               set the name of the listing file
+
+
+
+
+binutils-2.18.92            2008-10-02                          5
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+           You  may  combine these options; for example, use --aallnn
+           for assembly listing without  forms  processing.   The
+           ==ffiillee  option,  if  used,  must  be  the last one.  By
+           itself, --aa defaults to --aahhllss.
+
+       ----aalltteerrnnaattee
+           Begin in alternate macro mode.
+
+       --DD  Ignored.   This  option   is   accepted   for   script
+           compatibility with calls to other assemblers.
+
+       ----ddeebbuugg--pprreeffiixx--mmaapp _o_l_d==_n_e_w
+           When   assembling   files  in  directory  _o_l_d,  record
+           debugging  information  describing  them  as  in   _n_e_w
+           instead.
+
+       ----ddeeffssyymm _s_y_m==_v_a_l_u_e
+           Define  the  symbol  _s_y_m to be _v_a_l_u_e before assembling
+           the input file.  _v_a_l_u_e must be  an  integer  constant.
+           As  in  C, a leading 00xx indicates a hexadecimal value,
+           and a leading 00 indicates an octal value.   The  value
+           of  the  symbol can be overridden inside a source file
+           via the use of a ".set" pseudo-op.
+
+       --ff  "fast"---skip  whitespace  and  comment  preprocessing
+           (assume source is compiler output).
+
+       --gg
+       ----ggeenn--ddeebbuugg
+           Generate  debugging  information  for  each  assembler
+           source line using whichever debug format is  preferred
+           by  the  target.   This  currently means either STABS,
+           ECOFF or DWARF2.
+
+       ----ggssttaabbss
+           Generate  stabs   debugging   information   for   each
+           assembler  line.   This  may  help debugging assembler
+           code, if the debugger can handle it.
+
+       ----ggssttaabbss++
+           Generate  stabs   debugging   information   for   each
+           assembler line, with GNU extensions that probably only
+           gdb can handle, and that could  make  other  debuggers
+           crash  or  refuse to read your program.  This may help
+           debugging assembler  code.   Currently  the  only  GNU
+           extension  is  the  location  of  the  current working
+           directory at assembling time.
+
+       ----ggddwwaarrff--22
+           Generate  DWARF2  debugging   information   for   each
+           assembler  line.   This  may  help debugging assembler
+           code, if the  debugger  can  handle  it.   Note---this
+           option  is  only supported by some targets, not all of
+           them.
+
+
+
+binutils-2.18.92            2008-10-02                          6
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       ----hheellpp
+           Print a summary of the command line options and  exit.
+
+       ----ttaarrggeett--hheellpp
+           Print  a  summary  of  all target specific options and
+           exit.
+
+       --II _d_i_r
+           Add directory _d_i_r to the search  list  for  ".include"
+           directives.
+
+       --JJ  Don't warn about signed overflow.
+
+       --KK  Issue warnings when difference tables altered for long
+           displacements.
+
+       --LL
+       ----kkeeeepp--llooccaallss
+           Keep (in  the  symbol  table)  local  symbols.   These
+           symbols   start   with   system-specific  local  label
+           prefixes, typically  ..LL  for  ELF  systems  or  LL  for
+           traditional a.out systems.
+
+       ----lliissttiinngg--llhhss--wwiiddtthh==_n_u_m_b_e_r
+           Set  the  maximum  width, in words, of the output data
+           column for an assembler listing to _n_u_m_b_e_r.
+
+       ----lliissttiinngg--llhhss--wwiiddtthh22==_n_u_m_b_e_r
+           Set the maximum width, in words, of  the  output  data
+           column  for continuation lines in an assembler listing
+           to _n_u_m_b_e_r.
+
+       ----lliissttiinngg--rrhhss--wwiiddtthh==_n_u_m_b_e_r
+           Set the maximum width of  an  input  source  line,  as
+           displayed in a listing, to _n_u_m_b_e_r bytes.
+
+       ----lliissttiinngg--ccoonntt--lliinneess==_n_u_m_b_e_r
+           Set  the  maximum number of lines printed in a listing
+           for a single line of input to _n_u_m_b_e_r + 1.
+
+       --oo _o_b_j_f_i_l_e
+           Name the object-file output from aass _o_b_j_f_i_l_e.
+
+       --RR  Fold the data section into the text section.
+
+           Set the default size of GAS's hash tables to  a  prime
+           number  close  to  _n_u_m_b_e_r.   Increasing this value can
+           reduce the length of time it takes  the  assembler  to
+           perform  its  tasks,  at the expense of increasing the
+           assembler's memory requirements.   Similarly  reducing
+           this  value  can reduce the memory requirements at the
+           expense of speed.
+
+
+
+
+
+binutils-2.18.92            2008-10-02                          7
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       ----rreedduuccee--mmeemmoorryy--oovveerrhheeaaddss
+           This option reduces GAS's memory requirements, at  the
+           expense  of  making  the  assembly  processes  slower.
+           Currently   this   switch    is    a    synonym    for
+           ----hhaasshh--ssiizzee==44005511,  but in the future it may have other
+           effects as well.
+
+       ----ssttaattiissttiiccss
+           Print the maximum space (in bytes) and total time  (in
+           seconds) used by assembly.
+
+       ----ssttrriipp--llooccaall--aabbssoolluuttee
+           Remove local absolute symbols from the outgoing symbol
+           table.
+
+       --vv
+       --vveerrssiioonn
+           Print the aass version.
+
+       ----vveerrssiioonn
+           Print the aass version and exit.
+
+       --WW
+       ----nnoo--wwaarrnn
+           Suppress warning messages.
+
+       ----ffaattaall--wwaarrnniinnggss
+           Treat warnings as errors.
+
+       ----wwaarrnn
+           Don't suppress  warning  messages  or  treat  them  as
+           errors.
+
+       --ww  Ignored.
+
+       --xx  Ignored.
+
+       --ZZ  Generate an object file even after errors.
+
+       ---- || _f_i_l_e_s ......
+           Standard input, or source files to assemble.
+
+       The  following options are available when as is configured
+       for an ARC processor.
+
+       --mmaarrcc[[55||66||77||88]]
+           This option selects the core processor variant.
+
+       --EEBB || --EELL
+           Select either big-endian (-EB) or little-endian  (-EL)
+           output.
+
+       The  following options are available when as is configured
+       for the ARM processor family.
+
+
+
+binutils-2.18.92            2008-10-02                          8
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       --mmccppuu==_p_r_o_c_e_s_s_o_r[[++_e_x_t_e_n_s_i_o_n......]]
+           Specify which ARM processor variant is the target.
+
+       --mmaarrcchh==_a_r_c_h_i_t_e_c_t_u_r_e[[++_e_x_t_e_n_s_i_o_n......]]
+           Specify which ARM architecture variant is used by  the
+           target.
+
+       --mmffppuu==_f_l_o_a_t_i_n_g_-_p_o_i_n_t_-_f_o_r_m_a_t
+           Select   which  Floating  Point  architecture  is  the
+           target.
+
+       --mmffllooaatt--aabbii==_a_b_i
+           Select which floating point ABI is in use.
+
+       --mmtthhuummbb
+           Enable Thumb only instruction decoding.
+
+       --mmaappccss--3322 || --mmaappccss--2266 || --mmaappccss--ffllooaatt || --mmaappccss--rreeeennttrraanntt
+           Select which procedure calling convention is in use.
+
+       --EEBB || --EELL
+           Select either big-endian (-EB) or little-endian  (-EL)
+           output.
+
+       --mmtthhuummbb--iinntteerrwwoorrkk
+           Specify   that   the  code  has  been  generated  with
+           interworking between Thumb and ARM code in mind.
+
+       --kk  Specify that PIC code has been generated.
+
+       See the info pages for documentation of the  CRIS-specific
+       options.
+
+       The  following options are available when as is configured
+       for a D10V processor.
+
+       --OO  Optimize output by parallelizing instructions.
+
+       The following options are available when as is  configured
+       for a D30V processor.
+
+       --OO  Optimize output by parallelizing instructions.
+
+       --nn  Warn when nops are generated.
+
+       --NN  Warn when a nop after a 32-bit multiply instruction is
+           generated.
+
+       The following options are available when as is  configured
+       for the Intel 80960 processor.
+
+       --AACCAA || --AACCAA__AA || --AACCBB || --AACCCC || --AAKKAA || --AAKKBB || --AAKKCC || --AAMMCC
+           Specify  which  variant of the 960 architecture is the
+           target.
+
+
+
+binutils-2.18.92            2008-10-02                          9
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       --bb  Add code to collect statistics about branches taken.
+
+       --nnoo--rreellaaxx
+           Do not alter compare-and-branch instructions for  long
+           displacements; error if necessary.
+
+       The  following options are available when as is configured
+       for the Ubicom IP2K series.
+
+       --mmiipp22002222eexxtt
+           Specifies that the extended  IP2022  instructions  are
+           allowed.
+
+       --mmiipp22002222
+           Restores  the  default  behaviour, which restricts the
+           permitted instructions to just the basic IP2022  ones.
+
+       The  following options are available when as is configured
+       for the Renesas M32C and M16C processors.
+
+       --mm3322cc
+           Assemble M32C instructions.
+
+       --mm1166cc
+           Assemble M16C instructions (the default).
+
+       --rreellaaxx
+           Enable support for link-time relaxations.
+
+       --hh--ttiicckk--hheexx
+           Support H'00 style hex constants in addition  to  0x00
+           style.
+
+       The  following options are available when as is configured
+       for the Renesas M32R (formerly Mitsubishi M32R) series.
+
+       ----mm3322rrxx
+           Specify which processor in  the  M32R  family  is  the
+           target.   The  default  is normally the M32R, but this
+           option changes it to the M32RX.
+
+       ----wwaarrnn--eexxpplliicciitt--ppaarraalllleell--ccoonnfflliiccttss oorr ----WWpp
+           Produce warning messages  when  questionable  parallel
+           constructs are encountered.
+
+       ----nnoo--wwaarrnn--eexxpplliicciitt--ppaarraalllleell--ccoonnfflliiccttss oorr ----WWnnpp
+           Do  not  produce  warning  messages  when questionable
+           parallel constructs are encountered.
+
+       The following options are available when as is  configured
+       for the Motorola 68000 series.
+
+       --ll  Shorten  references  to undefined symbols, to one word
+           instead of two.
+
+
+
+binutils-2.18.92            2008-10-02                         10
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       --mm6688000000 || --mm6688000088 || --mm6688001100 || --mm6688002200 || --mm6688003300
+       || --mm6688004400 || --mm6688006600 || --mm6688330022 || --mm6688333311 || --mm6688333322
+       || --mm6688333333 || --mm6688334400 || --mmccppuu3322 || --mm55220000
+           Specify what processor in  the  68000  family  is  the
+           target.   The  default is normally the 68020, but this
+           can be changed at configuration time.
+
+       --mm6688888811 || --mm6688888822 || --mmnnoo--6688888811 || --mmnnoo--6688888822
+           The target machine does (or does not) have a floating-
+           point   coprocessor.   The  default  is  to  assume  a
+           coprocessor for 68020, 68030, and cpu32.  Although the
+           basic  68000  is  not  compatible  with  the  68881, a
+           combination of the two can be  specified,  since  it's
+           possible   to   do   emulation   of   the  coprocessor
+           instructions with the main processor.
+
+       --mm6688885511 || --mmnnoo--6688885511
+           The target machine does (or does not) have  a  memory-
+           management unit coprocessor.  The default is to assume
+           an MMU for 68020 and up.
+
+       For details about the PDP-11  machine  dependent  features
+       options, see PPDDPP--1111--OOppttiioonnss.
+
+       --mmppiicc || --mmnnoo--ppiicc
+           Generate  position-independent (or position-dependent)
+           code.  The default is --mmppiicc.
+
+       --mmaallll
+       --mmaallll--eexxtteennssiioonnss
+           Enable all instruction set extensions.   This  is  the
+           default.
+
+       --mmnnoo--eexxtteennssiioonnss
+           Disable all instruction set extensions.
+
+       --mm_e_x_t_e_n_s_i_o_n || --mmnnoo--_e_x_t_e_n_s_i_o_n
+           Enable  (or  disable)  a  particular  instruction  set
+           extension.
+
+       --mm_c_p_u
+           Enable the instruction set extensions supported  by  a
+           particular CPU, and disable all other extensions.
+
+       --mm_m_a_c_h_i_n_e
+           Enable  the  instruction set extensions supported by a
+           particular  machine  model,  and  disable  all   other
+           extensions.
+
+       The  following options are available when as is configured
+       for a picoJava processor.
+
+       --mmbb Generate "big endian" format output.
+
+
+
+
+binutils-2.18.92            2008-10-02                         11
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       --mmll Generate "little endian" format output.
+
+       The following options are available when as is  configured
+       for the Motorola 68HC11 or 68HC12 series.
+
+       --mm6688hhcc1111 || --mm6688hhcc1122 || --mm6688hhccss1122
+           Specify  what processor is the target.  The default is
+           defined by the configuration option when building  the
+           assembler.
+
+       --mmsshhoorrtt
+           Specify to use the 16-bit integer ABI.
+
+       --mmlloonngg
+           Specify to use the 32-bit integer ABI.
+
+       --mmsshhoorrtt--ddoouubbllee
+           Specify to use the 32-bit double ABI.
+
+       --mmlloonngg--ddoouubbllee
+           Specify to use the 64-bit double ABI.
+
+       ----ffoorrccee--lloonngg--bbrraanncchheess
+           Relative  branches are turned into absolute ones. This
+           concerns conditional branches, unconditional  branches
+           and branches to a sub routine.
+
+       --SS || ----sshhoorrtt--bbrraanncchheess
+           Do  not turn relative branches into absolute ones when
+           the offset is out of range.
+
+       ----ssttrriicctt--ddiirreecctt--mmooddee
+           Do not turn the direct addressing mode  into  extended
+           addressing  mode when the instruction does not support
+           direct addressing mode.
+
+       ----pprriinntt--iinnssnn--ssyynnttaaxx
+           Print the syntax of instruction in case of error.
+
+       ----pprriinntt--ooppccooddeess
+           print the list of instructions with  syntax  and  then
+           exit.
+
+       ----ggeenneerraattee--eexxaammppllee
+           print  an  example  of  instruction  for each possible
+           instruction and then exit.  This option is only useful
+           for testing aass.
+
+       The  following options are available when aass is configured
+       for the SPARC architecture:
+
+       --AAvv66 || --AAvv77 || --AAvv88 || --AAssppaarrcclleett || --AAssppaarrcclliittee
+       --AAvv88pplluuss || --AAvv88pplluussaa || --AAvv99 || --AAvv99aa
+           Explicitly select a variant of the SPARC architecture.
+
+
+
+binutils-2.18.92            2008-10-02                         12
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+           --AAvv88pplluuss  and  --AAvv88pplluussaa  select a 32 bit environment.
+           --AAvv99 and --AAvv99aa select a 64 bit environment.
+
+           --AAvv88pplluussaa and --AAvv99aa enable the  SPARC  V9  instruction
+           set with UltraSPARC extensions.
+
+       --xxaarrcchh==vv88pplluuss || --xxaarrcchh==vv88pplluussaa
+           For  compatibility  with  the  Solaris  v9  assembler.
+           These  options  are   equivalent   to   -Av8plus   and
+           -Av8plusa, respectively.
+
+       --bbuummpp
+           Warn   when   the   assembler   switches   to  another
+           architecture.
+
+       The following options are available when as is  configured
+       for the 'c54x architecture.
+
+       --mmffaarr--mmooddee
+           Enable  extended  addressing  mode.  All addresses and
+           relocations will assume extended  addressing  (usually
+           23 bits).
+
+       --mmccppuu==_C_P_U___V_E_R_S_I_O_N
+           Sets the CPU version being compiled for.
+
+       --mmeerrrroorrss--ttoo--ffiillee _F_I_L_E_N_A_M_E
+           Redirect  error  output  to a file, for broken systems
+           which don't support such behaviour in the shell.
+
+       The following options are available when as is  configured
+       for a MIPS processor.
+
+       --GG _n_u_m
+           This  option  sets  the largest size of an object that
+           can be referenced implicitly with the  "gp"  register.
+           It is only accepted for targets that use ECOFF format,
+           such as a  DECstation  running  Ultrix.   The  default
+           value is 8.
+
+       --EEBB Generate "big endian" format output.
+
+       --EELL Generate "little endian" format output.
+
+       --mmiippss11
+       --mmiippss22
+       --mmiippss33
+       --mmiippss44
+       --mmiippss55
+       --mmiippss3322
+       --mmiippss3322rr22
+       --mmiippss6644
+       --mmiippss6644rr22
+           Generate  code  for  a particular MIPS Instruction Set
+
+
+
+binutils-2.18.92            2008-10-02                         13
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+           Architecture  level.    --mmiippss11   is   an   alias   for
+           --mmaarrcchh==rr33000000,  --mmiippss22  is  an  alias for --mmaarrcchh==rr66000000,
+           --mmiippss33 is an alias for --mmaarrcchh==rr44000000 and --mmiippss44  is  an
+           alias  for  --mmaarrcchh==rr88000000.  --mmiippss55, --mmiippss3322, --mmiippss3322rr22,
+           --mmiippss6644, and --mmiippss6644rr22 correspond to generic  MMIIPPSS  VV,
+           MMIIPPSS3322, MMIIPPSS3322 RReelleeaassee 22, MMIIPPSS6644, and MMIIPPSS6644 RReelleeaassee 22
+           ISA processors, respectively.
+
+       --mmaarrcchh==_C_P_U
+           Generate code for a particular MIPS cpu.
+
+       --mmttuunnee==_c_p_u
+           Schedule and tune for a particular MIPS cpu.
+
+       --mmffiixx77000000
+       --mmnnoo--ffiixx77000000
+           Cause  nops  to  be  inserted  if  the  read  of   the
+           destination  register  of  an mfhi or mflo instruction
+           occurs in the following two instructions.
+
+       --mmddeebbuugg
+       --nnoo--mmddeebbuugg
+           Cause stabs-style  debugging  output  to  go  into  an
+           ECOFF-style  .mdebug  section  instead of the standard
+           ELF .stabs sections.
+
+       --mmppddrr
+       --mmnnoo--ppddrr
+           Control generation of ".pdr" sections.
+
+       --mmggpp3322
+       --mmffpp3322
+           The register sizes are normally inferred from the  ISA
+           and  ABI,  but  these  flags  force a certain group of
+           registers to be treated as 32 bits wide at all  times.
+           --mmggpp3322  controls the size of general-purpose registers
+           and  --mmffpp3322  controls  the  size   of   floating-point
+           registers.
+
+       --mmiippss1166
+       --nnoo--mmiippss1166
+           Generate  code  for  the  MIPS  16 processor.  This is
+           equivalent to putting ".set mips16" at  the  start  of
+           the  assembly file.  --nnoo--mmiippss1166 turns off this option.
+
+       --mmssmmaarrttmmiippss
+       --mmnnoo--ssmmaarrttmmiippss
+           Enables  the  SmartMIPS  extension   to   the   MIPS32
+           instruction  set.  This is equivalent to putting ".set
+           smartmips"  at  the  start  of  the   assembly   file.
+           --mmnnoo--ssmmaarrttmmiippss turns off this option.
+
+       --mmiippss33dd
+
+
+
+
+binutils-2.18.92            2008-10-02                         14
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       --nnoo--mmiippss33dd
+           Generate  code  for  the  MIPS-3D Application Specific
+           Extension.  This tells the assembler to accept MIPS-3D
+           instructions.  --nnoo--mmiippss33dd turns off this option.
+
+       --mmddmmxx
+       --nnoo--mmddmmxx
+           Generate   code  for  the  MDMX  Application  Specific
+           Extension.  This tells the assembler  to  accept  MDMX
+           instructions.  --nnoo--mmddmmxx turns off this option.
+
+       --mmddsspp
+       --mmnnoo--ddsspp
+           Generate  code  for  the  DSP  Release  1  Application
+           Specific  Extension.   This  tells  the  assembler  to
+           accept DSP Release 1 instructions.  --mmnnoo--ddsspp turns off
+           this option.
+
+       --mmddsspprr22
+       --mmnnoo--ddsspprr22
+           Generate  code  for  the  DSP  Release  2  Application
+           Specific  Extension.  This option implies -mdsp.  This
+           tells  the  assembler  to   accept   DSP   Release   2
+           instructions.  --mmnnoo--ddsspprr22 turns off this option.
+
+       --mmmmtt
+       --mmnnoo--mmtt
+           Generate   code   for   the  MT  Application  Specific
+           Extension.  This tells  the  assembler  to  accept  MT
+           instructions.  --mmnnoo--mmtt turns off this option.
+
+       ----ccoonnssttrruucctt--ffllooaattss
+       ----nnoo--ccoonnssttrruucctt--ffllooaattss
+           The    ----nnoo--ccoonnssttrruucctt--ffllooaattss   option   disables   the
+           construction of double width floating point  constants
+           by  loading  the  two halves of the value into the two
+           single width floating point registers that make up the
+           double  width register.  By default ----ccoonnssttrruucctt--ffllooaattss
+           is selected, allowing construction of  these  floating
+           point constants.
+
+       ----eemmuullaattiioonn==_n_a_m_e
+           This  option  causes  aass  to emulate aass configured for
+           some other target, in all respects,  including  output
+           format (choosing between ELF and ECOFF only), handling
+           of  pseudo-opcodes  which   may   generate   debugging
+           information  or  store  symbol  table information, and
+           default endianness.  The available configuration names
+           are:   mmiippsseeccooffff,   mmiippsseellff,  mmiippsslleeccooffff,  mmiippssbbeeccooffff,
+           mmiippsslleellff, mmiippssbbeellff.  The first two do  not  alter  the
+           default endianness from that of the primary target for
+           which the assembler was configured; the others  change
+           the  default  to little- or big-endian as indicated by
+           the bb or ll  in  the  name.   Using  --EEBB  or  --EELL  will
+
+
+
+binutils-2.18.92            2008-10-02                         15
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+           override the endianness selection in any case.
+
+           This  option  is  currently  supported  only  when the
+           primary target aass is configured for is a MIPS  ELF  or
+           ECOFF  target.   Furthermore,  the  primary  target or
+           others   specified   with   ----eennaabbllee--ttaarrggeettss==......    at
+           configuration  time must include support for the other
+           format, if both are to be available.  For example, the
+           Irix 5 configuration includes support for both.
+
+           Eventually,    this    option    will   support   more
+           configurations, with more  fine-grained  control  over
+           the  assembler's  behavior,  and will be supported for
+           more processors.
+
+       --nnooccpppp
+           aass  ignores  this  option.    It   is   accepted   for
+           compatibility with the native tools.
+
+       ----ttrraapp
+       ----nnoo--ttrraapp
+       ----bbrreeaakk
+       ----nnoo--bbrreeaakk
+           Control  how  to deal with multiplication overflow and
+           division by zero.  ----ttrraapp  or  ----nnoo--bbrreeaakk  (which  are
+           synonyms)  take  a  trap  exception (and only work for
+           Instruction Set  Architecture  level  2  and  higher);
+           ----bbrreeaakk  or ----nnoo--ttrraapp (also synonyms, and the default)
+           take a break exception.
+
+       --nn  When this option is used,  aass  will  issue  a  warning
+           every  time  it  generates  a  nop  instruction from a
+           macro.
+
+       The following options are available when as is  configured
+       for an MCore processor.
+
+       --jjssrrii22bbssrr
+       --nnoojjssrrii22bbssrr
+           Enable  or disable the JSRI to BSR transformation.  By
+           default this is  enabled.   The  command  line  option
+           --nnoojjssrrii22bbssrr can be used to disable it.
+
+       --ssiiffiilltteerr
+       --nnoossiiffiilltteerr
+           Enable  or  disable  the silicon filter behaviour.  By
+           default  this  is  disabled.   The  default   can   be
+           overridden by the --ssiiffiilltteerr command line option.
+
+       --rreellaaxx
+           Alter jump instructions for long displacements.
+
+       --mmccppuu==[[221100||334400]]
+           Select  the  cpu  type  on  the target hardware.  This
+
+
+
+binutils-2.18.92            2008-10-02                         16
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+           controls which instructions can be assembled.
+
+       --EEBB Assemble for a big endian target.
+
+       --EELL Assemble for a little endian target.
+
+       See the info pages for documentation of the  MMIX-specific
+       options.
+
+       The  following options are available when as is configured
+       for an Xtensa processor.
+
+       ----tteexxtt--sseeccttiioonn--lliitteerraallss || ----nnoo--tteexxtt--sseeccttiioonn--lliitteerraallss
+           With  ----tteexxtt--sseeccttiioonn--lliitteerraallss,   literal   pools   are
+           interspersed  in  the  text  section.   The default is
+           ----nnoo--tteexxtt--sseeccttiioonn--lliitteerraallss, which places literals in a
+           separate  section  in  the output file.  These options
+           only affect literals referenced via PC-relative "L32R"
+           instructions;   literals   for  absolute  mode  "L32R"
+           instructions are handled separately.
+
+       ----aabbssoolluuttee--lliitteerraallss || ----nnoo--aabbssoolluuttee--lliitteerraallss
+           Indicate to the assembler whether "L32R"  instructions
+           use  absolute  or PC-relative addressing.  The default
+           is  to  assume  absolute  addressing  if  the   Xtensa
+           processor  includes  the  absolute  "L32R"  addressing
+           option.  Otherwise, only the PC-relative  "L32R"  mode
+           can be used.
+
+       ----ttaarrggeett--aalliiggnn || ----nnoo--ttaarrggeett--aalliiggnn
+           Enable or disable automatic alignment to reduce branch
+           penalties at the expense of some  code  density.   The
+           default is ----ttaarrggeett--aalliiggnn.
+
+       ----lloonnggccaallllss || ----nnoo--lloonnggccaallllss
+           Enable  or disable transformation of call instructions
+           to allow calls across a greater  range  of  addresses.
+           The default is ----nnoo--lloonnggccaallllss.
+
+       ----ttrraannssffoorrmm || ----nnoo--ttrraannssffoorrmm
+           Enable  or  disable  all  assembler transformations of
+           Xtensa  instructions.   The  default  is  ----ttrraannssffoorrmm;
+           ----nnoo--ttrraannssffoorrmm  should  be used only in the rare cases
+           when the instructions must be exactly as specified  in
+           the assembly source.
+
+       ----rreennaammee--sseeccttiioonn _o_l_d_n_a_m_e==_n_e_w_n_a_m_e
+           When  generating  output  sections, rename the _o_l_d_n_a_m_e
+           section to _n_e_w_n_a_m_e.
+
+       The following options are available when as is  configured
+       for a Z80 family processor.
+
+
+
+
+
+binutils-2.18.92            2008-10-02                         17
+
+
+
+
+
+AS(1)                 GNU Development Tools                 AS(1)
+
+
+       --zz8800
+           Assemble for Z80 processor.
+
+       --rr880000
+           Assemble for R800 processor.
+
+       --iiggnnoorree--uunnddooccuummeenntteedd--iinnssttrruuccttiioonnss
+       --WWnnuudd
+           Assemble  undocumented Z80 instructions that also work
+           on R800 without warning.
+
+       --iiggnnoorree--uunnppoorrttaabbllee--iinnssttrruuccttiioonnss
+       --WWnnuupp
+           Assemble all  undocumented  Z80  instructions  without
+           warning.
+
+       --wwaarrnn--uunnddooccuummeenntteedd--iinnssttrruuccttiioonnss
+       --WWuudd
+           Issue a warning for undocumented Z80 instructions that
+           also work on R800.
+
+       --wwaarrnn--uunnppoorrttaabbllee--iinnssttrruuccttiioonnss
+       --WWuupp
+           Issue a warning for undocumented Z80 instructions that
+           do not work on R800.
+
+       --ffoorrbbiidd--uunnddooccuummeenntteedd--iinnssttrruuccttiioonnss
+       --FFuudd
+           Treat all undocumented instructions as errors.
+
+       --ffoorrbbiidd--uunnppoorrttaabbllee--iinnssttrruuccttiioonnss
+       --FFuupp
+           Treat  undocumented  Z80 instructions that do not work
+           on R800 as errors.
+
+SSEEEE AALLSSOO
+       _g_c_c(1), _l_d(1), and the Info entries for _b_i_n_u_t_i_l_s and _l_d.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1991, 92, 93, 94, 95, 96, 97, 98, 99,  2000,
+       2001, 2002, 2006, 2007 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+       Documentation  License,  Version  1.1 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+binutils-2.18.92            2008-10-02                         18
+
+

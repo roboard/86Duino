@@ -142,13 +142,10 @@ int main(void)
 	mode = GetBootLoaderMode();
 	
 	// 0.5 Is pre-reset soft reset? if yes, go to bootloader
-	if(fp != NULL)
-	{
-		rst_key = io_inpb(0xf21A);
-		io_outpb(0xf21A, 0x00);
-		if(rst_key != 0x5a && mode == PRO_MODE)
-			return spawnl(P_OVERLAY, "86duino.exe", "86duino.exe", NULL);
-	}
+	rst_key = io_inpb(0xf21A);
+	io_outpb(0xf21A, 0x00);
+	if(fp != NULL && rst_key != 0x5a && mode == PRO_MODE)
+		return spawnl(P_OVERLAY, "86duino.exe", "86duino.exe", NULL);
 	
 	// 1. Init USB device
 	void* USBDEV = CreateUSBDevice();

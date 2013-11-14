@@ -1,0 +1,37 @@
+This is DJGPP port of GMP-4.2.2.
+
+GNU MP is a portable library written in C for arbitrary precision
+arithmetic on integers, rational numbers, and floating-point numbers.
+It aims to provide the fastest possible arithmetic for all applications
+that need higher precision than is directly supported by the basic C
+types.
+
+Binary archive is built for i386-pc-msdosdjgpp target. One may want to
+reconfigure sources for actual processor type and rebuild GMP.
+
+Building from sources
+=====================
+
+I built GMP using GCC-4.2.2 under Windows XP Pro + SP2.
+
+Sources in gmp422s.zip are preconfigured for target i386-pc-msdosdjgpp.
+Simply running configure script with needed parameters should be enough
+to reconfigure if needed.
+
+I used following configure command:
+
+./configure i386-pc-msdosdjgpp --disable-shared --enable-mpbsd --enable-cxx --prefix=/dev/env/DJDIR
+
+(I really used the script gmp.build included in gmp422s.zip to
+build from the original source archive gmp-4.2.2.tar.bz2.
+gmp422s.zip is also generated file)  
+
+
+To build GMP run 'make'.
+
+To run tests of the GMP, run 'make check'
+
+To install GMP run 'make install prefix=where_to_install' (replace
+'where_to_install' with real value).
+
+Andris Pavenis <andris.pavenis@iki.fi>

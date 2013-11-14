@@ -1,0 +1,198 @@
+
+
+
+WINDMC(1)             GNU Development Tools             WINDMC(1)
+
+
+NNAAMMEE
+       windmc - generates Windows message resources.
+
+SSYYNNOOPPSSIISS
+DDEESSCCRRIIPPTTIIOONN
+       wwiinnddmmcc  reads message definitions from an input file (.mc)
+       and translate them into a set of output files.  The output
+       files may be of four kinds:
+
+       "h" A C header file containing the message definitions.
+
+       "rc"
+           A resource file compilable by the wwiinnddrreess tool.
+
+       "bin"
+           One  or more binary files containing the resource data
+           for a specific message language.
+
+       "dbg"
+           A C include file  that  maps  message  id's  to  their
+           symbolic name.
+
+       The  exact  description  of  these  different  formats  is
+       available in documentation from Microsoft.
+
+       When wwiinnddmmcc converts from the "mc"  format  to  the  "bin"
+       format,  "rc",  "h",  and optional "dbg" it is acting like
+       the Windows Message Compiler.
+
+OOPPTTIIOONNSS
+       --aa
+       ----aasscciiii__iinn
+           Specifies that the input file specified is ANSI.  This
+           is the default behaviour.
+
+       --AA
+       ----aasscciiii__oouutt
+           Specifies  that  messages  in  the  output "bin" files
+           should be in ANSI format.
+
+       --bb
+       ----bbiinnpprreeffiixx
+           Specifies that  "bin"  filenames  should  have  to  be
+           prefixed by the basename of the source file.
+
+       --cc
+       ----ccuussttoommffllaagg
+           Sets the customer bit in all message id's.
+
+       --CC _c_o_d_e_p_a_g_e
+       ----ccooddeeppaaggee__iinn _c_o_d_e_p_a_g_e
+           Sets  the default codepage to be used to convert input
+           file to UTF16. The default is ocdepage 1252.
+
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+WINDMC(1)             GNU Development Tools             WINDMC(1)
+
+
+       --dd
+       ----ddeecciimmaall__vvaalluueess
+           Outputs the constants in the header file  in  decimal.
+           Default is using hexadecimal output.
+
+       --ee _e_x_t
+       ----eexxtteennssiioonn _e_x_t
+           The  extension  for the header file. The default is .h
+           extension.
+
+       --FF _t_a_r_g_e_t
+       ----ttaarrggeett _t_a_r_g_e_t
+           Specify the BFD format  to  use  for  a  bin  file  as
+           output.   This  is  a BFD target name; you can use the
+           ----hheellpp option to see  a  list  of  supported  targets.
+           Normally  wwiinnddmmcc will use the default format, which is
+           the first one listed by the ----hheellpp option.
+
+       --hh _p_a_t_h
+       ----hheeaaddeerrddiirr _p_a_t_h
+           The target directory of the generated header file. The
+           default is the current directory.
+
+       --HH
+       ----hheellpp
+           Displays  a  list  of  command  line  options and then
+           exits.
+
+       --mm _c_h_a_r_a_c_t_e_r_s
+       ----mmaaxxlleennggtthh _c_h_a_r_a_c_t_e_r_s
+           Instructs wwiinnddmmcc to generate a warning if  the  length
+           of any message exceeds the number specified.
+
+       --nn
+       ----nnuulllltteerrmmiinnaattee
+           Terminate  message  text  in  "bin"  files by zero. By
+           default they are terminated by CR/LF.
+
+       --oo
+       ----hhrreessuulltt__uussee
+           Not yet implemented. Instructs "windmc" to generate an
+           OLE2  header  file,  using HRESULT definitions. Status
+           codes are used if the flag is not specified.
+
+       --OO _c_o_d_e_p_a_g_e
+       ----ccooddeeppaaggee__oouutt _c_o_d_e_p_a_g_e
+           Sets the default codepage to be used  to  output  text
+           files. The default is ocdepage 1252.
+
+       --rr _p_a_t_h
+       ----rrccddiirr _p_a_t_h
+           The target directory for the generated "rc" script and
+           the generated "bin" files that the  resource  compiler
+           script includes. The default is the current directory.
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+WINDMC(1)             GNU Development Tools             WINDMC(1)
+
+
+       --uu
+       ----uunniiccooddee__iinn
+           Specifies that the input file is UTF16.
+
+       --UU
+       ----uunniiccooddee__oouutt
+           Specifies that  messages  in  the  output  "bin"  file
+           should  be  in  UTF16  format.  This  is  the  default
+           behaviour.
+
+       --vv
+       ----vveerrbboossee
+           Enable verbose mode.
+
+       --VV
+       ----vveerrssiioonn
+           Prints the version number for wwiinnddmmcc.
+
+       --xx _p_a_t_h
+       ----xxddggbb _p_a_t_h
+           The path of the "dbg" C include file that maps message
+           id's  to  the symbolic name. No such file is generated
+           without specifying the switch.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       the Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1991, 1992, 1993, 1994,  1995,  1996,  1997,
+       1998,  1999,  2000,  2001,  2002,  2003, 2004, 2005, 2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission is granted to copy,  distribute  and/or  modify
+       this   document   under   the   terms   of  the  GNU  Free
+       Documentation License, Version 1.2 or  any  later  version
+       published   by  the  Free  Software  Foundation;  with  no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover  Texts.   A  copy of the license is included in
+       the section entitled "GNU Free Documentation License".
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+

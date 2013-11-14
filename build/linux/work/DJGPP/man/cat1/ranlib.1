@@ -1,0 +1,132 @@
+
+
+
+RANLIB(1)             GNU Development Tools             RANLIB(1)
+
+
+NNAAMMEE
+       ranlib - generate index to archive.
+
+SSYYNNOOPPSSIISS
+       ranlib [--vvVVtt] _a_r_c_h_i_v_e
+
+DDEESSCCRRIIPPTTIIOONN
+       rraannlliibb  generates  an  index to the contents of an archive
+       and stores it in the archive.  The index lists each symbol
+       defined  by  a  member of an archive that is a relocatable
+       object file.
+
+       You may use nnmm --ss or nnmm ----pprriinntt--aarrmmaapp to list this  index.
+
+       An  archive  with  such  an index speeds up linking to the
+       library and allows routines in the library  to  call  each
+       other without regard to their placement in the archive.
+
+       The  GNU rraannlliibb program is another form of GNU aarr; running
+       rraannlliibb is completely equivalent to executing aarr --ss.
+
+OOPPTTIIOONNSS
+       --vv
+       --VV
+       ----vveerrssiioonn
+           Show the version number of rraannlliibb.
+
+       --tt  Update the timestamp of the symbol map of an  archive.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are inserted in place of the  original  @_f_i_l_e  option.
+           If  _f_i_l_e  does  not exist, or cannot be read, then the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace  character  may be included in an option by
+           surrounding the entire  option  in  either  single  or
+           double  quotes.  Any character (including a backslash)
+           may be included  by  prefixing  the  character  to  be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain additional @_f_i_l_e  options;  any  such  options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       _a_r(1), _n_m(1), and the Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright  (c)  1991,  1992, 1993, 1994, 1995, 1996, 1997,
+       1998, 1999, 2000, 2001,  2002,  2003,  2004,  2005,  2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+RANLIB(1)             GNU Development Tools             RANLIB(1)
+
+
+       Documentation  License,  Version  1.2 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+

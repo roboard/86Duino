@@ -1,0 +1,198 @@
+
+
+
+GTAGS-PARSER(1)                                   GTAGS-PARSER(1)
+
+
+NNAAMMEE
+       gtags-parser - print cross reference list for gtags.
+
+SSYYNNOOPPSSIISS
+       ggttaaggss--ppaarrsseerr [-bdenrstvw] _f_i_l_e ...
+
+DDEESSCCRRIIPPTTIIOONN
+       GGttaaggss--ppaarrsseerr  print cross reference list for ggttaaggss(1) from
+       the specified C, C++, yacc, java, PHP and Assembly  source
+       to  standard  output.   Each  line  of output contains the
+       object name, the line number which it appears, the file in
+       which  it is defined, and a line image separated by white-
+       space.  It's same with the  output  of  ccttaaggss(1)  with  --xx
+       option.
+
+       Depending  upon  the  options  provided  to  ggttaaggss--ppaarrsseerr,
+       objects will consist  of  function  definitions,  function
+       references and other symbols.
+
+       Files  whose names end in '.c' or '.h' are assumed to be C
+       source files and are searched  for  C  style  routine  and
+       macro  definitions.  Files whose names end in '.c++' '.cc'
+       '.cpp' '.cxx' '.hxx' '.hpp' '.C' '.H' are  assumed  to  be
+       C++  source  files.   Files  whose  names  end in '.y' are
+       assumed to be YACC source files.  Files whose names end in
+       '.java'  are assumed to be Java source files.  Files whose
+       names end in '.php' '.php3' '.phtml' are assumed to be PHP
+       source  files.   Files whose names end in '.s' or '.S' are
+       assumed to be Assembler source  files.   Other  files  are
+       searched for C style definitions.
+
+       Yacc  files  each have a special tag. yyyyppaarrssee is the start
+       of the second section of the yacc file.
+
+       This command is the default parser of GLOBAL  source  code
+       tag system.
+
+OOPPTTIIOONNSS
+       The following options are available:
+
+       --bb, ----bbeeggiinn--bblloocckk
+              Force  level  1  block  to  begin when reach a left
+              brace at the first column.  (C only)
+
+       --dd, ----ddeeffiinnee
+              Pick up not only function but  also  macro  without
+              argument as a definition.
+
+       --ee, ----eenndd--bblloocckk
+              Force level 1 block to end when reach a right brace
+              at the first column.  (C only)
+
+       --nn, ----nnoo--ttaaggss
+              Suppress output of tags. It is useful to  use  with
+
+
+
+GNU Project                  May 2004                           1
+
+
+
+
+
+GTAGS-PARSER(1)                                   GTAGS-PARSER(1)
+
+
+              --ww option.
+
+       --rr, ----rreeffeerreennccee
+              Locate function references instead of function def-
+              initions.  'GTAGS' is needed at the current  direc-
+              tory.   (C,  C++  and Java source only) By default,
+              locate function definitions.
+
+       --ss, ----ssyymmbbooll
+              Collect symbols other than functions.  By  default,
+              locate function definitions.
+
+       --tt, ----ttyyppeeddeeff
+              Pick up not only function but also typedef name and
+              enum member as a definition.
+
+       --vv, ----vveerrbboossee
+              Verbose mode.
+
+       --ww, ----wwaarrnniinngg
+              Print warning message.
+
+       ----llaannggmmaapp=map
+              Language mapping. Each comma-separated   map   con-
+              sists  of the language name, a colon, and a list of
+              file    extensions.      Default     mapping     is
+              'c:.c.h,yacc:.y,asm:.s.S,java:.java,cpp:.c++.cc.cpp.cxx.hxx.hpp.C.H,php:.php.php3.phtml'.
+
+       The --rr and --ss options override each other;  the  last  one
+       specified determines the method used.
+
+DDIIAAGGNNOOSSTTIICCSS
+       GGttaaggss--ppaarrsseerr  exits  with  a  non  0  value  if  an  error
+       occurred, 0 otherwise.  Duplicate objects are not  consid-
+       ered errors.
+
+SSEEEE AALLSSOO
+       gglloobbaall(1), ggttaaggss(1), hhttaaggss(1).
+
+       GNU GLOBAL source code tag system
+       (http://www.gnu.org/software/global/).
+
+BBUUGG
+       GGttaaggss--ppaarrsseerr  relies  on  the input being well formed, and
+       any syntactical errors will completely confuse it.
+
+       Assembler support is far from  complete.   Probably  valid
+       only for FreeBSD and Linux kernel source.
+
+AAUUTTHHOORR
+       Tama Communications Corporation.
+
+HHIISSTTOORRYY
+       The   ggttaaggss--ppaarrsseerr(gctags)  command  appeared  in  FreeBSD
+
+
+
+GNU Project                  May 2004                           2
+
+
+
+
+
+GTAGS-PARSER(1)                                   GTAGS-PARSER(1)
+
+
+       2.2.2.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU Project                  May 2004                           3
+
+
