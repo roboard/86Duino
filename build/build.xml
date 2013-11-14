@@ -357,8 +357,8 @@
       <param name="target.path" value="linux/work" />
     </antcall>
 
-    <copy todir="linux/work" file="linux/dist/arduino" />
-    <chmod perm="755" file="linux/work/arduino" />
+    <copy todir="linux/work" file="linux/dist/86duino" />
+    <chmod perm="755" file="linux/work/86duino" />
 
     <copy todir="linux/work/hardware">
       <fileset dir="linux/dist" includes="tools/**" />
@@ -369,9 +369,12 @@
     <chmod perm="755" file="linux/work/hardware/tools/bossac64" />
     <chmod perm="755" file="linux/work/hardware/tools/adk2tool" />
     <chmod perm="755" file="linux/work/hardware/tools/adk2install" />
+    <chmod perm="755" file="linux/work/hardware/tools/86upload.exe" />
+    <chmod perm="755" file="linux/work/DOSBox-0.74/upx309w/upx.exe" />
+    <chmod perm="755" file="linux/work/DOSBox-0.74/DOSBox.exe" />
 
-    <copy todir="linux/work" file="linux/dist/arduino" />
-    <chmod perm="755" file="linux/work/arduino" />
+    <copy todir="linux/work" file="linux/dist/86duino" />
+    <chmod perm="755" file="linux/work/86duino" />
 
     <antcall target="linux-unzip-arm-toolchain" />
   </target>
