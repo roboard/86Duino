@@ -156,9 +156,14 @@ public class DuinoCompiler implements MessageConsumer {
     // 4. link it all together into the .elf file
     sketch.setCompilingProgress(60);
     writeDosboxconf(idepath+dosboxpath,_buildPath);
-    writeMakefile(_buildPath);
-    String[] cmd={idepath+dosboxpath+"DOSBox.exe","-conf" ,idepath+dosboxpath+"dosbox-86duino.conf","-noconsole"};
-    execAsynchronously(cmd);
+    writeMakefile(_buildPath); 
+    if(Base.isLinux()){
+      String[] cmd_linux={"dosbox","-conf" ,idepath+dosboxpath+"dosbox-86duino.conf","-noconsole"};
+      execAsynchronously(cmd_linux);}
+    else{             
+      String[] cmd_windows={idepath+dosboxpath+"DOSBox.exe","-conf" ,idepath+dosboxpath+"dosbox-86duino.conf","-noconsole"};
+      execAsynchronously(cmd_windows);}
+    
     
     Verbord=true;    
     if(!compileSusses(_buildPath))
