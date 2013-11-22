@@ -65,8 +65,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x02,								// bNumInterfaces.
 		0x01,								// bConfigurationValue
 		0x04,								// iConfiguration
-		DSC_CONFIG_ATR_BASE |				// bmAttributes
-		DSC_CONFIG_ATR_REMOTE_WAKEUP,	
+		DSC_CONFIG_ATR_BASE,				// bmAttributes
 		DSC_MAXPOWER(100),					// bMaxPower
 	},
 	
@@ -97,7 +96,7 @@ Configuration_Desc_Set desc_Config_Set =
 		DSC_TYPE_CS_INTERFACE,				// bDescriptorType
 		DSC_SUBTYPE_CS_CALL_MANAGE,			// bDescriptorSubtype
 		0x00,								// bmCapabilities
-		0x00,								// bDataInterface
+		0x01,								// bDataInterface
 	},
 	
 	// Abstract Control Management Functional Descriptor

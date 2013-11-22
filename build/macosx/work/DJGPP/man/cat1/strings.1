@@ -1,0 +1,132 @@
+
+
+
+STRINGS(1)            GNU Development Tools            STRINGS(1)
+
+
+NNAAMMEE
+       strings  -  print  the  strings of printable characters in
+       files.
+
+SSYYNNOOPPSSIISS
+       strings [--aaffoovv] [--_m_i_n_-_l_e_n]
+               [--nn _m_i_n_-_l_e_n] [----bbyytteess==_m_i_n_-_l_e_n]
+               [--tt _r_a_d_i_x] [----rraaddiixx==_r_a_d_i_x]
+               [--ee _e_n_c_o_d_i_n_g] [----eennccooddiinngg==_e_n_c_o_d_i_n_g]
+               [--] [----aallll] [----pprriinntt--ffiillee--nnaammee]
+               [--TT _b_f_d_n_a_m_e] [----ttaarrggeett==_b_f_d_n_a_m_e]
+               [----hheellpp] [----vveerrssiioonn] _f_i_l_e...
+
+DDEESSCCRRIIPPTTIIOONN
+       For each _f_i_l_e given,  GNU  ssttrriinnggss  prints  the  printable
+       character  sequences  that  are at least 4 characters long
+       (or the number given  with  the  options  below)  and  are
+       followed by an unprintable character.  By default, it only
+       prints  the  strings  from  the  initialized  and   loaded
+       sections  of  object  files;  for other types of files, it
+       prints the strings from the whole file.
+
+       ssttrriinnggss is mainly useful for determining the  contents  of
+       non-text files.
+
+OOPPTTIIOONNSS
+       --aa
+       ----aallll
+       --   Do  not  scan only the initialized and loaded sections
+           of object files; scan the whole files.
+
+       --ff
+       ----pprriinntt--ffiillee--nnaammee
+           Print the name of the file before each string.
+
+       ----hheellpp
+           Print a summary of the program usage on  the  standard
+           output and exit.
+
+       --_m_i_n_-_l_e_n
+       --nn _m_i_n_-_l_e_n
+       ----bbyytteess==_m_i_n_-_l_e_n
+           Print  sequences  of characters that are at least _m_i_n_-
+           _l_e_n characters long, instead of the default 4.
+
+       --oo  Like --tt oo.  Some other versions of ssttrriinnggss have --oo act
+           like  --tt  dd  instead.   Since we can not be compatible
+           with both ways, we simply chose one.
+
+       --tt _r_a_d_i_x
+       ----rraaddiixx==_r_a_d_i_x
+           Print the offset within the file before  each  string.
+           The  single  character argument specifies the radix of
+           the offset---oo for octal, xx for hexadecimal, or dd  for
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+STRINGS(1)            GNU Development Tools            STRINGS(1)
+
+
+           decimal.
+
+       --ee _e_n_c_o_d_i_n_g
+       ----eennccooddiinngg==_e_n_c_o_d_i_n_g
+           Select  the character encoding of the strings that are
+           to be found.  Possible values for _e_n_c_o_d_i_n_g  are:  ss  =
+           single-7-bit-byte  characters  (ASCII, ISO 8859, etc.,
+           default), SS = single-8-bit-byte characters, bb = 16-bit
+           bigendian,   ll  =  16-bit  littleendian,  BB  =  32-bit
+           bigendian,  LL  =  32-bit  littleendian.   Useful   for
+           finding wide character strings. (ll and bb apply to, for
+           example, Unicode UTF-16/UCS-2 encodings).
+
+       --TT _b_f_d_n_a_m_e
+       ----ttaarrggeett==_b_f_d_n_a_m_e
+           Specify an object code format other than your system's
+           default format.
+
+       --vv
+       ----vveerrssiioonn
+           Print  the  program  version  number  on  the standard
+           output and exit.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are  inserted  in  place of the original @_f_i_l_e option.
+           If _f_i_l_e does not exist, or cannot be  read,  then  the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace character may be included in an  option  by
+           surrounding  the  entire  option  in  either single or
+           double quotes.  Any character (including a  backslash)
+           may  be  included  by  prefixing  the  character to be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain  additional  @_f_i_l_e  options;  any such options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       _a_r(1), _n_m(1), _o_b_j_d_u_m_p(1), _r_a_n_l_i_b(1),  _r_e_a_d_e_l_f(1)  and  the
+       Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright  (c)  1991,  1992, 1993, 1994, 1995, 1996, 1997,
+       1998, 1999, 2000, 2001,  2002,  2003,  2004,  2005,  2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+       Documentation  License,  Version  1.2 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+       the section entitled "GNU Free Documentation License".
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+

@@ -1,0 +1,15 @@
+gnu/grep-2.5-4/README
+gnu/grep-2.5-4/ChangeLog
+gnu/grep-2.5-4/NEWS
+gnu/grep-2.5-4/djgpp/readme
+manifest/grep254b.dsm
+manifest/grep254b.ver
+manifest/grep254b.mft
+share/info/grep.info
+share/man/cat1/grep.1
+share/man/cat1/fgrep.1
+share/man/cat1/egrep.1
+bin/grep.exe
+bin/egrep.exe
+bin/fgrep.exe
+gnu/grep-2.5-4

@@ -1,0 +1,594 @@
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+NNAAMMEE
+       gprof - display call graph profile data
+
+SSYYNNOOPPSSIISS
+       gprof [ -[abcDhilLrsTvwxyz] ] [ -[ACeEfFJnNOpPqQZ][_n_a_m_e] ]
+        [ -I _d_i_r_s ] [ -d[_n_u_m] ] [ -k _f_r_o_m_/_t_o ]
+        [ -m _m_i_n_-_c_o_u_n_t ] [ -R _m_a_p___f_i_l_e ] [ -t _t_a_b_l_e_-_l_e_n_g_t_h ]
+        [ --[no-]annotated-source[=_n_a_m_e] ]
+        [ --[no-]exec-counts[=_n_a_m_e] ]
+        [ --[no-]flat-profile[=_n_a_m_e] ] [ --[no-]graph[=_n_a_m_e] ]
+        [ --[no-]time=_n_a_m_e] [ --all-lines ] [ --brief ]
+        [ --debug[=_l_e_v_e_l] ] [ --function-ordering ]
+        [ --file-ordering _m_a_p___f_i_l_e ] [ --directory-path=_d_i_r_s ]
+        [ --display-unused-functions ] [ --file-format=_n_a_m_e ]
+        [ --file-info ] [ --help ] [ --line ] [ --min-count=_n ]
+        [ --no-static ] [ --print-path ] [ --separate-files ]
+        [ --static-call-graph ] [ --sum ] [ --table-length=_l_e_n ]
+        [ --traditional ] [ --version ] [ --width=_n ]
+        [ --ignore-non-functions ] [ --demangle[=_S_T_Y_L_E] ]
+        [ --no-demangle ] [ _i_m_a_g_e_-_f_i_l_e ] [ _p_r_o_f_i_l_e_-_f_i_l_e ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       "gprof" produces an execution profile  of  C,  Pascal,  or
+       Fortran77  programs.   The  effect  of  called routines is
+       incorporated in the profile of each caller.   The  profile
+       data  is  taken from the call graph profile file (_g_m_o_n_._o_u_t
+       default) which is created by programs  that  are  compiled
+       with  the  --ppgg  option  of "cc", "pc", and "f77".  The --ppgg
+       option also links in versions of the library routines that
+       are  compiled  for  profiling.   "Gprof"  reads  the given
+       object file (the default is "a.out") and  establishes  the
+       relation  between  its  symbol  table  and  the call graph
+       profile from _g_m_o_n_._o_u_t.  If more than one profile  file  is
+       specified, the "gprof" output shows the sum of the profile
+       information in the given profile files.
+
+       "Gprof" calculates  the  amount  of  time  spent  in  each
+       routine.  Next, these times are propagated along the edges
+       of the call graph.  Cycles are discovered, and calls  into
+       a cycle are made to share the time of the cycle.
+
+       Several forms of output are available from the analysis.
+
+       The _f_l_a_t _p_r_o_f_i_l_e shows how much time your program spent in
+       each function,  and  how  many  times  that  function  was
+       called.   If  you simply want to know which functions burn
+       most of the cycles, it is stated concisely here.
+
+       The _c_a_l_l _g_r_a_p_h shows, for each function,  which  functions
+       called  it,  which other functions it called, and how many
+       times.  There is also an estimate of  how  much  time  was
+       spent  in  the  subroutines  of  each  function.  This can
+       suggest places where you might try to  eliminate  function
+       calls that use a lot of time.
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+       The  _a_n_n_o_t_a_t_e_d  _s_o_u_r_c_e  listing is a copy of the program's
+       source code, labeled with the number of times each line of
+       the program was executed.
+
+OOPPTTIIOONNSS
+       These  options  specify  which  of  several output formats
+       "gprof" should produce.
+
+       Many of these options take an optional _s_y_m_s_p_e_c to  specify
+       functions  to  be included or excluded.  These options can
+       be specified multiple times, with different  symspecs,  to
+       include or exclude sets of symbols.
+
+       Specifying  any of these options overrides the default (--pp
+       --qq), which prints a flat profile and call  graph  analysis
+       for all functions.
+
+       "-A[symspec]"
+       "--annotated-source[=symspec]"
+           The --AA option causes "gprof" to print annotated source
+           code.  If _s_y_m_s_p_e_c is specified, print output only  for
+           matching symbols.
+
+       "-b"
+       "--brief"
+           If  the  --bb option is given, "gprof" doesn't print the
+           verbose blurbs that try to explain the meaning of  all
+           of  the  fields  in the tables.  This is useful if you
+           intend to print out the output, or are tired of seeing
+           the blurbs.
+
+       "-C[symspec]"
+       "--exec-counts[=symspec]"
+           The  --CC  option  causes  "gprof"  to  print a tally of
+           functions and the number of times each was called.  If
+           _s_y_m_s_p_e_c  is  specified,  print tally only for matching
+           symbols.
+
+           If the profile data file  contains  basic-block  count
+           records, specifying the --ll option, along with --CC, will
+           cause basic-block execution counts to be  tallied  and
+           displayed.
+
+       "-i"
+       "--file-info"
+           The  --ii  option  causes  "gprof"  to  display  summary
+           information about the profile data  file(s)  and  then
+           exit.  The number of histogram, call graph, and basic-
+           block count records is displayed.
+
+       "-I dirs"
+       "--directory-path=dirs"
+           The --II option specifies a list of  search  directories
+           in  which  to find source files.  Environment variable
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+           _G_P_R_O_F___P_A_T_H  can  also   be   used   to   convey   this
+           information.  Used mostly for annotated source output.
+
+       "-J[symspec]"
+       "--no-annotated-source[=symspec]"
+           The --JJ option causes "gprof" not  to  print  annotated
+           source  code.  If _s_y_m_s_p_e_c is specified, "gprof" prints
+           annotated source, but excludes matching symbols.
+
+       "-L"
+       "--print-path"
+           Normally, source filenames are printed with  the  path
+           component suppressed.  The --LL option causes "gprof" to
+           print the full pathname of source filenames, which  is
+           determined  from symbolic debugging information in the
+           image file and is relative to the directory  in  which
+           the compiler was invoked.
+
+       "-p[symspec]"
+       "--flat-profile[=symspec]"
+           The  --pp option causes "gprof" to print a flat profile.
+           If _s_y_m_s_p_e_c is specified, print flat profile  only  for
+           matching symbols.
+
+       "-P[symspec]"
+       "--no-flat-profile[=symspec]"
+           The  --PP  option  causes "gprof" to suppress printing a
+           flat profile.  If _s_y_m_s_p_e_c is specified, "gprof" prints
+           a flat profile, but excludes matching symbols.
+
+       "-q[symspec]"
+       "--graph[=symspec]"
+           The  --qq  option causes "gprof" to print the call graph
+           analysis.  If _s_y_m_s_p_e_c is specified, print  call  graph
+           only for matching symbols and their children.
+
+       "-Q[symspec]"
+       "--no-graph[=symspec]"
+           The  --QQ option causes "gprof" to suppress printing the
+           call graph.  If _s_y_m_s_p_e_c is specified, "gprof" prints a
+           call graph, but excludes matching symbols.
+
+       "-t"
+       "--table-length=num"
+           The  --tt option causes the _n_u_m most active source lines
+           in  each  source  file  to  be  listed   when   source
+           annotation is enabled.  The default is 10.
+
+       "-y"
+       "--separate-files"
+           This  option  affects  annotated  source  output only.
+           Normally, "gprof" prints  annotated  source  files  to
+           standard-output.    If   this   option  is  specified,
+           annotated source for a  file  named  _p_a_t_h_/_f_i_l_e_n_a_m_e  is
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+           generated in the file _f_i_l_e_n_a_m_e_-_a_n_n.  If the underlying
+           file system would truncate  _f_i_l_e_n_a_m_e_-_a_n_n  so  that  it
+           overwrites  the  original  _f_i_l_e_n_a_m_e, "gprof" generates
+           annotated source in the file _f_i_l_e_n_a_m_e_._a_n_n instead  (if
+           the   original   file  name  has  an  extension,  that
+           extension is _r_e_p_l_a_c_e_d with _._a_n_n).
+
+       "-Z[symspec]"
+       "--no-exec-counts[=symspec]"
+           The --ZZ option causes "gprof" not to print a  tally  of
+           functions and the number of times each was called.  If
+           _s_y_m_s_p_e_c  is  specified,  print  tally,   but   exclude
+           matching symbols.
+
+       "-r"
+       "--function-ordering"
+           The ----ffuunnccttiioonn--oorrddeerriinngg option causes "gprof" to print
+           a suggested function ordering for the program based on
+           profiling  data.   This  option  suggests  an ordering
+           which may improve paging, tlb and cache  behavior  for
+           the   program   on  systems  which  support  arbitrary
+           ordering of functions in an executable.
+
+           The exact details of how to force the linker to  place
+           functions  in  a  particular order is system dependent
+           and out of the scope of this manual.
+
+       "-R map_file"
+       "--file-ordering map_file"
+           The ----ffiillee--oorrddeerriinngg option causes "gprof" to  print  a
+           suggested  .o link line ordering for the program based
+           on profiling data.  This option suggests  an  ordering
+           which  may  improve paging, tlb and cache behavior for
+           the program on systems which do not support  arbitrary
+           ordering of functions in an executable.
+
+           Use of the --aa argument is highly recommended with this
+           option.
+
+           The _m_a_p___f_i_l_e argument is a pathname to  a  file  which
+           provides  function  name to object file mappings.  The
+           format of the file is similar to  the  output  of  the
+           program "nm".
+
+                   c-parse.o:00000000 T yyparse
+                   c-parse.o:00000004 C yyerrflag
+                   c-lang.o:00000000 T maybe_objc_method_name
+                   c-lang.o:00000000 T print_lang_statistics
+                   c-lang.o:00000000 T recognize_objc_keyword
+                   c-decl.o:00000000 T print_lang_identifier
+                   c-decl.o:00000000 T print_lang_type
+                   ...
+
+           To  create  a  _m_a_p___f_i_l_e  with GNU "nm", type a command
+
+
+
+binutils-2.18.90            2008-09-10                          4
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+           like    "nm    --extern-only     --defined-only     -v
+           --print-file-name program-name".
+
+       "-T"
+       "--traditional"
+           The  --TT  option  causes "gprof" to print its output in
+           "traditional" BSD style.
+
+       "-w width"
+       "--width=width"
+           Sets width of output lines to _w_i_d_t_h.   Currently  only
+           used when printing the function index at the bottom of
+           the call graph.
+
+       "-x"
+       "--all-lines"
+           This option affects annotated source output only.   By
+           default,  only  the lines at the beginning of a basic-
+           block are annotated.  If  this  option  is  specified,
+           every  line in a basic-block is annotated by repeating
+           the annotation for the first line.  This  behavior  is
+           similar to "tcov"'s --aa.
+
+       "--demangle[=style]"
+       "--no-demangle"
+           These  options control whether C++ symbol names should
+           be demangled when printing output.  The default is  to
+           demangle  symbols.   The "--no-demangle" option may be
+           used to turn off demangling. Different compilers  have
+           different  mangling  styles.   The optional demangling
+           style argument can be used to  choose  an  appropriate
+           demangling style for your compiler.
+
+       AAnnaallyyssiiss OOppttiioonnss
+
+
+       "-a"
+       "--no-static"
+           The  --aa option causes "gprof" to suppress the printing
+           of statically declared  (private)  functions.   (These
+           are  functions  whose  names are not listed as global,
+           and   which    are    not    visible    outside    the
+           file/function/block  where  they  were defined.)  Time
+           spent in these functions, calls  to/from  them,  etc.,
+           will all be attributed to the function that was loaded
+           directly before  it  in  the  executable  file.   This
+           option  affects  both  the  flat  profile and the call
+           graph.
+
+       "-c"
+       "--static-call-graph"
+           The --cc option causes the call graph of the program  to
+           be  augmented  by  a heuristic which examines the text
+           space of the object file and identifies function calls
+
+
+
+binutils-2.18.90            2008-09-10                          5
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+           in  the  binary machine code.  Since normal call graph
+           records are only generated when functions are entered,
+           this  option  identifies children that could have been
+           called, but never were.  Calls to functions that  were
+           not   compiled   with   profiling   enabled  are  also
+           identified, but  only  if  symbol  table  entries  are
+           present  for  them.  Calls to dynamic library routines
+           are typically _n_o_t found by this  option.   Parents  or
+           children  identified  via this heuristic are indicated
+           in the call graph with call counts of 00.
+
+       "-D"
+       "--ignore-non-functions"
+           The --DD option causes "gprof" to ignore  symbols  which
+           are  not known to be functions.  This option will give
+           more accurate profile data  on  systems  where  it  is
+           supported (Solaris and HPUX for example).
+
+       "-k from/to"
+           The --kk option allows you to delete from the call graph
+           any arcs from symbols matching symspec _f_r_o_m  to  those
+           matching symspec _t_o.
+
+       "-l"
+       "--line"
+           The  --ll  option  enables line-by-line profiling, which
+           causes histogram hits  to  be  charged  to  individual
+           source code lines, instead of functions.  This feature
+           only works with programs compiled by older versions of
+           the  "gcc"  compiler.   Newer  versions  of  "gcc" are
+           designed to work with the "gcov" tool instead.
+
+           If the program was compiled with basic-block  counting
+           enabled, this option will also identify how many times
+           each line of code was  executed.   While  line-by-line
+           profiling can help isolate where in a large function a
+           program is spending its time,  it  also  significantly
+           increases  the  running time of "gprof", and magnifies
+           statistical inaccuracies.
+
+       "-m num"
+       "--min-count=num"
+           This  option  affects  execution  count  output  only.
+           Symbols  that  are  executed  less  than _n_u_m times are
+           suppressed.
+
+       "-nsymspec"
+       "--time=symspec"
+           The --nn  option  causes  "gprof",  in  its  call  graph
+           analysis, to only propagate times for symbols matching
+           _s_y_m_s_p_e_c.
+
+       "-Nsymspec"
+
+
+
+
+binutils-2.18.90            2008-09-10                          6
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+       "--no-time=symspec"
+           The --nn  option  causes  "gprof",  in  its  call  graph
+           analysis,  not to propagate times for symbols matching
+           _s_y_m_s_p_e_c.
+
+       "-z"
+       "--display-unused-functions"
+           If you give the --zz option, "gprof"  will  mention  all
+           functions  in  the  flat profile, even those that were
+           never called, and that had  no  time  spent  in  them.
+           This  is  useful in conjunction with the --cc option for
+           discovering which routines were never called.
+
+       MMiisscceellllaanneeoouuss OOppttiioonnss
+
+
+       "-d[num]"
+       "--debug[=num]"
+           The --dd _n_u_m option specifies debugging options.  If _n_u_m
+           is not specified, enable all debugging.
+
+       "-h"
+       "--help"
+           The --hh option prints command line usage.
+
+       "-Oname"
+       "--file-format=name"
+           Selects   the   format  of  the  profile  data  files.
+           Recognized  formats  are  aauuttoo  (the  default),   bbssdd,
+           44..44bbssdd, mmaaggiicc, and pprrooff (not yet supported).
+
+       "-s"
+       "--sum"
+           The   --ss   option  causes  "gprof"  to  summarize  the
+           information in the profile data files it read in,  and
+           write  out  a profile data file called _g_m_o_n_._s_u_m, which
+           contains all the information  from  the  profile  data
+           files  that "gprof" read in.  The file _g_m_o_n_._s_u_m may be
+           one of the specified input files; the effect  of  this
+           is  to  merge  the  data in the other input files into
+           _g_m_o_n_._s_u_m.
+
+           Eventually you can run "gprof"  again  without  --ss  to
+           analyze the cumulative data in the file _g_m_o_n_._s_u_m.
+
+       "-v"
+       "--version"
+           The  --vv  flag  causes  "gprof"  to  print  the current
+           version number, and then exit.
+
+       DDeepprreeccaatteedd OOppttiioonnss
+
+           These options have been replaced with  newer  versions
+           that use symspecs.
+
+
+
+binutils-2.18.90            2008-09-10                          7
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+       "-e function_name"
+           The  --ee  _f_u_n_c_t_i_o_n  option  tells  "gprof" to not print
+           information about the function _f_u_n_c_t_i_o_n___n_a_m_e (and  its
+           children...)  in  the  call  graph.  The function will
+           still be listed as a child of any functions that  call
+           it,  but  its  index  number  will  be  shown  as [[nnoott
+           pprriinntteedd]].  More than one --ee option may be given;  only
+           one  _f_u_n_c_t_i_o_n___n_a_m_e  may  be  indicated  with  each  --ee
+           option.
+
+       "-E function_name"
+           The "-E function" option works like the  "-e"  option,
+           but  time spent in the function (and children who were
+           not called from anywhere else), will not  be  used  to
+           compute  the  percentages-of-time  for the call graph.
+           More than  one  --EE  option  may  be  given;  only  one
+           _f_u_n_c_t_i_o_n___n_a_m_e may be indicated with each --EE option.
+
+       "-f function_name"
+           The  --ff  _f_u_n_c_t_i_o_n  option  causes "gprof" to limit the
+           call graph  to  the  function  _f_u_n_c_t_i_o_n___n_a_m_e  and  its
+           children  (and  their  children...).  More than one --ff
+           option may be given; only  one  _f_u_n_c_t_i_o_n___n_a_m_e  may  be
+           indicated with each --ff option.
+
+       "-F function_name"
+           The --FF _f_u_n_c_t_i_o_n option works like the "-f" option, but
+           only time spent in the function and its children  (and
+           their  children...)  will  be used to determine total-
+           time and percentages-of-time for the call graph.  More
+           than   one   --FF   option   may   be  given;  only  one
+           _f_u_n_c_t_i_o_n___n_a_m_e may be indicated with  each  --FF  option.
+           The --FF option overrides the --EE option.
+
+FFIILLEESS
+       "a.out"
+           the namelist and text space.
+
+       "gmon.out"
+           dynamic call graph and profile.
+
+       "gmon.sum"
+           summarized dynamic call graph and profile.
+
+BBUUGGSS
+       The  granularity  of  the  sampling  is shown, but remains
+       statistical at best.  We assume that  the  time  for  each
+       execution of a function can be expressed by the total time
+       for the function  divided  by  the  number  of  times  the
+       function  is  called.   Thus the time propagated along the
+       call graph arcs to  the  function's  parents  is  directly
+       proportional to the number of times that arc is traversed.
+
+       Parents that are not themselves  profiled  will  have  the
+
+
+
+binutils-2.18.90            2008-09-10                          8
+
+
+
+
+
+GPROF(1)                       GNU                       GPROF(1)
+
+
+       time  of  their  profiled children propagated to them, but
+       they will appear to be spontaneously invoked in  the  call
+       graph  listing,  and  will  not have their time propagated
+       further.   Similarly,   signal   catchers,   even   though
+       profiled, will appear to be spontaneous (although for more
+       obscure  reasons).   Any  profiled  children   of   signal
+       catchers  should  have  their  times  propagated properly,
+       unless the signal catcher was invoked during the execution
+       of the profiling routine, in which case all is lost.
+
+       The   profiled  program  must  call  "exit"(2)  or  return
+       normally for the profiling information to be saved in  the
+       _g_m_o_n_._o_u_t file.
+
+SSEEEE AALLSSOO
+       _m_o_n_i_t_o_r(3),  _p_r_o_f_i_l(2), _c_c(1), _p_r_o_f(1), and the Info entry
+       for _g_p_r_o_f.
+
+       "An  Execution  Profiler  for  Modular  Programs",  by  S.
+       Graham,  P.  Kessler, M. McKusick; Software - Practice and
+       Experience, Vol. 13, pp. 671-685, 1983.
+
+       "gprof: A Call Graph Execution Profiler", by S. Graham, P.
+       Kessler,  M.  McKusick;  Proceedings  of  the  SIGPLAN '82
+       Symposium on Compiler Construction, SIGPLAN Notices,  Vol.
+       17, No  6, pp. 120-126, June 1982.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1988, 92, 97, 98, 99, 2000, 2001, 2003, 2007
+       Free Software Foundation, Inc.
+
+       Permission is granted to copy,  distribute  and/or  modify
+       this   document   under   the   terms   of  the  GNU  Free
+       Documentation License, Version 1.1 or  any  later  version
+       published   by  the  Free  Software  Foundation;  with  no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover  Texts.   A  copy of the license is included in
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          9
+
+

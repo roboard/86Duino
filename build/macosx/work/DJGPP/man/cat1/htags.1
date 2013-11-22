@@ -1,0 +1,528 @@
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+NNAAMMEE
+       htags - generate hypertext from source code.
+
+SSYYNNOOPPSSIISS
+       hhttaaggss [-acDfFghInosTvwx][-d _d_b_p_a_t_h][-m _n_a_m_e][-S _c_g_i_d_i_r][-t
+       _t_i_t_l_e][_d_i_r]
+
+DDEESSCCRRIIPPTTIIOONN
+       HHttaaggss makes hypertext of  C,  C++,  Yacc,  Java,  PHP  and
+       Assembly source code.
+
+       In  advance  of  using  this  command,  you  must  execute
+       ggttaaggss(1) from the root directory of the source tree.  Then
+       you can execute hhttaaggss from the same place.  HHttaaggss makes an
+       directory named 'HTML' and generates hypertext in it.  You
+       can start browsing from 'HTML/index.html'.
+
+       Since  hhttaaggss  generates static hypertext as long as the --DD
+       or --ff option is not specified, you can  move  it  anywhere
+       and browse it with any browser without web server.
+
+       You  must use same parser for both ggttaaggss(1) and hhttaaggss.  If
+       you use the default parser, it is not  necessary  to  con-
+       sider for it.
+
+
+OOPPTTIIOONNSS
+       The following options are available:
+
+       --aa, ----aallpphhaabbeett
+              Make  an alphabetical function index which is suit-
+              able for a large project.
+
+       ----ccaauuttiioonn
+              Include caution message to prohibit downloading.
+
+       --cc, ----ccoommppaacctt
+              Compress html files  by ggzziipp(1).  You need  to  set
+              up a web server so that ggzziipp(1) is invoked for each
+              compressed file.  See 'HTML/.htaccess' that is gen-
+              erated by htags.
+
+       ----ccvvsswweebb _u_r_l
+              Include  cvsweb  URL.  _u_r_l  is used as base of URL.
+              When directory 'CVS' exists in the  root  directory
+              of  source  project, content of 'CVS/Repository' is
+              used as relative path from the base.
+
+       ----ccvvsswweebb--ccvvssrroooott _c_v_s_r_o_o_t
+              Specifies cvsroot in cvsweb URL.
+
+       --DD, ----ddyynnaammiicc
+              Generate object lists dynamically  using  CGI  pro-
+              gram.   By  default,  object  lists  are  generated
+
+
+
+GNU Project                 March 2007                          1
+
+
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+              statically.  Though this option decrease  both  the
+              size  and the generation time of the hypertext, you
+              need to set up a web server, and  you  cannot  move
+              the hypertext from the source directroy.
+
+       --dd, ----ddbbppaatthh _d_b_p_a_t_h
+              Specifies   the  directory  in  which  'GTAGS'  and
+              'GRTAGS' exist. The default is the  current  direc-
+              tory.
+
+       --ff, ----ffoorrmm
+              Support search form using CGI program.  You need to
+              set up a web server, and you cannot move the hyper-
+              text from the source directroy.
+
+       --FF, ----ffrraammee
+              Use frame for each part of the contents.
+
+       ----ffuullll--ppaatthh
+              List  file  names with full path in file index.  By
+              default, list just the last component of a path.
+
+       --gg, ----ggttaaggss
+              Execute ggttaaggss(1) before  creating  hypertext.   The
+              --vv, --ww and _d_b_p_a_t_h are passed to ggttaaggss.
+
+       --hh, ----ffuunncc--hheeaaddeerr[=_p_o_s_i_t_i_o_n]
+              Insert  function  header  for  each  function.   By
+              default, hhttaaggss doesn't generates it.  You can spec-
+              ify  the  position  using  _p_o_s_i_t_i_o_n argument, which
+              allows one of before, right and after.  The default
+              position is after.
+
+       --II, ----iiccoonn
+              Use icons instead of text for some links.
+
+       ----ddiissaabbllee--ggrreepp
+              Disable grep in search form(-f,--form).
+
+       ----ggttaaggssccoonnff _f_i_l_e
+              Load user's configuration from _f_i_l_e.
+
+       ----ggttaaggssllaabbeell _l_a_b_e_l
+              _l_a_b_e_l  is used for the label of configuration file.
+              The default is default.
+
+       ----iinnsseerrtt--hheeaaddeerr _f_i_l_e
+              Insert custom header derived from _f_i_l_e after <body>
+              tag.
+
+       ----iinnsseerrtt--ffooootteerr _f_i_l_e
+              Insert  custom  footer  derived  from  _f_i_l_e  before
+              </body> tag.
+
+
+
+
+GNU Project                 March 2007                          2
+
+
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+       ----iitteemm--oorrddeerr _s_p_e_c
+              Specify order of items in the top page.   The  _s_p_e_c
+              is  a string consists of item signs in order.  Each
+              sign means as follows: cc: caution, ss: search  form,
+              mm:  mains, dd: definition, ff: files.  The default is
+              _c_s_m_d_f.
+
+       --mm, ----mmaaiinn--ffuunncc _n_a_m_e
+              Specify the main  function  name.  The  default  is
+              main.
+
+       --nn, ----lliinnee--nnuummbbeerr[=_c_o_l_u_m_n_s]
+              Print line numbers. By default, doesn't print them.
+              The default value of _c_o_l_u_m_n_s is 4.
+
+       ----nnoo--mmaapp--ffiillee
+              Doesn't generate  'MAP'  and  'FILEMAP'  file.   By
+              default, hhttaaggss generates them.
+
+       --oo, ----ootthheerr
+              Pick  up not only source files but also other files
+              except for binary files.
+
+       ----ssttaattiissttiiccss
+              Print statistics information.
+
+       --ss, ----ssyymmbbooll
+              Make anchors not only for functions but also  other
+              symbols.  'GSYMS' tag file needed.
+
+       --SS, ----sseeccuurree--ccggii _c_g_i_d_i_r
+              Write  CGI  programs  into  the _c_g_i_d_i_r to realize a
+              centralised CGI program.  Script  alias  is  '/cgi-
+              bin'  by  default.   You  can  overwrite this value
+              using config variable script_alias in 'gtags.conf'.
+
+       --tt, ----ttiittllee _t_i_t_l_e
+              The  _t_i_t_l_e  of  this  hypertext. The default is the
+              last component of the current directory.
+
+       --TT, ----ttaabbllee--fflliisstt[=_f_i_e_l_d_s]
+              Generate file list using <table> tag.   The  _f_i_e_l_d_s
+              is  used for field number in a line. The default is
+              5.
+
+       ----ttaabbllee--lliisstt
+              List tags using <table> tag.
+
+       ----ttaabbss _n_u_m_b_e_r
+              Tab stop. The default is 8.
+
+       --vv, ----vveerrbboossee
+              Verbose mode.
+
+
+
+
+GNU Project                 March 2007                          3
+
+
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+       --ww, ----wwaarrnniinngg
+              Print warning messages.
+
+       --xx, ----xxhhttmmll[=_v_e_r_s_i_o_n]
+              Generate XHTML hypertext instead of HTML.   If  the
+              ----ffrraammee option is specified then generate XHTML-1.0
+              Frameset  for  index.html  and  generate  XHTML-1.0
+              Transitional  for  other  files, else if _v_e_r_s_i_o_n is
+              1.1 or config variable xhtml_version is set to  1.1
+              then  generate  XHTML-1.1  else  XHTML  1.0 Transi-
+              tional.
+
+       _d_i_r    The directory in which hypertext is generated.  The
+              default is the current directory.
+
+EEXXAAMMPPLLEESS
+            $ gtags -v
+            $ htags -sanohITvt 'Welcom to XXX source tour!'
+            $ firefox HTML/index.html
+
+
+FFIILLEESS
+       'GTAGS'
+              Tag file for function definitions.
+
+       'GRTAGS'
+              Tag file for function references.
+
+       'GSYMS'
+              Tag file for other symbols.
+
+       'GPATH'
+              Tag file for path of source files.
+
+       '/etc/gtags.conf', '$HOME/.globalrc'
+              Configuration file.
+
+       'HTML/index.html'
+              Index file for hypertext.
+
+       'HTML/MAP'
+              Mapping file for converting tag into path of hyper-
+              text.  External system utilize this file.
+
+       'HTML/FILEMAP'
+              Mapping file for converting file name into path  of
+              hypertext.  External system utilize this file.
+
+       'HTML/style.css'
+              Style  sheet  file. This file is generated when the
+              ----xxhhttmmll option is specified.
+
+EENNVVIIRROONNMMEENNTT
+       The following environment variables affect  the  execution
+
+
+
+GNU Project                 March 2007                          4
+
+
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+       of hhttaaggss:
+
+       TTMMPPDDIIRR If  this  variable is set, its value is used as the
+              directory to make temporary files. The  default  is
+              '/tmp'.
+
+       GGTTAAGGSSCCOONNFF
+              If  this  variable is set, its value is used as the
+              configuration file. The  default  is  '$HOME/.glob-
+              alrc'.
+
+       GGTTAAGGSSLLAABBEELL
+              If  this  variable is set, its value is used as the
+              label  of  configuration  file.  The   default   is
+              default.
+
+       GGTTAAGGSSCCAACCHHEE
+              If  this  variable is set, its value is used as the
+              size of btree cache. The default is 500000 (bytes).
+
+CCOONNFFIIGGUURRAATTIIOONN
+       The following configuration variables affect the execution
+       of hhttaaggss: If the ----xxhhttmmll option is specified then all def-
+       initions  of  HTML tag are ignored.  Instead, you can cus-
+       tomize   the   appearance   using   style    sheet    file
+       ('style.css').
+
+       datadir(string)
+              Shared    data    directory.    The    default   is
+              '/usr/local/share' but you  can  change  the  value
+              using  configure  script.   HHttaaggss  lookup  template
+              files in the 'gtags' directory in this data  direc-
+              tory.
+
+       htags_options(string)
+              Default  options  for hhttaaggss. This value is inserted
+              into the head of arguments.
+
+       xhtml_version(1.0|1.1)
+              XHTML version. 1.0  and  1.1  are  acceptable.  The
+              default is 1.0.
+
+       body_begin(string)
+              Begin   tag   for   body.  The  default  is  '<body
+              text=#191970 bgcolor=#f5f5dc vlink=gray>'.
+
+       body_end(string)
+              End tag for body. The default is '</body>'.
+
+       table_begin(string)
+              Begin tag for table. The default is '<table>'.
+
+       table_end(string)
+              End tag for table. The default is '</table>'.
+
+
+
+GNU Project                 March 2007                          5
+
+
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+       title_begin(string)
+              Begin tag for  Title.  The  default  is  '<h1><font
+              color=#cc0000>'.
+
+       title_end(string)
+              End tag for Title. The default is '</font></h1>'.
+
+       comment_begin(string)
+              Begin  tag  for  comments. The default is '<i><font
+              color=green>'.
+
+       comment_end(string)
+              End tag for comments. The default is '</font></i>'.
+
+       dynamic(boolean)
+              Generate object list dynamically.
+
+       sharp_begin(string)
+              Begin  tag  for  'define'.  The  default  is '<font
+              color=darkred>'.
+
+       sharp_end(string)
+              End tag for 'define'. The default is '</font>'.
+
+       brace_begin(string)
+              Begin  tag  for  brace.  The  default   is   '<font
+              color=red>'.
+
+       brace_end(string)
+              End tag for brace. The default is '</font>'.
+
+       reserved_begin(string)
+              Begin  tag for reserved word. The default is '<b>'.
+
+       reserved_end(string)
+              End tag for reserved word. The default is '</b>'.
+
+       position_begin(string)
+              Begin tag for posiotion mark. The default is '<font
+              color=gray>'.
+
+       position_end(string)
+              End   tag   for  posiotion  mark.  The  default  is
+              '</font>'.
+
+       colorize_warned_line(boolean)
+              Colorize warned line  using  warned_line_begin  and
+              warned_line_end.  The default is false.
+
+       warned_line_begin(string)
+              Begin  tag for line which htags warned. The default
+              is '<span style="background-color:yellow">'.
+
+
+
+
+
+GNU Project                 March 2007                          6
+
+
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+       warned_line_end(string)
+              End tag for line which htags warned. The default is
+              '</span>'.
+
+       hr(string)
+              Horizontal rules. The default is '<hr>'.
+
+       ncol(number)
+              Columns of line number. The default is 4.
+
+       tabs(number)
+              Tab stop. The default is 8.
+
+       flist_fields(number)
+              Field number of file index. The default is 5.
+
+       full_path(boolean)
+              List  file  names with full path in file index.  By
+              default, list just the last component of a path.
+
+       table_list(boolean)
+              List tags using <table> tag. The default is  false.
+
+       table_flist(boolean)
+              Use  <table>  tag  for  file  index. The default is
+              false.
+
+       normal_suffix(string)
+              Suffix for normal html file. The default is 'html'.
+
+       no_map_file(boolean)
+              Doesn't  generate 'MAP' file. The default is false.
+
+       gzipped_suffix(string)
+              Suffix for compressed html  file.  The  default  is
+              'ghtml'.
+
+       script_alias(string)
+              Script alias for safe cgi script (--SS).
+
+       show_position(boolean)
+              Show  position per function definition. The default
+              is false.
+
+       definition_header(no|before|right|after)
+              Position of function header. The default is 'no'.
+
+       other_files(boolean)
+              File index includes not only source files but  also
+              other files. The default is false.
+
+       disable_grep(boolean)
+              Disable grep in search form(-f,--form). The default
+              is false.
+
+
+
+GNU Project                 March 2007                          7
+
+
+
+
+
+HTAGS(1)                                                 HTAGS(1)
+
+
+       enable_idutils(boolean)
+              Enable  idutils  in  search  form(-f,--form).   The
+              default is false.
+
+       include_file_suffixes(comma separated list)
+              Suffixes   of   include   file.   The   default  is
+              'h,hxx,hpp,H,inc.php'.
+
+       langmap(comma separated list)
+              Language mapping. Each comma-separated map consists
+              of  the  language name, a colon, and a list of file
+              extensions.        Default        mapping        is
+              'c:.c.h,yacc:.y,asm:.s.S,java:.java,cpp:.c++.cc.cpp.cxx.hxx.hpp.C.H,php:.php.php3.phtml'.
+
+       copy_files(boolean)
+              Copy files instead of linking.  When the --ff  option
+              is used, hhttaaggss make links of tag files in 'cgi-bin'
+              directory by default.
+
+DDIIAAGGNNOOSSTTIICCSS
+       HHttaaggss exits with a non 0 value if  an  error  occurred,  0
+       otherwise.
+
+MMEESSSSAAGGEE FFOORRMMAATT
+       Verbose  message  has  important level. The most important
+       level is 0, the second it 1 and so on. All the message has
+       level numbers leading blanks.
+
+SSEEEE AALLSSOO
+       ggttaaggss--ppaarrsseerr(1), gglloobbaall(1), ggttaaggss(1).
+
+       GNU GLOBAL source code tag system
+       (http://www.gnu.org/software/global/).
+
+BBUUGG
+       Generated  hypertext is VERY LARGE.  In advance, check the
+       space of your disk.
+
+       PHP supprt is far from complete.
+
+AAUUTTHHOORR
+       Tama Communications Corporation.
+
+HHIISSTTOORRYY
+       The hhttaaggss command appeared in FreeBSD 2.2.2.
+
+
+
+
+
+
+
+
+
+
+
+
+GNU Project                 March 2007                          8
+
+

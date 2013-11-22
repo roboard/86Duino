@@ -1,0 +1,660 @@
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+NNAAMMEE
+       gcov - coverage testing tool
+
+SSYYNNOOPPSSIISS
+       gcov [--vv|----vveerrssiioonn] [--hh|----hheellpp]
+            [--aa|----aallll--bblloocckkss]
+            [--bb|----bbrraanncchh--pprroobbaabbiilliittiieess]
+            [--cc|----bbrraanncchh--ccoouunnttss]
+            [--nn|----nnoo--oouuttppuutt]
+            [--ll|----lloonngg--ffiillee--nnaammeess]
+            [--pp|----pprreesseerrvvee--ppaatthhss]
+            [--ff|----ffuunnccttiioonn--ssuummmmaarriieess]
+            [--oo|----oobbjjeecctt--ddiirreeccttoorryy _d_i_r_e_c_t_o_r_y_|_f_i_l_e] _s_o_u_r_c_e_f_i_l_e
+            [--uu|----uunnccoonnddiittiioonnaall--bbrraanncchheess]
+
+DDEESSCCRRIIPPTTIIOONN
+       ggccoovv is a test coverage program.  Use it in concert with
+       GCC to analyze your programs to help create more
+       efficient, faster running code and to discover untested
+       parts of your program.  You can use ggccoovv as a profiling
+       tool to help discover where your optimization efforts will
+       best affect your code.  You can also use ggccoovv along with
+       the other profiling tool, ggpprrooff, to assess which parts of
+       your code use the greatest amount of computing time.
+
+       Profiling tools help you analyze your code's performance.
+       Using a profiler such as ggccoovv or ggpprrooff, you can find out
+       some basic performance statistics, such as:
+
+       +o   how often each line of code executes
+
+       +o   what lines of code are actually executed
+
+       +o   how much computing time each section of code uses
+
+       Once you know these things about how your code works when
+       compiled, you can look at each module to see which modules
+       should be optimized.  ggccoovv helps you determine where to
+       work on optimization.
+
+       Software developers also use coverage testing in concert
+       with testsuites, to make sure software is actually good
+       enough for a release.  Testsuites can verify that a
+       program works as expected; a coverage program tests to see
+       how much of the program is exercised by the testsuite.
+       Developers can then determine what kinds of test cases
+       need to be added to the testsuites to create both better
+       testing and a better final product.
+
+       You should compile your code without optimization if you
+       plan to use ggccoovv because the optimization, by combining
+       some lines of code into one function, may not give you as
+       much information as you need to look for `hot spots' where
+       the code is using a great deal of computer time.
+
+
+
+gcc-4.2.3                   2008-02-01                          1
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       Likewise, because ggccoovv accumulates statistics by line (at
+       the lowest resolution), it works best with a programming
+       style that places only one statement on each line.  If you
+       use complicated macros that expand to loops or to other
+       control structures, the statistics are less helpful---they
+       only report on the line where the macro call appears.  If
+       your complex macros behave like functions, you can replace
+       them with inline functions to solve this problem.
+
+       ggccoovv creates a logfile called _s_o_u_r_c_e_f_i_l_e_._g_c_o_v which
+       indicates how many times each line of a source file
+       _s_o_u_r_c_e_f_i_l_e_._c has executed.  You can use these logfiles
+       along with ggpprrooff to aid in fine-tuning the performance of
+       your programs.  ggpprrooff gives timing information you can use
+       along with the information you get from ggccoovv.
+
+       ggccoovv works only on code compiled with GCC.  It is not
+       compatible with any other profiling or test coverage
+       mechanism.
+
+OOPPTTIIOONNSS
+       --hh
+       ----hheellpp
+           Display help about using ggccoovv (on the standard
+           output), and exit without doing any further
+           processing.
+
+       --vv
+       ----vveerrssiioonn
+           Display the ggccoovv version number (on the standard
+           output), and exit without doing any further
+           processing.
+
+       --aa
+       ----aallll--bblloocckkss
+           Write individual execution counts for every basic
+           block.  Normally gcov outputs execution counts only
+           for the main blocks of a line.  With this option you
+           can determine if blocks within a single line are not
+           being executed.
+
+       --bb
+       ----bbrraanncchh--pprroobbaabbiilliittiieess
+           Write branch frequencies to the output file, and write
+           branch summary info to the standard output.  This
+           option allows you to see how often each branch in your
+           program was taken.  Unconditional branches will not be
+           shown, unless the --uu option is given.
+
+       --cc
+       ----bbrraanncchh--ccoouunnttss
+           Write branch frequencies as the number of branches
+           taken, rather than the percentage of branches taken.
+
+
+
+
+gcc-4.2.3                   2008-02-01                          2
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       --nn
+       ----nnoo--oouuttppuutt
+           Do not create the ggccoovv output file.
+
+       --ll
+       ----lloonngg--ffiillee--nnaammeess
+           Create long file names for included source files.  For
+           example, if the header file _x_._h contains code, and was
+           included in the file _a_._c, then running ggccoovv on the
+           file _a_._c will produce an output file called
+           _a_._c_#_#_x_._h_._g_c_o_v instead of _x_._h_._g_c_o_v.  This can be useful
+           if _x_._h is included in multiple source files.  If you
+           use the --pp option, both the including and included
+           file names will be complete path names.
+
+       --pp
+       ----pprreesseerrvvee--ppaatthhss
+           Preserve complete path information in the names of
+           generated _._g_c_o_v files.  Without this option, just the
+           filename component is used.  With this option, all
+           directories are used, with // characters translated to
+           ## characters, _. directory components removed and _._.
+           components renamed to ^^.  This is useful if
+           sourcefiles are in several different directories.  It
+           also affects the --ll option.
+
+       --ff
+       ----ffuunnccttiioonn--ssuummmmaarriieess
+           Output summaries for each function in addition to the
+           file level summary.
+
+       --oo _d_i_r_e_c_t_o_r_y_|_f_i_l_e
+       ----oobbjjeecctt--ddiirreeccttoorryy _d_i_r_e_c_t_o_r_y
+       ----oobbjjeecctt--ffiillee _f_i_l_e
+           Specify either the directory containing the gcov data
+           files, or the object path name.  The _._g_c_n_o, and _._g_c_d_a
+           data files are searched for using this option.  If a
+           directory is specified, the data files are in that
+           directory and named after the source file name,
+           without its extension.  If a file is specified here,
+           the data files are named after that file, without its
+           extension.  If this option is not supplied, it
+           defaults to the current directory.
+
+       --uu
+       ----uunnccoonnddiittiioonnaall--bbrraanncchheess
+           When branch probabilities are given, include those of
+           unconditional branches.  Unconditional branches are
+           normally not interesting.
+
+       ggccoovv should be run with the current directory the same as
+       that when you invoked the compiler.  Otherwise it will not
+       be able to locate the source files.  ggccoovv produces files
+       called _m_a_n_g_l_e_d_n_a_m_e_._g_c_o_v in the current directory.  These
+
+
+
+gcc-4.2.3                   2008-02-01                          3
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       contain the coverage information of the source file they
+       correspond to.  One _._g_c_o_v file is produced for each source
+       file containing code, which was compiled to produce the
+       data files.  The _m_a_n_g_l_e_d_n_a_m_e part of the output file name
+       is usually simply the source file name, but can be
+       something more complicated if the --ll or --pp options are
+       given.  Refer to those options for details.
+
+       The _._g_c_o_v files contain the :: separated fields along with
+       program source code.  The format is
+
+               <execution_count>:<line_number>:<source line text>
+
+       Additional block information may succeed each line, when
+       requested by command line option.  The _e_x_e_c_u_t_i_o_n___c_o_u_n_t is
+       -- for lines containing no code and ########## for lines which
+       were never executed.  Some lines of information at the
+       start have _l_i_n_e___n_u_m_b_e_r of zero.
+
+       The preamble lines are of the form
+
+               -:0:<tag>:<value>
+
+       The ordering and number of these preamble lines will be
+       augmented as ggccoovv development progresses --- do not rely
+       on them remaining unchanged.  Use _t_a_g to locate a
+       particular preamble line.
+
+       The additional block information is of the form
+
+               <tag> <information>
+
+       The _i_n_f_o_r_m_a_t_i_o_n is human readable, but designed to be
+       simple enough for machine parsing too.
+
+       When printing percentages, 0% and 100% are only printed
+       when the values are _e_x_a_c_t_l_y 0% and 100% respectively.
+       Other values which would conventionally be rounded to 0%
+       or 100% are instead printed as the nearest non-boundary
+       value.
+
+       When using ggccoovv, you must first compile your program with
+       two special GCC options: --ffpprrooffiillee--aarrccss --fftteesstt--ccoovveerraaggee.
+       This tells the compiler to generate additional information
+       needed by gcov (basically a flow graph of the program) and
+       also includes additional code in the object files for
+       generating the extra profiling information needed by gcov.
+       These additional files are placed in the directory where
+       the object file is located.
+
+       Running the program will cause profile output to be
+       generated.  For each source file compiled with
+       --ffpprrooffiillee--aarrccss, an accompanying _._g_c_d_a file will be placed
+       in the object file directory.
+
+
+
+gcc-4.2.3                   2008-02-01                          4
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       Running ggccoovv with your program's source file names as
+       arguments will now produce a listing of the code along
+       with frequency of execution for each line.  For example,
+       if your program is called _t_m_p_._c, this is what you see when
+       you use the basic ggccoovv facility:
+
+               $ gcc -fprofile-arcs -ftest-coverage tmp.c
+               $ a.out
+               $ gcov tmp.c
+               90.00% of 10 source lines executed in file tmp.c
+               Creating tmp.c.gcov.
+
+       The file _t_m_p_._c_._g_c_o_v contains output from ggccoovv.  Here is a
+       sample:
+
+                       -:    0:Source:tmp.c
+                       -:    0:Graph:tmp.gcno
+                       -:    0:Data:tmp.gcda
+                       -:    0:Runs:1
+                       -:    0:Programs:1
+                       -:    1:#include <stdio.h>
+                       -:    2:
+                       -:    3:int main (void)
+                       1:    4:{
+                       1:    5:  int i, total;
+                       -:    6:
+                       1:    7:  total = 0;
+                       -:    8:
+                      11:    9:  for (i = 0; i < 10; i++)
+                      10:   10:    total += i;
+                       -:   11:
+                       1:   12:  if (total != 45)
+                   #####:   13:    printf ("Failure\n");
+                       -:   14:  else
+                       1:   15:    printf ("Success\n");
+                       1:   16:  return 0;
+                       -:   17:}
+
+       When you use the --aa option, you will get individual block
+       counts, and the output looks like this:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+gcc-4.2.3                   2008-02-01                          5
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+                       -:    0:Source:tmp.c
+                       -:    0:Graph:tmp.gcno
+                       -:    0:Data:tmp.gcda
+                       -:    0:Runs:1
+                       -:    0:Programs:1
+                       -:    1:#include <stdio.h>
+                       -:    2:
+                       -:    3:int main (void)
+                       1:    4:{
+                       1:    4-block  0
+                       1:    5:  int i, total;
+                       -:    6:
+                       1:    7:  total = 0;
+                       -:    8:
+                      11:    9:  for (i = 0; i < 10; i++)
+                      11:    9-block  0
+                      10:   10:    total += i;
+                      10:   10-block  0
+                       -:   11:
+                       1:   12:  if (total != 45)
+                       1:   12-block  0
+                   #####:   13:    printf ("Failure\n");
+                   $$$$$:   13-block  0
+                       -:   14:  else
+                       1:   15:    printf ("Success\n");
+                       1:   15-block  0
+                       1:   16:  return 0;
+                       1:   16-block  0
+                       -:   17:}
+
+       In this mode, each basic block is only shown on one line
+       -- the last line of the block.  A multi-line block will
+       only contribute to the execution count of that last line,
+       and other lines will not be shown to contain code, unless
+       previous blocks end on those lines.  The total execution
+       count of a line is shown and subsequent lines show the
+       execution counts for individual blocks that end on that
+       line.  After each block, the branch and call counts of the
+       block will be shown, if the --bb option is given.
+
+       Because of the way GCC instruments calls, a call count can
+       be shown after a line with no individual blocks.  As you
+       can see, line 13 contains a basic block that was not
+       executed.
+
+       When you use the --bb option, your output looks like this:
+
+               $ gcov -b tmp.c
+               90.00% of 10 source lines executed in file tmp.c
+               80.00% of 5 branches executed in file tmp.c
+               80.00% of 5 branches taken at least once in file tmp.c
+               50.00% of 2 calls executed in file tmp.c
+               Creating tmp.c.gcov.
+
+
+
+
+gcc-4.2.3                   2008-02-01                          6
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       Here is a sample of a resulting _t_m_p_._c_._g_c_o_v file:
+
+                       -:    0:Source:tmp.c
+                       -:    0:Graph:tmp.gcno
+                       -:    0:Data:tmp.gcda
+                       -:    0:Runs:1
+                       -:    0:Programs:1
+                       -:    1:#include <stdio.h>
+                       -:    2:
+                       -:    3:int main (void)
+               function main called 1 returned 1 blocks executed 75%
+                       1:    4:{
+                       1:    5:  int i, total;
+                       -:    6:
+                       1:    7:  total = 0;
+                       -:    8:
+                      11:    9:  for (i = 0; i < 10; i++)
+               branch  0 taken 91% (fallthrough)
+               branch  1 taken 9%
+                      10:   10:    total += i;
+                       -:   11:
+                       1:   12:  if (total != 45)
+               branch  0 taken 0% (fallthrough)
+               branch  1 taken 100%
+                   #####:   13:    printf ("Failure\n");
+               call    0 never executed
+                       -:   14:  else
+                       1:   15:    printf ("Success\n");
+               call    0 called 1 returned 100%
+                       1:   16:  return 0;
+                       -:   17:}
+
+       For each function, a line is printed showing how many
+       times the function is called, how many times it returns
+       and what percentage of the function's blocks were
+       executed.
+
+       For each basic block, a line is printed after the last
+       line of the basic block describing the branch or call that
+       ends the basic block.  There can be multiple branches and
+       calls listed for a single source line if there are
+       multiple basic blocks that end on that line.  In this
+       case, the branches and calls are each given a number.
+       There is no simple way to map these branches and calls
+       back to source constructs.  In general, though, the lowest
+       numbered branch or call will correspond to the leftmost
+       construct on the source line.
+
+       For a branch, if it was executed at least once, then a
+       percentage indicating the number of times the branch was
+       taken divided by the number of times the branch was
+       executed will be printed.  Otherwise, the message "never
+       executed" is printed.
+
+
+
+
+gcc-4.2.3                   2008-02-01                          7
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       For a call, if it was executed at least once, then a
+       percentage indicating the number of times the call
+       returned divided by the number of times the call was
+       executed will be printed.  This will usually be 100%, but
+       may be less for functions that call "exit" or "longjmp",
+       and thus may not return every time they are called.
+
+       The execution counts are cumulative.  If the example
+       program were executed again without removing the _._g_c_d_a
+       file, the count for the number of times each line in the
+       source was executed would be added to the results of the
+       previous run(s).  This is potentially useful in several
+       ways.  For example, it could be used to accumulate data
+       over a number of program runs as part of a test
+       verification suite, or to provide more accurate long-term
+       information over a large number of program runs.
+
+       The data in the _._g_c_d_a files is saved immediately before
+       the program exits.  For each source file compiled with
+       --ffpprrooffiillee--aarrccss, the profiling code first attempts to read
+       in an existing _._g_c_d_a file; if the file doesn't match the
+       executable (differing number of basic block counts) it
+       will ignore the contents of the file.  It then adds in the
+       new execution counts and finally writes the data to the
+       file.
+
+       UUssiinngg ggccoovv wwiitthh GGCCCC OOppttiimmiizzaattiioonn
+
+       If you plan to use ggccoovv to help optimize your code, you
+       must first compile your program with two special GCC
+       options: --ffpprrooffiillee--aarrccss --fftteesstt--ccoovveerraaggee.  Aside from that,
+       you can use any other GCC options; but if you want to
+       prove that every single line in your program was executed,
+       you should not compile with optimization at the same time.
+       On some machines the optimizer can eliminate some simple
+       code lines by combining them with other lines.  For
+       example, code like this:
+
+               if (a != b)
+                 c = 1;
+               else
+                 c = 0;
+
+       can be compiled into one instruction on some machines.  In
+       this case, there is no way for ggccoovv to calculate separate
+       execution counts for each line because there isn't
+       separate code for each line.  Hence the ggccoovv output looks
+       like this if you compiled the program with optimization:
+
+                     100:   12:if (a != b)
+                     100:   13:  c = 1;
+                     100:   14:else
+                     100:   15:  c = 0;
+
+
+
+
+gcc-4.2.3                   2008-02-01                          8
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       The output shows that this block of code, combined by
+       optimization, executed 100 times.  In one sense this
+       result is correct, because there was only one instruction
+       representing all four of these lines.  However, the output
+       does not indicate how many times the result was 0 and how
+       many times the result was 1.
+
+       Inlineable functions can create unexpected line counts.
+       Line counts are shown for the source code of the
+       inlineable function, but what is shown depends on where
+       the function is inlined, or if it is not inlined at all.
+
+       If the function is not inlined, the compiler must emit an
+       out of line copy of the function, in any object file that
+       needs it.  If _f_i_l_e_A_._o and _f_i_l_e_B_._o both contain out of line
+       bodies of a particular inlineable function, they will also
+       both contain coverage counts for that function.  When
+       _f_i_l_e_A_._o and _f_i_l_e_B_._o are linked together, the linker will,
+       on many systems, select one of those out of line bodies
+       for all calls to that function, and remove or ignore the
+       other.  Unfortunately, it will not remove the coverage
+       counters for the unused function body.  Hence when
+       instrumented, all but one use of that function will show
+       zero counts.
+
+       If the function is inlined in several places, the block
+       structure in each location might not be the same.  For
+       instance, a condition might now be calculable at compile
+       time in some instances.  Because the coverage of all the
+       uses of the inline function will be shown for the same
+       source lines, the line counts themselves might seem
+       inconsistent.
+
+SSEEEE AALLSSOO
+       _g_p_l(7), _g_f_d_l(7), _f_s_f_-_f_u_n_d_i_n_g(7), _g_c_c(1) and the Info entry
+       for _g_c_c.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (c) 1996, 1997, 1999, 2000, 2001, 2002, 2003,
+       2004, 2005 Free Software Foundation, Inc.
+
+       Permission is granted to copy, distribute and/or modify
+       this document under the terms of the GNU Free
+       Documentation License, Version 1.2 or any later version
+       published by the Free Software Foundation; with the
+       Invariant Sections being "GNU General Public License" and
+       "Funding Free Software", the Front-Cover texts being (a)
+       (see below), and with the Back-Cover Texts being (b) (see
+       below).  A copy of the license is included in the _g_f_d_l(7)
+       man page.
+
+       (a) The FSF's Front-Cover Text is:
+
+            A GNU Manual
+
+
+
+gcc-4.2.3                   2008-02-01                          9
+
+
+
+
+
+GCOV(1)                        GNU                        GCOV(1)
+
+
+       (b) The FSF's Back-Cover Text is:
+
+            You have freedom to copy and modify this GNU Manual, like GNU
+            software.  Copies published by the Free Software Foundation raise
+            funds for GNU development.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+gcc-4.2.3                   2008-02-01                         10
+
+

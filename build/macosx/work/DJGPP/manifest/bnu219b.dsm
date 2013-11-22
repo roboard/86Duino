@@ -1,0 +1,34 @@
+#
+# DSM for Binutils 2.19 binaries
+#
+
+dsm-file-version: 1.0
+dsm-author: Andris Pavenis
+dsm-name: bnu219b
+dsm-version: 0.4.0
+dsm-type: binaries
+
+name: binutils
+version: 2.19
+manifest: bnu219b
+sources-dsm: bnu219s
+short-description: GNU Binary Utilities for DJGPP
+long-description: GNU Binary Utililities for DJGPP includes the assembler \
+linker, and other utilties needed for DJGPP development.
+
+organisation: FSF
+web-site: http://www.gnu.org/software/binutils.html
+ftp-site: ftp://ftp.gnu.org/pub/gnu/binutils/
+
+mailing-list: binutils@sources.redhat.com
+
+porter: Andris Pavenis
+porter-email: pavenis@lanet.lv
+
+simtelnet-path: v2gnu/
+zip: bnu219b.zip
+
+replaces: binutils < 2.19
+
+pre-install-readme: gnu/gnu/binutl-2.19/readme.dos
+

@@ -1,0 +1,57 @@
+#
+# DSM for PDCurses 3.4 headers and libraries.
+# Written by Juan Manuel Guerrero <juan.guerrero@gmx.de> 2007-08-13
+# Updated by Robert Riebisch <rr@bttr-software.de> 2008-10-08
+#
+
+dsm-file-version: 1.0
+dsm-name: pdcur34a
+dsm-version: 0.6.1
+
+type: binaries
+
+dsm-author: Robert Riebisch
+dsm-author-email: rr@bttr-software.de
+
+name: PDCurses
+version: 3.4 release 1
+manifest: pdcur34a
+sources-dsm: pdcur34s
+documentation-dsm:
+short-description: Headers and libraries for Public Domain Curses 3.4
+long-description: PDCurses is an implementation of X/Open\n\
+curses for multiple platforms.
+
+license: MIT license (public domain)
+# author.
+author:
+author-email:
+maintainer: William McBrine
+maintainer-email: <wmcbrine@users.sf.net>
+# For reporting bugs
+mailing-list:
+# The home page of PDCurses.
+web-site: http://pdcurses.sourceforge.net/
+# The ftp site of PDCurses.
+ftp-site:
+# For discussing DJGPP- and DOS/Windows-specific aspects
+mailing-list: djgpp@delorie.com
+newsgroup: comp.os.msdos.djgpp
+
+porter: Robert Riebisch
+porter-email: rr@bttr-software.de
+
+simtelnet-path: v2tk/
+zip: pdcur34a.zip
+
+changelog: contrib/PDCurses.34/HISTORY
+
+pre-install-readme: contrib/PDCurses.34/README
+pre-install-readme: contrib/PDCurses.34/djgpp/README
+
+requires: DPMI 0.9
+
+replaces: PDCurses < 3.4 release 1
+
+# For reading docs:
+depends-on: less

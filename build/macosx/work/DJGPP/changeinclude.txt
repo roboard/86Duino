@@ -1,0 +1,4 @@
+\s*#\s*include\s*[<"](SoftwareSerial.h)[">]
+SFSerial.h
+\s*#\s*include\s*[<"](LiquidCrystal.h)[">]
+Liquid.h

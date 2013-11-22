@@ -1,0 +1,330 @@
+
+
+
+STRIP(1)              GNU Development Tools              STRIP(1)
+
+
+NNAAMMEE
+       strip - Discard symbols from object files.
+
+SSYYNNOOPPSSIISS
+       strip [--FF _b_f_d_n_a_m_e |----ttaarrggeett==_b_f_d_n_a_m_e]
+             [--II _b_f_d_n_a_m_e |----iinnppuutt--ttaarrggeett==_b_f_d_n_a_m_e]
+             [--OO _b_f_d_n_a_m_e |----oouuttppuutt--ttaarrggeett==_b_f_d_n_a_m_e]
+             [--ss|----ssttrriipp--aallll]
+             [--SS|--gg|--dd|----ssttrriipp--ddeebbuugg]
+             [--KK _s_y_m_b_o_l_n_a_m_e |----kkeeeepp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+             [--NN _s_y_m_b_o_l_n_a_m_e |----ssttrriipp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e]
+             [--ww|----wwiillddccaarrdd]
+             [--xx|----ddiissccaarrdd--aallll] [--XX |----ddiissccaarrdd--llooccaallss]
+             [--RR _s_e_c_t_i_o_n_n_a_m_e |----rreemmoovvee--sseeccttiioonn==_s_e_c_t_i_o_n_n_a_m_e]
+             [--oo _f_i_l_e] [--pp|----pprreesseerrvvee--ddaatteess]
+             [----kkeeeepp--ffiillee--ssyymmbboollss]
+             [----oonnllyy--kkeeeepp--ddeebbuugg]
+             [--vv |----vveerrbboossee] [--VV|----vveerrssiioonn]
+             [----hheellpp] [----iinnffoo]
+             _o_b_j_f_i_l_e...
+
+DDEESSCCRRIIPPTTIIOONN
+       GNU  ssttrriipp discards all symbols from object files _o_b_j_f_i_l_e.
+       The list of object files may include archives.   At  least
+       one object file must be given.
+
+       ssttrriipp  modifies  the  files  named in its argument, rather
+       than writing modified copies under different names.
+
+OOPPTTIIOONNSS
+       --FF _b_f_d_n_a_m_e
+       ----ttaarrggeett==_b_f_d_n_a_m_e
+           Treat the original _o_b_j_f_i_l_e as a file with  the  object
+           code  format  _b_f_d_n_a_m_e,  and  rewrite  it  in  the same
+           format.
+
+       ----hheellpp
+           Show a summary of the options to ssttrriipp and exit.
+
+       ----iinnffoo
+           Display a list showing all  architectures  and  object
+           formats available.
+
+       --II _b_f_d_n_a_m_e
+       ----iinnppuutt--ttaarrggeett==_b_f_d_n_a_m_e
+           Treat  the  original _o_b_j_f_i_l_e as a file with the object
+           code format _b_f_d_n_a_m_e.
+
+       --OO _b_f_d_n_a_m_e
+       ----oouuttppuutt--ttaarrggeett==_b_f_d_n_a_m_e
+           Replace _o_b_j_f_i_l_e with  a  file  in  the  output  format
+           _b_f_d_n_a_m_e.
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          1
+
+
+
+
+
+STRIP(1)              GNU Development Tools              STRIP(1)
+
+
+       --RR _s_e_c_t_i_o_n_n_a_m_e
+       ----rreemmoovvee--sseeccttiioonn==_s_e_c_t_i_o_n_n_a_m_e
+           Remove  any  section named _s_e_c_t_i_o_n_n_a_m_e from the output
+           file.  This option may be given more than once.   Note
+           that  using  this  option inappropriately may make the
+           output file unusable.
+
+       --ss
+       ----ssttrriipp--aallll
+           Remove all symbols.
+
+       --gg
+       --SS
+       --dd
+       ----ssttrriipp--ddeebbuugg
+           Remove debugging symbols only.
+
+       ----ssttrriipp--uunnnneeeeddeedd
+           Remove all symbols that are not needed for  relocation
+           processing.
+
+       --KK _s_y_m_b_o_l_n_a_m_e
+       ----kkeeeepp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           When stripping symbols, keep symbol _s_y_m_b_o_l_n_a_m_e even if
+           it would normally be stripped.   This  option  may  be
+           given more than once.
+
+       --NN _s_y_m_b_o_l_n_a_m_e
+       ----ssttrriipp--ssyymmbbooll==_s_y_m_b_o_l_n_a_m_e
+           Remove  symbol  _s_y_m_b_o_l_n_a_m_e  from the source file. This
+           option may  be  given  more  than  once,  and  may  be
+           combined with strip options other than --KK.
+
+       --oo _f_i_l_e
+           Put the stripped output in _f_i_l_e, rather than replacing
+           the existing file.  When this argument is  used,  only
+           one _o_b_j_f_i_l_e argument may be specified.
+
+       --pp
+       ----pprreesseerrvvee--ddaatteess
+           Preserve  the  access  and  modification  dates of the
+           file.
+
+       --ww
+       ----wwiillddccaarrdd
+           Permit regular  expressions  in  _s_y_m_b_o_l_n_a_m_es  used  in
+           other  command  line  options.  The question mark (?),
+           asterisk (*), backslash (\) and square  brackets  ([])
+           operators can be used anywhere in the symbol name.  If
+           the  first  character  of  the  symbol  name  is   the
+           exclamation  point (!) then the sense of the switch is
+           reversed for that symbol.  For example:
+
+                     -w -K !foo -K fo*
+
+
+
+binutils-2.18.90            2008-09-10                          2
+
+
+
+
+
+STRIP(1)              GNU Development Tools              STRIP(1)
+
+
+           would cause strip to only keep symbols that start with
+           the letters "fo", but to discard the symbol "foo".
+
+       --xx
+       ----ddiissccaarrdd--aallll
+           Remove non-global symbols.
+
+       --XX
+       ----ddiissccaarrdd--llooccaallss
+           Remove   compiler-generated   local  symbols.   (These
+           usually start with LL or ...)
+
+       ----kkeeeepp--ffiillee--ssyymmbboollss
+           When stripping a file, perhaps with  ----ssttrriipp--ddeebbuugg  or
+           ----ssttrriipp--uunnnneeeeddeedd, retain any symbols specifying source
+           file names, which would otherwise get stripped.
+
+       ----oonnllyy--kkeeeepp--ddeebbuugg
+           Strip a file, removing contents of any  sections  that
+           would not be stripped by ----ssttrriipp--ddeebbuugg and leaving the
+           debugging  sections  intact.   In  ELF   files,   this
+           preserves all note sections in the output.
+
+           The  intention  is  that  this  option will be used in
+           conjunction with ----aadddd--ggnnuu--ddeebbuugglliinnkk to create  a  two
+           part  executable.   One  a  stripped binary which will
+           occupy less space in RAM and in a distribution and the
+           second  a  debugging  information  file  which is only
+           needed  if  debugging  abilities  are  required.   The
+           suggested  procedure  to  create  these  files  is  as
+           follows:
+
+           1.<Link the executable as normal.  Assuming that is is
+           called>
+               "foo" then...
+
+           1.<Run "objcopy --only-keep-debug foo foo.dbg" to>
+               create a file containing the debugging info.
+
+           1.<Run "objcopy --strip-debug foo" to create a>
+               stripped executable.
+
+           1.<Run "objcopy --add-gnu-debuglink=foo.dbg foo">
+               to  add  a  link  to  the  debugging info into the
+               stripped executable.
+
+           Note---the choice of ".dbg" as an  extension  for  the
+           debug    info    file    is   arbitrary.    Also   the
+           "--only-keep-debug"  step  is  optional.   You   could
+           instead do this:
+
+           1.<Link the executable as normal.>
+           1.<Copy "foo" to "foo.full">
+
+
+
+
+binutils-2.18.90            2008-09-10                          3
+
+
+
+
+
+STRIP(1)              GNU Development Tools              STRIP(1)
+
+
+           1.<Run "strip --strip-debug foo">
+           1.<Run "objcopy --add-gnu-debuglink=foo.full foo">
+
+           i.e.,  the  file pointed to by the ----aadddd--ggnnuu--ddeebbuugglliinnkk
+           can be the full executable.  It does not have to be  a
+           file created by the ----oonnllyy--kkeeeepp--ddeebbuugg switch.
+
+           Note---this  switch  is only intended for use on fully
+           linked files.  It does not make sense  to  use  it  on
+           object  files  where  the debugging information may be
+           incomplete.    Besides   the   gnu_debuglink   feature
+           currently  only  supports the presence of one filename
+           containing   debugging   information,   not   multiple
+           filenames on a one-per-object-file basis.
+
+       --VV
+       ----vveerrssiioonn
+           Show the version number for ssttrriipp.
+
+       --vv
+       ----vveerrbboossee
+           Verbose  output:  list  all object files modified.  In
+           the case of archives, ssttrriipp --vv lists  all  members  of
+           the archive.
+
+       @@_f_i_l_e
+           Read command-line options from _f_i_l_e.  The options read
+           are inserted in place of the  original  @_f_i_l_e  option.
+           If  _f_i_l_e  does  not exist, or cannot be read, then the
+           option will be treated literally, and not removed.
+
+           Options  in  _f_i_l_e  are  separated  by  whitespace.   A
+           whitespace  character  may be included in an option by
+           surrounding the entire  option  in  either  single  or
+           double  quotes.  Any character (including a backslash)
+           may be included  by  prefixing  the  character  to  be
+           included  with  a  backslash.   The  _f_i_l_e  may  itself
+           contain additional @_f_i_l_e  options;  any  such  options
+           will be processed recursively.
+
+SSEEEE AALLSSOO
+       the Info entries for _b_i_n_u_t_i_l_s.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright  (c)  1991,  1992, 1993, 1994, 1995, 1996, 1997,
+       1998, 1999, 2000, 2001,  2002,  2003,  2004,  2005,  2006,
+       2007, 2008 Free Software Foundation, Inc.
+
+       Permission  is  granted  to copy, distribute and/or modify
+       this  document  under  the   terms   of   the   GNU   Free
+       Documentation  License,  Version  1.2 or any later version
+       published  by  the  Free  Software  Foundation;  with   no
+       Invariant Sections, with no Front-Cover Texts, and with no
+       Back-Cover Texts.  A copy of the license  is  included  in
+
+
+
+binutils-2.18.90            2008-09-10                          4
+
+
+
+
+
+STRIP(1)              GNU Development Tools              STRIP(1)
+
+
+       the section entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+binutils-2.18.90            2008-09-10                          5
+
+

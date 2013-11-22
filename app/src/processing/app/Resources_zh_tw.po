@@ -1227,7 +1227,7 @@ msgid ""
 msgstr ""
 "<html> <head> <style type=\"text/css\">b { font: 13pt \"Lucida Grande\" }p "
 "{ font: 11pt \"Lucida Grande\"; margin-top: 8px }</style> </head><b>你確定"
-"要離開嗎？</b><p>關閉最後一份開啟中的草稿碼就回離開86Duino。"
+"要離開嗎？</b><p>關閉最後一份開啟中的草稿碼就會離開86Duino。"
 
 #: Base.java:970
 msgid "Contributed"
