@@ -110,6 +110,11 @@ msgstr "加入檔案..."
 msgid "Tools"
 msgstr "工具"
 
+#: Editor.java:681
+msgid "Auto Show Serial Monitor"
+msgstr "自動顯示序列埠監控視窗"
+
+
 #: Editor.java:662 EditorToolbar.java:41 EditorToolbar.java:46
 msgid "Serial Monitor"
 msgstr "序列埠監控視窗"
@@ -175,8 +180,8 @@ msgid "Visit Arduino.cc"
 msgstr "拜訪Arduino.cc"
 
 #: Editor.java:1092
-msgid "Visit 86duino.com"
-msgstr "拜訪86duino.com"
+msgid "Visit 86Duino.com"
+msgstr "拜訪86Duino.com"
 
 #: Editor.java:1094
 msgid "http://arduino.cc/"
@@ -1227,7 +1232,7 @@ msgid ""
 msgstr ""
 "<html> <head> <style type=\"text/css\">b { font: 13pt \"Lucida Grande\" }p "
 "{ font: 11pt \"Lucida Grande\"; margin-top: 8px }</style> </head><b>你確定"
-"要離開嗎？</b><p>關閉最後一份開啟中的草稿碼就會離開86Duino。"
+"要離開嗎？</b><p>關閉最後一份開啟中的草稿碼就回離開86Duino。"
 
 #: Base.java:970
 msgid "Contributed"
