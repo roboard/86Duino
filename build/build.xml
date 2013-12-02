@@ -240,7 +240,9 @@
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr-4/bin" includes="**/*" />
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/libexec/gcc/avr/3.4.6/" includes="**/cc1*" />
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/libexec/gcc/avr/4.3.2/" includes="**/cc1*" />
-    </chmod>
+      <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/DOSBox.exe" />
+      <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/upx309w/upx.exe" />
+	</chmod>
 
     <replace file="macosx/work/86Duino.app/Contents/Info.plist"
              token="VERSION" value="${version}" />
