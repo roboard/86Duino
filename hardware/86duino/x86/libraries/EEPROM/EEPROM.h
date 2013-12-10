@@ -1,6 +1,6 @@
 /*
-  EEPROM.h - EEPROM library for 86Duino
-  Copyright (c) 2013 Vic Chen <vic@dmp.com.tw>. All right reserved.
+  EEPROM.h - EEPROM library
+  Copyright (c) 2006 David A. Mellis.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -20,29 +20,21 @@
 #ifndef EEPROM_h
 #define EEPROM_h
 
-#include <inttypes.h>
-#include <stdio.h>
+#include "Block.h"
+
 
 class EEPROMClass
 {
   public:
 	EEPROMClass(void);
 	~EEPROMClass(void);
-    uint8_t read(int);
-    void write(int, uint8_t);
-	void EEPROMflush();
+    unsigned char read(unsigned short int in_addr);
+    void write(unsigned short int in_addr, unsigned char in_data);
 	void set_bank(bool);
 	
-
   private:
-    unsigned long int E2END;
-	FILE *_file;
-	bool bank;
-	
-	FILE* create_newfile();
-	uint32_t get_size(FILE *fp);
-	uint8_t eeprom_read_byte(FILE *fp, int addr);
-	void eeprom_write_byte(FILE *fp, int addr, uint8_t val);
+    EEPROMBlock **_data;
+	bool _bank;
 };
 
 extern EEPROMClass EEPROM;
