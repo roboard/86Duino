@@ -2,12 +2,16 @@
 #include <conio.h>
 #include <dos.h>
 #include <errno.h>
+#include <string.h>
 #include "process.h"
 #define USE_COMMON
 #include "common.h"
 #include "usb.h"
 #include "io.h"
 
+
+
+/***************************  Bootloader Functions ****************************/
 void init(void) {
 	int i;
 	if(io_Init() == false)
@@ -114,168 +118,422 @@ void* get_prospace(long pro_size) {
 	return p;
 }
 
-#define TIME_OUT    (8000)
 
-#define PROGRAM     (1)
-#define BOOTLOADER  (2)
-int main(void)
-{
+/*
++------------------------+
+| Package size | command | 
++------------------------+
+*/
+
+// the size of member in the package
+#define PSIZE_BYTES           (4)
+#define COMM_BYTES            (2)
+#define FNAME_BYTES           (32)
+#define FSIZE_BYTES           (4)
+#define LAST_BYTES            (1)
+#define CHSUM_BYTES           (1)
+#define ERRCODE_BYTES         (2)
+#define VERSION_BYTES         (32)
+#define WFDONE_BYTES          (9)
+#define VSDONE_BYTES          (41)
+
+// command
+#define GET_BIOS_VER          (0x0010)
+#define GET_BOOTLOADER_VER    (0x0011)
+#define BURN_BOOTLOADER       (0x0012)
+#define BURN_BIOS             (0x0013)
+#define BURN_PROGRAM          (0x0014)
+#define BURN_VERSIONFILE      (0x0015)
+
+// Error code
+#define EMALLOC               (0x0001)
+#define ECOMMAND              (0x0002)
+#define EFILENAME             (0x0004)
+#define EFILELENGTH           (0x0008)
+#define EOPENFILE             (0x0010)
+#define EWRITEFILE            (0x0020)
+#define ELAST                 (0x0040)
+#define ECHECKSUM             (0x0080)
+
+// bootloader state
+#define GETPSZIE              (0x50)
+#define GETPACKAGE            (0x51)
+#define GETCOMMAND            (0x52)
+#define ANALYSIS              (0x53)
+#define GETFILENAME           (0x54)
+#define GETFILESIZE           (0x55)
+#define WRITEFILE             (0x56)
+#define LASTSTEP              (0x57)
+#define SENDRESULT            (0x58)
+#define WRITEFILEDONE         (0x59)
+#define GETVERSION            (0x5A)
+#define GETVERSIONDONE        (0x5B)
+
+// isLast flag
+#define YES                   (0x01)
+#define NO                    (0x02)
+
+// COMS
+#define VERBITS               (3)
+#define BTLRADDR              (147)
+#define BIOSADDR              (150)
+
+unsigned char Cal_checksum(unsigned char* cch, unsigned long packagesize) {
+	unsigned long i;
+	unsigned char checksum = 0;
+	for(i=0; i<(packagesize - 1); i++)
+		checksum = checksum + cch[i];
+	checksum = ~(checksum);
+	return checksum;
+}
+
+
+#define TIME_OUT    (8000)
+const char* bootloader_ver = "100";
+const char* bios_ver       = "090";
+static char version[VERSION_BYTES] = {'\0'};
+int main(void) {
 	FILE* fp = NULL;
-	int i, mode, type;
+	int i, j, mode;
+	long length = 0L, total_l = 0L, tmp = 0L;
+	bool get_length = false, transfer = false, empty_program = false, reboot = false;
 	unsigned long time;
 	unsigned char rst_key = 0;
-	long length = 0L, total_l = 0L, tmp = 0L;
-	bool get_length = false, transfer = false;
-	bool empty_program = false, reboot = false;
-	unsigned char* start_p;
-	unsigned char* p;
+	unsigned char* pstart_p, *package_p;
 	
-	/* For writing flash*/
+	// the variables for package
+	char filename[FNAME_BYTES];
+	unsigned long packageSize = 0L, ps = 0L, filesize = 0L;
+	unsigned short command  = 0, errorcode = 0;
+	unsigned char isLast = 0, checksum = 0;
+	
+	// for writing flash
 	#define SECTION    (8192L) // write size 8k to disk every time
 	unsigned long msize = 0L;
+
+	/*
+	// detect bootloader version
+	for(i=0; i<VERBITS; i++) {version[i] = read_cmos(BTLRADDR+i); version[i] = '\0';}
+	if(strcmp(version, bootloader_ver) != 0)
+		for(i=0; i<VERBITS; i++) write_cmos(BTLRADDR+i, bootloader_ver[i]);
 	
-	// 0. Try to open 86duino.exe file in disk or flash
-	fp = fopen("86duino.exe", "rb");
-	if(fp != NULL) fclose(fp); else empty_program = true;
+	// detect bios version
+	for(i=0; i<VERBITS; i++) {version[i] = read_cmos(BIOSADDR+i); version[i] = '\0';}
+	if(strcmp(version, bios_ver) != 0)
+		for(i=0; i<VERBITS; i++) write_cmos(BIOSADDR+i, bios_ver[i]);
+	*/
+	 
+	// Try to open 86duino.exe file in disk or flash
+	fp = fopen("_86duino.exe", "rb");
+	if(fp != NULL)
+		fclose(fp);
+	else
+		empty_program = true;
 	
 	init();
 	mode = GetBootLoaderMode();
 	
-	// 0.5 Is pre-reset soft reset? if yes, go to bootloader
+	// Is pre-reset soft reset? if yes, go to bootloader
 	rst_key = io_inpb(0xf21A);
 	io_outpb(0xf21A, 0x00);
 	if(fp != NULL && rst_key != 0x5a && mode == PRO_MODE)
-		return spawnl(P_OVERLAY, "86duino.exe", "86duino.exe", NULL);
+		return spawnl(P_OVERLAY, "_86duino.exe", "_86duino.exe", NULL);
 	
-	// 1. Init USB device
+	// Init USB device
 	void* USBDEV = CreateUSBDevice();
 	if(USBDEV == NULL)
-		{printf("CreateUSBDevice() return NULL\n"); return -1;}
+	{
+		printf("CreateUSBDevice() return NULL\n");
+		return -1;
+	}
 	usb_SetUSBPins(USBDEV, 7, 0, 7, 1);
 	if(usb_Init(USBDEV) == false)
-		{printf("Usb_Init() return NULL\n"); return -1;}
-	usb_SetTimeOut(USBDEV, 2000);
+	{
+		printf("Usb_Init() return NULL\n");
+		return -1;
+	}
+    usb_SetTimeOut(USBDEV, 2000L);
 
-	EnableLLED(); 
-	// 2. main loop, timeout 8 sec
+    
+	int _prev, _cur, bstate;
+	EnableLLED();
 	time = timer_nowtime();
+	bstate = GETPSZIE;
+	_prev = _cur = 0; // QueryRXQuere counter
 	while((timer_nowtime() - time) < TIME_OUT)
 	{
 		LEDPulse();
-		// 2.1 If no 86duino.exe file in disk or flash, reading process without 8 sec limit until complete 
+		// If no _86duino.exe file in disk or flash, reading process without 8 sec limit until complete 
 		if(empty_program == true) time = timer_nowtime();
 		
-		if(usb_Ready(USBDEV) == false || usb_QueryRxQueue(USBDEV) == 0) continue;
+		if(usb_Ready(USBDEV) == false) continue;
 		
-		if(get_length == false)
+		_cur = usb_QueryRxQueue(USBDEV); // re-count if the value is changed
+		if(_cur != _prev)
 		{
-			// 2.2 Get file size
-		    if(usb_QueryRxQueue(USBDEV) >= 5)
+			time = timer_nowtime();
+			_prev = _cur;
+		}
+		
+		switch(bstate)
+		{
+		case GETPSZIE:
+			if(usb_QueryRxQueue(USBDEV) >= PSIZE_BYTES)
 		    {
-		    	type = usb_Read(USBDEV);
-		    	for(i=0; i<4; i++) length = length + ((long)usb_Read(USBDEV) << (8*i));
-		    	//2.3 Get program memory size
-				if ((p = (unsigned char*)get_prospace(length)) == NULL)
+				for(i=0, packageSize=0L; i<PSIZE_BYTES; i++)
+					packageSize = packageSize + ((unsigned long)usb_Read(USBDEV)<< (8*i));
+#if defined DEBUG_MODE
+				printf("package size = %ld\n", packageSize);
+#endif
+				ps = packageSize;
+				// malloc memory space for package
+				package_p = (unsigned char*)get_prospace(packageSize);
+				if(package_p == NULL)
 				{
-					printf("ERROR: \'program_size\' alloc fail.\n");
+#if defined DEBUG_MODE
+					printf("ERROR: \'package size\' malloc fail.\n");
+#endif
+					errorcode |= EMALLOC;
+					bstate = SENDRESULT;
 					break;
 				}
-				else
+				pstart_p = package_p;
+				bstate = GETPACKAGE;
+			}
+			break;
+		case GETPACKAGE:
+			if(transfer == false)
+		    {
+				tmp = usb_QueryRxQueue(USBDEV);
+				ps = ps - tmp;
+				if(ps == 0L) transfer = true;
+				for(i=0; i<tmp; i++)
 				{
-					get_length = true;
-					total_l = length;
-					start_p = p;
+					*package_p = (unsigned char)usb_Read(USBDEV);
+					package_p++;
 				}
 			}
-		}
-		else
-		{
-			// 2.3 Put file to memory
-			tmp = usb_QueryRxQueue(USBDEV);
-			length = length - tmp;
-			if(length <= 0)	transfer = true;
-			for(i=0; i<tmp; i++)
+			else
 			{
-				*p = (unsigned char)usb_Read(USBDEV);
-				p++;
-				time = timer_nowtime();
+				transfer = false;
+				package_p = pstart_p;
+				bstate = GETCOMMAND;
 			}
-			if(transfer == true) break;				
-		}
-	}
-	
-	p = start_p;
-	if(transfer == false) {usb_Write(USBDEV, '3'); goto END;}
-	
-	fp = NULL;	
-	if(type == BOOTLOADER)
-		fp = fopen("____86bt.$$$", "wb");
-	else if(type == PROGRAM)
-		fp = fopen("____86pg.$$$", "wb");
-
-	if(fp == NULL) {usb_Write(USBDEV, '4'); goto END;}
-		
-	// 3. Write file from memory to disk or flash
-	for(; total_l > 0L; total_l -= msize, start_p += msize)
-	{
-		msize = (total_l <= SECTION) ? total_l : SECTION;
-		if(fwrite(start_p, sizeof(unsigned char), msize, fp) != msize)
-		{
-			switch(errno) // return error message
+			break;
+		case GETCOMMAND:
+			for(i=0, command=0; i<COMM_BYTES; i++)
 			{
-			case EACCES: usb_Write(USBDEV, '5'); break;
-			case EAGAIN: usb_Write(USBDEV, '6'); break;
-			case EBADF:  usb_Write(USBDEV, '7'); break;
-			case EFBIG:  usb_Write(USBDEV, '8'); break;
-			case EINTR:  usb_Write(USBDEV, '9'); break;
-			case EIO:    usb_Write(USBDEV, 'a'); break;
-			case ENOMEM: usb_Write(USBDEV, 'b'); break;
-			case ENOSPC: usb_Write(USBDEV, 'c'); break;
-			case ENXIO:  usb_Write(USBDEV, 'd'); break;
-			case EPIPE:  usb_Write(USBDEV, 'e'); break;
-			default:     usb_Write(USBDEV, 'f'); break;
+				command = command + ((unsigned short)(*package_p) << (8*i));
+				package_p++;
 			}
-			fclose(fp);
-			goto END;
-		}
+#if defined DEBUG_MODE
+			printf("command = %d\n", command);
+#endif
+			package_p = pstart_p;
+			bstate = ANALYSIS;
+			break;
+		case ANALYSIS:
+			switch(command)
+			{
+			case GET_BIOS_VER:    case GET_BOOTLOADER_VER:
+			case BURN_BOOTLOADER: case BURN_BIOS:
+			case BURN_PROGRAM:    case BURN_VERSIONFILE:
+				// Calculate checksum
+				for(length=0, checksum=0; length < (packageSize-1); length++)
+				{
+					checksum += *package_p;
+					package_p++;
+				}
+				checksum = ~checksum;
+#if defined DEBUG_MODE
+				printf("checksum = %02X *package_p = %02X\n", checksum, *package_p);
+#endif
+				if(checksum != *package_p)
+				{
+					ker_Mfree((void*)pstart_p);
+					errorcode |= ECHECKSUM;
+					bstate = SENDRESULT;
+					break;
+				}
+				package_p--;
+				isLast = *package_p;
+				package_p = pstart_p + COMM_BYTES;
+				if(command == GET_BIOS_VER || command == GET_BOOTLOADER_VER)
+					bstate = GETVERSION;
+				else
+					bstate = GETFILENAME;
+				break;
+			default:
+#if defined DEBUG_MODE
+				printf("Receive a unavailable command\n");
+#endif
+				ker_Mfree((void*)pstart_p);
+				errorcode |= ECOMMAND;
+				bstate = SENDRESULT;
+				break;
+			}
+			break;
+		case GETFILENAME:
+			for(i=0; i<FNAME_BYTES; i++)
+			{
+				filename[i] = (char)(*package_p);
+				package_p++;
+			}
+			for(i=0; i<FNAME_BYTES; i++)
+				if(filename[i] == '\0') break;
+			if(i == FNAME_BYTES)
+			{
+				ker_Mfree((void*)pstart_p);
+				errorcode |= EFILENAME;
+				bstate = SENDRESULT;
+				break;
+			}
+#if defined DEBUG_MODE
+			printf("File name = %s\n", filename);
+#endif
+			bstate = GETFILESIZE;
+			break;
+		case GETFILESIZE:
+			for(i=0, filesize=0L; i<FSIZE_BYTES; i++)
+			{
+				filesize = filesize + ((unsigned long)(*package_p) << (8*i));
+				package_p++;
+			}
+#if defined DEBUG_MODE
+			printf("File size = %ld\n", filesize);
+#endif
+			total_l = filesize;
+			bstate = WRITEFILE;
+			break;
+		case WRITEFILE:
+			fp = fopen("___86tmp.$$$", "wb");
+			if(fp == NULL)
+			{
+				ker_Mfree((void*)pstart_p);
+				errorcode |= EOPENFILE;
+				bstate = SENDRESULT;
+				break;
+			}
 
-		usb_Write(USBDEV, 'z');
-		fflush(fp);
-	}
-    fclose(fp);
-   
-    // 3.5 switch filename
-	if(type == BOOTLOADER)
-	{
-    	remove("v86boot.exe");
-		rename("____86bt.$$$", "v86boot.exe");
-    	usb_Write(USBDEV, '1');
-		if((fp = fopen("86duino.exe", "rb")) != NULL)
-			fclose(fp);
-		else
-			reboot = true;
-    }
-    else if(type == PROGRAM)
-    {
-    	if(empty_program == true)
-    		rename("____86pg.$$$", "86duino.exe");
-    	else
-    	{
-	    	remove("86duino.exe");
-			rename("____86pg.$$$", "86duino.exe");
-	    }
-    	usb_Write(USBDEV, '2');
-	}
+			for(; total_l > 0L; total_l -= msize, package_p += msize)
+			{
+				msize = (total_l <= SECTION) ? total_l : SECTION;
+				if(fwrite(package_p, sizeof(unsigned char), msize, fp) != msize)
+				{
+					ker_Mfree((void*)pstart_p);
+					errorcode |= EWRITEFILE;
+					bstate = SENDRESULT;
+					break;
+				}
+				usb_Write(USBDEV, 'z');
+				fflush(fp);
+			}
+		    fclose(fp);
+		    
+		    if(command == BURN_BOOTLOADER)
+			{
+		    	remove("_v86boot.exe");
+				rename("___86tmp.$$$", "_v86boot.exe");
+				if((fp = fopen("_86duino.exe", "rb")) != NULL)
+					fclose(fp);
+				else
+					reboot = true;
+		    }
+		    else if(command == BURN_PROGRAM)
+		    {
+		    	if(empty_program == false)
+		    		remove("_86duino.exe");
+				rename("___86tmp.$$$", "_86duino.exe");
+			}
+			else
+			{
+				if((fp = fopen(filename, "r")) != NULL)
+				{
+					fclose(fp);
+					remove(filename);
+				}
+				rename("___86tmp.$$$", filename);
+			}
+			
+		    time = timer_nowtime(); // reset timer
+		    ker_Mfree((void*)pstart_p);
+			usb_Write(USBDEV, '0');
+			bstate = SENDRESULT;
+			break;
+        case SENDRESULT:
+        	package_p = (unsigned char*) ker_Malloc(WFDONE_BYTES);
+        	packageSize = COMM_BYTES + ERRCODE_BYTES + CHSUM_BYTES;
+        	for(i=0, j=0; j<PSIZE_BYTES; i++, j++)
+				package_p[i] = (packageSize & (0xff << (8*j))) >> (8*j);
+			for(j=0; j<COMM_BYTES; i++, j++)
+				package_p[i] = (command & (0xff << (8*j))) >> (8*j);
+			for(j=0; j<ERRCODE_BYTES; i++, j++)
+				package_p[i] = (errorcode & (0xff << (8*j))) >> (8*j);
+        	package_p[i] = Cal_checksum(package_p+PSIZE_BYTES, packageSize);
+        	
+        	usb_Send(USBDEV, package_p, WFDONE_BYTES);
+        	
+        	ker_Mfree((void*)package_p);
+        	if(errorcode == 0 && isLast == NO)
+        	{
+        		time = timer_nowtime();
+        		bstate = GETPSZIE;
+        	}
+			else
+				goto END;
+        	break;
+		case GETVERSION:
+			if(command == GET_BOOTLOADER_VER)
+			{
+				for(i=0; i<VERBITS; i++)
+					version[i] = bootloader_ver[i];
+				version[i] = '\0';
+			}
+			else if(command == GET_BIOS_VER)
+			{
+				for(i=0; i<VERBITS; i++)
+					version[i] = bios_ver[i];
+				version[i] = '\0';
+			}
+			bstate = GETVERSIONDONE;
+		    break;
+		case GETVERSIONDONE:
+			package_p = (unsigned char*) ker_Malloc(VSDONE_BYTES);
+        	packageSize = COMM_BYTES + VERSION_BYTES + ERRCODE_BYTES + CHSUM_BYTES;
+        	for(i=0, j=0; j<PSIZE_BYTES; i++, j++)
+				package_p[i] = (packageSize & (0xff << (8*j))) >> (8*j);
+			for(j=0; j<COMM_BYTES; i++, j++)
+				package_p[i] = (command & (0xff << (8*j))) >> (8*j);
+			for(j=0; j<VERSION_BYTES; i++, j++)
+				package_p[i] = version[j];
+			for(j=0; j<ERRCODE_BYTES; i++, j++)
+				package_p[i] = (errorcode & (0xff << (8*j))) >> (8*j);
+        	package_p[i] = Cal_checksum(package_p+PSIZE_BYTES, packageSize);
+        	
+        	usb_Send(USBDEV, package_p, VSDONE_BYTES);
+        	
+        	ker_Mfree((void*)package_p);
+        	if(errorcode == 0 && isLast == NO)
+        	{
+        		time = timer_nowtime();
+        		bstate = GETPSZIE;
+        	}
+			else
+				goto END;
+			break;
+		} // switch (bstate)...
+	} // while((timer_nowtime() ...
 	
-END: // 4. prepare to run user program
+	
+END: // prepare to run user program
 	delay_ms(100);
-	ker_Mfree((void*)p);
+	//ker_Mfree((void*)pstart_p);
 	usb_Close(USBDEV);
 	DisableLLED();
 	
 	if(reboot == true)
 		io_outpb(0x64, 0xfe); //reset CPU;
 	else
-		return spawnl(P_OVERLAY, "86duino.exe", "86duino.exe", NULL);
+		return spawnl(P_OVERLAY, "_86duino.exe", "_86duino.exe", NULL);
 }
 
