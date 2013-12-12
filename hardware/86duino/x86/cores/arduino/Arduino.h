@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "v86clock.h"
 #include "parduino.h"
 #include "io.h"
 
@@ -127,6 +128,8 @@ void loop(void);
 #ifdef __cplusplus
 
 extern void* USBDEV;
+#define Serial4    Serial485
+#define Serial6    Serial232
 #include "Hserial.h"
 
 uint16_t makeWord(uint16_t w);

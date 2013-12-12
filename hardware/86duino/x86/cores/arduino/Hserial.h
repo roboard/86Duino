@@ -90,7 +90,7 @@ extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;
 extern HardwareSerial Serial3;
 extern HardwareSerial Serial485;
-extern HardwareSerial Serial4;
+extern HardwareSerial Serial232;
 
 extern void serialEventRun(void) __attribute__((weak));
 

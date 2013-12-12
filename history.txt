@@ -1,0 +1,78 @@
+### CODING 101 - 2013.XX.XX ###
+
+[ide]
+* Update BasicUploader.java to use the new Hehuan bootloader.
+
+[core]
+* Add Serial232 for the RS232 port of 86Duino EduCake.
+* Serial4 is now an alias of Serial485 for 86Duino One.
+* Serial6 is now an alias of Serial232 for 86Duino EduCake.
+
+[libraries]
+* Update the EEPROM library to implement 16KB EEPROM using the reserved spaces 
+  in the SPI flash and CMOS of 86Duino.
+* Finish and test the old Wifi library (ported from Arduino 1.5.2) and the new 
+  Wifi library (ported from Arduino 1.5.5).
+
+[bootloader]
+* A new and rigorous bootloader protocol.
+* The bootloader is now named as Hehuan.
+
+
+
+### CODING 100r3 - 2013.12.01 ###
+
+[ide]
+* Support Mac OS X.
+
+[bootloader]
+* Fix a USB descriptor issue that only occurs in Mac OS X.
+
+
+### CODING 100r2 - 2013.11.17 ###
+
+[ide]
+* Support Linux (only tested on Ubuntu 10.04, 11.04, 12.04, and 13.04).
+
+
+
+### CODING 100 - 2013.11.12 ###
+
+[ide]
+* Modify the GUI appearance.
+* Allow to upload the bootloader via IDE.
+
+[core]
+* All of Arduino standard API (except USB keyboard and mouse) are implemented 
+  and tested. Many bugs of standard API from the implementation of Coding 080
+  are fixed.
+* Fix a string-buffer-size bug in String::concat(int num) and 
+  String::concat(unsigned int num) of Wstring.cpp.
+* Add Serial4 for the RS232 port of 86Duino EduCake.
+* Add Serial485 for the RS485 port of 86Duino One.
+* Remove the index() function in DJGPP/include/string.h to avoid the 
+  function name conflict problem occuring in an sketch example 
+  from the Arduino 1.5.2 IDE.
+
+[libraries]
+* Finish and test the SD library.
+* Finish and test the EEPROM library, which implements the EEPROM of 86Duino 
+  using the unused CMOS space (only 200 bytes).
+
+[bootloader]
+* Remove the file size limit to sketch programs.
+* Much safe memory and disk allocation approach for uploading sketches.
+
+
+
+### CODING 080 - 2013.10.18 ###
+
+* First public release for alpha-test users of 86Duino; althrough it can work, 
+  it is still in alpha stage.
+* Only Windows XP is supported.
+* Most of Arduino API, except few low-level functions such as 
+  attachInterrupt(), are implemented.
+* Most of Arduino libraries, such as Servo, SPI, Wire, Firmata, ..., 
+  are ported; however, not everyone is tested entirely.
+* The bootloader works but its protocol isn't rigorous and needs further 
+  enhancement.

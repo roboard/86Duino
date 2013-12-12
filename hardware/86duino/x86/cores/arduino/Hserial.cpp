@@ -152,13 +152,13 @@ void serialEvent1() __attribute__((weak));
 void serialEvent2() __attribute__((weak));
 void serialEvent3() __attribute__((weak));
 void serialEvent485() __attribute__((weak));
-void serialEvent4() __attribute__((weak));
+void serialEvent232() __attribute__((weak));
 void serialEvent() {}
 void serialEvent1() {}
 void serialEvent2() {}
 void serialEvent3() {}
 void serialEvent485() {}
-void serialEvent4() {}
+void serialEvent232() {}
 void serialEventRun(void)
 {
 	if(USBDEV != NULL && Serial.available() > 0) serialEvent();
@@ -166,12 +166,12 @@ void serialEventRun(void)
 	if(Serial2.handle != NULL && Serial2.available() > 0) serialEvent2();
 	if(Serial3.handle != NULL && Serial3.available() > 0) serialEvent3();
 	if(Serial485.handle != NULL && Serial485.available() > 0) serialEvent485();
-	if(Serial4.handle != NULL && Serial4.available() > 0) serialEvent4();
+	if(Serial232.handle != NULL && Serial232.available() > 0) serialEvent232();
 }
 
 HardwareSerial Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 HardwareSerial Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
-HardwareSerial Serial4(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
+HardwareSerial Serial232(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 // Preinstantiate Objects //////////////////////////////////////////////////////
