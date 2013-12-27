@@ -26,7 +26,7 @@ menu.cpu=Processor
 86DuinoZERO.build.vid=0x2341
 86DuinoZERO.build.pid=0x8036
 86DuinoZERO.build.core=arduino
-86DuinoZERO.build.variant=86duinozero
+86DuinoZERO.build.variant=zero
 86DuinoZERO.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 
 ################################################################################
@@ -53,7 +53,7 @@ menu.cpu=Processor
 86DuinoONE.build.vid=0x2341
 86DuinoONE.build.pid=0x8036
 86DuinoONE.build.core=arduino
-86DuinoONE.build.variant=86duinoone
+86DuinoONE.build.variant=one
 86DuinoONE.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 
 ################################################################################

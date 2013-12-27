@@ -36,12 +36,7 @@ extern "C" {
 // vx86_uart_Init(com, mode)
 //     [com] : 0 ~ (Maximum size of UART - 1)
 //     [mode]: Maximum baud mode
-DMPAPI(bool) vx86_uart_Init(int com, int mode);
-#define MAX_BAUD_6000000			(1)
-#define MAX_BAUD_3000000			(2)
-#define MAX_BAUD_750000 			(3)
-#define MAX_BAUD_115200A 			(4)
-#define MAX_BAUD_115200B			(5)
+DMPAPI(bool) vx86_uart_Init(int com);
 DMPAPI(void) vx86_uart_Close(int com);
 
 DMPAPI(unsigned short) vx86_uart_GetBaseAddr(int com);
@@ -53,6 +48,12 @@ DMPAPI(int) vx86_uart_GetIRQ(int com);
 DMPAPI(unsigned long) vx86_uart_MaxBPS(int com);
 DMPAPI(void) vx86_uart_EnableHalfDuplex(int com);
 DMPAPI(void) vx86_uart_EnableFullDuplex(int com);
+
+DMPAPI(int) vx86_uart_GetSBCLK(void);
+DMPAPI(int) vx86_uart_GetCS(int com);
+DMPAPI(int) vx86_uart_GetHCS(int com);
+DMPAPI(void) vx86_uart_SetCS(int com, int); // The "cs" conflicts with TFTColorPicker.ino in 86Duino TFT library
+DMPAPI(void) vx86_uart_SetHCS(int com, int hcs);
 
 
 // ---------------------------------------------------

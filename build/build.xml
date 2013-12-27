@@ -101,7 +101,7 @@
     <unzip dest="${target.path}" src="shared/reference.zip" overwrite="false"/>
     
     <!-- Write the revision file! -->
-    <echo file="${target.path}/lib/version.txt" message="Coding 100" />
+    <echo file="${target.path}/lib/version.txt" message="Coding 101" />
   </target>
 
   
@@ -174,7 +174,9 @@
     </copy>
 
     <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/bossac" perm="+x" />
-
+    <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/DOSBox.exe" perm="+x" />
+    <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/upx309w/upx.exe" perm="+x" />
+      
     <copy todir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr/include/avr">
       <fileset file="macosx/dist/eeprom.h" />
     </copy>
@@ -240,8 +242,6 @@
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr-4/bin" includes="**/*" />
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/libexec/gcc/avr/3.4.6/" includes="**/cc1*" />
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/libexec/gcc/avr/4.3.2/" includes="**/cc1*" />
-      <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/DOSBox.exe" />
-      <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/upx309w/upx.exe" />
 	</chmod>
 
     <replace file="macosx/work/86Duino.app/Contents/Info.plist"

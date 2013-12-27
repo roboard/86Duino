@@ -72,7 +72,7 @@ public:
     friend class DNSClient;
 };
 
-const IPAddress INADDR_NONE(0,0,0,0);
+const IPAddress IPADDR_NONE(0,0,0,0);
 
 
 #endif

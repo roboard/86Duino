@@ -22,6 +22,8 @@
 
 #define __DMP_COM_LIB
 
+#define _VORTEX86EXC_UART_WORKAROUND
+
 #include "uart.h"
 #define  USE_COMMON
 #include "common.h"
@@ -225,11 +227,11 @@ DMP_INLINE(bool) uart_IsOK(SerialPort *port)
 	return true;
 }
 
-DMPAPI(bool) uart_Init(void *vport, int mode)
+DMPAPI(bool) uart_Init(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
 
-	if (vx86_uart_Init(port->com, mode) == false) {
+	if (vx86_uart_Init(port->com) == false) {
 		err_print((char*)"%s: Vertex86 COM%d init fail!!\n", __FUNCTION__, port->com + 1);
 		goto VX86_UART_INIT_FAIL;
 	}
@@ -288,6 +290,7 @@ VX86_UART_INIT_FAIL:
 
 DMPAPI(void) uart_Close(void *vport)
 {
+	unsigned char lcr;
 	SerialPort *port = (SerialPort *)vport;
 	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
 	
@@ -303,8 +306,29 @@ DMPAPI(void) uart_Close(void *vport)
 		irq_Close();
 		
 		// restore old LSB & MSB
+#ifdef _VORTEX86EXC_UART_WORKAROUND
+	/* To avoid Vortex86EX(D) write sync. issue. */
+	io_DisableINT();
+	{
+		lcr = io_inpb(port->LCR);  
+		io_outpb(port->LCR, 0x80); 
+		
+		do {
+			io_outpb(port->DLLSB, port->old_lsb);
+		} while (io_inpb(port->DLLSB) != port->old_lsb);
+		
+		do {
+			io_outpb(port->DLMSB, port->old_msb);
+		} while (io_inpb(port->DLMSB) != port->old_msb);
+		
+		io_inpb(0x80); // do IO delay
+		io_outpb(port->LCR, lcr);  
+	}
+	io_RestoreINT();
+#else
 		_16550_DLAB_Out(port, port->DLLSB, port->old_lsb);
 		_16550_DLAB_Out(port, port->DLMSB, port->old_msb);
+#endif
 		
 		// restore old LCR & timeout
 		uart_SetFormat(vport, port->old_lcr);
@@ -318,27 +342,53 @@ DMPAPI(void) uart_Close(void *vport)
 
 DMPAPI(bool) uart_SetBaud(void *vport, unsigned long baud)
 {
-	unsigned char  MD, LD;
+	unsigned char lcr;
 	unsigned short divisor;
-	unsigned long  max_baud;
 	SerialPort *port = (SerialPort *)vport;
 	
 	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return false; }
 	
-	max_baud = vx86_uart_MaxBPS(port->com);
-
-	if (max_baud < baud) return false;
-	if (max_baud == 1500000L && baud == 1500000L) return false;
+	if (vx86_uart_GetSBCLK() != 0)
+		divisor = (unsigned short)(baud >> 16);
+	else
+		divisor = (unsigned short)(baud);
 	
-	divisor = (unsigned short)(max_baud/baud);
-	LD = (unsigned char)(divisor & 0x00ff);
-	MD = (unsigned char)((divisor & 0xff00) >> 8);
+	if (divisor == 0xFFFF) {
+		err_print((char*)"%s: Unsupported baud rate.\n", __FUNCTION__);
+		return false;
+	}
 	
-	port->lsb = LD;
-	port->msb = MD;
+	// set speed mode
+	vx86_uart_SetCS(port->com, (divisor & 0x8000) >> 15);
+	vx86_uart_SetHCS(port->com, (divisor & 0x4000) >> 14);
+	
+	divisor &= 0x3FFF;
+	port->lsb = (unsigned char)(divisor & 0x00FF);
+	port->msb = (unsigned char)((divisor & 0xFF00) >> 8);
 
+#ifdef _VORTEX86EXC_UART_WORKAROUND
+	/* To avoid Vortex86EX(D) write sync. issue. */
+	io_DisableINT();
+	{
+		lcr = io_inpb(port->LCR);  
+		io_outpb(port->LCR, 0x80); 
+		
+		do {
+			io_outpb(port->DLLSB, port->lsb);
+		} while (io_inpb(port->DLLSB) != port->lsb);
+		
+		do {
+			io_outpb(port->DLMSB, port->msb);
+		} while (io_inpb(port->DLMSB) != port->msb);
+		
+		io_inpb(0x80); // do IO delay
+		io_outpb(port->LCR, lcr);  
+	}
+	io_RestoreINT();
+#else
 	_16550_DLAB_Out(port, port->DLLSB, port->lsb);
 	_16550_DLAB_Out(port, port->DLMSB, port->msb);
+#endif
 	
 	return true;
 }

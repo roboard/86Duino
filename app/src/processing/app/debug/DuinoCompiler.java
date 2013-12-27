@@ -75,7 +75,8 @@ public class DuinoCompiler implements MessageConsumer {
     
   List<String> file_path = new ArrayList<String>();
   List<String> file_name = new ArrayList<String>();
-  List<String> IncludeName = new ArrayList<String>(); 
+  List<String> IncludeName = new ArrayList<String>();
+  List<String> Includeliba = new ArrayList<String>();  
   String primaryClassName;
   String tmppath;
   String dosboxpath;
@@ -85,6 +86,7 @@ public class DuinoCompiler implements MessageConsumer {
   String makefilesourcepath="";
   String dosbox_mount;
   String ofile_path;
+  String str_libfiles="";
   TargetPlatform tp;
   String idepath;
   String idepath_nochande;
@@ -123,12 +125,13 @@ public class DuinoCompiler implements MessageConsumer {
     standlibrariepath ="/hardware/86duino/"+tp.getName()+"/libraries";
     
     chngeIncludeData(idepath+djgpppath);
+    chngeIncludelibaData(idepath+djgpppath);
     idepath_nochande=idepath;
     idepath=idepath.replace("\\","/");
     
     if (prefs.get("build.variant.path").length() != 0)
       includePaths.add(prefs.get("build.variant.path")); 
-    for (File file : sketch.getImportedLibraries()){
+    for (File file : sketch.getImportedLibraries()) {
       includePaths.add(file.getPath());
     }
     
@@ -659,8 +662,8 @@ public class DuinoCompiler implements MessageConsumer {
       File utilityFolder = new File(libraryFolder, "utility");
       createFolder(outputFolder);
       
-        
       String aaa= libraryFolder.getAbsolutePath();
+      aaa=aaa.replace("\\","/");
       String lib_same=idepath+"/libraries/";
       String[] strArray0 = aaa.split(libraryFolder.getName());
                              
@@ -862,7 +865,7 @@ public class DuinoCompiler implements MessageConsumer {
         out.write("\n");
         out.write("EXEFILES  = 86duino.exe\n");
         out.write("OBJFILES  = c:/compile/main.o\n");
-        out.write("LIBFILES  = -lstd~1 \n");
+        out.write("LIBFILES  = -lstd~1 "+str_libfiles+"\n");
         //out.write("LIBFILES  = -lstd~1 -L g:/ethernet/utility -lwatt\n");
         out.write("\n");
         out.write(".PHONY : everything all clean \n\n");
@@ -988,6 +991,22 @@ public class DuinoCompiler implements MessageConsumer {
         e.printStackTrace();
     }
   }
+  private void chngeIncludelibaData(String Path)throws RunnerException{
+    try{
+      FileReader fr = new FileReader(Path+File.separator+"changeliba.txt");
+      BufferedReader br = new BufferedReader(fr);
+      String readoneline;
+      while((readoneline = br.readLine()) != null){     
+        if(readoneline   !=  null ){     
+          Includeliba.add(readoneline);   
+        }               
+      }     
+      br.close();
+      fr.close();
+    }catch(IOException e){
+        e.printStackTrace();
+    }
+  }
   public void chngeInclude(String path,String filename) throws RunnerException {
      try{
         String a,b;
@@ -1002,6 +1021,12 @@ public class DuinoCompiler implements MessageConsumer {
             for(int i = 0; i < IncludeName.size() ; i+=2){ 
               readoneline=readoneline.replaceAll(IncludeName.get(i),"\n#include <"+IncludeName.get(i+1)+">\n");
               
+            }
+            for(int i = 0; i < Includeliba.size() ; i+=2){ 
+              if(readoneline.matches(Includeliba.get(i))){
+                str_libfiles += Includeliba.get(i+1);
+                str_libfiles += " ";
+              }
             }
             out.write(readoneline+"\n");   
           }               

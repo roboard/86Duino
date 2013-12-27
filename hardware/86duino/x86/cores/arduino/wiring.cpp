@@ -33,7 +33,6 @@ void delay(unsigned long ms) {
 }
 
 unsigned long micros() {
-	#define CLOCKS_PER_MICROSEC (299UL)
 	return (getclocks64()/CLOCKS_PER_MICROSEC);
 }
 
@@ -43,6 +42,7 @@ void delayMicroseconds(unsigned long us) {
 
 bool init() {
 	int i, crossbarBase, gpioBase;
+	timer_nowtime(); // initialize timer
 	if(io_Init() == false) return false;
 
 	//set corssbar Base Address
@@ -93,7 +93,7 @@ bool init() {
         printf("init2 error\n");
         return false;
     }
-	
+    
 	//io_Close();
 	return true;
 }

@@ -62,10 +62,49 @@ void HardwareSerial::begin(unsigned long baud, uint8_t config) {
 void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
     unsigned short crossbar_ioaddr = 0;
 	if(handle != NULL) return;
+	
+	if (io_Init() == false) {
+		printf("ERROR: IO init fail.\n");
+		return;
+	}
+	sb_Write(0xc0, sb_Read(0xc0) & 0x7fffffffL | ((unsigned long)1L << 31));
+	io_Close();
+
 	if ((handle = com_Init(port)) == NULL) 
 	{
 		printf("COM init fail!!\n");
 		return;
+	}
+	
+	switch (baud) {
+	case 6000000L: baud = COM_UARTBAUD_6000000BPS; break;
+	case 3000000L: baud = COM_UARTBAUD_3000000BPS; break;
+	case 2000000L: baud = COM_UARTBAUD_2000000BPS; break;
+	case 1500000L: baud = COM_UARTBAUD_1500000BPS; break;
+	case 1000000L: baud = COM_UARTBAUD_1000000BPS; break;
+	case 750000L:  baud = COM_UARTBAUD_750000BPS;  break;
+	case 500000L:  baud = COM_UARTBAUD_500000BPS;  break;
+	case 461538L:  baud = COM_UARTBAUD_461538BPS;  break;
+	case 333333L:  baud = COM_UARTBAUD_333333BPS;  break;
+	case 300000L:  baud = COM_UARTBAUD_300000BPS;  break;
+	case 250000L:  baud = COM_UARTBAUD_250000BPS;  break;
+	case 200000L:  baud = COM_UARTBAUD_200000BPS;  break;
+	case 150000L:  baud = COM_UARTBAUD_150000BPS;  break;
+	case 125000L:  baud = COM_UARTBAUD_125000BPS;  break;
+	case 115200L:  baud = COM_UARTBAUD_115200BPS;  break;
+	case 57600L:   baud = COM_UARTBAUD_57600BPS;   break;
+	case 38400L:   baud = COM_UARTBAUD_38400BPS;   break;
+	case 28800L:   baud = COM_UARTBAUD_28800BPS;   break;
+	case 19200L:   baud = COM_UARTBAUD_19200BPS;   break;
+	case 14400L:   baud = COM_UARTBAUD_14400BPS;   break;
+	case 9600L:    baud = COM_UARTBAUD_9600BPS;    break;
+	case 4800L:    baud = COM_UARTBAUD_4800BPS;    break;
+	case 2400L:    baud = COM_UARTBAUD_2400BPS;    break;
+	case 1200L:    baud = COM_UARTBAUD_1200BPS;    break;
+	case 600L:     baud = COM_UARTBAUD_600BPS;     break;
+	case 300L:     baud = COM_UARTBAUD_300BPS;     break;
+	case 50L:      baud = COM_UARTBAUD_50BPS;      break;
+	default:       baud = COM_UARTBAUD_9600BPS;    break;
 	}
 	
 	com_SetBPS(handle, baud);
@@ -74,21 +113,24 @@ void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
 	com_FlushRxQueue(handle);
 	com_SetTimeOut(handle, timeout);
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
+	
+	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
+	if(port == COM1 || port == COM2 || port == COM3)
+		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
+	#endif
+	
 	if(port == COM1)
 	{
-		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 		io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
 		io_outpb(crossbar_ioaddr + COM1_RX, 0x08);
 	}
 	else if(port == COM2)
 	{
-		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 		io_outpb(crossbar_ioaddr + COM2_TX, 0x08);
 		io_outpb(crossbar_ioaddr + COM2_RX, 0x08);
 	}
 	else if(port == COM3)
 	{
-		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 		io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
 		io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
 	}
@@ -98,6 +140,7 @@ void HardwareSerial::end() {
 	if(handle == NULL) return;
 	com_FlushWFIFO(handle);
 	com_Close(handle);
+	handle = NULL;
 }
 
 int HardwareSerial::available(void) {

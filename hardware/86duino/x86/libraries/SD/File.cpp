@@ -156,7 +156,7 @@ void File::flush() {
 
 bool File::seek(uint32_t pos) {
   if (! _file) return false;
-  return !(fseek(_file, pos, SEEK_CUR));
+  return !(fseek(_file, pos, SEEK_SET));
 }
 
 uint32_t File::position() {

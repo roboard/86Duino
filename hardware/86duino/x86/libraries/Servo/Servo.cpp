@@ -448,7 +448,7 @@ void Servo::writeMicroseconds(int value) {
 		//value = value - TRIM_DURATION;
 		value = usToTicks(value);  // convert to ticks after compensating for interrupt overhead - 12 Aug 2009
 		
-		if(servos[channel].ticks == value) return; // if set the same value to same pin, do nothong.
+		// if(servos[channel].ticks == value) return; // if set the same value to same pin, do nothong.
 		servos[channel].ticks = value; // update date
 		if(servos[channel].Pin.isActive == false) return; 
 		

@@ -106,7 +106,7 @@ typedef volatile struct serial_port
 } SerialPort;
 
 DMPAPI(void *) CreateUART(int com);
-DMPAPI(bool) uart_Init(void *vport, int mode);
+DMPAPI(bool) uart_Init(void *vport);
 DMPAPI(void) uart_Close(void *vport);
 // com
 #define UART_COM1       (0)
@@ -120,13 +120,40 @@ DMPAPI(void) uart_Close(void *vport);
 #define UART_COM9       (8)
 #define UART_COM10      (9)
 // mode
-#define MAX_BAUD_6000000			(1)
-#define MAX_BAUD_3000000			(2)
-#define MAX_BAUD_750000 			(3)
-#define MAX_BAUD_115200A 			(4)
-#define MAX_BAUD_115200B			(5)
+// #define MAX_BAUD_6000000			(1)
+// #define MAX_BAUD_3000000			(2)
+// #define MAX_BAUD_750000 			(3)
+// #define MAX_BAUD_115200A 		(4)
+// #define MAX_BAUD_115200B			(5)
 
 DMPAPI(bool) uart_SetBaud(void *vport, unsigned long baud);
+#define UARTBAUD_6000000BPS         (0xC001FFFFUL)
+#define UARTBAUD_3000000BPS         (0xC002FFFFUL)
+#define UARTBAUD_2000000BPS         (0xC003FFFFUL)
+#define UARTBAUD_1500000BPS         (0xC004FFFFUL)
+#define UARTBAUD_1000000BPS         (0xC006FFFFUL)
+#define UARTBAUD_750000BPS          (0xC0088002UL)
+#define UARTBAUD_500000BPS          (0xC00C8003UL)
+#define UARTBAUD_461538BPS          (0xC00DFFFFUL)
+#define UARTBAUD_333333BPS          (0xC012FFFFUL)
+#define UARTBAUD_300000BPS          (0xC0148005UL)
+#define UARTBAUD_250000BPS          (0x800C8006UL)
+#define UARTBAUD_200000BPS          (0x800FFFFFUL)
+#define UARTBAUD_150000BPS          (0x8014800AUL)
+#define UARTBAUD_125000BPS          (0x8018800CUL)
+#define UARTBAUD_115200BPS          (0x00010001UL)
+#define UARTBAUD_57600BPS           (0x00020002UL)
+#define UARTBAUD_38400BPS           (0x00030003UL)
+#define UARTBAUD_28800BPS           (0x00040004UL)
+#define UARTBAUD_19200BPS           (0x00060006UL)
+#define UARTBAUD_14400BPS           (0x00080008UL)
+#define UARTBAUD_9600BPS            (0x000C000CUL)
+#define UARTBAUD_4800BPS            (0x00180018UL)
+#define UARTBAUD_2400BPS            (0x00300030UL)
+#define UARTBAUD_1200BPS            (0x00600060UL)
+#define UARTBAUD_600BPS             (0x00C000C0UL)
+#define UARTBAUD_300BPS             (0x01800180UL)
+#define UARTBAUD_50BPS              (0x09000900UL)
 DMPAPI(void) uart_SetFormat(void *vport, unsigned char format);
 #define BYTESIZE5          (0x00)
 #define BYTESIZE6          (0x01)

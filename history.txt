@@ -1,22 +1,35 @@
-### CODING 101 - 2013.XX.XX ###
+### CODING 101 - 2013.12.27 ###
 
 [ide]
 * Update BasicUploader.java to use the new Hehuan bootloader.
+* Update DuinoCompiler.java to compile with third party DOS library.
+* Modify build.varaint in board.txt to match them in variants directory.
+* Add the ethernet .h files into DJGPP/include and .a file into DJGPP/lib for all platform
+* Update uploader to support the older bootloader for compatibility.
 
 [core]
 * Add Serial232 for the RS232 port of 86Duino EduCake.
 * Serial4 is now an alias of Serial485 for 86Duino One.
 * Serial6 is now an alias of Serial232 for 86Duino EduCake.
+* Modify soft-reset method to match Arduino Leonardo.
+* Add 600, 14400, 28800 baudrate to com.cpp and uart.cpp.
 
 [libraries]
 * Update the EEPROM library to implement 16KB EEPROM using the reserved spaces 
   in the SPI flash and CMOS of 86Duino.
 * Finish and test the old Wifi library (ported from Arduino 1.5.2) and the new 
   Wifi library (ported from Arduino 1.5.5).
+* Add Ethernet library
+* Add TFT library
+* Modify a bug for SD library to let TFTBitmapLogo work normally.
+  File.cpp => seek() => fseek(_file, pos, SEEK_CUR) change to fseek(_file, pos, SEEK_SET) 
+* Modify a bug for Servo library to let servo work normally if you use servo.write(1500) in loop().
+  Comment "if(servos[channel].ticks == value) return;"
 
 [bootloader]
 * A new and rigorous bootloader protocol.
 * The bootloader is now named as Hehuan.
+* Update bootloader to support the older uploader for compatibility.
 
 
 
@@ -27,6 +40,7 @@
 
 [bootloader]
 * Fix a USB descriptor issue that only occurs in Mac OS X.
+
 
 
 ### CODING 100r2 - 2013.11.17 ###

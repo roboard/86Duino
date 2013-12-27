@@ -656,8 +656,6 @@ DMP_INLINE(void) Set_Line_Coding(USB_Device *usb)
 	
 	SetEPnDLR(usb, EP0, OUT, ENABLE | EP0_MAX_PACKET_SIZE);
 	usb->state = USB_DEV_CDC_CONNECT;
-	if (!QueueEmpty(usb->xmit))
-		EP2_InHandler(usb);
 }
 #if defined DMP_DOS_DJGPP
 DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Line_Coding)
@@ -682,9 +680,22 @@ DMP_INLINE(void) Set_Control_Line_State(USB_Device *usb)
 	if ((usb->Setup.bmRequestType & 0x80) != 0x00) return;
 	
 	usb->control_line_state = usb->Setup.wValue.Value;
+	
 	if (!(usb->control_line_state & 0x01))
 		usb->state = USB_DEV_CONFIGURED;
+		
 	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
+	
+#ifdef DMP_86DUINO_MODE	
+	// the below behavier is only for compatible of Arduino Leonado (windows)
+	if(usb->ling_coding.dwDTERate == 1200 && (usb->control_line_state & 0x01) == 0)
+	{   
+		io_DisableINT();
+		io_outpb(usb_on_off_data, io_inpb(usb_on_off_data) | (1 << usb_on_off_pin));
+		io_outpb(0xf21A, 0x5a); // write soft reset key
+		io_outpb(0x64, 0xfe); // reboot
+	}
+#endif
 }
 #if defined DMP_DOS_DJGPP
 DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Control_Line_State)
@@ -866,24 +877,31 @@ DPMI_END_OF_LOCKED_STATIC_FUNC(EP1_InHandler)
 
 DMP_INLINE(void) EP2_InHandler(USB_Device *usb)
 {
-	int len = 0;
+	static int ep2_in_len = 0;
 	
 	if (usb->bulk_in_transmitting == true) return;
-	if (usb->xmit->count <= 0) return;
+	if (usb->xmit->count <= 0) {
+		if (ep2_in_len == EP2_MAX_PACKET_SIZE_IN) {
+			SetEPnDLR(usb, EP2, IN, ENABLE);
+			ep2_in_len = 0;
+		}
+		return;
+	}
 	
 #ifdef DMP_86DUINO_MODE
 	TX_LED_ON();
 #endif	
 	
+	ep2_in_len = 0;
 	do {
-		usb->EP[2].InBuf[len++] =(BYTE)PopQueue(usb->xmit);
-	} while(usb->xmit->count > 0 && len < EP2_MAX_PACKET_SIZE_IN);
+		usb->EP[2].InBuf[ep2_in_len++] =(BYTE)PopQueue(usb->xmit);
+	} while(usb->xmit->count > 0 && ep2_in_len < EP2_MAX_PACKET_SIZE_IN);
 	
 	#if defined DMP_DOS_DJGPP
 	dosmemput(usb->EP[2].InBuf, EP2_MAX_PACKET_SIZE_IN, usb->EP[2].InPhysical);
 	#endif
 	
-	SetEPnDLR(usb, EP2, IN, ENABLE | len);
+	SetEPnDLR(usb, EP2, IN, ENABLE | ep2_in_len);
 	usb->bulk_in_transmitting = true;
 }
 #if defined DMP_DOS_DJGPP
@@ -1078,17 +1096,6 @@ static int USB_ISR(int irq, void* data)
 		{
 			io_outpdw(usb->ISR, IEP3TX);
 		}
-		
-#ifdef DMP_86DUINO_MODE	
-		// the below behavier is only for compatible of Arduino Leonado (windows)
-		if(usb->ling_coding.dwDTERate == 1200 && (usb->control_line_state & 0x01) == 0)
-		{   
-			io_DisableINT();
-			io_outpb(usb_on_off_data, io_inpb(usb_on_off_data) | (1 << usb_on_off_pin));
-			io_outpb(0xf21A, 0x5a); // write soft reset key
-			io_outpb(0x64, 0xfe); // reboot
-		}
-#endif
 	}
 	else
 		return ISR_NONE;
@@ -1562,11 +1569,9 @@ DMPAPI(int) usb_Send(void *vusb, BYTE *buf, int bsize)
 	USB_Device *usb = (USB_Device *)vusb;
 	
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return 0; }
-	// if (usb->state != USB_DEV_CONFIGURED)
-	// {
-		// err_print((char*)"%s: USB device is not ready.\n", __FUNCTION__);
-		// return 0;
-	// }
+	
+	if (usb->state != USB_DEV_CDC_CONNECT)
+		return 0;
 	
 	for (i = 0; i < bsize; i++)
 	{
@@ -1587,7 +1592,7 @@ DMPAPI(int) usb_Send(void *vusb, BYTE *buf, int bsize)
 		{
 			PushQueue(usb->xmit, buf[i]);
 			
-			if ((i == (bsize - 1) || usb->xmit->count >= usb->xmit->size) && usb->state == USB_DEV_CDC_CONNECT)
+			if (i == (bsize - 1) || usb->xmit->count >= usb->xmit->size)
 			{
 				EP2_InHandler(usb);
 			}

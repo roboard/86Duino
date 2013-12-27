@@ -120,7 +120,7 @@ public class BasicUploader extends Uploader  {
     
     String packageName = prefs.get("target_package");
     if(packageName.compareTo("86duino") == 0){
-      prefs.put("type", "1");
+      prefs.put("type", "20");
       prefs.put("build.project_name", "86duino");
     }
     else
@@ -357,11 +357,11 @@ public class BasicUploader extends Uploader  {
         prefs.put("serial.port.file", uploadPort);
     }
     
-    prefs.put("build.path", prefs.get("runtime.ide.path")+"/hardware/86duino/x86/bootloaders");
+    prefs.put("build.path", prefs.get("runtime.ide.path")+"/hardware/86duino/x86/bootloaders/hehuan");
     
     String packageName = prefs.get("target_package");
     if(packageName.compareTo("86duino") == 0){
-      prefs.put("type", "2");
+      prefs.put("type", "18");
       prefs.put("build.project_name", "v86boot");
     }
     

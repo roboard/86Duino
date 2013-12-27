@@ -87,21 +87,25 @@ DMPAPI(COMPort *) CreateCOMPort(int com)
 	port->GetLineCoding      = NULL;
 	port->SetSerialState     = NULL;
 	port->GetControlLineState= NULL;
-	port->SetBitTime         = NULL;
-	port->SetEWLimit         = NULL;
+	port->Reset              = NULL;
 	port->AddIDFilter        = NULL;
+	port->GetIDFilter        = NULL;
 	port->DelIDFilter        = NULL;
-	port->ClearIDTable       = NULL;
-	port->SetCANErrorHandler = NULL;
-	port->SetCANBusOfHandler = NULL;
-	port->GetSTAT            = NULL;
-	port->GetERROR           = NULL;
+	port->ClearIDList        = NULL;
 	port->EnableBypass       = NULL;
 	port->DisableBypass      = NULL;
-	port->EnableStoreERROR   = NULL;
-	port->DisableStoreERROR  = NULL;
-	port->SetTxControl       = NULL;
-	port->GetRxControl       = NULL;
+	port->SetEWLimit         = NULL;
+	port->GetEWLimit         = NULL;
+	port->GetTxErrorCount    = NULL;
+	port->GetRxErrorCount    = NULL;
+	port->GetNowState        = NULL;
+	port->EnableStoreError   = NULL;
+	port->DisableStoreError  = NULL;
+	port->SetCANBusOffHandler= NULL;
+	port->PopError           = NULL;
+	port->GetLastError       = NULL;
+	port->ReadCAN            = NULL;
+	port->WriteCAN           = NULL;
 	port->EnableHalfDuplex   = NULL;
 	port->EnableFullDuplex   = NULL;
 	
@@ -120,7 +124,7 @@ DMPAPI(COMPort *) com_Init(int com)
 		case COM6: case COM7: case COM8: case COM9: case COM10:
 		{
 			if ((port->func = (void *)CreateUART(com)) == NULL) goto FAIL;
-			if (uart_Init(port->func, MAX_BAUD_6000000) == false)
+			if (uart_Init(port->func) == false)
 			{
 				uart_Close(port->func);
 				goto FAIL;
@@ -205,8 +209,8 @@ DMPAPI(COMPort *) com_Init(int com)
 		
 		case CAN_BUS:
 		{
-			if ((port->func = (void *)CreateCANBus(PORTIO_SPACE)) == NULL) goto FAIL;
-			if (can_Init(port->func, CAN_NONE) == false)
+			if ((port->func = (void *)CreateCANBus(IO_PORT)) == NULL) goto FAIL;
+			if (can_Init(port->func) == false)
 			{
 				can_Close(port->func);
 				goto FAIL;
@@ -214,14 +218,10 @@ DMPAPI(COMPort *) com_Init(int com)
 			
 			port->Close              = can_Close;
 			port->SetTimeOut         = can_SetTimeOut;
-			port->Read               = can_Read;
-			port->Receive            = can_Receive;
 			port->QueryRxQueue       = can_QueryRxQueue;
 			port->RxQueueFull        = can_RxQueueFull;
 			port->RxQueueEmpty       = can_RxQueueEmpty;
 			port->FlushRxQueue       = can_FlushRxQueue;
-			port->Write              = can_Write;
-			port->Send               = can_Send;
 			port->QueryTxQueue       = can_QueryTxQueue;
 			port->TxQueueFull        = can_TxQueueFull;
 			port->TxQueueEmpty       = can_TxQueueEmpty;
@@ -229,21 +229,25 @@ DMPAPI(COMPort *) com_Init(int com)
 			port->TxReady            = can_TxReady;
 			port->FlushWFIFO         = can_FlushWFIFO;
 			port->SetBPS             = can_SetBPS;
-			port->SetBitTime         = can_SetBitTime;
-			port->SetEWLimit         = can_SetEWLimit;
+			port->Reset              = can_Reset;
 			port->AddIDFilter        = can_AddIDFilter;
+			port->GetIDFilter        = can_GetIDFilter;
 			port->DelIDFilter        = can_DelIDFilter;
-			port->ClearIDTable       = can_ClearIDTable;
-			port->SetCANErrorHandler = can_SetCANErrorHandler;
-			port->SetCANBusOfHandler = can_SetCANBusOfHandler;
-			port->GetSTAT            = can_GetSTAT;
-			port->GetERROR           = can_GetERROR;
+			port->ClearIDList        = can_ClearIDList;
 			port->EnableBypass       = can_EnableBypass;
 			port->DisableBypass      = can_DisableBypass;
-			port->EnableStoreERROR   = can_DisableBypass;
-			port->DisableStoreERROR  = can_DisableStoreERROR;
-			port->SetTxControl       = can_SetTxControl;
-			port->GetRxControl       = can_GetRxControl;
+			port->SetEWLimit         = can_SetEWLimit;
+			port->GetEWLimit         = can_GetEWLimit;
+			port->GetTxErrorCount    = can_GetTxErrorCount;
+			port->GetRxErrorCount    = can_GetRxErrorCount;
+			port->GetNowState        = can_GetNowState;
+			port->EnableStoreError   = can_EnableStoreError;
+			port->DisableStoreError  = can_DisableStoreError;
+			port->SetCANBusOffHandler= can_SetCANBusOffHandler;
+			port->PopError           = can_PopError;
+			port->GetLastError       = can_GetLastError;
+			port->ReadCAN            = can_Read;
+			port->WriteCAN           = can_Write;
 			
 			return port;
 		}
@@ -267,6 +271,7 @@ DMPAPI(void) com_Close(COMPort *port)
 		return;
 	}
 	port->Close(port->func);
+	ker_Mfree(port);
 }
 
 DMPAPI(bool) com_SetBPS(COMPort *port, unsigned long bps)
@@ -589,94 +594,55 @@ DMPAPI(unsigned short) com_GetControlLineState(COMPort *port)
 	return usb_GetControlLineState(port->func);
 }
 
-DMPAPI(bool) com_SetBitTime(COMPort *port, CAN_BitTime *bt)
+/* for CAN-BUS */
+DMPAPI(void) com_Reset(COMPort *port)
 {
-	if (port->SetBitTime == NULL)
+	if (port->Reset == NULL)
 	{
 		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return false;
+		return;
 	}
-	return port->SetBitTime(port->func, bt);
+	port->Reset(port->func);
 }
 
-DMPAPI(bool) com_SetEWLimit(COMPort *port, int ewl)
-{
-	if (port->SetEWLimit == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return false;
-	}
-	return port->SetEWLimit(port->func, ewl);
-}
-
-DMPAPI(bool) com_AddIDFilter(COMPort *port, bool ext_id, unsigned long filter, unsigned long mask)
+DMPAPI(bool) com_AddIDFilter(COMPort *port, int index, int ext_id, unsigned long filter, unsigned long mask)
 {
 	if (port->AddIDFilter == NULL)
 	{
 		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
 		return false;
 	}
-	return port->AddIDFilter(port->func, ext_id, filter, mask);
+	return port->AddIDFilter(port->func, index, ext_id, filter, mask);
 }
 
-DMPAPI(bool) com_DelIDFilter(COMPort *port, bool ext_id, unsigned long filter, unsigned long mask)
+DMPAPI(bool) com_GetIDFilter(COMPort *port, int index, int *ext_id, unsigned long *filter, unsigned long *mask)
+{
+	if (port->GetIDFilter == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return false;
+	}
+	return port->GetIDFilter(port->func, index, ext_id, filter, mask);
+}
+
+DMPAPI(bool) com_DelIDFilter(COMPort *port, int index)
 {
 	if (port->DelIDFilter == NULL)
 	{
 		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
 		return false;
 	}
-	return port->DelIDFilter(port->func, ext_id, filter, mask);
+	return port->DelIDFilter(port->func, index);
 }
 
-DMPAPI(void) com_ClearIDTable(COMPort *port)
+DMPAPI(void) com_ClearIDList(COMPort *port)
 {
-	if (port->ClearIDTable == NULL)
+	if (port->ClearIDList == NULL)
 	{
 		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
 		return;
 	}
-	port->ClearIDTable(port->func);
-}
-
-DMPAPI(void) com_SetCANErrorHandler(COMPort *port, void (*func)(CAN_Bus *))
-{
-	if (port->SetCANErrorHandler == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return;
-	}
-	port->SetCANErrorHandler(port->func, func);
-}
-
-DMPAPI(void) com_SetCANBusOfHandler(COMPort *port, void (*func)(CAN_Bus *))
-{
-	if (port->SetCANBusOfHandler == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return;
-	}
-	port->SetCANBusOfHandler(port->func, func);
-}
-
-DMPAPI(unsigned char) com_GetSTAT(COMPort *port)
-{
-	if (port->GetSTAT == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return 0x00;
-	}
-	return port->GetSTAT(port->func);
-}
-
-DMPAPI(unsigned char) com_GetERROR(COMPort *port)
-{
-	if (port->GetERROR == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return 0x00;
-	}
-	return port->GetERROR(port->func);
+	port->ClearIDList(port->func);
 }
 
 DMPAPI(void) com_EnableBypass(COMPort *port)
@@ -699,42 +665,122 @@ DMPAPI(void) com_DisableBypass(COMPort *port)
 	port->DisableBypass(port->func);
 }
 
-DMPAPI(void) com_EnableStoreERROR(COMPort *port)
+DMPAPI(bool) com_SetEWLimit(COMPort *port, int ewl)
 {
-	if (port->EnableStoreERROR == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return;
-	}
-	port->EnableStoreERROR(port->func);
-}
-
-DMPAPI(void) com_DisableStoreERROR(COMPort *port)
-{
-	if (port->DisableStoreERROR == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return;
-	}
-	port->DisableStoreERROR(port->func);
-}
-
-DMPAPI(void) com_SetTxControl(COMPort *port, int format, unsigned long id)
-{
-	if (port->SetTxControl == NULL)
-	{
-		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
-		return;
-	}
-	port->SetTxControl(port->func, format, id);
-}
-
-DMPAPI(bool) com_GetRxControl(COMPort *port, int *format, unsigned long *id, int *len)
-{
-	if (port->GetRxControl == NULL)
+	if (port->SetEWLimit == NULL)
 	{
 		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
 		return false;
 	}
-	return port->GetRxControl(port->func, format, id, len);
+	return port->SetEWLimit(port->func, ewl);
+}
+
+DMPAPI(int) com_GetEWLimit(COMPort *port)
+{
+	if (port->GetEWLimit == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return -1;
+	}
+	return port->GetEWLimit(port->func);
+}
+
+DMPAPI(int)  com_GetTxErrorCount(COMPort *port)
+{
+	if (port->GetTxErrorCount == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return -1;
+	}
+	return port->GetTxErrorCount(port->func);
+}
+
+DMPAPI(int) com_GetRxErrorCount(COMPort *port)
+{
+	if (port->GetRxErrorCount == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return -1;
+	}
+	return port->GetRxErrorCount(port->func);
+}
+
+DMPAPI(unsigned char) com_GetNowState(COMPort *port)
+{
+	if (port->GetNowState == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return 0xFF;
+	}
+	return port->GetNowState(port->func);
+}
+
+DMPAPI(void) com_EnableStoreError(COMPort *port)
+{
+	if (port->EnableStoreError == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return;
+	}
+	port->EnableStoreError(port->func);
+}
+
+DMPAPI(void) com_DisableStoreError(COMPort *port)
+{
+	if (port->DisableStoreError == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return;
+	}
+	port->DisableStoreError(port->func);
+}
+
+DMPAPI(void) com_SetCANBusOffHandler(COMPort *port, void (*func)(CAN_Bus *))
+{
+	if (port->SetCANBusOffHandler == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return;
+	}
+	port->SetCANBusOffHandler(port->func, func);
+}
+
+DMPAPI(unsigned char) com_PopError(COMPort *port)
+{
+	if (port->PopError == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return 0xFF;
+	}
+	return port->PopError(port->func);
+}
+
+DMPAPI(unsigned char) com_GetLastError(COMPort *port)
+{
+	if (port->GetLastError == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return 0xFF;
+	}
+	return port->GetLastError(port->func);
+}
+
+DMPAPI(bool) com_ReadCAN(COMPort *port, CANFrame *pack)
+{
+	if (port->ReadCAN == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return false;
+	}
+	return port->ReadCAN(port->func, pack);
+}
+
+DMPAPI(bool) com_WriteCAN(COMPort *port, CANFrame *pack)
+{
+	if (port->WriteCAN == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return false;
+	}
+	return port->WriteCAN(port->func, pack);
 }

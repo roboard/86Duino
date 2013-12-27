@@ -80,7 +80,7 @@
 #include "io.h"
 #include "err.h"
 
-DMP_INLINE(void) vx86dx_EnableTurboMode(int com)
+DMP_INLINE(void) vx86_EnableTurboMode(int com)
 {
 	switch (com)
 	{
@@ -99,7 +99,7 @@ DMP_INLINE(void) vx86dx_EnableTurboMode(int com)
 	}
 }
 
-DMP_INLINE(void) vx86dx_DisableTurboMode(int com)
+DMP_INLINE(void) vx86_DisableTurboMode(int com)
 {
 	switch (com)
 	{
@@ -147,7 +147,7 @@ DMP_INLINE(bool) vx86dx_IsTurboMode(int com)
 *             Vortex86 UART Clock Mode Config                 *
 **************************************************************/
 // CS
-DMP_INLINE(int) vx86_uart_GetCS(int com)
+DMPAPI(int) vx86_uart_GetCS(int com)
 {
 	int cpuid = vx86_CpuID();
 	int cs;
@@ -199,12 +199,48 @@ DMP_INLINE(int) vx86_uart_GetCS(int com)
 		}
 		}
 		break;
+	case CPU_VORTEX86DX_D:
+		{
+		switch (com)
+		{
+		case 0:
+			cs = ((sb_Read8(0x53) & (1 << 6)) == 0) ? (0) : (1);
+			break;
+		case 1:
+			cs = ((sb_Read(0xA0) & (1L << 22)) == 0L) ? (0) : (1);
+			break;
+		case 2:
+			cs = ((sb_Read(0xA4) & (1L << 22)) == 0L) ? (0) : (1);
+			break;
+		case 3:
+			cs = ((sb_Read(0xA8) & (1L << 22)) == 0L) ? (0) : (1);
+			break;
+		}
+		}
+		break;
+	case CPU_VORTEX86MX:
+	case CPU_VORTEX86MX_PLUS:
+		{
+		switch (com)
+		{
+		case 0:
+			cs = ((sb_Read8(0x53) & (1 << 6)) == 0) ? (0) : (1);
+			break;
+		case 2:
+			cs = ((sb_Read(0xA4) & (1L << 22)) == 0L) ? (0) : (1);
+			break;
+		case 3:
+			cs = ((sb_Read(0xA8) & (1L << 22)) == 0L) ? (0) : (1);
+			break;
+		}
+		}
+		break;
 	}
     
 	return cs;
 }
 
-DMP_INLINE(void) vx86_uart_SetCS(int com, int cs)
+DMPAPI(void) vx86_uart_SetCS(int com, int cs)
 {
 	int cpuid = vx86_CpuID();
 	
@@ -256,11 +292,47 @@ DMP_INLINE(void) vx86_uart_SetCS(int com, int cs)
 		}
 		}
 		break;
+	case CPU_VORTEX86DX_D:
+		{
+		switch (com)
+		{
+		case 0:
+			sb_Write8(0x53, (sb_Read8(0x53) & 0xBF) | (cs << 6));
+			break;
+		case 1:
+			sb_Write(0xA0, (sb_Read(0xA0) & 0xFFBFFFFFL) | ((unsigned long)cs << 22));
+			break;
+		case 2:
+			sb_Write(0xA4, (sb_Read(0xA4) & 0xFFBFFFFFL) | ((unsigned long)cs << 22));
+			break;
+		case 3:
+			sb_Write(0xA8, (sb_Read(0xA8) & 0xFFBFFFFFL) | ((unsigned long)cs << 22));
+			break;
+		}
+		}
+		break;
+	case CPU_VORTEX86MX:
+	case CPU_VORTEX86MX_PLUS:
+		{
+		switch (com)
+		{
+		case 0:
+			sb_Write8(0x53, (sb_Read8(0x53) & 0xBF) | (cs << 6));
+			break;
+		case 2:
+			sb_Write(0xA4, (sb_Read(0xA4) & 0xFFBFFFFFL) | ((unsigned long)cs << 22));
+			break;
+		case 3:
+			sb_Write(0xA8, (sb_Read(0xA8) & 0xFFBFFFFFL) | ((unsigned long)cs << 22));
+			break;
+		}
+		}
+		break;
 	}
 }
 
 // HCS
-DMP_INLINE(int) vx86_uart_GetHCS(int com)
+DMPAPI(int) vx86_uart_GetHCS(int com)
 {
 	int cpuid = vx86_CpuID();
 	int hcs;
@@ -315,7 +387,7 @@ DMP_INLINE(int) vx86_uart_GetHCS(int com)
 	return hcs;
 }
 
-DMP_INLINE(void) vx86_uart_SetHCS(int com, int hcs)
+DMPAPI(void) vx86_uart_SetHCS(int com, int hcs)
 {
 	int cpuid = vx86_CpuID();
 	
@@ -369,15 +441,40 @@ DMP_INLINE(void) vx86_uart_SetHCS(int com, int hcs)
 }
 
 // SBCLK
-DMP_INLINE(int) vx86_uart_GetSBCLK(void)
+DMPAPI(int) vx86_uart_GetSBCLK(void)
 {
-    if (sb_Read(0xc0) & 0x80000000L) return 1;
-    else return 0;
+	int sbclk;
+	int cpuid = vx86_CpuID();
+	
+	switch (cpuid)
+	{
+	case CPU_VORTEX86EX:
+	case CPU_VORTEX86DX2:
+	case CPU_VORTEX86DX3:
+		sbclk = (sb_Read(0xc0) & 0x80000000L) ? (1) : (0);
+		break;
+	default:
+		sbclk = 0;
+		break;
+	}
+	
+    return sbclk;
 }
 
 DMP_INLINE(void) vx86_uart_SetSBCLK(int sbclk)
 {
-	sb_Write(0xc0, sb_Read(0xc0) & 0x7fffffffL | ((unsigned long)sbclk << 31));
+	int cpuid = vx86_CpuID();
+	
+	switch (cpuid)
+	{
+	case CPU_VORTEX86EX:
+	case CPU_VORTEX86DX2:
+	case CPU_VORTEX86DX3:
+		sb_Write(0xc0, sb_Read(0xc0) & 0x7fffffffL | ((unsigned long)sbclk << 31));
+		break;
+	default:
+		break;
+	}
 }
 
 DMP_INLINE(void) vx86_uart_SetCLKMode(int com, int sbclk, int cs, int hcs)
@@ -413,6 +510,8 @@ DMP_INLINE(int) vx86_uart_UARTsets(void)
 	case CPU_VORTEX86DX_A:
 	case CPU_VORTEX86DX_C:
 	case CPU_VORTEX86DX_D:
+	case CPU_VORTEX86MX:
+	case CPU_VORTEX86MX_PLUS:
 		sets = VORTEX86DX_UART_SETS;
 		break;
 	default:
@@ -423,17 +522,20 @@ DMP_INLINE(int) vx86_uart_UARTsets(void)
     return sets;
 }
 
-static int vx86_uart_cnt = 0;
 static int vx86_uart_use[10];
 static unsigned long old_vx86_uart_config[10];
 static unsigned char old_dx2_ucfg[1];
 static bool old_dx_turbo[4];
 
-DMPAPI(bool) vx86_uart_Init(int com, int speed)
+DMPAPI(bool) vx86_uart_Init(int com)
 {
 	int cpuid = vx86_CpuID();
 	
 	if (com < 0 || com >= vx86_uart_UARTsets()) {
+		err_print((char*)"%s: There is no COM%d.\n", __FUNCTION__,com + 1);
+		return false;
+	}
+	if ((cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) && com == 1) {
 		err_print((char*)"%s: There is no COM%d.\n", __FUNCTION__,com + 1);
 		return false;
 	}
@@ -444,19 +546,6 @@ DMPAPI(bool) vx86_uart_Init(int com, int speed)
     }
 
 	if (cpuid == CPU_VORTEX86EX || cpuid == CPU_VORTEX86DX2 || cpuid == CPU_VORTEX86DX3) {
-		int sbclk, cs, hcs;
-
-		switch (speed) {
-			case 1: sbclk = 1; cs = 1; hcs = 1; break;
-			case 2: sbclk = 1; cs = 1; hcs = 0; break;
-			case 3: sbclk = 0; cs = 1; hcs = 0; break;
-			case 4: sbclk = 1; cs = 0; hcs = 0; break;
-			case 5: sbclk = 0; cs = 0; hcs = 0; break;
-			default: break;
-		};
-
-		if (vx86_uart_cnt > 0 && sbclk != vx86_uart_GetSBCLK())
-			return false;
 
 		if (cpuid == CPU_VORTEX86EX) {
 			unsigned short uart_baseAddr;
@@ -498,20 +587,9 @@ DMPAPI(bool) vx86_uart_Init(int com, int speed)
 				break;
 			}
 		}
-		vx86_uart_SetCLKMode(com, sbclk, cs, hcs);
 	}
-	else if (cpuid == CPU_VORTEX86DX_D) {
-		switch (speed)
-		{
-		case 1:
-			old_dx_turbo[com] = vx86dx_IsTurboMode(com);
-			vx86dx_EnableTurboMode(com);
-			break;
-		default:
-			old_dx_turbo[com] = vx86dx_IsTurboMode(com);
-			vx86dx_DisableTurboMode(com);
-			break;
-		}
+	else if (cpuid == CPU_VORTEX86DX_D || cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) {
+		old_dx_turbo[com] = vx86dx_IsTurboMode(com);
 	}
 	else if (cpuid == CPU_VORTEX86DX_A || cpuid == CPU_VORTEX86DX_C)
 		;
@@ -519,7 +597,6 @@ DMPAPI(bool) vx86_uart_Init(int com, int speed)
 		return false;
 	
     vx86_uart_use[com] = 1;
-    vx86_uart_cnt++;
 	
     return true;
 }
@@ -529,6 +606,8 @@ DMPAPI(void) vx86_uart_Close(int com)
 	int cpuid = vx86_CpuID();
 	
 	if (com < 0 || com >= vx86_uart_UARTsets())
+		return;
+	if ((cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) && com == 1)
 		return;
 	if (vx86_uart_use[com] == 0)
 		return;
@@ -574,11 +653,11 @@ DMPAPI(void) vx86_uart_Close(int com)
 			break;
 		}
 	}
-	else if (cpuid == CPU_VORTEX86DX_D) {
+	else if (cpuid == CPU_VORTEX86DX_D || cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) {
 		if (old_dx_turbo[com] == true)
-			vx86dx_EnableTurboMode(com);
+			vx86_EnableTurboMode(com);
 		else
-			vx86dx_DisableTurboMode(com);
+			vx86_DisableTurboMode(com);
 	}
 	else if (cpuid == CPU_VORTEX86DX_A || cpuid == CPU_VORTEX86DX_C)
 		;
@@ -586,7 +665,6 @@ DMPAPI(void) vx86_uart_Close(int com)
 		return;
 	
     vx86_uart_use[com] = 0;
-    if (vx86_uart_cnt > 0) vx86_uart_cnt--;
 }
 
 /**************************************************************
@@ -648,8 +726,12 @@ DMPAPI(unsigned short) vx86_uart_GetBaseAddr(int com)
 			break;
 		}
 	}
-	else if (cpuid == CPU_VORTEX86DX_A || cpuid == CPU_VORTEX86DX_C || cpuid == CPU_VORTEX86DX_D) {
+	else if (cpuid == CPU_VORTEX86DX_A || cpuid == CPU_VORTEX86DX_C || cpuid == CPU_VORTEX86DX_D ||
+	         cpuid == CPU_VORTEX86MX   || cpuid == CPU_VORTEX86MX_PLUS) {
 		if (com < 0 || com > 3)
+			return 0;
+		
+		if ((cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) && com == 1)
 			return 0;
 			
 		switch (com)
@@ -758,8 +840,12 @@ DMPAPI(int) vx86_uart_GetIRQ(int com)
 			break;
 		}
 	}
-	else if (cpuid == CPU_VORTEX86DX_A || cpuid == CPU_VORTEX86DX_C || cpuid == CPU_VORTEX86DX_D) {
+	else if (cpuid == CPU_VORTEX86DX_A || cpuid == CPU_VORTEX86DX_C || cpuid == CPU_VORTEX86DX_D ||
+	         cpuid == CPU_VORTEX86MX   || cpuid == CPU_VORTEX86MX_PLUS) {
 		if (com < 0 || com > 3)
+			return 0;
+		
+		if ((cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) && com == 1)
 			return 0;
 			
 		switch (com)
@@ -809,9 +895,12 @@ DMPAPI(unsigned long) vx86_uart_MaxBPS(int com)
 				return 115200L;
 		else return 0L;
 	}
-	else if (cpuid == CPU_VORTEX86DX_D) {
+	else if (cpuid == CPU_VORTEX86DX_D || cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) {
 		if (com < 0 || com > 3)
 			return 0L;
+		
+		if ((cpuid == CPU_VORTEX86MX || cpuid == CPU_VORTEX86MX_PLUS) && com == 1)
+			return 0;
 		
 		if (vx86dx_IsTurboMode(com) == true)
 			return 1500000L;

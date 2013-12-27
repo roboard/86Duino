@@ -80,21 +80,25 @@ typedef struct
 	DMPAPI(unsigned short) (*GetControlLineState)(void *);
 	
 	/* only for CAN bus */
-	DMPAPI(bool) (*SetBitTime)(void *, CAN_BitTime *);
-	DMPAPI(bool) (*SetEWLimit)(void *, int);
-	DMPAPI(bool) (*AddIDFilter)(void *, bool, unsigned long, unsigned long);
-	DMPAPI(bool) (*DelIDFilter)(void *, bool, unsigned long, unsigned long);
-	DMPAPI(void) (*ClearIDTable)(void *);
-	DMPAPI(void) (*SetCANErrorHandler)(void *, void (*)(CAN_Bus *));
-	DMPAPI(void) (*SetCANBusOfHandler)(void *, void (*)(CAN_Bus *));
-	DMPAPI(unsigned char) (*GetSTAT)(void *);
-	DMPAPI(unsigned char) (*GetERROR)(void *);
+	DMPAPI(void) (*Reset)(void *);
+	DMPAPI(bool) (*AddIDFilter)(void *, int, int, unsigned long, unsigned long);
+	DMPAPI(bool) (*GetIDFilter)(void *, int, int *, unsigned long *, unsigned long *);
+	DMPAPI(bool) (*DelIDFilter)(void *, int);
+	DMPAPI(void) (*ClearIDList)(void *);
 	DMPAPI(void) (*EnableBypass)(void *);
 	DMPAPI(void) (*DisableBypass)(void *);
-	DMPAPI(void) (*EnableStoreERROR)(void *);
-	DMPAPI(void) (*DisableStoreERROR)(void *);
-	DMPAPI(void) (*SetTxControl)(void *, int, unsigned long);
-	DMPAPI(bool) (*GetRxControl)(void *, int *, unsigned long *, int *);
+	DMPAPI(bool) (*SetEWLimit)(void *, int);
+	DMPAPI(int)  (*GetEWLimit)(void *);
+	DMPAPI(int)  (*GetTxErrorCount)(void *);
+	DMPAPI(int)  (*GetRxErrorCount)(void *);
+	DMPAPI(void) (*EnableStoreError)(void *);
+	DMPAPI(void) (*DisableStoreError)(void *);
+	DMPAPI(void) (*SetCANBusOffHandler)(void *, void (*)(CAN_Bus *));
+	DMPAPI(unsigned char)  (*GetNowState)(void *);
+	DMPAPI(unsigned char) (*PopError)(void *);
+	DMPAPI(unsigned char) (*GetLastError)(void *);
+	DMPAPI(bool) (*ReadCAN)(void *, CANFrame*);
+	DMPAPI(bool) (*WriteCAN)(void *, CANFrame*);
 	
 } COMPort;
 
@@ -119,16 +123,45 @@ DMPAPI(COMPort *) com_Init(int com);
 DMPAPI(void) com_Close(COMPort *port);
 
 DMPAPI(bool) com_SetBPS(COMPort *port, unsigned long bps);
-	#define COM_CAN_BPS_1000K   (1000000L)
-	#define COM_CAN_BPS_833K    (833333L)
-	#define COM_CAN_BPS_500K    (500000L)
-	#define COM_CAN_BPS_250K    (250000L)
-	#define COM_CAN_BPS_125K    (125000L)
-	#define COM_CAN_BPS_100K    (100000L)
-	#define COM_CAN_BPS_83K3    (83333L)
-	#define COM_CAN_BPS_50K     (50000L)
-	#define COM_CAN_BPS_20K     (20000L)
-	#define COM_CAN_BPS_10K     (10000L)
+// for UART
+#define COM_UARTBAUD_6000000BPS         (0xC001FFFFUL)
+#define COM_UARTBAUD_3000000BPS         (0xC002FFFFUL)
+#define COM_UARTBAUD_2000000BPS         (0xC003FFFFUL)
+#define COM_UARTBAUD_1500000BPS         (0xC004FFFFUL)
+#define COM_UARTBAUD_1000000BPS         (0xC006FFFFUL)
+#define COM_UARTBAUD_750000BPS          (0xC0088002UL)
+#define COM_UARTBAUD_500000BPS          (0xC00C8003UL)
+#define COM_UARTBAUD_461538BPS          (0xC00DFFFFUL)
+#define COM_UARTBAUD_333333BPS          (0xC012FFFFUL)
+#define COM_UARTBAUD_300000BPS          (0xC0148005UL)
+#define COM_UARTBAUD_250000BPS          (0x800C8006UL)
+#define COM_UARTBAUD_200000BPS          (0x800FFFFFUL)
+#define COM_UARTBAUD_150000BPS          (0x8014800AUL)
+#define COM_UARTBAUD_125000BPS          (0x8018800CUL)
+#define COM_UARTBAUD_115200BPS          (0x00010001UL)
+#define COM_UARTBAUD_57600BPS           (0x00020002UL)
+#define COM_UARTBAUD_38400BPS           (0x00030003UL)
+#define COM_UARTBAUD_28800BPS           (0x00040004UL)
+#define COM_UARTBAUD_19200BPS           (0x00060006UL)
+#define COM_UARTBAUD_14400BPS           (0x00080008UL)
+#define COM_UARTBAUD_9600BPS            (0x000C000CUL)
+#define COM_UARTBAUD_4800BPS            (0x00180018UL)
+#define COM_UARTBAUD_2400BPS            (0x00300030UL)
+#define COM_UARTBAUD_1200BPS            (0x00600060UL)
+#define COM_UARTBAUD_600BPS             (0x00C000C0UL)
+#define COM_UARTBAUD_300BPS             (0x01800180UL)
+#define COM_UARTBAUD_50BPS              (0x09000900UL)
+// for CAN bus
+#define COM_CAN_BPS_1000K               (CAN_BPS_1000K)
+#define COM_CAN_BPS_833K                (CAN_BPS_833K)
+#define COM_CAN_BPS_500K                (CAN_BPS_500K)
+#define COM_CAN_BPS_250K                (CAN_BPS_250K)
+#define COM_CAN_BPS_125K                (CAN_BPS_125K)
+#define COM_CAN_BPS_100K                (CAN_BPS_100K)
+#define COM_CAN_BPS_83K3                (CAN_BPS_83K3)
+#define COM_CAN_BPS_50K                 (CAN_BPS_50K)
+#define COM_CAN_BPS_20K                 (CAN_BPS_20K)
+#define COM_CAN_BPS_10K                 (CAN_BPS_10K)
 DMPAPI(void) com_SetTimeOut(COMPort *port, unsigned long timeout);
 #define NO_TIMEOUT         (-1)
 
@@ -217,21 +250,25 @@ DMPAPI(void) com_SetSerialState(COMPort *port, unsigned short state);
 DMPAPI(unsigned short) com_GetControlLineState(COMPort *port);
 
 /* only for CAN bus */
-DMPAPI(bool) com_SetBitTime(COMPort *port, CAN_BitTime *bt);
-DMPAPI(bool) com_SetEWLimit(COMPort *port, int ewl);
-DMPAPI(bool) com_AddIDFilter(COMPort *port, bool ext_id, unsigned long filter, unsigned long mask);
-DMPAPI(bool) com_DelIDFilter(COMPort *port, bool ext_id, unsigned long filter, unsigned long mask);
-DMPAPI(void) com_ClearIDTable(COMPort *port);
-DMPAPI(void) com_SetCANErrorHandler(COMPort *port, void (*func)(CAN_Bus *));
-DMPAPI(void) com_SetCANBusOfHandler(COMPort *port, void (*func)(CAN_Bus *));
-DMPAPI(unsigned char) com_GetSTAT(COMPort *port);
-DMPAPI(unsigned char) com_GetERROR(COMPort *port);
+DMPAPI(void) com_Reset(COMPort *port);
+DMPAPI(bool) com_AddIDFilter(COMPort *port, int index, int ext_id, unsigned long filter, unsigned long mask);
+DMPAPI(bool) com_GetIDFilter(COMPort *port, int index, int *ext_id, unsigned long *filter, unsigned long *mask);
+DMPAPI(bool) com_DelIDFilter(COMPort *port, int index);
+DMPAPI(void) com_ClearIDList(COMPort *port);
 DMPAPI(void) com_EnableBypass(COMPort *port);
 DMPAPI(void) com_DisableBypass(COMPort *port);
-DMPAPI(void) com_EnableStoreERROR(COMPort *port);
-DMPAPI(void) com_DisableStoreERROR(COMPort *port);
-DMPAPI(void) com_SetTxControl(COMPort *port, int format, unsigned long id);
-DMPAPI(bool) com_GetRxControl(COMPort *port, int *format, unsigned long *id, int *len);
+DMPAPI(bool) com_SetEWLimit(COMPort *port, int ewl);
+DMPAPI(int)  com_GetEWLimit(COMPort *port);
+DMPAPI(int)  com_GetTxErrorCount(COMPort *port);
+DMPAPI(int)  com_GetRxErrorCount(COMPort *port);
+DMPAPI(void) com_EnableStoreError(COMPort *port);
+DMPAPI(void) com_DisableStoreError(COMPort *port);
+DMPAPI(void) com_SetCANBusOffHandler(COMPort *port, void (*func)(CAN_Bus *));
+DMPAPI(unsigned char)  com_GetNowState(COMPort *port);
+DMPAPI(unsigned char) com_PopError(COMPort *port);
+DMPAPI(unsigned char) com_GetLastError(COMPort *port);
+DMPAPI(bool) com_ReadCAN(COMPort *port, CANFrame*);
+DMPAPI(bool) com_WriteCAN(COMPort *port, CANFrame*);
 
 #ifdef __cplusplus
 }

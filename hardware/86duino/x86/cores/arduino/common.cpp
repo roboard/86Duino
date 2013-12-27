@@ -28,6 +28,7 @@
 
 #define  USE_COMMON
 #include "common.h"
+#include "v86clock.h"
 
 #if defined(DMP_WIN32_MSVC) || defined(DMP_WINCE_MSVC)
 	#include <windows.h>
@@ -158,6 +159,17 @@ DMPAPI(unsigned long) timer_nowtime(void) { //in ms
     return ((*timeraddr) - inittime) * 55UL;
 #elif defined(DMP_DOS_DJGPP)
     static bool usetimer = false;
+
+    static unsigned long long int inittime;
+
+    if (usetimer == false)
+    {
+        inittime = getclocks64();
+        usetimer = true;
+    }
+    return (unsigned long)((getclocks64() - inittime)/VORTEX86EX_CLOCKS_PER_MS);
+
+/*
     static uclock_t inittime;
     
     if (usetimer == false)
@@ -169,6 +181,7 @@ DMPAPI(unsigned long) timer_nowtime(void) { //in ms
     
     //return (biostime(0, 0) - inittime) * 55UL;
     return (unsigned long)((uclock() - inittime)*1000UL/UCLOCKS_PER_SEC);
+*/
 #elif defined(DMP_DOS_WATCOM)
 	{
 		static bool usetimer = false;
@@ -198,14 +211,13 @@ DMPAPI(void) delay_ms(unsigned long delaytime) { //delay in ms
 
     if (delaytime > 0UL) delay((unsigned)delaytime);
 #else
-	unsigned long begin;
-	begin = timer_nowtime();
-	delaytime = delaytime + begin;
-	if (delaytime < begin)
-	{
-		while ((long)timer_nowtime() < 0L);
-	}
-	while (timer_nowtime() < delaytime);
+	/*
+	delaytime = delaytime + timer_nowtime();
+	while ((long)(delaytime - timer_nowtime()) > 0L);
+	*/
+	for (; delaytime > 1000L; delaytime = delaytime - 1000L)
+		delay_us(1000000L);
+	if (delaytime != 0L) delay_us(delaytime * 1000L);
 #endif
 }
 
@@ -242,7 +254,7 @@ DMPAPI(unsigned long long int) getclocks64(void)
 	errmsg_exit("ERROR: %s() isn't supported due to unrecognized OS!\n", __FUNCTION__);
 #endif
 
-    return (((unsigned long long int)nowclocks_msb << 32) + nowclocks);
+    return (((unsigned long long int)nowclocks_msb << 32) + (unsigned long long int)nowclocks);
 }
 
 static unsigned long getclocks(void) {
@@ -274,8 +286,7 @@ static unsigned long getclocks(void) {
 DMPAPI(void) delay_us(unsigned long delaytime) { //delay in us
     unsigned long nowclocks;
 
-    #define CLOCKS_PER_MICROSEC (299UL) //only for RoBoard (RB-100)
     nowclocks = getclocks();
-    while ((getclocks() - nowclocks)/CLOCKS_PER_MICROSEC < delaytime);
+    while ((getclocks() - nowclocks)/(unsigned long)CLOCKS_PER_MICROSEC < delaytime);
 }
 /*------------------ end of Timer Functions -------------------*/
