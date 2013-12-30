@@ -30,7 +30,7 @@ gratefully acknowledged.
 
 The 86Duino boards are designed by Hao Wei Chiu. And the software and firmware 
 are developed by Android Lin and Oswald Kuo. All of them are members of the 
-RoBoard team of DMP Electronic Inc.
+RoBoard team in DMP Electronic Inc.
 
 There are also people and organizations in Taiwan who motivate, assist, and/or 
 contribut the development of 86Duino. Detailed list can be seen in credits.txt.

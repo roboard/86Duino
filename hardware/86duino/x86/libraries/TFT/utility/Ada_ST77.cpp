@@ -14,8 +14,10 @@
 
   Written by Limor Fried/Ladyada for Adafruit Industries.
   MIT license, all text above must be included in any redistribution
- ****************************************************/
- #include <Serial.h>
+  
+  Modified 25 December 2013 by Oswald Kuo
+****************************************************/
+#include <Serial.h>
 
 #include "Ada_ST77.h"
 #include <limits.h>

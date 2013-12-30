@@ -4,7 +4,7 @@
 * Update BasicUploader.java to use the new Hehuan bootloader.
 * Update DuinoCompiler.java to compile with third party DOS library.
 * Modify build.varaint in board.txt to match them in variants directory.
-* Add the ethernet .h files into DJGPP/include and .a file into DJGPP/lib for all platform
+* Add the ethernet .h files into DJGPP/include and .a file into DJGPP/lib for all platforms.
 * Update uploader to support the older bootloader for compatibility.
 
 [core]

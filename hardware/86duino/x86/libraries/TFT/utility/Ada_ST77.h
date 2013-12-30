@@ -1,4 +1,4 @@
-	/***************************************************
+/***************************************************
   This is a library for the Adafruit 1.8" SPI display.
   This library works with the Adafruit 1.8" TFT Breakout w/SD card
   ----> http://www.adafruit.com/products/358
@@ -14,6 +14,8 @@
 
   Written by Limor Fried/Ladyada for Adafruit Industries.
   MIT license, all text above must be included in any redistribution
+  
+  Modified 25 December 2013 by Oswald Kuo
  ****************************************************/
 
 #ifndef _ADAFRUIT_ST7735H_

@@ -5,7 +5,6 @@
 #include "Arduino.h"
 #include "utility/Ada_GFX.h"
 #include "utility/Ada_ST77.h"
-#include <SPI.h>
 
 /// The Arduino LCD is a ST7735-based device.
 /// By default, it is mounted horizontally.

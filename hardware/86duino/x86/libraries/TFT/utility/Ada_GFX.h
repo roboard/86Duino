@@ -12,6 +12,8 @@
  Processing-like API written by Enrico Gueli for Officine Arduino.
  BSD license, check license.txt for more information.
  All text above must be included in any redistribution.
+ 
+ Modified 25 December 2013 by Oswald Kuo
  ******************************************************************/
 
 #ifndef _ADAFRUIT_GFX_H
