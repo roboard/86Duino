@@ -49,7 +49,7 @@
 // ------------------------------------------------- //
 //
 // TX & RX Queue size macro
-#define TX_QUEUE_SIZE    		(256)
+#define TX_QUEUE_SIZE    		(4096)
 #define RX_QUEUE_SIZE    		(4096)
 
 #define NEAR_FULL_SIZE          (1024)

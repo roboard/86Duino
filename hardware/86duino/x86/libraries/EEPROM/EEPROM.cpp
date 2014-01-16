@@ -1,6 +1,6 @@
 /*
-  EEPROM.cpp - EEPROM library
-  Copyright (c) 2006 David A. Mellis.  All right reserved.
+  EEPROM.cpp - DM&P Vortex86 EEPROM library
+  Copyright (c) 2013 Vic Cheng <vic@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -15,8 +15,9 @@
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  
-  Modified 25 November 2013 by Vic Cheng
+
+  (If you need a commercial license, please contact soc@dmp.com.tw 
+   to get more information.)
 */
 
 /******************************************************************************
@@ -118,19 +119,26 @@ static unsigned char read_cmos(unsigned char address)
   pcidev.func = 0;
 
   reg = pci_dev_read_dw(&pcidev, 0xc0);
-  
-  if(address < 100) // 0~99 low page 
+  if(address == 20 || address == 22)//special case
+  {
+  	//Set bit 3 to access high 128 bytes RTC SRAM
+	pci_dev_write_dw(&pcidev, 0xc0, reg | 0x00000008);
+	address = (address == 20)? 26:27;
+	outp(0x70, address);
+  }
+  else if(address < 100) // 0~99 low page 
   {
 	//clear bit 3 to access low 128 bytes RTC SRAM
 	pci_dev_write_dw(&pcidev, 0xc0, reg & 0xfffffff7);
+	outp(0x70, address + 28);
   }
   else// 100~199 high page
   {
 	//Set bit 3 to access high 128 bytes RTC SRAM
 	pci_dev_write_dw(&pcidev, 0xc0, reg | 0x00000008);
 	address -= 100;
+	outp(0x70, address + 28);
   }
-  outp(0x70, address + 28);
   result = inp(0x71);
   
   // Restore old register value
@@ -154,19 +162,27 @@ static void write_cmos(unsigned char address, unsigned char buf)
   pcidev.func = 0;
   
   reg = pci_dev_read_dw(&pcidev, 0xc0);
-  
-  if(address < 100) // 0~99 low page 
+  if(address == 20 || address == 22) //special case
+  {
+    //Set bit 3 to access high 128 bytes RTC SRAM
+	pci_dev_write_dw(&pcidev, 0xc0, reg | 0x00000008);
+	address = (address == 20)? 26:27;
+	outp(0x70, address);
+  }
+  else if(address < 100) // 0~99 low page 
   {
 	//clear bit 3 to access low 128 bytes RTC SRAM
 	pci_dev_write_dw(&pcidev, 0xc0, reg & 0xfffffff7);
+	outp(0x70, address + 28);
   }
   else// 100~199 high page
   {
 	//Set bit 3 to access high 128 bytes RTC SRAM
 	pci_dev_write_dw(&pcidev, 0xc0, reg | 0x00000008);
 	address -= 100;
+	outp(0x70, address + 28);
   }
-  outp(0x70, address + 28);
+  
   outp(0x71, buf);
 
   // Restore old register value

@@ -1,3 +1,26 @@
+### CODING 102 - 2014.XX.XX ###
+
+[ide]
+* Modify the bug for Add external library
+* On Linux, serial monitor default baudrate is 115200 (when it default is 9600, serial monitor will get no data).
+
+[core]
+* Change the queue size of UART TX from 256 to 4096.
+
+[libraries]
+* Add Audio library to play the .wav file in SD card for 86Duino ONE.
+* Add FreeIMU1 library to access the GYRO sensor on 86Duino ONE.
+* Add Time86 library to read/set internal RTC on 86Duino.
+* Modify EEPROM.cpp. In COMS, two bytes (20 and 22 bytes) are used by BIOS and other program.
+  We use 26 and 27 bytes to replace them.
+* Modify twi.cpp to work fine if I2C's SDA is LOW after soft-reset.
+
+[bootloader]
+
+
+
+
+
 ### CODING 101 - 2013.12.27 ###
 
 [ide]
@@ -9,7 +32,7 @@
 
 [core]
 * Add Serial232 for the RS232 port of 86Duino EduCake.
-* Serial4 is now an alias of Serial485 for 86Duino One.
+* Serial4 is now an alias of Serial485 for 86Duino ONE.
 * Serial6 is now an alias of Serial232 for 86Duino EduCake.
 * Modify soft-reset method to match Arduino Leonardo.
 * Add 600, 14400, 28800 baudrate to com.cpp and uart.cpp.
