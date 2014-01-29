@@ -34,9 +34,9 @@ void loop()
   // advance to the next address of the EEPROM
   address = address + 1;
   
-  // there are only 200 bytes of EEPROM, from 0 to 199, so if we're
-  // on address 200, wrap around to address 0
-  if (address == 200)
+  // there are only 16384 bytes of EEPROM, from 0 to 16383, so if we're
+  // on address 16384, wrap around to address 0
+  if (address == 16384)
     address = 0;
     
   delay(500);

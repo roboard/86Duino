@@ -11,7 +11,7 @@ public:
 	IPAddress getGatewayIp();
 	IPAddress getDnsServerIp();
 
-	int beginWithDHCP(uint8_t *, unsigned long timeout = 10000, unsigned long responseTimeout = 4000);
+	int beginWithDHCP(unsigned long timeout = 10000, unsigned long responseTimeout = 4000);
 	int checkLease();
 };
 

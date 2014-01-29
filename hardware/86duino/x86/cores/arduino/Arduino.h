@@ -21,9 +21,10 @@ extern "C"{
 #define HIGH         (0x01)
 #define LOW          (0x00)
 
-#define INPUT        (0x00)
-#define OUTPUT       (0x01)
-#define INPUT_PULLUP (0x02)
+#define INPUT          (0x00)
+#define OUTPUT         (0x01)
+#define INPUT_PULLUP   (0x02)
+#define INPUT_PULLDOWN (0x03)
 
 #define true 0x1
 #define false 0x0

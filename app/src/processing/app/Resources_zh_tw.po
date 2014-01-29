@@ -1666,3 +1666,35 @@ msgstr "（只能在不執行86Duino時進行編輯）"
 #, java-format
 msgid "ignoring invalid font size {0}"
 msgstr "忽略無效的字型大小{0}"
+
+#: Base.java:129
+msgid "Coding"
+msgstr "口丁"
+
+#: DuinoCompiler.java:995
+msgid "error"
+msgstr "錯誤"
+
+#: DuinoCompiler.java:560
+msgid "was not declared in this scope"
+msgstr "在這個檔案中未被宣告"
+
+#: DuinoCompiler.java:561
+msgid "has no member named"
+msgstr "中沒有成員名為"
+
+#: DuinoCompiler.java:562
+msgid "declaration of C function"
+msgstr "此函式宣告"
+
+#: DuinoCompiler.java:563
+msgid "conflicts with"
+msgstr "與下面函式宣告相衝突"
+
+#: DuinoCompiler.java:564
+msgid "conflicting declaration"
+msgstr "發生衝突的宣告"
+
+#: DuinoCompiler.java:565
+msgid "has a previous declaration as"
+msgstr "在之前已經被宣告成"

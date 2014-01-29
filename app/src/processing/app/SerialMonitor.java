@@ -1,6 +1,8 @@
 /* -*- mode: java; c-basic-offset: 2; indent-tabs-mode: nil -*- */
 
 /*
+  Copyright (c) 2014    Android Lin <acen@dmp.com.tw>
+                        
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
@@ -129,8 +131,12 @@ public class SerialMonitor extends JFrame implements MessageConsumer {
     for (int i = 0; i < serialRateStrings.length; i++)
       serialRates.addItem(serialRateStrings[i] + " " + _("baud"));
 
-    serialRate = Preferences.getInteger("serial.debug_rate");
-    serialRates.setSelectedItem(serialRate + " " + _("baud"));
+	if(Base.isLinux())
+    	serialRate = 115200;
+    else 
+		serialRate = Preferences.getInteger("serial.debug_rate");
+    
+	serialRates.setSelectedItem(serialRate + " " + _("baud"));
     serialRates.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
         String wholeString = (String) serialRates.getSelectedItem();

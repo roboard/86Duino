@@ -14,7 +14,6 @@
 
 #include <inttypes.h>
 #include <time.h>
-#include <dos.h>
 
 //#if defined (__DJ_time_t) // avoid conflict with newlib or other posix libc
 //#undef __DJ_time_t

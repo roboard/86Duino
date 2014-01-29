@@ -28,10 +28,10 @@ void loop()
   // turned off.
   EEPROM.write(addr, val);
   
-  // advance to the next address.  there are 200 bytes in 
-  // the EEPROM, so go back to 0 when we hit 200.
+  // advance to the next address.  there are 16384 bytes in 
+  // the EEPROM, so go back to 0 when we hit 16384.
   addr = addr + 1;
-  if (addr == 200)
+  if (addr == 16384)
     addr = 0;
   
   delay(100);

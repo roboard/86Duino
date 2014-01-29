@@ -53,7 +53,6 @@ import processing.core.PApplet;
 import processing.app.Preferences;
 
 
-
 public class DuinoCompiler implements MessageConsumer {
   static final String BUGS_URL =
     _("http://github.com/arduino/Arduino/issues");
@@ -90,7 +89,11 @@ public class DuinoCompiler implements MessageConsumer {
   TargetPlatform tp;
   String idepath;
   String idepath_nochande;
+  String documentspath;
+  String documentspath_nochande;
   MessageConsumer consumer;
+  
+
   /**
    * Compile sketch.
    *
@@ -110,6 +113,8 @@ public class DuinoCompiler implements MessageConsumer {
     primaryClassName= _primaryClassName;
 
     prefs = createBuildPreferences(_buildPath, _primaryClassName);
+     
+   
 
     // 0. include paths for core + all libraries
     sketch.setCompilingProgress(20);
@@ -117,17 +122,22 @@ public class DuinoCompiler implements MessageConsumer {
     includePaths.add(prefs.get("build.core.path"));
     
     //PATH
-    tmppath           =_buildPath;
+    tmppath           = _buildPath;
     idepath           = prefs.get("runtime.ide.path");
-    dosboxpath        ="/DOSBox-0.74/";
-    djgpppath         ="/DJGPP";
-    standapipath      ="/hardware/86duino/"+tp.getName()+"/cores/arduino";
-    standlibrariepath ="/hardware/86duino/"+tp.getName()+"/libraries";
+    dosboxpath        = "/DOSBox-0.74/";
+    djgpppath         = "/DJGPP";
+    standapipath      = "/hardware/86duino/"+tp.getName()+"/cores/arduino";
+    standlibrariepath = "/hardware/86duino/"+tp.getName()+"/libraries";
+    documentspath     = prefs.get("sketchbook.path") + "/libraries";
+    
+    
+    
     
     chngeIncludeData(idepath+djgpppath);
-    chngeIncludelibaData(idepath+djgpppath);
     idepath_nochande=idepath;
     idepath=idepath.replace("\\","/");
+    documentspath_nochande=documentspath;
+    documentspath=documentspath.replace("\\","/");
     
     if (prefs.get("build.variant.path").length() != 0)
       includePaths.add(prefs.get("build.variant.path")); 
@@ -135,6 +145,10 @@ public class DuinoCompiler implements MessageConsumer {
       includePaths.add(file.getPath());
     }
     
+    
+   
+      
+      
     // 1. compile the sketch (already in the buildPath)
     sketch.setCompilingProgress(30);
     mainHave(_buildPath);
@@ -253,17 +267,21 @@ public class DuinoCompiler implements MessageConsumer {
     
     return p;
   }
-
   private List<File> compileFiles(String outputPath, File sourcePath,
                                   boolean recurse, List<String> includePaths)
       throws RunnerException {
+    List<File> txtSources = findFilesInFolder(sourcePath, "txt", recurse);
     List<File> hSources = findFilesInFolder(sourcePath, "h", recurse);
     List<File> sSources = findFilesInFolder(sourcePath, "S", recurse);
     List<File> cSources = findFilesInFolder(sourcePath, "c", recurse);
     List<File> cppSources = findFilesInFolder(sourcePath, "cpp", recurse);
     List<File> objectPaths = new ArrayList<File>();
     
- 		for (File file : hSources) {    
+ 	for (File file : txtSources) {
+      if((file.getName().compareTo("lib_link_para.txt")== 0)||(file.getName().compareTo("lib_link_para.TXT")== 0) )    
+        changeIncludelibaData(file.getAbsolutePath());             
+    }
+    for (File file : hSources) {    
       if((dosbox_mount.compareTo("d:/"))==0){
         chngeInclude(outputPath,file.getName());
       }
@@ -460,9 +478,6 @@ public class DuinoCompiler implements MessageConsumer {
     String errorFormat = "([\\w\\d_]+.\\w+):(\\d+):\\s*error:\\s*(.*)\\s*";
     String[] pieces = PApplet.match(s, errorFormat);
 
-     if (pieces != null){
-      
-    }
 
 //    if (pieces != null && exception == null) {
 //      exception = sketch.placeException(pieces[3], pieces[1], PApplet.parseInt(pieces[2]) - 1);
@@ -542,7 +557,9 @@ public class DuinoCompiler implements MessageConsumer {
         SketchCode code = sketch.getCode(e.getCodeIndex());
         String fileName = (code.isExtension("ino") || code.isExtension("pde")) ? code.getPrettyName() : code.getFileName();
         int lineNum = e.getCodeLine() + 1;
-        s = fileName + ":" + lineNum + ": error: " + pieces[3] + msg;        
+        pieces[3] = pieces[3].replace("was not declared in this scope", _("was not declared in this scope"));
+        pieces[3] = pieces[3].replace("has no member named", _("has no member named"));
+		s = fileName + ":" + lineNum + ": "+ _("error") + ": " + pieces[3] + msg; 
       }
             
       if (exception == null && e != null) {
@@ -550,7 +567,11 @@ public class DuinoCompiler implements MessageConsumer {
         exception.hideStackTrace();
       }      
     } 
-    
+    s = s.replace("declaration of C function", _("declaration of C function"));
+    s = s.replace("conflicts with", _("conflicts with"));
+    s = s.replace("conflicting declaration", _("conflicting declaration"));
+    s = s.replace("has a previous declaration as", _("has a previous declaration as"));
+		
     System.err.println(s);
   }
 
@@ -664,7 +685,8 @@ public class DuinoCompiler implements MessageConsumer {
       
       String aaa= libraryFolder.getAbsolutePath();
       aaa=aaa.replace("\\","/");
-      String lib_same=idepath+"/libraries/";
+      String lib_ide=idepath+"/libraries/";
+      String lib_hardware=idepath+"/hardware/86duino/x86/libraries/";
       String[] strArray0 = aaa.split(libraryFolder.getName());
                              
       // this library can use includes in its utility/ folder
@@ -672,10 +694,12 @@ public class DuinoCompiler implements MessageConsumer {
       
       ofile_path="d:/"+libraryFolder.getName()+"/";
       
-      if(strArray0[0].compareTo(lib_same) == 0)
+      if(strArray0[0].compareTo(lib_ide) == 0)
         dosbox_mount="f:/"+libraryFolder.getName()+"/";
-      else
+      else if(strArray0[0].compareTo(lib_hardware) == 0)
         dosbox_mount="g:/"+libraryFolder.getName()+"/";
+      else
+        dosbox_mount="i:/"+libraryFolder.getName()+"/";
         
       makefilesourcepath=makefilesourcepath+"-I"+dosbox_mount+" -I"+dosbox_mount+"utility ";
       objectFiles.addAll(compileFiles(outputFolder.getAbsolutePath(),
@@ -684,10 +708,12 @@ public class DuinoCompiler implements MessageConsumer {
       createFolder(outputFolder);
       
       ofile_path="d:/"+libraryFolder.getName()+"/utility/";
-      if(strArray0[0].compareTo(lib_same) == 0)
+      if(strArray0[0].compareTo(lib_ide) == 0)
         dosbox_mount="f:/"+libraryFolder.getName()+"/utility/";
-      else
+      else if(strArray0[0].compareTo(lib_hardware) == 0)
         dosbox_mount="g:/"+libraryFolder.getName()+"/utility/";
+      else
+        dosbox_mount="i:/"+libraryFolder.getName()+"/utility/";
       objectFiles.addAll(compileFiles(outputFolder.getAbsolutePath(),
                                       utilityFolder, false, includePaths));
       // other libraries should not see this library's utility/ folder
@@ -812,6 +838,7 @@ public class DuinoCompiler implements MessageConsumer {
         out.write("z:mount d \""+buildPath+"\"\n");
         out.write("z:mount h \""+idepath+standapipath+"\"\n");
         out.write("z:mount g \""+idepath+standlibrariepath+"\"\n");
+        out.write("z:mount i \""+documentspath+"\"\n");
         out.write("z:mount f \""+idepath+"/libraries\"\n");
         out.write("z:mount e \""+idepath+"/hardware/86duino/x86/variants/"+prefs.get("build.variant")+"\"\n");
         out.write("z:mount c \""+idepath+djgpppath+"\"\n");
@@ -927,11 +954,14 @@ public class DuinoCompiler implements MessageConsumer {
         FileReader fr = new FileReader(path);
         BufferedReader br = new BufferedReader(fr);
         String readoneline;
-        while((readoneline = br.readLine()) != null){     
-          if(readoneline   !=  null ){     
+        while((readoneline = br.readLine()) != null)
+		{     
+          if(readoneline != null)
+		  {     
             readoneline=readoneline.replace("d:/",tmppath.replace("\\","/")+"/");
             readoneline=readoneline.replace("h:/",idepath+standapipath+"/");
             readoneline=readoneline.replace("g:/",idepath+standlibrariepath+"/");
+            readoneline=readoneline.replace("i:/",documentspath+"/");
             readoneline=readoneline.replace("f:/",idepath+"/libraries/");
             readoneline=readoneline.replace("e:/",idepath+"/hardware/86duino/x86/variants/"+prefs.get("build.variant")+"/");
             readoneline=readoneline.replace("c:/",idepath+djgpppath+"/");
@@ -941,29 +971,34 @@ public class DuinoCompiler implements MessageConsumer {
               if(preferences.getBoolean("build.verbose"))
                 System.out.println(readoneline);
             } 
-            else{
+            else
+			{
               String errorFormat = "[\\w\\d_]+.\\w+:\\s*\\*\\*\\*\\s*Warning:\\s*File\\s*\\`.*\\'\\s*(.*)\\s*\\(.*\\)\\s*";
               String[] pieces = PApplet.match(readoneline, errorFormat);
               //[\\w\\d_]+.\\w+:\\s*\\*\\*\\*\\s*Warning:\\s*File\\s*\\`.*\\'\\s*(.*)\\s*\\(.*\\)\\s*
               //has modification time in the future
               errorFormat="[\\w\\d_]+.\\w+:\\s*warning:\\s*(.*)\\.\\s*.*\\.\\s*";
               String[] piecess = PApplet.match(readoneline, errorFormat);
+              int print_message = 0;
               //[\w\d_]+.\w+:\s*warning:\s*(.*)\.\s*.*\.\s*
               //Clock skew detected
-              if (pieces == null && piecess==null)
-                message(readoneline);
-              else{                 
+              if (pieces == null && piecess == null)
+                print_message = 1;
+              else
+			  {                 
                 if (pieces != null)
                   if (!pieces[1].trim().equals("has modification time in the future"))
-                    message(readoneline);
+				  	print_message = 1;
                 else if (piecess != null)
                   if (!piecess[1].trim().equals("Clock skew detected"))
-                    message(readoneline);
+                     print_message = 1;
               }
-            }
-          }               
-        }     
-        br.close();                                   
+              
+			  if(print_message == 1)
+                    message(readoneline);
+            } // if(ary_readoneline[0] ...
+          } // if(readoneline != null)              
+        } // while((readoneline = br.readLine()) != null)     
         br.close();
         fr.close();
         if(!Verbord){
@@ -991,22 +1026,6 @@ public class DuinoCompiler implements MessageConsumer {
         e.printStackTrace();
     }
   }
-  private void chngeIncludelibaData(String Path)throws RunnerException{
-    try{
-      FileReader fr = new FileReader(Path+File.separator+"changeliba.txt");
-      BufferedReader br = new BufferedReader(fr);
-      String readoneline;
-      while((readoneline = br.readLine()) != null){     
-        if(readoneline   !=  null ){     
-          Includeliba.add(readoneline);   
-        }               
-      }     
-      br.close();
-      fr.close();
-    }catch(IOException e){
-        e.printStackTrace();
-    }
-  }
   public void chngeInclude(String path,String filename) throws RunnerException {
      try{
         String a,b;
@@ -1022,12 +1041,6 @@ public class DuinoCompiler implements MessageConsumer {
               readoneline=readoneline.replaceAll(IncludeName.get(i),"\n#include <"+IncludeName.get(i+1)+">\n");
               
             }
-            for(int i = 0; i < Includeliba.size() ; i+=2){ 
-              if(readoneline.matches(Includeliba.get(i))){
-                str_libfiles += Includeliba.get(i+1);
-                str_libfiles += " ";
-              }
-            }
             out.write(readoneline+"\n");   
           }               
         }
@@ -1038,6 +1051,23 @@ public class DuinoCompiler implements MessageConsumer {
         File file = new File(path+File.separator+filename);
         file.delete();
         f.renameTo(file);
+    }catch(IOException e){
+        e.printStackTrace();
+    }
+  }
+  public void changeIncludelibaData(String Path)throws RunnerException{
+    try{
+      FileReader fr = new FileReader(Path);
+      BufferedReader br = new BufferedReader(fr);
+      String readoneline;
+      while((readoneline = br.readLine()) != null){     
+        if(readoneline   !=  null ){     
+          str_libfiles += readoneline;
+          str_libfiles += " ";   
+        }               
+      }      
+      br.close();
+      fr.close();
     }catch(IOException e){
         e.printStackTrace();
     }

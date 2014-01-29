@@ -1,7 +1,7 @@
 #ifndef ethernet_h
 #define ethernet_h
 
-#define MAX_SOCK_NUM 4
+#define MAX_SOCK_NUM 128
 
 #include <Arduino.h>
 #include <inttypes.h>
@@ -22,6 +22,13 @@ public:
 	void begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dns_server);
 	void begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dns_server, IPAddress gateway);
 	void begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet);
+	
+	int begin(void);
+	void begin(IPAddress local_ip);
+	void begin(IPAddress local_ip, IPAddress dns_server);
+	void begin(IPAddress local_ip, IPAddress dns_server, IPAddress gateway);
+	void begin(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet);
+	
 	int maintain();
 
 	IPAddress localIP();

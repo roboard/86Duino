@@ -19,8 +19,9 @@
 
 #include "Arduino.h"
 #include "io.h"
-#define PULL_DOWN     (0x02)
+#define TRI_STATE     (0x00)
 #define PULL_UP       (0x01)
+#define PULL_DOWN     (0x02)
 
 int crossbar_bit;
 static unsigned short crossbar_ioaddr = 0;
@@ -58,7 +59,12 @@ void pinMode(uint8_t pin, uint8_t mode) {
 	
 	if (mode == INPUT)
 	{
-	    io_outpb(crossbar_ioaddr + 0x30 + pinMap[pin], PULL_DOWN);
+	    io_outpb(crossbar_ioaddr + 0x30 + pinMap[pin], TRI_STATE);
+	    io_outpb(GPIODIRBASE + 4*(crossbar_bit/8), io_inpb(GPIODIRBASE + 4*(crossbar_bit/8))&~(1<<(crossbar_bit%8)));   
+	}
+	else if(mode == INPUT_PULLDOWN)
+	{
+		io_outpb(crossbar_ioaddr + 0x30 + pinMap[pin], PULL_DOWN);
 	    io_outpb(GPIODIRBASE + 4*(crossbar_bit/8), io_inpb(GPIODIRBASE + 4*(crossbar_bit/8))&~(1<<(crossbar_bit%8)));   
 	}
 	else if (mode == INPUT_PULLUP)

@@ -24,6 +24,8 @@
 
 #include "Block.h"
 
+#define EEPROM_200B    (0)
+#define EEPROM_16K     (1)
 
 class EEPROMClass
 {
@@ -32,11 +34,11 @@ class EEPROMClass
 	~EEPROMClass(void);
     unsigned char read(unsigned short int in_addr);
     void write(unsigned short int in_addr, unsigned char in_data);
-	void set_bank(bool);
+	void setBank(int);
 	
   private:
     EEPROMBlock **_data;
-	bool _bank;
+	int _bank;
 };
 
 extern EEPROMClass EEPROM;

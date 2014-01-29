@@ -10,8 +10,8 @@
 
 void setup()
 {
-  // write a 0 to all 200 bytes of the EEPROM
-  for (int i = 0; i < 200; i++)
+  // write a 0 to all 16384 bytes of the EEPROM by default
+  for (int i = 0; i < 16384; i++)
     EEPROM.write(i, 0);
     
   // turn the LED on when we're done

@@ -1,18 +1,25 @@
 ### CODING 102 - 2014.XX.XX ###
 
 [ide]
-* Modify the bug for Add external library
+* Modify the bug for Add external library.
 * On Linux, serial monitor default baudrate is 115200 (when it default is 9600, serial monitor will get no data).
+* Now, if you select "Chinese Tranditional" language, the title of 86Duino IDE is also changed.
 
 [core]
 * Change the queue size of UART TX from 256 to 4096.
+* Modify the state of input pin is tri-state if use pinMode(INPUT) and then add INPUT_PULLDOWN for pinMode() on 86Duino.
 
 [libraries]
 * Add Audio library to play the .wav file in SD card for 86Duino ONE.
 * Add FreeIMU1 library to access the GYRO sensor on 86Duino ONE.
 * Add Time86 library to read/set internal RTC on 86Duino.
+* Update Ethernet library.
+  Modify MAX_SOCK_NUM from 4 to 128.
+  Add begin() without mac address parameter.
 * Modify EEPROM.cpp. In COMS, two bytes (20 and 22 bytes) are used by BIOS and other program.
   We use 26 and 27 bytes to replace them.
+  Modify set_bank() to setBank().
+  Add EEPROM_200B and EEPROM_16K for setBank() on 86duino.
 * Modify twi.cpp to work fine if I2C's SDA is LOW after soft-reset.
 
 [bootloader]

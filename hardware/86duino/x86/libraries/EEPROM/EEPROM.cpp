@@ -52,7 +52,7 @@ typedef struct
  ******************************************************************************/
 EEPROMClass::EEPROMClass(void)
 {
-  _bank = false; //default use bank 0;
+  _bank = EEPROM_16K; //default use bank 0;
   
   _data = new EEPROMBlock*[ADDRESS];
   
@@ -71,7 +71,7 @@ EEPROMClass::~EEPROMClass(void)
     delete _data[i];
 
   delete [](_data);
-  _bank = false;
+  _bank = EEPROM_16K;
 }
  
 /******************************************************************************
@@ -192,7 +192,7 @@ static void write_cmos(unsigned char address, unsigned char buf)
  
 unsigned char EEPROMClass::read(unsigned short int in_addr)
 {
-  if(((in_addr >= EEPROMSIZE) && _bank) || ((in_addr >= EEPROMSIZE_BANK0) && !_bank))//bank == true 0~16384, false 0~199
+  if(((in_addr >= EEPROMSIZE) && (_bank == EEPROM_16K)) || ((in_addr >= EEPROMSIZE_BANK0) && (_bank == EEPROM_200B)))//bank == true 0~16384, false 0~199
   {
     Serial.print("EEPROMClass read error(bank = ");
 	Serial.print(_bank);
@@ -203,7 +203,7 @@ unsigned char EEPROMClass::read(unsigned short int in_addr)
 	return 0;
   }
   
-  if(_bank == false)
+  if(_bank == EEPROM_200B)
     return read_cmos(in_addr);
   else
 	return (_data[in_addr / DATASIZE])->read(in_addr - (DATASIZE * (in_addr / DATASIZE)));
@@ -211,7 +211,7 @@ unsigned char EEPROMClass::read(unsigned short int in_addr)
 
 void EEPROMClass::write(unsigned short int in_addr, unsigned char in_data)
 {
-  if(((in_addr >= EEPROMSIZE) && _bank) || ((in_addr >= EEPROMSIZE_BANK0) && !_bank))//bank == true 0~16384, false 0~199
+  if(((in_addr >= EEPROMSIZE) && (_bank == EEPROM_16K)) || ((in_addr >= EEPROMSIZE_BANK0) && (_bank == EEPROM_200B)))//bank == true 0~16384, false 0~199
   {
     Serial.print("EEPROMClass write error(bank = ");
 	Serial.print(_bank);
@@ -221,14 +221,20 @@ void EEPROMClass::write(unsigned short int in_addr, unsigned char in_data)
 	Serial.println(EEPROMSIZE);
 	return;
   }
-  if(_bank == false)
+  if(_bank == EEPROM_200B)
     write_cmos(in_addr, in_data);
   else
     (_data[in_addr / DATASIZE])->write(in_addr - (DATASIZE * (in_addr / DATASIZE)) , in_data);
 }
 
-void EEPROMClass::set_bank(bool input)
+void EEPROMClass::setBank(int input)
 {
+  if(input != EEPROM_200B && input != EEPROM_16K)
+  {
+  	_bank = EEPROM_16K;
+  	return;
+  }	
+  
   _bank = input;
 }
 

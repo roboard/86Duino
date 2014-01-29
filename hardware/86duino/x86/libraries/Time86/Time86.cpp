@@ -27,9 +27,8 @@
   13 Jan 2014 - modify to 86Duino version by Andriod Lin.
 */
 
-#include <Arduino.h> 
-
 #include "Time86.h"
+#include <dos.h>
 
 static time_t cacheTime;   // the time the cache was updated
 

@@ -126,8 +126,11 @@ public class Base {
       if (versionFile.exists()) {
         String version = PApplet.loadStrings(versionFile)[0];
         if (!version.equals(VERSION_NAME)) {
-          VERSION_NAME = version;
-          RELEASE = true;
+          String[] token = version.split(" ");
+		  VERSION_NAME = _(token[0]);
+		  for(int i=1; i<token.length; i++)
+		  	VERSION_NAME += " "+token[i];
+		  RELEASE = true;
         }
       }
     } catch (Exception e) {
