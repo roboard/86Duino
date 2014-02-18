@@ -227,6 +227,14 @@ void EEPROMClass::write(unsigned short int in_addr, unsigned char in_data)
     (_data[in_addr / DATASIZE])->write(in_addr - (DATASIZE * (in_addr / DATASIZE)) , in_data);
 }
 
+void EEPROMClass::set_bank(bool input)
+{
+  if(input == false)
+  	_bank = EEPROM_200B;
+  else
+  	_bank = EEPROM_16K;
+}
+
 void EEPROMClass::setBank(int input)
 {
   if(input != EEPROM_200B && input != EEPROM_16K)

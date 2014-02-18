@@ -34,6 +34,7 @@ class EEPROMClass
 	~EEPROMClass(void);
     unsigned char read(unsigned short int in_addr);
     void write(unsigned short int in_addr, unsigned char in_data);
+    void set_bank(bool);
 	void setBank(int);
 	
   private:
