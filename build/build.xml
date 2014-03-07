@@ -101,7 +101,7 @@
     <unzip dest="${target.path}" src="shared/reference.zip" overwrite="false"/>
     
     <!-- Write the revision file! -->
-    <echo file="${target.path}/lib/version.txt" message="Coding 101" />
+    <echo file="${target.path}/lib/version.txt" message="Coding 102" />
   </target>
 
   
@@ -176,6 +176,7 @@
     <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/bossac" perm="+x" />
     <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/DOSBox.exe" perm="+x" />
     <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/upx309w/upx.exe" perm="+x" />
+    <chmod file="macosx/work/86Duino.app/Contents/Resources/Java//hardware/tools/avr/bin/86upload.exe" perm="+x" />
       
     <copy todir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr/include/avr">
       <fileset file="macosx/dist/eeprom.h" />

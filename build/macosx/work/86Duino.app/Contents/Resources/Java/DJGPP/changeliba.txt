@@ -1,2 +1,0 @@
-\s*#\s*include\s*[<"](Ethernet.h)[">]
--lswsk

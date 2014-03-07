@@ -2,3 +2,5 @@
 SFSerial.h
 \s*#\s*include\s*[<"](LiquidCrystal.h)[">]
 Liquid.h
+\s*#\s*include\s*[<"](CapacitiveSensor.h)[">]
+Capa.h

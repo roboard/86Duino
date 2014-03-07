@@ -1,13 +1,68 @@
-- Andrew Wu
+------------------
+The 86Duino Team
+------------------
 
-- DY Hung
+* Android Lin (acen@dmp.com.tw)
 
-- Hellion Chuang
+  IDE, bootloader, standard API and libraries development. Verification of 
+  86Duino-Arduino compatibility.
 
-- Vic Cheng
+* Oswald Kuo (oswald@dmp.com.tw)
 
-- Terry Wang
+  IDE development. Verification of 86Duino-Arduino compatibility.
 
-- Fablab.Taipei
+* Hao Wei Chiu (wei@dmp.com.tw)
 
-- Openlab.Taipei
+  Hardware designer.
+
+
+--------------
+Contributors
+--------------
+
+* Andrew Wu (arw@dmp.com.tw)
+
+  coreboot and SeaBIOS for Vortex86EX, and the build script for DJGPP cross 
+  compilers.
+
+* WL Huang (robotics@dmp.com.tw)
+
+  Core I/O library of Vortex86EX.
+
+* DY Hung (Dyhung@dmp.com.tw)
+
+  Porting of the Arduino Ethernet and WiFi libraries, and of the FreeIMU 
+  library.
+
+* Hellion Chuang (hellion@dmp.com.tw)
+
+  Porting of the Firmata library.
+
+* Vic Cheng (vic@dmp.com.tw)
+
+  Porting of the Arduino EEPROM, SD, and Audio libraries.
+
+* Terry Wang (teniiwang@gmail.com)
+
+  Porting of the OneWire and Capacitive Sensing libraries. Test of Arduino 
+  peripherals on 86Duino.
+
+
+---------------
+Miscellaneous
+---------------
+
+* OpenLab.Taipei (http://www.openlabtaipei.org/)
+
+  Translation of "Arduino The Documentary" in Chinese, which motivates us to 
+  develop the 86Duino. Also kindly provide the Chinese name of the 86Duino IDE.
+
+* FabLab.Taipei (http://www.fablabtaipei.org/)
+
+  Kindly provide resources to support the study group of discussing Arduino and 
+  86Duino source codes.
+
+* LBU (lbu098140@gmail.com)
+
+  Chinese translation of the 86Duino language reference.
+

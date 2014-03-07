@@ -5,6 +5,26 @@
 #include "SwsSock.h"
 #include "Ethernet.h"
 #include "Dhcp.h"
+#include "io.h"
+
+uint8_t EthernetClass::MAC_address[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+uint8_t *EthernetClass::localMAC()
+{
+	int i;
+	void *mac_io;
+	
+	if (io_Init() == false)
+		;
+	else if ((mac_io = io_Alloc(IO_USE_MMIO, 0xFFFFFFB0UL, 0x06UL)) == NULL)
+		io_Close();
+	else {
+		for (i = 0; i < 6; i++) MAC_address[i] = io_In8(mac_io, i);
+		io_Free(mac_io);
+		io_Close();
+	}
+	return &MAC_address[0];
+}
 
 int EthernetClass::begin(uint8_t *mac_address)
 {
@@ -35,49 +55,29 @@ int EthernetClass::begin(void)
 
 void EthernetClass::begin(uint8_t *mac_address, IPAddress local_ip)
 {
-	begin(local_ip);
-}
-
-void EthernetClass::begin(IPAddress local_ip)
-{
 	// Assume the DNS server will be the machine on the same network as the local IP
 	// but with last octet being '1'
 	IPAddress dns_server = local_ip;
 	dns_server[3] = 1;
-	begin(local_ip, dns_server);
+	begin(mac_address, local_ip, dns_server);
 }
 
 void EthernetClass::begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dns_server)
-{
-	begin(local_ip, dns_server);
-}
-
-void EthernetClass::begin(IPAddress local_ip, IPAddress dns_server)
 {
 	// Assume the gateway will be the machine on the same network as the local IP
 	// but with last octet being '1'
 	IPAddress gateway = local_ip;
 	gateway[3] = 1;
-	begin(local_ip, dns_server, gateway);
+	begin(mac_address, local_ip, dns_server, gateway);
 }
 
 void EthernetClass::begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dns_server, IPAddress gateway)
 {
-	begin(local_ip, dns_server, gateway);
-}
-
-void EthernetClass::begin(IPAddress local_ip, IPAddress dns_server, IPAddress gateway)
-{
 	IPAddress subnet(255, 255, 255, 0);
-	begin(local_ip, dns_server, gateway, subnet);
+	begin(mac_address, local_ip, dns_server, gateway, subnet);
 }
 
 void EthernetClass::begin(uint8_t *mac, IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
-{
-	begin(local_ip, dns_server, gateway, subnet);
-}
-
-void EthernetClass::begin(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
 {
 	SwsSock.setIPAddress(local_ip._address);
 	SwsSock.setDnsServerIp(dns_server._address);

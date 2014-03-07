@@ -71,7 +71,7 @@ bool init() {
 	// set ADC Base Address
 	sb_Write(0xbc, sb_Read(0xbc) & (~(1L<<28)));  // active adc
 	sb1_Write16(0xde, sb1_Read16(0xde) | 0x02);   // not Available for 8051A Access ADC
-	sb1_Write(0xe0, 0x0010fe00L); // baseaddr = 0xfe00, disable irq
+	sb1_Write(0xe0, 0x0050fe00L); // baseaddr = 0xfe00, disable irq
 	
 	// set MCM Base Address
 	set_MMIO();

@@ -9,18 +9,18 @@ static const uint8_t MOSI = 11;
 static const uint8_t MISO = 12;
 static const uint8_t SCK  = 13;
 
-static const uint8_t SDA = 18;
-static const uint8_t SCL = 19;
 static const uint8_t LED_BUILTIN = 13;
 
-static const uint8_t A0 = 0;
-static const uint8_t A1 = 1;
-static const uint8_t A2 = 2;
-static const uint8_t A3 = 3;
-static const uint8_t A4 = 4;
-static const uint8_t A5 = 5;
-static const uint8_t A6 = 6;
-static const uint8_t A7 = 7;
+static const uint8_t A0 = 45;
+static const uint8_t A1 = 46;
+static const uint8_t A2 = 47;
+static const uint8_t A3 = 48;
+static const uint8_t A4 = 49;
+static const uint8_t A5 = 50;
+static const uint8_t A6 = 51;
+
+static const uint8_t SDA = 52;
+static const uint8_t SCL = 53;
 
 #define PINS    (45)
 static int pinMap[PINS] = {11, 10, 39, 23, 37, 20, 19, 35, 33, 17,

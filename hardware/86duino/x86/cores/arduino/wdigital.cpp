@@ -23,12 +23,12 @@
 #define PULL_UP       (0x01)
 #define PULL_DOWN     (0x02)
 
-int crossbar_bit;
+
 static unsigned short crossbar_ioaddr = 0;
 static unsigned short gpio_ioaddr = 0;
 void pinMode(uint8_t pin, uint8_t mode) { 
 	static bool pinmode_init = false;
-	int i;
+	int i, crossbar_bit;
 	if(pin >= PINS) return;
 	
 	if(pinmode_init == false)
@@ -57,6 +57,7 @@ void pinMode(uint8_t pin, uint8_t mode) {
 	
 	crossbar_bit = pinMap[pin];
 	
+	io_DisableINT();
 	if (mode == INPUT)
 	{
 	    io_outpb(crossbar_ioaddr + 0x30 + pinMap[pin], TRI_STATE);
@@ -74,11 +75,13 @@ void pinMode(uint8_t pin, uint8_t mode) {
 	}     
 	else
 	    io_outpb(GPIODIRBASE + 4*(crossbar_bit/8), io_inpb(GPIODIRBASE + 4*(crossbar_bit/8))|(1<<(crossbar_bit%8)));      
+	io_RestoreINT();
 }
 
 void digitalWrite(uint8_t pin, uint8_t val) {
     unsigned int port;
     unsigned int value;
+    int crossbar_bit;
 	if(pin >= PINS) return;
     if(crossbar_ioaddr == 0 || gpio_ioaddr == 0) return;// You should use pinMode() first
 	
@@ -103,6 +106,7 @@ void digitalWrite(uint8_t pin, uint8_t val) {
 }
 
 int digitalRead(uint8_t pin) {
+	int crossbar_bit;
 	if(pin >= PINS) return 0xffff;
 	if(crossbar_ioaddr == 0 || gpio_ioaddr == 0) return 0xffff;// You should use pinMode() first
 	

@@ -90,7 +90,9 @@ extern "C"{
 
 typedef unsigned int word;
 
-#define bit(b) (1UL << (b))
+#define bit(b)    (1UL << (b))
+#define DEGREE_C    (0)
+#define DEGREE_F    (1)
 
 typedef uint8_t boolean;
 typedef uint8_t byte;
@@ -106,6 +108,7 @@ void analogWrite(uint8_t, uint32_t);
 void analogReadResolution(int res);
 void analogWriteResolution(int res);
 void Close_Pwm(uint8_t);
+double cpuTemperature(uint8_t);
 
 unsigned long millis(void);
 unsigned long micros(void);
