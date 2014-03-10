@@ -20,7 +20,7 @@
 * Update Ethernet library.
   Modify MAX_SOCK_NUM from 4 to 128.
   Add begin() without mac address parameter.
-  Add Ethernet.readmac() (read the mac address of 86Duino).
+  Add Ethernet.localmac() (read the mac address of 86Duino).
 * Modify EEPROM library.
   In CMOS, two bytes (20 and 22 bytes) are used by BIOS or other program. We use 26 and 27 bytes to replace them.
   Add a new setBank().

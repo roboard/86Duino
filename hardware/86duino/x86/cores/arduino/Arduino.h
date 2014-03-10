@@ -108,7 +108,6 @@ void analogWrite(uint8_t, uint32_t);
 void analogReadResolution(int res);
 void analogWriteResolution(int res);
 void Close_Pwm(uint8_t);
-double cpuTemperature(uint8_t);
 
 unsigned long millis(void);
 unsigned long micros(void);
@@ -130,6 +129,9 @@ void loop(void);
 #endif
 
 #ifdef __cplusplus
+
+double cpuTemperature(void);
+double cpuTemperature(uint8_t);
 
 extern void* USBDEV;
 #define Serial4    Serial485

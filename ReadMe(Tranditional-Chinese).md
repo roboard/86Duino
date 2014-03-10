@@ -53,7 +53,7 @@ Vortex86EX 成為 86Duino 主控核心的一個合適選擇。
 86Duino 內建相容 Arudino 的韌體系統，此外，86Duino 也可執行 DOS、Windows、Linux 
 以及大部份主流的 x86 即時作業系統。
 
-可參考 86Duino 網站：http://www.86duino.com/，以獲得更詳細的資訊。
+可參考 86Duino 網站，以獲得更詳細的資訊：http://www.86duino.com/
 
 
 ---------------------------------------

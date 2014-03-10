@@ -174,6 +174,10 @@ void analogWrite(uint8_t pin, unsigned long val) {
 	}
 }
 
+double cpuTemperature(void) {
+    return cpuTemperature(DEGREE_C);
+}
+
 double cpuTemperature(uint8_t unit) {
 	unsigned long d;
 	unsigned long time;
