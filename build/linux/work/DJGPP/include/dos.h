@@ -163,7 +163,7 @@ void settime(struct time *);
 
 void getdfree(unsigned char drive, struct dfree *ptr);
 
-void delay(unsigned msec);
+//void delay(unsigned msec);
 /* int _get_default_drive(void);
 void _fixpath(const char *, char *); */
 
