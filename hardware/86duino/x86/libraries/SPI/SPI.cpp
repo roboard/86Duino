@@ -24,29 +24,9 @@
 #include "SPI.h"
 #define DEBUG_MODE    (1)
 
+unsigned SPI_IOaddr = 0;
+
 SPIClass SPI;
-static unsigned SPI_IOaddr = 0;
-
-void WriteData(uint8_t data) {
-	io_outpb(SPI_IOaddr, data);
-	while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-}
-
-uint8_t ReadData(void) {
-	while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-	return io_inpb(SPI_IOaddr + 1);
-}
-
-uint8_t SPIClass::transfer(uint8_t _data) {
-	uint8_t tmp;
-	WriteData(_data);
-	tmp = ReadData();
-	return tmp;
-}
-
-static void useFIFO(void) {
-	io_outpb(SPI_IOaddr + 2, io_inpb(SPI_IOaddr + 2) | 0x10);
-}
 
 // we must use internal FIFO, so only view "FIFO enable" option description in the CPU datasheet
 #define SPI_BUSY          (0x80)
@@ -55,11 +35,23 @@ static void useFIFO(void) {
 #define SPI_SENDOK        (0x10)
 #define SPI_OFIFOEMPTY    (0x08)
 #define SPI_IFIFOFULL     (0x04)
+
+static void useFIFO(void) {
+	if(SPI_IOaddr == 0) return;
+	io_outpb(SPI_IOaddr + 2, io_inpb(SPI_IOaddr + 2) | 0x10);
+}
+
 uint8_t ReadStateR(void) {
+	if(SPI_IOaddr == 0) return 0;
 	return io_inpb(SPI_IOaddr + 3);
 }
 
+void SPIClass::setSS(uint8_t data) {
+	SPICS(data);
+}
+
 void SPIClass::SPICS(uint8_t data) {
+	if(SPI_IOaddr == 0) return;
 	if(data != 0)
 		io_outpb(SPI_IOaddr + 4, 0x01);
 	else
@@ -67,8 +59,8 @@ void SPIClass::SPICS(uint8_t data) {
 }
 
 // skip SPI_IOaddr + 5
-
 void WriteCLKDIVR(uint8_t data) {
+	if(SPI_IOaddr == 0) return;
 	io_outpb(SPI_IOaddr + 6, data);
 }
 
@@ -79,15 +71,15 @@ void WriteCLKDIVR(uint8_t data) {
 #define CPHA         (0x02) // 0xFD is disable it
 #define RESET        (0x01) // it will be clear when out of reset state
 void Reset(void) {
-    io_outpb(SPI_IOaddr + 7, 0x01);
+    if(SPI_IOaddr == 0) return;
+	io_outpb(SPI_IOaddr + 7, 0x01);
     while((io_inpb(SPI_IOaddr + 7)&0x01) != 0); // wait SPI reset for complete
 }
 
 void WriteCTRR(uint8_t data) {
+	if(SPI_IOaddr == 0) return;
 	io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) | data);
 }
-
-// skip SPI_IOaddr + 8&9, mean that we don't use interrupt
 
 void SPIClass::begin() {
 	void *pciDev = NULL;
@@ -107,7 +99,7 @@ void SPIClass::begin() {
 	io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) & 0xF1 | SPI_MODE0); // set mode
 	io_outpb(SPI_IOaddr + 0x0b, 0x08); // delay clk between two transfers
     //SOURCE clock/(2 * SPI_CLOCK_DIV)
-	setClockDivider(SPI_CLOCK_DIV800); // 125k Hz
+	setClockDivider(13); // 100/(2*13) ~= 4MHz
 	useFIFO();
 	detachInterrupt();
     
@@ -139,16 +131,17 @@ void SPIClass::begin() {
 
 
 void SPIClass::end() {
+	if(SPI_IOaddr == 0) return;
 	//SPCR &= ~_BV(SPE);
 }
 
 void SPIClass::setBitOrder(uint8_t bitOrder)
 {
-	if(bitOrder == LSBFIRST) {
-	  io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) | LSBSHIFT);
-	} else {
-	  io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) & ~LSBSHIFT);
-	}
+	if(SPI_IOaddr == 0) return;
+	if(bitOrder == LSBFIRST)
+		io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) | LSBSHIFT);
+	else
+	  	io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) & ~LSBSHIFT);
 }
 
 /*
@@ -164,9 +157,9 @@ Arduino Atmega328p
 #define SPI_MODE2 0x04 : CPOL = 1, CPHA = 0
 #define SPI_MODE3 0x06 : CPOL = 1, CPHA = 1
 */
-void SPIClass::setDataMode(uint8_t mode)
-{
-  io_outpb(SPI_IOaddr + 7, (io_inpb(SPI_IOaddr + 7) & 0xF1) | mode);
+void SPIClass::setDataMode(uint8_t mode) {
+	if(SPI_IOaddr == 0) return;
+	io_outpb(SPI_IOaddr + 7, (io_inpb(SPI_IOaddr + 7) & 0xF1) | mode);
 }
 
 // Vertex86EX has 3 ClockDivider: High, Mid, Low
@@ -183,7 +176,7 @@ void SPIClass::setDataMode(uint8_t mode)
 #define SPI_CLOCK_DIV2 0x04     : 8MHz
 #define SPI_CLOCK_DIV8 0x05     : 2MHz
 #define SPI_CLOCK_DIV32 0x06    : 500MHz
-it's result is 16MHz/above value, so that the lowest speed is 1.25MHz
+it's result is 16MHz/above value, so that the lowest speed is 0.125MHz
 
 #define SPI_CLOCK_DIV25   (25)     : 4MHz
 #define SPI_CLOCK_DIV100  (100)    : 1MHz
@@ -196,19 +189,10 @@ it's result is 16MHz/above value, so that the lowest speed is 1.25MHz
 void SPIClass::setClockDivider(uint16_t rate)
 {
 	if(rate == 0 && rate > 4095) return;
-	if(rate > 255)
-	{
-		io_outpb(SPI_IOaddr + 6, rate/256);
-	}
-	io_outpb(SPI_IOaddr + 2, (io_inpb(SPI_IOaddr + 2) & 0xF0) | (rate%256));
-}
-
-// bit0: Transfer data complete
-void SPIClass::attachInterrupt() {
-	io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) | 0x01);
-}
-
-void SPIClass::detachInterrupt() {
-	io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) & 0xFE);
+	if(SPI_IOaddr == 0) return;
+	if(rate > 15)
+		io_outpb(SPI_IOaddr + 6, (rate&0x0ff0)>>4);
+	
+	io_outpb(SPI_IOaddr + 2, (io_inpb(SPI_IOaddr + 2) & 0xF0) | (rate%16));
 }
 

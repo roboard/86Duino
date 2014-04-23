@@ -1,3 +1,24 @@
+### CODING 103 - 2014.04.23 ###
+
+[core]
+* Modify a bug that will disable a wrong PWM channel if you use muilti-channels PWM and input 0 or 255 value to analogWrite().
+* Suport HIGH and LOW level trigger in attachinterrupt().
+* Update can_Write() in can.cpp.
+
+[libraries]
+* Modify some wrong define and add a setSS function in SPI library.
+* Modify the SPI default speed from 62.5kHz to 4MHz in SPI library.
+* Modify the SPI initial speed from 1MHz to 4MHz in TFT library.
+* Modify the SPI initial speed from 62.5kHz to 2MHz in WIFI library.
+* Add SoftwareSerail library that suport speed up to 19200.
+* Add GSM library. You also can use hardware serial method to transmit with GSM shield in this library.
+* Add CANBus library.
+* Suport high speed mode (3.3MHz) in Wire library.
+* Use a better method to read LSM303 in FreeIMU1 library.
+* User can use pc speaker parameter in tone library to enable internal speaker on EduCake.
+
+
+
 ### CODING 102 - 2014.03.07 ###
 
 [ide]

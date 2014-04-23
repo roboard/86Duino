@@ -221,7 +221,7 @@ DMPAPI(void) delay_ms(unsigned long delaytime) { //delay in ms
 #endif
 }
 
-DMPAPI(unsigned long long int) getclocks64(void)
+DMP_INLINE(unsigned long long int) _getclocks64(void)
 {
     unsigned long nowclocks;
     unsigned long nowclocks_msb;
@@ -255,6 +255,15 @@ DMPAPI(unsigned long long int) getclocks64(void)
 #endif
 
     return (((unsigned long long int)nowclocks_msb << 32) + (unsigned long long int)nowclocks);
+}
+
+DMPAPI(unsigned long long int) getclocks64(void) {
+	unsigned long long int tmp;
+	do
+	{
+		tmp = _getclocks64();
+	}while((tmp&0xffffffffL) == 0xffffffffL); // fix the CPU bug.
+	return tmp;
 }
 
 static unsigned long getclocks(void) {

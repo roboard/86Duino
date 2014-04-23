@@ -91,7 +91,7 @@ extern HardwareSerial Serial2;
 extern HardwareSerial Serial3;
 extern HardwareSerial Serial485;
 extern HardwareSerial Serial232;
-
+extern HardwareSerial* HWSerial[4];
 extern void serialEventRun(void) __attribute__((weak));
 
 #endif

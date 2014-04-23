@@ -22,6 +22,9 @@
 #include "mcm.h"
 #include "irq.h"
 
+#define MCPFAU_CAP_LEVEL0    (0x08L << 16)
+#define MCPFAU_CAP_LEVEL1    (0x09L << 16)
+
 static int mc = 0, md = 1;
 static int mcint_offset[2] = {0, 24};
 static void clear_INTSTATUS(void) {
@@ -39,6 +42,10 @@ static void enable_MCINT(unsigned long used_int) {
 }
 
 static void (*sifIntMode[3])(int, int, unsigned long) = {mcpfau_SetCapMode1, mcpfau_SetCapMode2, mcpfau_SetCapMode3}; 
+static void (*sifSetPol[3])(int, int, unsigned long) = {mcpfau_SetPolarity1, mcpfau_SetPolarity2, mcpfau_SetPolarity3}; 
+static void (*sifSetRelease[3])(int, int, unsigned long) = {mcpfau_SetFAU1RELS, mcpfau_SetFAU2RELS, mcpfau_SetFAU3RELS}; 
+static void (*sifClearStat[3])(int, int) = {mcpfau_ClearFAU1STAT, mcpfau_ClearFAU2STAT, mcpfau_ClearFAU3STAT}; 
+static void (*sifSetMask[3])(int, int, unsigned long) = {mcpfau_SetMask1, mcpfau_SetMask2, mcpfau_SetMask3}; 
 static unsigned long (*readCapStat[3])(int, int) = {mcpfau_ReadCAPSTAT1, mcpfau_ReadCAPSTAT2, mcpfau_ReadCAPSTAT3};
 static unsigned long (*readCapFIFO[3])(int, int, unsigned long*) = {mcpfau_ReadCAPFIFO1, mcpfau_ReadCAPFIFO2, mcpfau_ReadCAPFIFO3};
 static volatile bool mcm_init[4] = {false, false, false, false};
@@ -53,9 +60,15 @@ static int user_int(int irq, void* data) {
 		m = i/3; // sif mc
 		n = i%3; // offset (capture pin number 1/2/3)
 		if(mcm_init[m] == false) {i += 2; continue;}
-		if((mc_inp(m, 0x04) & ((0x20000000L)<<n)) != 0L)
+		if((mc_inp(m, 0x04) & ((0x20000000L)<<n)) != 0L) // detect input edge-trigger
 		{
 			mc_outp(m, 0x04, (0x20000000L)<<n);
+			break;
+		}
+		
+		if((mc_inp(m, 0x04) & ((0x04000000L)<<n)) != 0L) // detect input level-trigger
+		{
+			mc_outp(m, 0x04, (0x04000000L)<<n);
 			break;
 		}
 	}
@@ -65,6 +78,11 @@ static int user_int(int irq, void* data) {
 	{
 		switch(_usedMode[m][n])
 		{
+		case MCPFAU_CAP_LEVEL0: case MCPFAU_CAP_LEVEL1:
+			sifSetMask[n](m, MCSIF_MODULEB, MCPFAU_MASK_INACTIVE);
+			sifClearStat[n](m, MCSIF_MODULEB);
+			evt++;
+			break;
 		case MCPFAU_CAP_BOTH:
 	    	while(readCapStat[n](m, MCSIF_MODULEB)!= MCENC_CAPFIFO_EMPTY)
           		if(readCapFIFO[n](m, MCSIF_MODULEB, &capdata) != MCPFAU_CAP_CAPCNT_OVERFLOW) evt++;
@@ -78,8 +96,19 @@ static int user_int(int irq, void* data) {
           		if(readCapFIFO[n](m, MCSIF_MODULEB, &capdata) == MCPFAU_CAP_0TO1EDGE) evt++;
           	break;
 		}
+		
+		// do user's function
 		for(; evt > 0; evt--)
 			_userfunc[i]();
+		
+		// if select level-trigger, switch the MASK to "NONE" after user's function is complete.
+		switch(_usedMode[m][n])
+		{
+		case MCPFAU_CAP_LEVEL0: case MCPFAU_CAP_LEVEL1:
+			sifSetMask[n](m, MCSIF_MODULEB, MCPFAU_MASK_NONE);
+			break;
+		default: break;
+		}
 	}
 	
 	return ISR_HANDLED;
@@ -180,7 +209,7 @@ void attachInterrupt(uint8_t interruptNum, void (*userFunc)(void), int mode) {
 	mcmsif_init();
 	
     clear_INTSTATUS();
-	enable_MCINT(0xe0); // SIFB FAULT INT1/2/3
+	enable_MCINT(0xfc); // SIFB FAULT INT3/2/1 + STAT3/2/1 = 6 bits
 	
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
     if (mc == 0)
@@ -202,7 +231,23 @@ void attachInterrupt(uint8_t interruptNum, void (*userFunc)(void), int mode) {
 	_userfunc[interruptNum] = userFunc;
 	io_RestoreINT();
 	
-	switch (mode) {
+	switch (mode) 
+	{
+	case LOW:
+		sifSetPol[interruptNum%3](mc, md, MCPFAU_POL_INVERSE);
+		sifSetMask[interruptNum%3](mc, md, MCPFAU_MASK_INACTIVE);
+		sifSetRelease[interruptNum%3](mc, md, MCPFAU_FAURELS_FSTAT0);
+		sifClearStat[interruptNum%3](mc, md);
+		_usedMode[mc][interruptNum%3] = MCPFAU_CAP_LEVEL0;
+		clear_INTSTATUS();
+		break;
+	case HIGH:
+		sifSetMask[interruptNum%3](mc, md, MCPFAU_MASK_INACTIVE);
+		sifSetRelease[interruptNum%3](mc, md, MCPFAU_FAURELS_FSTAT0);
+		sifClearStat[interruptNum%3](mc, md);
+		_usedMode[mc][interruptNum%3] = MCPFAU_CAP_LEVEL1;
+		clear_INTSTATUS();
+		break;
 	case CHANGE:
 		sifIntMode[interruptNum%3](mc, md, MCPFAU_CAP_BOTH);
 		_usedMode[mc][interruptNum%3] = MCPFAU_CAP_BOTH;
@@ -223,6 +268,15 @@ void attachInterrupt(uint8_t interruptNum, void (*userFunc)(void), int mode) {
 	// switch crossbar to MCM_SIF_PIN
 	io_outpb(crossbar_ioaddr + 0x90 + pin_offset[interruptNum], 0x08);//RICH IO
 	mcsif_Enable(mc, md);
+	
+	// If select level-trigger, switch the MASK to "NONE" after sif is enabled.
+	switch (mode)
+	{
+	case LOW: case HIGH:
+		sifSetMask[interruptNum%3](mc, md, MCPFAU_MASK_NONE);
+		break;
+	default: break;
+	}
 }
 
 void detachInterrupt(uint8_t interruptNum) {

@@ -4,8 +4,11 @@
 #include <inttypes.h>
 #include "Stream.h"
 
-#define BUFFER_LENGTH 32
-
+#define BUFFER_LENGTH    (128)
+#define STANDARDMODE     (100000UL)
+#define FASTMODE         (400000UL)
+#define HIGHSPEEDMODE    (3300000UL)
+ 
 class TwoWire : public Stream
 {
   private:
@@ -27,7 +30,7 @@ class TwoWire : public Stream
     TwoWire();
     void begin();
     void begin(uint8_t);
-    void begin(uint32_t);
+    void begin(uint32_t, uint8_t slaveaddr=0x7f);
     void begin(int);
     void beginTransmission(uint8_t);
     void beginTransmission(int);

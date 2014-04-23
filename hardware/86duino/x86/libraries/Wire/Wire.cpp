@@ -60,7 +60,15 @@ void TwoWire::begin(void)
   twi_init();
 }
 
-void TwoWire::begin(uint32_t speed)
+void TwoWire::begin(uint8_t address)
+{
+  begin();
+  twi_setAddress(address);
+  twi_attachSlaveTxEvent(onRequestService);
+  twi_attachSlaveRxEvent(onReceiveService);
+}
+
+void TwoWire::begin(uint32_t speed, uint8_t address)
 {
   rxBufferIndex = 0;
   rxBufferLength = 0;
@@ -69,11 +77,6 @@ void TwoWire::begin(uint32_t speed)
   txBufferLength = 0;
 
   twi_init(speed);
-}
-
-void TwoWire::begin(uint8_t address)
-{
-  begin();
   twi_setAddress(address);
   twi_attachSlaveTxEvent(onRequestService);
   twi_attachSlaveRxEvent(onReceiveService);

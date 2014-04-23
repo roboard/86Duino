@@ -37,9 +37,7 @@
 static int mc_md_inuse[PINS];
 
 #define ADC_RESOLUTION    (11) // for 86Duino
-#define PWM_RESOLUTION    (13) // for 86duino						
-static int mc = MC_MODULE0, md = MCPWM_MODULEA;
-//uint8_t analog_reference = DEFAULT;
+#define PWM_RESOLUTION    (13) // for 86duino
 
 void analogReference(uint8_t mode) {
 	return;	
@@ -66,7 +64,11 @@ static unsigned long mapResolution(unsigned long value, unsigned long from, unsi
 
 
 void Close_Pwm(uint8_t pin) {
+	int mc, md;
 	if(pin >= PINS) return;
+	
+	mc = arduino_to_mc_md[MCM_MC][pin];
+	md = arduino_to_mc_md[MCM_MD][pin];
 	
 	io_DisableINT();
 	if(mc_md_inuse[pin] == 1)
@@ -113,7 +115,8 @@ int analogRead(uint8_t pin) {
 static unsigned short crossbar_ioaddr = 0;
 void analogWrite(uint8_t pin, unsigned long val) {
 	float unit;
-	
+	int mc, md;
+		
 	if(pin >= PINS) return;
 	pinMode(pin, OUTPUT);
 	

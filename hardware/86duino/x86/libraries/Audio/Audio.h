@@ -14,6 +14,10 @@
 #include "Arduino.h"
 #include "Print.h"
 
+#ifndef __86DUINO_ONE
+#error Audio library is only used on 86Duino ONE!
+#endif
+
 class AudioClass : public Print {
 public:
 	AudioClass(){ };

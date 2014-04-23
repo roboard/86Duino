@@ -217,4 +217,5 @@ HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 HardwareSerial Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
 HardwareSerial Serial232(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 500L);
+HardwareSerial* HWSerial[4] = {NULL, &Serial1, &Serial2, &Serial3};
 // Preinstantiate Objects //////////////////////////////////////////////////////

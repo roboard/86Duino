@@ -46,18 +46,8 @@ void LSM330DLC::init(int acc_addr, int gyro_addr) {
 void LSM330DLC::getMotion6(int* ax, int* ay, int* az, int* gx, int* gy, int* gz) {
   uint8_t temp[12];
   uint8_t error = 0;
-  if (getRegVal( accAddr, 0x28, &temp[0])  == 0) error++;
-  if (getRegVal( accAddr, 0x29, &temp[1])  == 0) error++;
-  if (getRegVal( accAddr, 0x2A, &temp[2])  == 0) error++;
-  if (getRegVal( accAddr, 0x2B, &temp[3])  == 0) error++;
-  if (getRegVal( accAddr, 0x2C, &temp[4])  == 0) error++;
-  if (getRegVal( accAddr, 0x2D, &temp[5])  == 0) error++;
-  if (getRegVal(gyroAddr, 0x28, &temp[6])  == 0) error++;
-  if (getRegVal(gyroAddr, 0x29, &temp[7])  == 0) error++;
-  if (getRegVal(gyroAddr, 0x2A, &temp[8])  == 0) error++;
-  if (getRegVal(gyroAddr, 0x2B, &temp[9])  == 0) error++;
-  if (getRegVal(gyroAddr, 0x2C, &temp[10]) == 0) error++;
-  if (getRegVal(gyroAddr, 0x2D, &temp[11]) == 0) error++;
+  if (getRegVal( accAddr, 0xA8, &temp[0]) != 6) error++;
+  if (getRegVal(gyroAddr, 0xA8, &temp[6]) != 6) error++;
   
   if (error == 0) {
     ax[0] = (int16_t)temp[0]  | ((int16_t)temp[1]  << 8);
@@ -84,21 +74,24 @@ void LSM330DLC::getMotion6(int* ax, int* ay, int* az, int* gx, int* gy, int* gz)
 }
 
 int8_t LSM330DLC::getRegVal(uint8_t addr, uint8_t offset, uint8_t *pVal) {
+  int i = 0;
   uint32_t pretime;
   
   Wire.beginTransmission(addr);
   Wire.write(offset);
   Wire.endTransmission();
   
-  Wire.requestFrom((int)addr, 1);
+  Wire.requestFrom((int)addr, 6);
   pretime = millis();
-  while(!Wire.available() && (millis() - pretime) < 1000UL);
+  while ((millis() - pretime) < 1000UL) {
+    if (Wire.available()) {
+	  pVal[i++] = (uint8_t)Wire.read();
+	  if (i == 6) break;
+	  pretime = millis();
+	}
+  }
   
-  if (!Wire.available())
-    return 0;
-  
-  pVal[0] = (uint8_t)Wire.read();
-  return 1;
+  return i;
 }
 
 void LSM330DLC::setAccelDataRate(uint8_t rate) {

@@ -31,7 +31,7 @@ Contributors
 
 * DY Hung (Dyhung@dmp.com.tw)
 
-  Porting of the Arduino Ethernet and WiFi libraries, and of the FreeIMU 
+  Porting of the Arduino Ethernet, CANBus, and WiFi libraries, and of the FreeIMU 
   library.
 
 * Hellion Chuang (hellion@dmp.com.tw)

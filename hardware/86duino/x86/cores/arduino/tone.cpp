@@ -21,6 +21,7 @@
 #include "dmpcfg.h"
 #include "mcm.h"
 #include "irq.h"
+#include <pc.h>
 
 static int mc = 3, md = 2;
 
@@ -73,8 +74,9 @@ static void enable_MCINT(unsigned long used_int) {
 
 static bool toneInitInt = false;
 static char* name = "Tone";
-void noTone(uint8_t _pin)
-{
+void noTone(uint8_t _pin) {
+	if(_pin == PCSPEAKER) nosound();
+	
 	io_DisableINT();
 	use_pin_times = 0;
 	use_pin_tone  = 255;
@@ -98,13 +100,13 @@ static int isr_handler(int irq, void* data) {
 	{
 		if(h_l == 0)
 		{
-			digitalWrite(use_pin_tone, HIGH);
+			if(use_pin_tone != PCSPEAKER) digitalWrite(use_pin_tone, HIGH);
 			if(use_pin_times > 0) use_pin_times--;
 			h_l = 1;
 		}
 		else
 		{
-        	digitalWrite(use_pin_tone, LOW);
+        	if(use_pin_tone != PCSPEAKER) digitalWrite(use_pin_tone, LOW);
         	if(use_pin_times > 0) use_pin_times--;
         	h_l = 0;
 		}
@@ -140,7 +142,8 @@ static bool init_mc_irq(void) {
 
 
 void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
-    pinMode(_pin, OUTPUT);
+    if(_pin != PCSPEAKER)
+		pinMode(_pin, OUTPUT);
     
     mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
     mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
@@ -172,18 +175,23 @@ void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
     use_pin_tone = _pin;
 	io_RestoreINT();
 	
+	if(_pin == PCSPEAKER) sound(frequency);
 	mcpwm_Enable(mc, md);
 }
 
 void tone_UPDATE(uint8_t _pin, unsigned int frequency, unsigned long duration) {
-    if(frequency <= 0)
+	if(frequency <= 0)
 		mcpwm_SetWidth(mc, md, (duration*1000) * SYSCLK,(duration*1000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms ³æ¦ìms 
     else
 		mcpwm_SetWidth(mc, md, ((1.0/frequency)*1000000)/2 * SYSCLK, ((1.0/frequency)*500000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms    
-    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);    
+    
+	if(_pin == PCSPEAKER) sound(frequency);
+	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);    
 }
 
 void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
+	if(use_pin_tone != 255 && use_pin_tone !=_pin) return; // tone() has been used before.
+	
 	io_DisableINT();
 	if(frequency >= 10000)
 		frequency = 10000;

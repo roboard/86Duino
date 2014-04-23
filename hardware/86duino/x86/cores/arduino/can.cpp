@@ -904,7 +904,7 @@ DMPAPI(bool) can_Write(void *vcan, CANFrame *pack)
 		return false;
 	}
 	/* Check CAN-BUS packet type */
-	if (pack->type > 0x03 || pack->length < 0x00) {
+	if (pack->type > 0x03 || pack->type < 0x00) {
 		err_print((char*)"%s: CAN-BUS \'packet type\' error.\n", __FUNCTION__);
 		return false;
 	}

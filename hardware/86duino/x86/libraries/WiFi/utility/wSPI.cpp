@@ -25,26 +25,11 @@
 // #define WIFI_DEBUG_MODE    (1)
 
 WIFI_SPIClass wSPI;
-static unsigned WIFI_SPI_IOaddr = 0;
 
-void WIFI_WriteData(uint8_t data) {
-	io_outpb(WIFI_SPI_IOaddr, data);
-	while((io_inpb(WIFI_SPI_IOaddr + 3) & 0x08) == 0);
-}
-
-uint8_t WIFI_ReadData(void) {
-	while((io_inpb(WIFI_SPI_IOaddr + 3) & 0x20) == 0);
-	return io_inpb(WIFI_SPI_IOaddr + 1);
-}
-
-uint8_t WIFI_SPIClass::transfer(uint8_t _data) {
-	uint8_t tmp;
-	WIFI_WriteData(_data);
-	tmp = WIFI_ReadData();
-	return tmp;
-}
+unsigned WIFI_SPI_IOaddr = 0;
 
 static void WIFI_useFIFO(void) {
+	if(WIFI_SPI_IOaddr == 0) return;
 	io_outpb(WIFI_SPI_IOaddr + 2, io_inpb(WIFI_SPI_IOaddr + 2) | 0x10);
 }
 
@@ -56,10 +41,16 @@ static void WIFI_useFIFO(void) {
 #define WIFI_SPI_OFIFOEMPTY    (0x08)
 #define WIFI_SPI_IFIFOFULL     (0x04)
 uint8_t WIFI_ReadStateR(void) {
+	if(WIFI_SPI_IOaddr == 0) return 0;
 	return io_inpb(WIFI_SPI_IOaddr + 3);
 }
 
+void WIFI_SPIClass::setSS(uint8_t data) {
+	SPICS(data);
+}
+
 void WIFI_SPIClass::SPICS(uint8_t data) {
+	if(WIFI_SPI_IOaddr == 0) return;
 	if(data != 0)
 		io_outpb(WIFI_SPI_IOaddr + 4, 0x01);
 	else
@@ -67,8 +58,8 @@ void WIFI_SPIClass::SPICS(uint8_t data) {
 }
 
 // skip WIFI_SPI_IOaddr + 5
-
 void WIFI_WriteCLKDIVR(uint8_t data) {
+	if(WIFI_SPI_IOaddr == 0) return;
 	io_outpb(WIFI_SPI_IOaddr + 6, data);
 }
 
@@ -79,11 +70,13 @@ void WIFI_WriteCLKDIVR(uint8_t data) {
 #define WIFI_CPHA         (0x02) // 0xFD is disable it
 #define WIFI_RESET        (0x01) // it will be clear when out of reset state
 void WIFI_Reset(void) {
-    io_outpb(WIFI_SPI_IOaddr + 7, 0x01);
+    if(WIFI_SPI_IOaddr == 0) return;
+	io_outpb(WIFI_SPI_IOaddr + 7, 0x01);
     while((io_inpb(WIFI_SPI_IOaddr + 7)&0x01) != 0); // wait SPI reset for complete
 }
 
 void WIFI_WriteCTRR(uint8_t data) {
+	if(WIFI_SPI_IOaddr == 0) return;
 	io_outpb(WIFI_SPI_IOaddr + 7, io_inpb(WIFI_SPI_IOaddr + 7) | data);
 }
 
@@ -110,7 +103,7 @@ void WIFI_SPIClass::begin() {
 	io_outpb(WIFI_SPI_IOaddr + 7, io_inpb(WIFI_SPI_IOaddr + 7) & 0xF1 | WIFI_SPI_MODE0); // set mode
 	io_outpb(WIFI_SPI_IOaddr + 0x0b, 0x08); // delay clk between two transfers
     //SOURCE clock/(2 * SPI_CLOCK_DIV)
-	setClockDivider(WIFI_SPI_CLOCK_DIV800); // 125k Hz
+	setClockDivider(25); // 2MHz
 	WIFI_useFIFO();
 	detachInterrupt();
     
@@ -147,11 +140,11 @@ void WIFI_SPIClass::end() {
 
 void WIFI_SPIClass::setBitOrder(uint8_t bitOrder)
 {
-	if(bitOrder == LSBFIRST) {
-	  io_outpb(WIFI_SPI_IOaddr + 7, io_inpb(WIFI_SPI_IOaddr + 7) | WIFI_LSBSHIFT);
-	} else {
-	  io_outpb(WIFI_SPI_IOaddr + 7, io_inpb(WIFI_SPI_IOaddr + 7) & ~WIFI_LSBSHIFT);
-	}
+	if(WIFI_SPI_IOaddr == 0) return;
+	if(bitOrder == LSBFIRST)
+		io_outpb(WIFI_SPI_IOaddr + 7, io_inpb(WIFI_SPI_IOaddr + 7) | WIFI_LSBSHIFT);
+	else
+		io_outpb(WIFI_SPI_IOaddr + 7, io_inpb(WIFI_SPI_IOaddr + 7) & ~WIFI_LSBSHIFT);
 }
 
 /*
@@ -169,7 +162,8 @@ Arduino Atmega328p
 */
 void WIFI_SPIClass::setDataMode(uint8_t mode)
 {
-  io_outpb(WIFI_SPI_IOaddr + 7, (io_inpb(WIFI_SPI_IOaddr + 7) & 0xF1) | mode);
+	if(WIFI_SPI_IOaddr == 0) return;
+	io_outpb(WIFI_SPI_IOaddr + 7, (io_inpb(WIFI_SPI_IOaddr + 7) & 0xF1) | mode);
 }
 
 // Vertex86EX has 3 ClockDivider: High, Mid, Low
@@ -186,32 +180,23 @@ void WIFI_SPIClass::setDataMode(uint8_t mode)
 #define SPI_CLOCK_DIV2 0x04     : 8MHz
 #define SPI_CLOCK_DIV8 0x05     : 2MHz
 #define SPI_CLOCK_DIV32 0x06    : 500MHz
-it's result is 16MHz/above value, so that the lowest speed is 1.25MHz
+it's result is 16MHz/above value, so that the lowest speed is 0.125MHz
 
-#define WIFI_SPI_CLOCK_DIV25   (25)     : 4MHz
-#define WIFI_SPI_CLOCK_DIV100  (100)    : 1MHz
-#define WIFI_SPI_CLOCK_DIV400  (400)    : 250kHz
-#define WIFI_SPI_CLOCK_DIV800  (800)    : 125kHz
-#define WIFI_SPI_CLOCK_DIV13   (13)     : 8MHz (it is 12.5)
-#define WIFI_SPI_CLOCK_DIV50   (50)     : 2MHz
-#define WIFI_SPI_CLOCK_DIV200  (200)    : 500kHz
+#define SPI_CLOCK_DIV25   (25)     : 4MHz
+#define SPI_CLOCK_DIV100  (100)    : 1MHz
+#define SPI_CLOCK_DIV400  (400)    : 250kHz
+#define SPI_CLOCK_DIV800  (800)    : 125kHz
+#define SPI_CLOCK_DIV13   (13)     : 8MHz (it is 12.5)
+#define SPI_CLOCK_DIV50   (50)     : 2MHz
+#define SPI_CLOCK_DIV200  (200)    : 500kHz
 */
 void WIFI_SPIClass::setClockDivider(uint16_t rate)
 {
 	if(rate == 0 && rate > 4095) return;
-	if(rate > 255)
-	{
-		io_outpb(WIFI_SPI_IOaddr + 6, rate/256);
-	}
-	io_outpb(WIFI_SPI_IOaddr + 2, (io_inpb(WIFI_SPI_IOaddr + 2) & 0xF0) | (rate%256));
-}
-
-// bit0: Transfer data complete
-void WIFI_SPIClass::attachInterrupt() {
-	io_outpb(WIFI_SPI_IOaddr + 8, io_inpb(WIFI_SPI_IOaddr + 8) | 0x01);
-}
-
-void WIFI_SPIClass::detachInterrupt() {
-	io_outpb(WIFI_SPI_IOaddr + 8, io_inpb(WIFI_SPI_IOaddr + 8) & 0xFE);
+	if(WIFI_SPI_IOaddr == 0) return;
+	if(rate > 15)
+		io_outpb(WIFI_SPI_IOaddr + 6, (rate&0x0ff0)>>4);
+	
+	io_outpb(WIFI_SPI_IOaddr + 2, (io_inpb(WIFI_SPI_IOaddr + 2) & 0xF0) | (rate%16));
 }
 

@@ -4,3 +4,5 @@ SFSerial.h
 Liquid.h
 \s*#\s*include\s*[<"](CapacitiveSensor.h)[">]
 Capa.h
+\s*#\s*include\s*[<"](SoftwareSerial.h)[">]
+SFSerail.h

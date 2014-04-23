@@ -266,7 +266,7 @@ void Adafruit_ST7735::commonInit(uint8_t *cmdList) {
 
   if(hwSPI) { // Using hardware SPI
     SPI.begin();
-    SPI.setClockDivider(SPI_CLOCK_DIV25); // 4 MHz (half speed)
+    SPI.setClockDivider(13); // 4 MHz (half speed)
     SPI.setBitOrder(MSBFIRST);
     SPI.setDataMode(SPI_MODE0);
   } else {

@@ -18,13 +18,18 @@
 extern "C"{
 #endif
 
-#define HIGH         (0x01)
 #define LOW          (0x00)
+#define HIGH         (0x01)
+#define CHANGE       (0x02)
+#define FALLING      (0x03)
+#define RISING       (0x04)
 
 #define INPUT          (0x00)
 #define OUTPUT         (0x01)
 #define INPUT_PULLUP   (0x02)
 #define INPUT_PULLDOWN (0x03)
+
+#define PCSPEAKER    (250)
 
 #define true 0x1
 #define false 0x0
@@ -40,10 +45,6 @@ extern "C"{
 
 #define LSBFIRST (0)
 #define MSBFIRST (1)
-
-#define CHANGE   (1)
-#define FALLING  (2)
-#define RISING   (3)
 
 #define INTERNAL 3
 #define DEFAULT 1
