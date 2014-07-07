@@ -4,6 +4,7 @@
 #include <conio.h>
 #include <process.h>
 
+unsigned _stklen = 4096 * 1024;
 DPMI_MEMORY_ALL_LOCK(0)
 int main(void)
 {

@@ -22,8 +22,11 @@
 #include "common.h"
 #include "usb.h"
 #include "mcm.h"
+#include "irq.h"
 
 void *USBDEV = NULL;
+bool Global_irq_Init = false;
+
 unsigned long millis() {
 	return timer_nowtime();
 }
@@ -79,6 +82,22 @@ bool init() {
 	for(i=0; i<4; i++)
 		mc_SetMode(i, MCMODE_PWM_SIFB);
 	
+	if(Global_irq_Init == false)
+	{
+		// set MCM IRQ
+		if(irq_Init() == false) 
+	    {
+	        printf("MCM IRQ init fail\n"); return false;
+	    }
+	    
+	    if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
+	    {
+	        printf("MCM IRQ Setting fail\n"); return false;
+	    }
+	    Set_MCIRQ(GetMCIRQ());
+	    Global_irq_Init = true;
+	}
+    
 	//CDC
 	USBDEV = CreateUSBDevice();
     if(USBDEV == NULL)

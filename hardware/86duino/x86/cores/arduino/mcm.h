@@ -951,6 +951,73 @@ void mcpfau_SetCap1INT(int mc, int module, unsigned long interval);
 void mcpfau_SetCap2INT(int mc, int module, unsigned long interval);
 void mcpfau_SetCap3INT(int mc, int module, unsigned long interval);
 
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^   SSI Mode  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+void mcssi_SetPulCnt(int mc, int module, unsigned long pcnt);
+unsigned long mcssi_ReadPulCnt(int mc, int module);
+unsigned long mcssi_ReadData(int mc, int module);
+void mcssi_SetClock(int mc, int module, unsigned long clk);
+unsigned long mcssi_ReadClock(int mc, int module);
+void mcssi_SetWaitTime(int mc, int module, unsigned long waittime);
+unsigned long mcssi_ReadWaitTime(int mc, int module);
+
+#define MCSSI_LATCH_PHASE0    (0x00L << 31)
+#define MCSSI_LATCH_PHASE1    (0x01L << 31)
+void mcssi_SetLatchPhase(int mc, int module, unsigned long phase);
+
+unsigned long mcssi_ReadLatchPhase(int mc, int module);
+void mcssi_SetLatchTime(int mc, int module, unsigned long latchtime);
+unsigned long mcssi_ReadLatchTime(int mc, int module);
+void mcssi_SetNumberBITS(int mc, int module, unsigned long numberbits);
+unsigned long mcssi_ReadNumberBITS(int mc, int module);
+void mcssi_SetNumberRUNS(int mc, int module, unsigned long numberruns);
+unsigned long mcssi_ReadNumberRUNS(int mc, int module);
+
+#define MCSSI_COUNT            (0x00L << 12)
+#define MCSSI_CONTINUE         (0x01L << 12)
+#define MCSSI_COUNT_1TO0       (0x04L << 12)
+#define MCSSI_CONTINUE_1TO0    (0x05L << 12)
+#define MCSSI_COUNT_0TO1       (0x08L << 12)
+#define MCSSI_CONTINUE_0TO1    (0x09L << 12)
+#define MCSSI_COUNT_BOTH       (0x0cL << 12)
+#define MCSSI_CONTINUE_BOTH    (0x0dL << 12)
+void mcssi_SetCntMode(int mc, int module, unsigned long mode);
+void mcssi_SetExternalBit(int mc, int module);
+void mcssi_ClearExternalBit(int mc, int module, unsigned long mode);
+void mcssi_SetChkErrBit(int mc, int module);
+void mcssi_ClearChkErrBit(int mc, int module, unsigned long mode);
+void mcssi_SetGAY2BINBit(int mc, int module);
+void mcssi_ClearGAY2BINBit(int mc, int module, unsigned long mode);
+unsigned long mcssi_ReadRunNumber(int mc, int module);
+
+#define MCSSI_STAT_IDLE       (0x00L)
+#define MCSSI_STAT_READING    (0x01L)
+#define MCSSI_STAT_WAIT       (0x02L)
+unsigned long mcssi_ReadSSISTAT(int mc, int module);
+
+bool mcssi_CheckERRBit(int mc, int module);
+void mcssi_ClearERRBit(int mc, int module);
+
+#define MCSSI_CAPFIFO_HASDATA        (0x00L)
+#define MCSSI_CAPFIFO_OVERFLOW       (0x02L)
+#define MCSSI_CAPFIFO_EMPTY          (0x03L)
+unsigned long mcssi_ReadCAPSTAT(int mc, int module);
+
+#define MCSSI_RLDTRIG_DISABLE        (0x00L << 20)
+#define MCSSI_RLDTRIG_NORMAL         (0x01L << 20)
+#define MCSSI_RLDTRIG_ONESHOT        (0x02L << 20)
+void mcssi_SetRLDTRIG(int mc, int module, unsigned long mode);
+
+#define MCSSI_CAP_PCNT_DISABLE       (0x00L << 16)
+#define MCSSI_CAP_PCNT_ENABLE        (0x01L << 16)
+void mcssi_SetCAPMode(int mc, int module, unsigned long mode);
+
+void mcssi_SetCAPINT(int mc, int module, unsigned long number);
+void mcssi_SetCapInterval(int mc, int module, unsigned long number);
+unsigned long mcssi_ReadCAPFIFO(int mc, int module, unsigned long* data);
+
+unsigned long mcssi_ReadCtrlREG(int mc, int module);
+
 // MCM INTERRUPT FUNCTION 
 #define PULSE_END_INT    (0x01L)
 #define SC_END_INT       (0x02L)

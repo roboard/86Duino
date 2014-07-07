@@ -28,17 +28,17 @@
 static int mc = 0, md = 1;
 static int mcint_offset[2] = {0, 24};
 static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0xff0000ffL); //for EX
+    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
 }
 
 static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, 0x00L);  // disable mc interrupt
+    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, used_int<<mcint_offset[md]);
+	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
 }
 
 static void (*sifIntMode[3])(int, int, unsigned long) = {mcpfau_SetCapMode1, mcpfau_SetCapMode2, mcpfau_SetCapMode3}; 
@@ -110,7 +110,7 @@ static int user_int(int irq, void* data) {
 		default: break;
 		}
 	}
-	
+	if(i == EXTERNAL_NUM_INTERRUPTS) return ISR_NONE;
 	return ISR_HANDLED;
 }
 
@@ -119,6 +119,7 @@ static char* name = "attachInt";
 static bool interrupt_init(void) {
 	if(used_irq != 0xff) return true;
 	
+	/* this part is moved to wiring.cpp
 	if(irq_Init() == false) 
     {
         printf("irq_init fail\n"); return false;
@@ -128,6 +129,7 @@ static bool interrupt_init(void) {
     {
         printf("%s\n", __FUNCTION__); return false;
     }
+    */
     
     if(irq_InstallISR(GetMCIRQ(), user_int, (void*)name) == false)
 	{
@@ -137,7 +139,7 @@ static bool interrupt_init(void) {
 	//Master_DX2();
 	
 	used_irq = GetMCIRQ();
-	Set_MCIRQ(used_irq);
+	// Set_MCIRQ(used_irq); // moved to wiring.cpp
 	return true;
 }
 

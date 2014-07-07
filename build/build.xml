@@ -101,7 +101,7 @@
     <unzip dest="${target.path}" src="shared/reference.zip" overwrite="false"/>
     
     <!-- Write the revision file! -->
-    <echo file="${target.path}/lib/version.txt" message="Coding 103" />
+    <echo file="${target.path}/lib/version.txt" message="Coding 104" />
   </target>
 
   
@@ -176,7 +176,7 @@
     <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/bossac" perm="+x" />
     <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/DOSBox.exe" perm="+x" />
     <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/DOSBox-0.74/upx309w/upx.exe" perm="+x" />
-    <chmod file="macosx/work/86Duino.app/Contents/Resources/Java//hardware/tools/avr/bin/86upload.exe" perm="+x" />
+    <chmod file="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/x86/v86dude.exe" perm="+x" />
       
     <copy todir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr/include/avr">
       <fileset file="macosx/dist/eeprom.h" />
@@ -237,7 +237,8 @@
     <!-- The ant copy command does not preserve permissions. -->
     <chmod file="macosx/work/86Duino.app/Contents/MacOS/JavaApplicationStub" perm="+x" />
     <chmod perm="+x">
-      <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/bin" includes="**/*" />
+      <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/x86" includes="**/*" />
+	  <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/bin" includes="**/*" />
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr/bin" includes="**/*" />
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr-3/bin" includes="**/*" />
       <fileset dir="macosx/work/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr-4/bin" includes="**/*" />
@@ -283,12 +284,13 @@
     <!-- The ant copy command does not preserve permissions. -->
     <chmod file="macosx/working_dir/86Duino.app/Contents/MacOS/JavaApplicationStub" perm="+x" />
     <chmod perm="+x">
-      <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/avr/bin" includes="**/*" />
+      <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/x86" includes="**/*" />
+	  <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/avr/bin" includes="**/*" />
       <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr/bin" includes="**/*" />
       <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr-3/bin" includes="**/*" />
       <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/avr/avr-4/bin" includes="**/*" />
       <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/avr/libexec/gcc/avr/3.4.6/" includes="**/cc1*" />
-      <fileset dir="macosx/working_dir/86dDuino.app/Contents/Resources/Java/hardware/tools/avr/libexec/gcc/avr/4.3.2/" includes="**/cc1*" />
+      <fileset dir="macosx/working_dir/86Duino.app/Contents/Resources/Java/hardware/tools/avr/libexec/gcc/avr/4.3.2/" includes="**/cc1*" />
     </chmod>
 
     <!-- Pause briefly for the OS to catch up with the DMG changes. 
@@ -365,6 +367,7 @@
 
     <copy todir="linux/work/hardware">
       <fileset dir="linux/dist" includes="tools/**" />
+      <fileset dir="linux/dist" includes="tools/x86/**" />
     </copy>
 
     <chmod perm="755" file="linux/work/hardware/tools/avrdude" />
@@ -372,7 +375,7 @@
     <chmod perm="755" file="linux/work/hardware/tools/bossac64" />
     <chmod perm="755" file="linux/work/hardware/tools/adk2tool" />
     <chmod perm="755" file="linux/work/hardware/tools/adk2install" />
-    <chmod perm="755" file="linux/work/hardware/tools/86upload.exe" />
+    <chmod perm="755" file="linux/work/hardware/tools/x86/v86dude.exe" />
     <chmod perm="755" file="linux/work/DOSBox-0.74/upx309w/upx.exe" />
 
     <copy todir="linux/work" file="linux/dist/86duino" />

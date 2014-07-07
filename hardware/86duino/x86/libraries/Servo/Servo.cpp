@@ -70,17 +70,17 @@ static int md = 2;
 /************************************ MCM ************************************/
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0x00ffffffL); //for EX
+    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
 }
 
 static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, 0x00L);  // disable mc interrupt
+    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, used_int<<mcint_offset[md]);
+	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
 }
 
 /************ static functions common to all instances ***********************/
@@ -90,7 +90,7 @@ static volatile int evtnumber; // It is a excess variable, but can read the code
 static void pulse_init(bool mcm_init) {
 	if(mcm_init == true)
 	{  
-		Set_MCIRQ(GetMCIRQ());
+		// Set_MCIRQ(GetMCIRQ()); // moved to wiring.cpp
 		mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 		mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
 		mcpwm_SetDeadband(mc, md, 0L);
@@ -122,7 +122,10 @@ static void pulse_init(bool mcm_init) {
 static int isr_handler(int irq, void* data) {
 	unsigned long val;
 	volatile irqservo_t *tmp;
-    mc_outp(mc, 0x04, (USER_EVT_INT << mcint_offset[md]));
+	unsigned long svintmask = USER_EVT_INT << mcint_offset[md];
+    if((mc_inp(mc, 0x04) & svintmask) == 0L) return ISR_NONE;
+	
+	mc_outp(mc, 0x04, svintmask);
     
     do
     	val = mcpwm_ReadSTATREG2(mc, md);
@@ -333,15 +336,19 @@ END:
 
 static char* name = "Servo";
 static bool initServoIRQ(void) {
-    if(irq_Init() == false) 
-    {
-        printf("irq_init fail\n"); return false;
-    }
-    
-    if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
-    {
-        printf("%s\n", __FUNCTION__); return false;
-    }
+	if(Global_irq_Init == false)
+	{
+		if(irq_Init() == false) 
+	    {
+	        printf("irq_init fail\n"); return false;
+	    }
+	    
+	    if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
+	    {
+	        printf("%s\n", __FUNCTION__); return false;
+	    }
+	    Global_irq_Init = true;
+	}
     
     if(irq_InstallISR(GetMCIRQ(), isr_handler, (void*)name) == false)
     {
@@ -356,7 +363,11 @@ static bool closeServoIRQ(void) {
 }
 
 static bool isPWMPin(uint8_t pin) {
-    return ((arduino_to_mc_md[0][pin] == NOPWM) ? false : true);
+    int mcpwm = arduino_to_mc_md[0][pin];
+	int mdpwm = arduino_to_mc_md[1][pin];
+	if(mcpwm == NOPWM || mdpwm == NOPWM) return false;
+	if(mcpwm == MC_MODULE3 && mdpwm == MCPWM_MODULEB) return false;// this pin is uesd by tone and IRrmote lib after version 103
+    return true;
 }
 
 
@@ -390,6 +401,7 @@ uint8_t Servo::attach(int pin, int min, int max) {
 		if(isPWMPin(pin) == false)
 		{
 			pinMode(pin, OUTPUT);                  // set servo pin to output
+			digitalWrite(pin, LOW);
 			// if(isISRActive() == false) initServoIRQ(); we don't need this here   
 			insert(servos[this->servoIndex]);
 			cp2irqservos();

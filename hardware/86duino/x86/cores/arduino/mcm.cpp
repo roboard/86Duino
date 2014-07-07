@@ -1134,6 +1134,16 @@ static int           MCSIF_intOffset[2] = {0, 24};
 #define MCSIF_PFAU_CAPCTRLREG1  (0x2cL)
 #define MCSIF_PFAU_CAPFIFOREG1  (0x30L)
 
+#define MCSIF_SSI_PCNTREG       (0x0cL)
+#define MCSIF_SSI_CLKREG        (0x10L)
+#define MCSIF_SSI_WAITREG       (0x14L)
+#define MCSIF_SSI_DATAREG       (0x18L)
+#define MCSIF_SSI_TIMEREG       (0x1cL)
+#define MCSIF_SSI_CTRLREG       (0x20L)
+#define MCSIF_SSI_STATREG       (0x28L)
+#define MCSIF_SSI_CAPCTRLREG    (0x2cL)
+#define MCSIF_SSI_CAPFIFOREG    (0x30L)
+
 //
 
 void mcsif_Enable(int mc, int module) {
@@ -1708,6 +1718,169 @@ void mcpfau_SetCap3INT(int mc, int module, unsigned long interval)
     unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG3;
 	interval = (interval << 11L) & 0x0000f800L;
     mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff07ffL) + interval);
+}
+
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^   SSI Mode  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+void mcssi_SetPulCnt(int mc, int module, unsigned long pcnt) {
+    mc_outp(mc, MCSIF_modOffset[module] + MCSIF_SSI_PCNTREG, pcnt & 0x0fffffffL);
+}
+
+unsigned long mcssi_ReadPulCnt(int mc, int module) {
+    return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_PCNTREG) & 0x0fffffffL;
+}
+
+unsigned long mcssi_ReadData(int mc, int module) {
+    return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_DATAREG) & 0xffffffffL;
+}
+
+void mcssi_SetClock(int mc, int module, unsigned long clk) {
+    mc_outp(mc, MCSIF_modOffset[module] + MCSIF_SSI_CLKREG, clk & 0x0fffffffL);
+}
+
+unsigned long mcssi_ReadClock(int mc, int module) {
+    return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_CLKREG) & 0x0fffffffL;
+}
+
+void mcssi_SetWaitTime(int mc, int module, unsigned long waittime) {
+    mc_outp(mc, MCSIF_modOffset[module] + MCSIF_SSI_WAITREG, waittime & 0x0fffffffL);
+}
+
+unsigned long mcssi_ReadWaitTime(int mc, int module) {
+    return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_WAITREG) & 0x0fffffffL;
+}
+
+void mcssi_SetLatchPhase(int mc, int module, unsigned long phase) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_TIMEREG;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0x7fffffffL) | phase);
+}
+
+unsigned long mcssi_ReadLatchPhase(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_TIMEREG;
+	return (mc_inp(mc, reg) & ~(0x7fffffffL)) >> 31;
+}
+
+void mcssi_SetLatchTime(int mc, int module, unsigned long latchtime) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_TIMEREG;
+    latchtime = latchtime & 0x0fffffffL;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xf0000000L) | latchtime);
+}
+
+unsigned long mcssi_ReadLatchTime(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_TIMEREG;
+	return (mc_inp(mc, reg) & ~(0xf0000000L));
+}
+
+void mcssi_SetNumberBITS(int mc, int module, unsigned long numberbits) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	numberbits = numberbits & 0x1fL;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0x07ffffffL) | (numberbits << 27));
+}
+
+unsigned long mcssi_ReadNumberBITS(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	return (mc_inp(mc, reg) & ~(0x07ffffffL)) >> 27;
+}
+
+void mcssi_SetNumberRUNS(int mc, int module, unsigned long numberruns) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	numberruns = numberruns & 0x1fL;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffe0ffffL) | (numberruns << 16));
+}
+
+unsigned long mcssi_ReadNumberRUNS(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	return (mc_inp(mc, reg) & ~(0xffe0ffffL)) >> 16;
+}
+
+void mcssi_SetCntMode(int mc, int module, unsigned long mode) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff0fffL) | mode);
+}
+
+void mcssi_SetExternalBit(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	mc_outp(mc, reg, mc_inp(mc, reg) | (0x01L << 10));
+}
+
+void mcssi_ClearExternalBit(int mc, int module, unsigned long mode) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfffffbffL));
+}
+
+void mcssi_SetChkErrBit(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	mc_outp(mc, reg, mc_inp(mc, reg) | (0x01L << 9));
+}
+
+void mcssi_ClearChkErrBit(int mc, int module, unsigned long mode) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfffffdffL));
+}
+
+void mcssi_SetGAY2BINBit(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	mc_outp(mc, reg, mc_inp(mc, reg) | (0x01L << 8));
+}
+
+void mcssi_ClearGAY2BINBit(int mc, int module, unsigned long mode) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG;
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfffffeffL));
+}
+
+unsigned long mcssi_ReadRunNumber(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_STATREG) >> 8) & 0x1fL);
+}
+
+unsigned long mcssi_ReadSSISTAT(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_STATREG) >> 5) & 0x07L);
+}
+
+bool mcssi_CheckERRBit(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_STATREG;
+	if((mc_inp(mc, reg) & 0x08L) != 0) return true;
+	return false;
+}
+
+void mcssi_ClearERRBit(int mc, int module) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_STATREG;
+	mc_outp(mc, reg, mc_inp(mc, reg) | 0x08L);
+}
+
+unsigned long mcssi_ReadCAPSTAT(int mc, int module) {
+    return (mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_STATREG) & 0x03L);
+}
+
+void mcssi_SetRLDTRIG(int mc, int module, unsigned long mode) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
+	mc_outp(mc, reg, mc_inp(mc, reg) & 0xffcfffffL | mode);
+}
+
+void mcssi_SetCAPMode(int mc, int module, unsigned long mode) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
+	mc_outp(mc, reg, mc_inp(mc, reg) & 0xfffcffffL | mode);
+}
+
+void mcssi_SetCAPINT(int mc, int module, unsigned long number) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
+    number = number & 0x1FL;
+	mc_outp(mc, reg, mc_inp(mc, reg) & 0xffff0effL | (number << 11));
+}
+
+void mcssi_SetCapInterval(int mc, int module, unsigned long number) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
+    number = number & 0x1FFL;
+	mc_outp(mc, reg, mc_inp(mc, reg) & 0xfffffe00L | number);
+}
+
+unsigned long mcssi_ReadCAPFIFO(int mc, int module, unsigned long* data) {
+    unsigned long tmp = mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_CAPFIFOREG);
+    
+    if (data != NULL) *data = tmp;
+    return 0L;
+}
+
+unsigned long mcssi_ReadCtrlREG(int mc, int module) {
+    return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_SSI_CTRLREG);
 }
 
 

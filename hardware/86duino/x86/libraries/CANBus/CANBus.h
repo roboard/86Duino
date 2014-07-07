@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 
-#ifndef __86DUINO_ONE
-#error CAN bus library is only used on 86Duino ONE!
-#endif
+//#ifndef __86DUINO_ONE
+//#error CAN bus library is only used on 86Duino ONE!
+//#endif
 
 #define CAN_10KBPS         (CAN_BPS_10K)
 #define CAN_20KBPS         (CAN_BPS_20K)

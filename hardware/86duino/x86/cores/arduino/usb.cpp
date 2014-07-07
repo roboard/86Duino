@@ -1,7 +1,8 @@
 /*
   usb.cpp - DM&P Vortex86 USB Device library
   Copyright (c) 2013 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
-
+  2014/06 Modified by Android Lin <acen@dmp.com.tw>.
+  
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -298,6 +299,40 @@ DMP_INLINE(void) EP0_InHandler(USB_Device *usb);
 DMP_INLINE(void) EP0_OutHandler(USB_Device *usb);
 DMP_INLINE(void) EP2_InHandler(USB_Device *usb);
 
+DMP_INLINE(void) Get_Status(USB_Device *usb) 
+{
+	BYTE data[2] = {0, 0};
+	if ((usb->Setup.bmRequestType & 0x80) != 0x80) return;
+	//if (usb->Setup.wLength != 2) return;
+	usb->InDataPtr = data;
+	usb->InDataSize = (WORD)(sizeof(data));
+	usb->setup_in_handled = true;
+	if (usb->setup_in_handled == true) EP0_InHandler(usb);
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(Get_Status)
+#endif
+
+DMP_INLINE(void) Clear_Feature(USB_Device *usb)
+{
+	if ((usb->Setup.bmRequestType & 0x80) != 0x00) return;
+
+	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(Clear_Feature)
+#endif
+
+DMP_INLINE(void) Set_Feature(USB_Device *usb)
+{
+	if ((usb->Setup.bmRequestType & 0x80) != 0x00) return;
+
+	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Feature)
+#endif
+				
 DMP_INLINE(void) Set_Address(USB_Device *usb)
 {
 	if (usb->state == USB_DEV_CONFIGURED) return;
@@ -365,6 +400,31 @@ DMP_INLINE(void) Get_Descriptor(USB_Device *usb)
 				if (usb->setup_in_handled == true) EP0_InHandler(usb);
 			}
 			else SetEPnDLR(usb, EP0, IN, ENABLE | STALL);
+		}
+		break;
+		
+		case 0x21: 
+		{
+			// HID
+		}
+		break;
+		
+		case 0x22: 
+		{
+			if (usb->Setup.wValue.Val[LSB] == 0 && usb->Setup.wIndex.Value == 2)
+			{
+				usb->InDataPtr = (BYTE *)hidReportDescriptor;
+				usb->InDataSize = desc_Config_Set.desc_HID.bDescriptorLength;
+				usb->setup_in_handled = true;
+				if (usb->InDataSize > usb->Setup.wLength) usb->InDataSize = usb->Setup.wLength;
+				if (usb->setup_in_handled == true) EP0_InHandler(usb);
+			}
+		}
+		break;
+		
+		case 0x23: 
+		{
+			// Physical descriptor
 		}
 		break;
 		
@@ -498,12 +558,13 @@ DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Configuration)
 
 DMP_INLINE(void) Get_Interface(USB_Device *usb)
 {
+	BYTE tmp = 0;
 	if ((usb->Setup.bmRequestType & 0x80) != 0x80) return;
 	if (usb->Setup.wValue.Value != 0 || usb->Setup.wLength != 1) return;
 	
 	switch (usb->Setup.wIndex.Value)
 	{
-		case 0:
+		case 0: case 1: case 2:
 		{
 			if (usb->state == USB_DEV_ADDRESS)
 			{
@@ -511,23 +572,7 @@ DMP_INLINE(void) Get_Interface(USB_Device *usb)
 			}
 			else if (usb->state == USB_DEV_CONFIGURED)
 			{
-				usb->InDataPtr  = &desc_Config_Set.desc_CDC_comm.bInterfaceNumber;
-				usb->InDataSize = 1;
-				usb->setup_in_handled = true;
-				if (usb->setup_in_handled == true) EP0_InHandler(usb);
-			}
-		}
-		break;
-		
-		case 1:
-		{
-			if (usb->state == USB_DEV_ADDRESS)
-			{
-				SetEPnDLR(usb, EP0, IN, ENABLE | STALL);
-			}
-			else if (usb->state == USB_DEV_CONFIGURED)
-			{
-				usb->InDataPtr  = &desc_Config_Set.desc_CDC_data.bInterfaceNumber;
+				usb->InDataPtr  = &tmp;
 				usb->InDataSize = 1;
 				usb->setup_in_handled = true;
 				if (usb->setup_in_handled == true) EP0_InHandler(usb);
@@ -553,21 +598,8 @@ DMP_INLINE(void) Set_Interface(USB_Device *usb)
 	
 	switch (usb->Setup.wIndex.Value)
 	{
-		case 0:
-		{
-			if (usb->state == USB_DEV_ADDRESS)
-			{
-				SetEPnDLR(usb, EP0, IN, ENABLE | STALL);
-			}
-			else if (usb->state == USB_DEV_CONFIGURED)
-			{
-				SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
-			}
-		}
-		break;
-		
-		case 1:
-		{
+		case 0: case 1: case 2:
+		{   
 			if (usb->state == USB_DEV_ADDRESS)
 			{
 				SetEPnDLR(usb, EP0, IN, ENABLE | STALL);
@@ -626,10 +658,10 @@ DMP_INLINE(void) USB_Standard_Request(USB_Device *usb)
 {
 	switch (usb->Setup.bRequest)
 	{
-		// case 0x00: Get_Status(usb);        break;
-		// case 0x01: Clear_Feature(usb);     break;
+		case 0x00: Get_Status(usb);        break;
+		case 0x01: Clear_Feature(usb);     break; 
 		// case 0x02: /* Reserved */          break;
-		// case 0x03: Set_Feature(usb);       break;
+		case 0x03: Set_Feature(usb);       break; 
 		// case 0x04: /* Reserved */          break;
 		case 0x05: Set_Address(usb);       break;
 		case 0x06: Get_Descriptor(usb);    break;
@@ -729,8 +761,81 @@ DMP_INLINE(void) USB_CDC_Request(USB_Device *usb)
 		default: break;
 	};
 }
+
 #if defined DMP_DOS_DJGPP
 DPMI_END_OF_LOCKED_STATIC_FUNC(USB_CDC_Request)
+#endif
+
+
+DMP_INLINE(void) Set_Idle(USB_Device *usb)
+{
+	if ((usb->Setup.bmRequestType & 0x80) != 0x00) return;
+	
+	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Idle)
+#endif
+
+
+DMP_INLINE(void) Get_Report(USB_Device *usb)
+{
+	if ((usb->Setup.bmRequestType & 0x80) != 0x80) return;
+	
+	usb->InDataPtr = (BYTE *)&usb->ling_coding;
+	usb->InDataSize = 0; // zero package
+	usb->setup_in_handled = true;
+	
+	if (usb->setup_in_handled == true) EP0_InHandler(usb);
+	//SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(Get_Report)
+#endif
+
+
+DMP_INLINE(void) Get_Protocol(USB_Device *usb)
+{
+	if ((usb->Setup.bmRequestType & 0x80) != 0x80) return;
+	
+	usb->InDataPtr = (BYTE *)&usb->ling_coding;
+	usb->InDataSize = 0; // zero package
+	usb->setup_in_handled = true;
+	
+	if (usb->setup_in_handled == true) EP0_InHandler(usb);
+	//SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(Get_Protocol)
+#endif
+
+
+DMP_INLINE(void) Set_Protocol(USB_Device *usb)
+{
+	if ((usb->Setup.bmRequestType & 0x80) != 0x00) return;
+	
+	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Protocol)
+#endif
+
+
+DMP_INLINE(void) USB_HID_Request(USB_Device *usb)
+{   
+	switch (usb->Setup.bRequest)
+	{
+		case 0x01: Get_Report(usb);             break;
+		//case 0x02: Get_Idle(usb);               break;
+		case 0x03: Get_Protocol(usb);           break;
+		//case 0x09: Set_Report(usb);             break;
+		case 0x0A: Set_Idle(usb);               break;
+		case 0x0B: Set_Protocol(usb);           break;
+		default: break;
+	};
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(USB_HID_Request)
 #endif
 
 DMP_INLINE(void) EP0_SetupHandler(USB_Device *usb)
@@ -743,7 +848,7 @@ DMP_INLINE(void) EP0_SetupHandler(USB_Device *usb)
 	usb->Setup.wValue.Value  = ((WORD)usb->EP[0].SetupBuf[3] << 8) + (WORD)usb->EP[0].SetupBuf[2];
 	usb->Setup.wIndex.Value  = ((WORD)usb->EP[0].SetupBuf[5] << 8) + (WORD)usb->EP[0].SetupBuf[4];
 	usb->Setup.wLength       = ((WORD)usb->EP[0].SetupBuf[7] << 8) + (WORD)usb->EP[0].SetupBuf[6];
-	
+
 	if (usb->stall == true)
 	{
 		io_outpdw(usb->EP[0].CtrlTR, io_inpdw(usb->EP[0].CtrlTR) & 0xDFFF);
@@ -758,12 +863,25 @@ DMP_INLINE(void) EP0_SetupHandler(USB_Device *usb)
 			USB_Standard_Request(usb); break;
 		
 		case 0x21: case 0xA1:
-			USB_CDC_Request(usb); break;
-				
+			if(usb->Setup.wIndex.Value == 0)
+			{
+				USB_CDC_Request(usb);
+			}
+			else if(usb->Setup.wIndex.Value == 2)
+			{
+				USB_HID_Request(usb);
+			}
+			break;	
 		default: break;
 	};
 	
 	SetEPnDLR(usb, EP0, SETUP, ENABLE);
+	/*
+	printf("%02X %02X %02X %02X %02X %02X %02X %02X\n", usb->EP[0].SetupBuf[0],
+		   usb->EP[0].SetupBuf[1], usb->EP[0].SetupBuf[2], usb->EP[0].SetupBuf[3],
+		   usb->EP[0].SetupBuf[4], usb->EP[0].SetupBuf[5], usb->EP[0].SetupBuf[6],
+		   usb->EP[0].SetupBuf[7]);
+	*/
 }
 #if defined DMP_DOS_DJGPP
 DPMI_END_OF_LOCKED_STATIC_FUNC(EP0_SetupHandler)
@@ -929,6 +1047,40 @@ DMP_INLINE(void) EP2_OutHandler(USB_Device *usb)
 DPMI_END_OF_LOCKED_STATIC_FUNC(EP2_OutHandler)
 #endif
 
+
+DMP_INLINE(void) EP3_InHandler(USB_Device *usb)
+{
+	static int ep3_in_len = 0;
+	
+	if (usb->interrupt_in_transmitting == true) return;
+	if (usb->hidxmit->count <= 0) {
+		if (ep3_in_len == EP3_MAX_PACKET_SIZE_IN) {
+			SetEPnDLR(usb, EP3, IN, ENABLE);
+			ep3_in_len = 0;
+		}
+		return;
+	}
+	
+#ifdef DMP_86DUINO_MODE
+	TX_LED_ON();
+#endif	
+	
+	ep3_in_len = 0;
+	do {
+		usb->EP[3].InBuf[ep3_in_len++] =(BYTE)PopQueue(usb->hidxmit);
+	} while(usb->hidxmit->count > 0 && ep3_in_len < EP3_MAX_PACKET_SIZE_IN);
+	
+	#if defined DMP_DOS_DJGPP
+	dosmemput(usb->EP[3].InBuf, EP3_MAX_PACKET_SIZE_IN, usb->EP[3].InPhysical);
+	#endif
+	
+	SetEPnDLR(usb, EP3, IN, ENABLE | ep3_in_len);
+	usb->interrupt_in_transmitting = true;
+}
+#if defined DMP_DOS_DJGPP
+DPMI_END_OF_LOCKED_STATIC_FUNC(EP3_InHandler)
+#endif
+
 DMP_INLINE(bool) usb_Reset(USB_Device *usb)
 {
 	if (usb->InUse == 0) return false;
@@ -957,12 +1109,14 @@ DMP_INLINE(bool) usb_Reset(USB_Device *usb)
 	SetEPnDLR(usb, EP1, IN, 0L);
 	SetEPnDLR(usb, EP2, OUT, 0L);
 	SetEPnDLR(usb, EP2, IN, 0L);
+	SetEPnDLR(usb, EP3, IN, 0L); 
 	
 	// io_outpb(usb->DAR, 0x80); // enable USB device
 	// while (!(io_inpb(usb->DAR) & 0x80));
 	
 	ClearQueue(usb->rcvd);
 	ClearQueue(usb->xmit);
+	ClearQueue(usb->hidxmit); 
 	
 	// io_DisableINT();
 	// {
@@ -1095,6 +1249,8 @@ static int USB_ISR(int irq, void* data)
 		if (isr & IEP3TX)
 		{
 			io_outpdw(usb->ISR, IEP3TX);
+			usb->interrupt_in_transmitting = false;
+			EP3_InHandler(usb); 
 		}
 	}
 	else
@@ -1128,27 +1284,29 @@ DMPAPI(void *) CreateUSBDevice(void)
 		return NULL;
 	}
 	
-	usb->DevAddr                 = 0x00;
-	usb->ReadySetAddr            = false;
+	usb->DevAddr                   = 0x00;
+	usb->ReadySetAddr              = false;
 	
-	usb->state					 = USB_DEV_NOT_ATTACHED;
-	usb->stall					 = false;
+	usb->state					   = USB_DEV_NOT_ATTACHED;
+	usb->stall					   = false;
 	
-	usb->InUse                   = 0;
-	usb->IsSet                   = 0;
-	usb->setup_in_handled        = false;
-	usb->setup_out_handled       = false;
-	usb->bulk_in_transmitting 	 = false;
+	usb->InUse                     = 0;
+	usb->IsSet                     = 0;
+	usb->setup_in_handled          = false;
+	usb->setup_out_handled         = false;
+	usb->bulk_in_transmitting 	   = false;
+	usb->interrupt_in_transmitting = false;
 	
-	usb->TimeOut		         = USB_NO_TIMEOUT;
+	usb->TimeOut		           = USB_NO_TIMEOUT;
 	
-	usb->InDataPtr               = NULL;
-	usb->OutDataPtr              = NULL;
-	usb->InDataSize              = 0;
-	usb->OutDataSize             = 0;
+	usb->InDataPtr                 = NULL;
+	usb->OutDataPtr                = NULL;
+	usb->InDataSize                = 0;
+	usb->OutDataSize               = 0;
 
-	if ((usb->rcvd = CreateQueue(RX_QUEUE_SIZE)) == NULL) goto CREATE_RX_QUEUE_FAIL;
-	if ((usb->xmit = CreateQueue(TX_QUEUE_SIZE)) == NULL) goto CREATE_TX_QUEUE_FAIL;
+	if ((usb->rcvd    = CreateQueue(RX_QUEUE_SIZE)) == NULL) goto CREATE_RX_QUEUE_FAIL;
+	if ((usb->xmit    = CreateQueue(TX_QUEUE_SIZE)) == NULL) goto CREATE_TX_QUEUE_FAIL;
+	if ((usb->hidxmit = CreateQueue(TX_QUEUE_SIZE)) == NULL) goto CREATE_HIDTX_QUEUE_FAIL;
 	
 	usb->Setup.bmRequestType     = 0;
 	usb->Setup.bRequest          = 0;
@@ -1206,7 +1364,9 @@ DMPAPI(void *) CreateUSBDevice(void)
 	RX_LED_OFF();
 #endif
 	return (void *)usb;
-	
+
+CREATE_HIDTX_QUEUE_FAIL:
+	DestoryQueue(usb->xmit);	
 CREATE_TX_QUEUE_FAIL:
 	DestoryQueue(usb->rcvd);
 CREATE_RX_QUEUE_FAIL:
@@ -1239,6 +1399,9 @@ DMPAPI(bool) usb_Init(void *vusb)
 	{
 		int i, str_size;
 		DPMI_LOCK_FUNC(SetEPnDLR);
+		DPMI_LOCK_FUNC(Get_Status); 
+		DPMI_LOCK_FUNC(Clear_Feature);  
+		DPMI_LOCK_FUNC(Set_Feature); 
 		DPMI_LOCK_FUNC(Set_Address);
 		DPMI_LOCK_FUNC(Get_Descriptor);
 		DPMI_LOCK_FUNC(Set_Descriptor);
@@ -1253,12 +1416,18 @@ DMPAPI(bool) usb_Init(void *vusb)
 		DPMI_LOCK_FUNC(Set_Control_Line_State);
 		DPMI_LOCK_FUNC(Send_Break);
 		DPMI_LOCK_FUNC(USB_CDC_Request);
+		DPMI_LOCK_FUNC(Set_Idle); 
+		DPMI_LOCK_FUNC(Get_Report); 
+		DPMI_LOCK_FUNC(Get_Protocol); 
+		DPMI_LOCK_FUNC(Set_Protocol); 
+		DPMI_LOCK_FUNC(USB_HID_Request); 
 		DPMI_LOCK_FUNC(EP0_SetupHandler);
 		DPMI_LOCK_FUNC(EP0_InHandler);
 		DPMI_LOCK_FUNC(EP0_OutHandler);
 		DPMI_LOCK_FUNC(EP1_InHandler);
 		DPMI_LOCK_FUNC(EP2_InHandler);
 		DPMI_LOCK_FUNC(EP2_OutHandler);
+		DPMI_LOCK_FUNC(EP3_InHandler);
 		DPMI_LOCK_FUNC(usb_Reset);
 		DPMI_LOCK_FUNC(USB_ISR);
 		DPMI_LOCK_VAR(desc_Device);
@@ -1270,6 +1439,7 @@ DMPAPI(bool) usb_Init(void *vusb)
 		DPMI_LOCK_VAR(StringDescTable[4]);
 		DPMI_LOCK_VAR(StringDescTable[5]);
 		DPMI_LOCK_VAR(StringDescTable[6]);
+		DPMI_LOCK_VAR(hidReportDescriptor); 
 		locked = true;
 	}
 	#endif
@@ -1283,6 +1453,7 @@ DMPAPI(bool) usb_Init(void *vusb)
 	if ((usb->EP[1].InBuf    = (BYTE *)ker_Malloc(sizeof(BYTE)*EP1_MAX_PACKET_SIZE_IN)) == NULL)  goto EP1_IN_FAIL;
 	if ((usb->EP[2].InBuf    = (BYTE *)ker_Malloc(sizeof(BYTE)*EP2_MAX_PACKET_SIZE_IN)) == NULL)  goto EP2_IN_FAIL;
 	if ((usb->EP[2].OutBuf   = (BYTE *)ker_Malloc(sizeof(BYTE)*EP2_MAX_PACKET_SIZE_OUT)) == NULL) goto EP2_OUT_FAIL;
+	if ((usb->EP[3].InBuf    = (BYTE *)ker_Malloc(sizeof(BYTE)*EP3_MAX_PACKET_SIZE_IN)) == NULL)  goto EP3_IN_FAIL; 
 	
 	#if defined DMP_DOS_DJGPP
 	if ((dma_handle = dma_Alloc(EP0_MAX_PACKET_SIZE    +
@@ -1290,14 +1461,16 @@ DMPAPI(bool) usb_Init(void *vusb)
 						        EP0_MAX_PACKET_SIZE    +
 						        EP1_MAX_PACKET_SIZE_IN +
 						        EP2_MAX_PACKET_SIZE_IN +
-						        EP2_MAX_PACKET_SIZE_OUT, &dma_addr)) == DMA_FAIL) goto EP2_OUT_FAIL;
+						        EP2_MAX_PACKET_SIZE_OUT+
+								EP3_MAX_PACKET_SIZE_IN, &dma_addr)) == DMA_FAIL) goto EP2_OUT_FAIL;  
 	size_temp = 0;
 	usb->EP[0].SetupPhysical = dma_addr;
 	usb->EP[0].InPhysical    = dma_addr + (size_temp += EP0_MAX_PACKET_SIZE);
 	usb->EP[0].OutPhysical   = dma_addr + (size_temp += EP0_MAX_PACKET_SIZE);
-	usb->EP[1].InPhysical    = dma_addr + (size_temp += EP0_MAX_PACKET_SIZE);
-	usb->EP[2].InPhysical    = dma_addr + (size_temp += EP1_MAX_PACKET_SIZE_IN);
-	usb->EP[2].OutPhysical   = dma_addr + (size_temp += EP2_MAX_PACKET_SIZE_IN);
+	usb->EP[1].InPhysical    = dma_addr + (size_temp += EP1_MAX_PACKET_SIZE_IN);
+	usb->EP[2].InPhysical    = dma_addr + (size_temp += EP2_MAX_PACKET_SIZE_IN);
+	usb->EP[2].OutPhysical   = dma_addr + (size_temp += EP2_MAX_PACKET_SIZE_OUT);
+	usb->EP[3].InPhysical    = dma_addr + (size_temp += EP3_MAX_PACKET_SIZE_IN);
 	
 	#else
 	usb->EP[0].SetupPhysical = GrabPhysicalMEM((void *)usb->EP[0].SetupBuf);
@@ -1306,6 +1479,7 @@ DMPAPI(bool) usb_Init(void *vusb)
 	usb->EP[1].InPhysical    = GrabPhysicalMEM((void *)usb->EP[1].InBuf);
 	usb->EP[2].InPhysical    = GrabPhysicalMEM((void *)usb->EP[2].InBuf);
 	usb->EP[2].OutPhysical   = GrabPhysicalMEM((void *)usb->EP[2].OutBuf);
+	usb->EP[3].InPhysical    = GrabPhysicalMEM((void *)usb->EP[3].InBuf); 
 	#endif
 	
 	// usb->DevAddr = 0x00;
@@ -1318,11 +1492,13 @@ DMPAPI(bool) usb_Init(void *vusb)
 	io_outpdw(usb->EP[1].InDSR   , usb->EP[1].InPhysical);
 	io_outpdw(usb->EP[2].InDSR   , usb->EP[2].InPhysical);
 	io_outpdw(usb->EP[2].OutDSR  , usb->EP[2].OutPhysical);
+	io_outpdw(usb->EP[3].InDSR   , usb->EP[3].InPhysical); 
 	
 	io_outpw(usb->EP[0].CtrlTR   , 0x2000 | EP0_MAX_PACKET_SIZE);
 	io_outpw(usb->EP[1].InTR     , 0x3800 | EP1_MAX_PACKET_SIZE_IN);
 	io_outpw(usb->EP[2].InTR     , 0x3000 | EP2_MAX_PACKET_SIZE_IN);
 	io_outpw(usb->EP[2].OutTR    , 0x3000 | EP2_MAX_PACKET_SIZE_OUT);
+	io_outpw(usb->EP[3].InTR     , 0x3800 | EP3_MAX_PACKET_SIZE_IN); 
 	
 	SetEPnDLR(usb, EP0, SETUP, ENABLE);
 	
@@ -1354,7 +1530,8 @@ DMPAPI(bool) usb_Init(void *vusb)
 		irq_Setting(usb->nIRQ, IRQ_LEVEL_TRIGGER);
 		irq_InstallISR(usb->nIRQ, USB_ISR, (void *)usb);
 		io_outpdw(usb->IER, ISOF + IBRST + ISUSP + IRESM + SYSERR + 
-		                    IEP0SETUP + IEP0RX + IEP0TX + IEP1TX + IEP2RX + IEP2TX);
+		                    IEP0SETUP + IEP0RX + IEP0TX + IEP1TX + 
+							IEP2RX + IEP2TX + IEP3RX + IEP3TX);
 		io_outpb(usb->CFR, io_inpb(usb->CFR) | 0x01);
 	}
 	io_RestoreINT();
@@ -1363,9 +1540,11 @@ DMPAPI(bool) usb_Init(void *vusb)
 	usb->InUse = 1;
 	
 	return true;
-	
+
+EP3_IN_FAIL:
+	ker_Mfree(usb->EP[3].InBuf);  	
 EP2_OUT_FAIL:
-	ker_Mfree(usb->EP[2].InBuf);
+	ker_Mfree(usb->EP[2].OutBuf);
 EP2_IN_FAIL:
 	ker_Mfree(usb->EP[1].InBuf);
 EP1_IN_FAIL:	
@@ -1408,6 +1587,7 @@ DMPAPI(void) usb_Close(void *vusb)
 		ker_Mfree(usb->EP[1].InBuf);
 		ker_Mfree(usb->EP[2].InBuf);
 		ker_Mfree(usb->EP[2].OutBuf);
+		ker_Mfree(usb->EP[3].InBuf);
 		
 		if (io_Close() == false) err_print((char*)"%s: Close IO lib error!!\n", __FUNCTION__);
 		
@@ -1418,6 +1598,7 @@ DMPAPI(void) usb_Close(void *vusb)
 	}
 	DestoryQueue(usb->rcvd);
 	DestoryQueue(usb->xmit);
+	DestoryQueue(usb->hidxmit);
 	ker_Mfree((void *)usb);
 }
 
@@ -1599,6 +1780,39 @@ DMPAPI(int) usb_Send(void *vusb, BYTE *buf, int bsize)
 		}
 		io_RestoreINT();
 	}
+	
+	return i;
+}
+
+
+DMPAPI(int) hid_Send(void *vusb, BYTE *buf, int bsize)
+{
+	int i;
+	DWORD pretime;
+	USB_Device *usb = (USB_Device *)vusb;
+
+	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return 0; }
+	
+	if (usb->state != USB_DEV_CONFIGURED && usb->state != USB_DEV_CDC_CONNECT)
+		return 0;
+
+	if (usb->TimeOut != USB_NO_TIMEOUT) {
+		pretime = timer_nowtime();
+		while (QueueEmpty(usb->hidxmit) == false && (timer_nowtime() - pretime) < usb->TimeOut); 
+		
+		if (QueueEmpty(usb->hidxmit) == false) {
+			if (USB_TIMEOUT_DEBUG)
+				err_print((char*)"%s: USB device transmit timeout.\n", __FUNCTION__);
+			return 0;
+		}
+	}
+	else while(QueueEmpty(usb->hidxmit) == false);
+	
+	io_DisableINT();
+	for (i = 0; i < bsize; i++)
+		PushQueue(usb->hidxmit, buf[i]);
+	EP3_InHandler(usb);
+	io_RestoreINT();
 	
 	return i;
 }

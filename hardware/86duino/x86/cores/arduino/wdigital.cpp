@@ -85,6 +85,8 @@ void digitalWrite(uint8_t pin, uint8_t val) {
 	if(pin >= PINS) return;
     if(crossbar_ioaddr == 0 || gpio_ioaddr == 0) return;// You should use pinMode() first
 	
+	if(pin == 32) timer1_pin32_isUsed = true;
+	
 	crossbar_bit = pinMap[pin];
     port = GPIODATABASE + 4*(crossbar_bit/8);
     value = 1<<(crossbar_bit%8);
@@ -109,6 +111,8 @@ int digitalRead(uint8_t pin) {
 	int crossbar_bit;
 	if(pin >= PINS) return 0xffff;
 	if(crossbar_ioaddr == 0 || gpio_ioaddr == 0) return 0xffff;// You should use pinMode() first
+	
+	if(pin == 32) timer1_pin32_isUsed = true;
 	
 	crossbar_bit = pinMap[pin];
 	

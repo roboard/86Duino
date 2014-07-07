@@ -48,7 +48,10 @@ static int arduino_to_mc_md[2][PINS] = {
 	};
 
 #define EXTERNAL_NUM_INTERRUPTS    (12)
-static void (*_userfunc[EXTERNAL_NUM_INTERRUPTS])(void) = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-static int pin_offset[EXTERNAL_NUM_INTERRUPTS] = {16, 18, 21, 24, 26, 29, 0, 2, 5, 22, 30, 6};
+static void (*(_userfunc[EXTERNAL_NUM_INTERRUPTS]))(void) = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+
+#if defined __86DUINO_ONE || defined __86DUINO_ZERO || defined __86DUINO_EDUCAKE
+	static int pin_offset[EXTERNAL_NUM_INTERRUPTS] = {16, 18, 21, 24, 26, 29, 0, 2, 5, 22, 30, 6};
+#endif
 
 #endif

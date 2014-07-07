@@ -135,6 +135,8 @@ double cpuTemperature(void);
 double cpuTemperature(uint8_t);
 
 extern void* USBDEV;
+extern bool Global_irq_Init;
+extern bool timer1_pin32_isUsed; // defined in tone.cpp
 #define Serial4    Serial485
 #define Serial6    Serial232
 #include "Hserial.h"

@@ -1,7 +1,8 @@
 /*
   usb_desc.h - Part of DM&P Vortex86 USB Device library
   Copyright (c) 2013 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
-
+  2014/06 Modified by Android Lin <acen@dmp.com.tw>.
+  
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -124,6 +125,22 @@ typedef struct {
 
 
 // -----------------------------------
+//     USB Association Descriptor
+// -----------------------------------
+typedef struct {
+	BYTE bLength;						// Size of this Descriptor in Bytes
+	BYTE bDescriptorType;				// Descriptor Type (=0x0B)
+	BYTE bFirstInterface;				// Interface number of the first interface that is associated with this function. 
+	BYTE bInterfaceCount;				// Number of contiguous interfaces that are associated with this function. 
+	BYTE bFunctionClass;				// Function class (0x02)
+	BYTE bFuntionSubClass;				// Sub Function class (0x02)
+	BYTE bFunctionProtocol;				// Function Protocol (0x01)
+	BYTE iFunction;                     // Index of String Desc for Interface (0x00 = NONE)
+} IAD_Descriptor;
+
+
+
+// -----------------------------------
 //       USB CDC ACM Descriptor
 // -----------------------------------
 //
@@ -179,6 +196,22 @@ typedef struct {
 
 
 
+// -----------------------------------
+//         USB HID Descriptor
+// -----------------------------------
+
+typedef struct {
+	BYTE bLength;                       // Size of this Descriptor in Bytes
+	BYTE bDescriptorType;				// Descriptor Type (=0x21)
+	WORD bcdHID;                        // HID version (1.1)
+	BYTE bCountryCode;					// Country (USA)
+	BYTE bNumDescriptors;				// Number of Descriptors
+	BYTE bDescriptorType1;              // Report Descriptor (0x22)
+	WORD bDescriptorLength;				// Length of Descriptor
+} HID_Descriptor;
+extern const char hidReportDescriptor[101];
+
+
 //---------------------------------------------
 //             String Descriptor
 //---------------------------------------------
@@ -204,6 +237,9 @@ typedef struct {
 // #endif
 	Configuration_Descriptor				desc_CDC_config;
 
+		// Interface Association Descriptor
+		IAD_Descriptor                      desc_IAD_comm;
+		
 		// Communication Interface Class
 		Interface_Descriptor				desc_CDC_comm;
 			Header_Func_Descriptor			desc_CDC_head;
@@ -216,6 +252,11 @@ typedef struct {
 		Interface_Descriptor				desc_CDC_data;
 			Endpoint_Descriptor				desc_CDC_EP_BULK_in;
 			Endpoint_Descriptor				desc_CDC_EP_BULK_out;
+		
+		// HID Interface Class	
+		Interface_Descriptor				desc_HID_comm;
+			HID_Descriptor                  desc_HID;
+			Endpoint_Descriptor				desc_HID_EP_INTERRUPT;
 
 } Configuration_Desc_Set;
 
@@ -244,6 +285,8 @@ typedef struct {
 #define DSC_TYPE_STRING					(0x03)
 #define DSC_TYPE_INTERFACE				(0x04)
 #define DSC_TYPE_ENDPOINT				(0x05)
+#define DSC_TYPE_INTERFACE_ASSOCIATION  (0x0B) // 2014.06.11 modified: new name
+#define DSC_TYPE_HID                    (0x21) // 2014.06.11 modified: new name
 //
 // Configuration Descriptor -> bmAttributes
 #define DSC_CONFIG_ATR_BASE				(0x80)

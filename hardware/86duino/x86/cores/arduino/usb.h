@@ -1,7 +1,8 @@
 /*
   usb.h - DM&P Vortex86 USB Device library
   Copyright (c) 2013 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
-
+  2014/06 Modified by Android Lin <acen@dmp.com.tw>.
+  
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -120,6 +121,7 @@ typedef volatile struct usb_device
 	bool  setup_out_handled;
 	
 	bool  bulk_in_transmitting;
+	bool  interrupt_in_transmitting;
 	
 	DWORD TimeOut;
 
@@ -130,6 +132,7 @@ typedef volatile struct usb_device
 
 	Queue *rcvd;						   // RX queue
 	Queue *xmit;						   // TX queue
+	Queue *hidxmit;						   // HID TX queue 2014/06/17 modified: new
 	
 	SetupPacket Setup;                     // Setup packet
 
@@ -185,6 +188,7 @@ DMPAPI(bool) usb_TxQueueFull(void *vusb);
 DMPAPI(bool) usb_TxQueueEmpty(void *vusb);
 DMPAPI(bool) usb_TxReady(void *vusb);
 DMPAPI(int)  usb_Send(void *vusb, unsigned char* buf, int bsize);
+DMPAPI(int)  hid_Send(void *vusb, unsigned char* buf, int bsize); //2014/06/17 modified: new
 DMPAPI(bool) usb_Write(void *vusb, unsigned char val);
 DMPAPI(void) usb_FlushTxQueue(void *vusb);
 DMPAPI(void) usb_FlushWFIFO(void *vusb);

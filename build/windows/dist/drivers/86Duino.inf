@@ -32,7 +32,7 @@ yun.sketch.name="Arduino Yun"
 86Duino.sketch.name="86Duino"
 
 [DefaultInstall]
-CopyINF=arduino.inf
+CopyINF=86duino.inf
 
 [Version]
 Class=Ports
@@ -76,7 +76,7 @@ DefaultDestDir=12
 %yun.bootloader.name%=DriverInstall, USB\VID_2341&PID_0041
 %yun.sketch.name%=DriverInstall, USB\VID_2341&PID_8041&MI_00
 %86Duino.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
-%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_a4a5&MI_00
+%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
 
 [DeviceList.NTamd64]
 %due.bossa.name%=DriverInstall, USB\VID_03EB&PID_6124
@@ -104,7 +104,7 @@ DefaultDestDir=12
 %yun.bootloader.name%=DriverInstall, USB\VID_2341&PID_0041
 %yun.sketch.name%=DriverInstall, USB\VID_2341&PID_8041&MI_00
 %86Duino.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
-%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_a4a5&MI_00
+%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
 
 [DeviceList.NTia64]
 %esplora.bootloader.name%=DriverInstall, USB\VID_2341&PID_003C
@@ -129,7 +129,7 @@ DefaultDestDir=12
 %yun.bootloader.name%=DriverInstall, USB\VID_2341&PID_0041
 %yun.sketch.name%=DriverInstall, USB\VID_2341&PID_8041&MI_00
 %86Duino.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
-%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_a4a5&MI_00
+%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
 
 [DriverInstall]
 include=mdmcpq.inf,usb.inf

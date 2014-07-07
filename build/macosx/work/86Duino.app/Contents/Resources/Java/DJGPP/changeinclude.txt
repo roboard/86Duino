@@ -6,3 +6,9 @@ Liquid.h
 Capa.h
 \s*#\s*include\s*[<"](SoftwareSerial.h)[">]
 SFSerail.h
+\s*#\s*include\s*[<"](KeyboardController.h)[">]
+kbctrl.h
+\s*#\s*include\s*[<"](MouseController.h)[">]
+msctrl.h
+\s*#\s*include\s*[<"](IRremoteInt.h)[">]
+IRRInt.h

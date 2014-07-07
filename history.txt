@@ -1,21 +1,37 @@
+### CODING 104 - 2014.07.07 ###
+
+[core]
+* Fix the bug for ISR that include tone, attachInterrupt.
+* In tone.cpp, it uses another PWM module as a timer to avoid the conflict with Servo. You now can use tone and Servo functions together in a sketch.
+* Add USB HID, you can get a keyboard/mouse (a new HID device) when plug 86Duino into your PC and need to update 86Duino driver using the 86Duino.inf in "drivers" directory.
+* Adjust statck size form 512K to 4M for DJGPP. 
+
+[libraries]
+* Modified a compatible problem for Wire library.
+* Add Encoder library. Support Step/DIR, A/B phase, CW/CCW, Capture hardware counter modes. It's resolution is 10ns.
+* Add IRrmote library.
+* Add USB HOST library.
+* Fix the bug for Servo ISR.
+
+
 ### CODING 103 - 2014.04.23 ###
 
 [core]
-* Modify a bug that will disable a wrong PWM channel if you use muilti-channels PWM and input 0 or 255 value to analogWrite().
-* Suport HIGH and LOW level trigger in attachinterrupt().
+* Modify a bug that will disable a wrong PWM channel if you use muilti-channels PWM and then input 0 or 255 value in analogWrite().
+* Support HIGH and LOW level trigger in attachinterrupt().
 * Update can_Write() in can.cpp.
 
 [libraries]
-* Modify some wrong define and add a setSS function in SPI library.
+* Add SoftwareSerial library that support speed up to 19200.
+* Add GSM library. It also allow to use hardware serial to communicate with GSM shield.
+* Add CANBus library to communicate with the CAN devices.
+* Modify some wrong defines and add a setSS function in SPI library.
 * Modify the SPI default speed from 62.5kHz to 4MHz in SPI library.
 * Modify the SPI initial speed from 1MHz to 4MHz in TFT library.
 * Modify the SPI initial speed from 62.5kHz to 2MHz in WIFI library.
-* Add SoftwareSerail library that suport speed up to 19200.
-* Add GSM library. You also can use hardware serial method to transmit with GSM shield in this library.
-* Add CANBus library.
-* Suport high speed mode (3.3MHz) in Wire library.
+* Support high speed mode (3.3MHz) in Wire library.
 * Use a better method to read LSM303 in FreeIMU1 library.
-* User can use pc speaker parameter in tone library to enable internal speaker on EduCake.
+* You can use a new parameter(PCSPEAKER) in tone() to enable internal speaker on 86Duino EduCake.
 
 
 

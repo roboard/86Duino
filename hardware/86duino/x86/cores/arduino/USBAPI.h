@@ -132,6 +132,7 @@ public:
 };
 extern Keyboard_ Keyboard;
 
+/*
 //================================================================================
 //================================================================================
 //	Low level API
@@ -187,5 +188,5 @@ int USB_Send(uint8_t ep, const void* data, int len);	// blocking
 int USB_Recv(uint8_t ep, void* data, int len);		// non-blocking
 int USB_Recv(uint8_t ep);							// non-blocking
 void USB_Flush(uint8_t ep);
-
+*/
 #endif /* ifndef __USBAPI__ */
