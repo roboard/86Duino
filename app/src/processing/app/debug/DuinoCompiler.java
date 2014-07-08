@@ -902,10 +902,10 @@ public class DuinoCompiler implements MessageConsumer {
         out.write("-include $(INIFILES:.o=.d)\n\n");
         String filenamee;
         for(int i = 0; i < file_path.size(); i++){
-          out.write(file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".d "+": "+file_name.get(i)+"\n\tgcc -w -c -MMD -fno-exceptions -ffunction-sections -fdata-sections -O1 -o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+"$< $(IFALGS)\n");      
+          out.write(file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".d "+": "+file_name.get(i)+"\n\tgcc "+prefs.get("compiler.cpp.flags")+" -o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+"$< $(IFALGS)\n");      
           }
         out.write("\n");
-        out.write("86duino.exe : $(INIFILES)\n\tgcc -w -Wl,--gc-sections -O1 -o $@ $(INIFILES) $(LIBFILES)\n");
+        out.write("86duino.exe : $(INIFILES)\n\tgcc "+prefs.get("compiler.c.exe.flags")+" -o $@ $(INIFILES) $(LIBFILES)\n");
         out.write("\tstrip -v 86duino.exe");
         out.write("\n");
         out.close(); 

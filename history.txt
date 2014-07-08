@@ -1,5 +1,9 @@
 ### CODING 104 - 2014.07.07 ###
 
+[ide]
+* 86upload.exe is renamed as v86dude.exe and put into tools/x86 directory.
+* the compiling parameter "-O1" you can find and modifiy it in platform.txt.
+
 [core]
 * Fix the bug for ISR that include tone, attachInterrupt.
 * In tone.cpp, it uses another PWM module as a timer to avoid the conflict with Servo. You now can use tone and Servo functions together in a sketch.

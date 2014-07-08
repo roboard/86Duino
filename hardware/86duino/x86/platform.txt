@@ -4,20 +4,23 @@
 
 name=Vortex86EX (32-bits) Boards
 # Default "compiler.path" is correct, change only if you want to overidde the initial value
-#compiler.path={ide.path}/tools/avr/bin/..
-compiler.c.cmd=avr-gcc
-compiler.c.flags=-c -g -Os -w -ffunction-sections -fdata-sections -MMD
-compiler.c.elf.flags=-Os -Wl,--gc-sections
-compiler.c.elf.cmd=avr-gcc
+upx.path={runtime.ide.path}\hardware\tools\upx309w\
+compiler.path={runtime.ide.path}\hardware\tools\djgpp\i586-pc-msdosdjgpp\bin\
+compiler.lib.path={runtime.ide.path}\hardware\tools\djgpp\lib\
+compiler.c.cmd=gcc
+compiler.c.flags=-w -c -MMD -fno-exceptions -ffunction-sections -fdata-sections -O1  
+compiler.c.exe.flags=-w -Wl,--gc-sections -O1
+compiler.c.elf.cmd=gcc
 compiler.S.flags=-c -g -assembler-with-cpp
-compiler.cpp.cmd=avr-g++
-compiler.cpp.flags=-c -g -Os -w -fno-exceptions -ffunction-sections -fdata-sections -MMD
-compiler.ar.cmd=avr-ar
+compiler.cpp.cmd=gcc
+compiler.cpp.flags=-w -c -MMD -fno-exceptions -ffunction-sections -fdata-sections -O1  
+compiler.ar.cmd=ar
 compiler.ar.flags=rcs
 compiler.objcopy.cmd=avr-objcopy
 compiler.objcopy.eep.flags=-O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0
-compiler.elf2hex.flags=-O ihex -R .eeprom
-compiler.elf2hex.cmd=avr-objcopy
+compiler.elf2hex.flags=-v
+compiler.elf2hex.cmd=strip
+compiler.upx.cmd=upx
 compiler.ldflags=
 compiler.size.cmd=avr-size
 # this can be overriden in boards.txt
@@ -27,22 +30,25 @@ build.extra_flags=
 # --------------------
 
 ## Compile c files
-recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} -mmcu={build.mcu} -DF_CPU={build.f_cpu} -D{software}={runtime.ide.version} {build.extra_flags} {includes} "{source_file}" -o "{object_file}"
+recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} "{source_file}" -o "{object_file}" {includes}
 
 ## Compile c++ files
-recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} -mmcu={build.mcu} -DF_CPU={build.f_cpu} -D{software}={runtime.ide.version} {build.extra_flags} {includes} "{source_file}" -o "{object_file}"
+recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} "{source_file}" -o "{object_file}"  {includes}
 
 ## Create archives
-recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" {compiler.ar.flags} "{build.path}/{archive_file}" "{object_file}"
+recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" {compiler.ar.flags} "{build.path}/{archive_file}" "{object_file}" 
 
 ## Combine gc-sections, archives, and objects
-recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.flags} -mmcu={build.mcu} -o "{build.path}/{build.project_name}.elf" {object_files} "{build.path}/{archive_file}" "-L{build.path}" -lm
+recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.flags} -o "{build.path}/86duino.exe" {object_files} "-L{build.path}" "-L{compiler.lib.path}" -lcore "{str_libfiles}" -lstdc++
 
 ## Create eeprom
 recipe.objcopy.eep.pattern="{compiler.path}{compiler.objcopy.cmd}" {compiler.objcopy.eep.flags} "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.eep"
 
 ## Create hex
-recipe.objcopy.hex.pattern="{compiler.path}{compiler.elf2hex.cmd}" {compiler.elf2hex.flags} "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
+recipe.objcopy.hex.pattern="{compiler.path}{compiler.elf2hex.cmd}" {compiler.elf2hex.flags} "{build.path}/86duino.exe"
+
+## use upx
+recipe.objcopy.upx.pattern="{upx.path}{compiler.upx.cmd}" "{build.path}/86duino.exe"  
 
 ## Compute size
 recipe.size.pattern="{compiler.path}{compiler.size.cmd}" -A "{build.path}/{build.project_name}.hex"
