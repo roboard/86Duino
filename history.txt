@@ -12,10 +12,12 @@
 
 [libraries]
 * Modified a compatible problem for Wire library.
-* Add Encoder library. Support Step/DIR, A/B phase, CW/CCW, Capture hardware counter modes. It's resolution is 10ns.
+* Add Encoder library. Support Step/DIR, A/B phase, CW/CCW, Capture, SSI hardware counter modes. It's resolution is 10ns.
 * Add IRrmote library.
 * Add USB HOST library.
 * Fix the bug for Servo ISR.
+* Due to tone and IRrmote use a PWM module as their timer, so servo will use GPIO to simulate PWM signal if you use the 32 PIN.
+
 
 
 ### CODING 103 - 2014.04.23 ###
