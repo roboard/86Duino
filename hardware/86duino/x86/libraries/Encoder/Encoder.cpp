@@ -89,7 +89,7 @@ static unsigned long long int ovdata[3] = {0L, 0L, 0L};
 static volatile int capture_state = 0; // for MODE_CAPTURE
 // static int test_count[3] = {0, 0, 0}; // for debugging
 static int user_int(int irq, void* data) {
-	int i, mc, handled = 0;
+	int i, mc, irq_handled = 0;
 	unsigned long capdata, stat;
 	
 	// detect all sensor interface
@@ -102,15 +102,15 @@ static int user_int(int irq, void* data) {
 			if(check_interrupt_enable(mc, SIFB_USEREVTBIT) == true && check_interrupt_state(mc, SIFB_USEREVTBIT) == true) // USER EVT
 			{
 				clear_interrupt_state(mc, SIFB_USEREVTBIT);
-				if((_encmode[mc] & INTR_COMPARE) == INTR_COMPARE) _encfunc[mc](INTR_COMPARE);
-				handled |= 0x01;
+				irq_handled |= 0x01;
+				if((_encmode[mc] & INTR_COMPARE) == INTR_COMPARE && _encfunc[mc] != NULL) _encfunc[mc](INTR_COMPARE);
 			}
 			
 			if(check_interrupt_enable(mc, SIFB_TRIGRESETBIT) == true && check_interrupt_state(mc, SIFB_TRIGRESETBIT) == true) // USER EVT
 			{
 				clear_interrupt_state(mc, SIFB_TRIGRESETBIT);
-				if((_encmode[mc] & INTR_INDEX) == INTR_INDEX) _encfunc[mc](INTR_INDEX);
-				handled |= 0x02;
+				irq_handled |= 0x02;
+				if((_encmode[mc] & INTR_INDEX) == INTR_INDEX && _encfunc[mc] != NULL) _encfunc[mc](INTR_INDEX);
 			}
 		}
 		else if(_mcmode[mc] == MODE_CAPTURE)
@@ -120,6 +120,7 @@ static int user_int(int irq, void* data) {
 				if(check_interrupt_enable(mc, SIFB_CAP1INTBIT+i) == true && check_interrupt_state(mc, SIFB_CAP1INTBIT+i) == true) // USER EVT
 				{
 					clear_interrupt_state(mc, SIFB_CAP1INTBIT+i);
+					irq_handled |= 0x04;
 					
 					while(readCapStat[i](mc, MCSIF_MODULEB) != MCENC_CAPFIFO_EMPTY)
 					{
@@ -133,7 +134,7 @@ static int user_int(int irq, void* data) {
 							if(i == 0)      capture_state = INTR_A_PULSE_HIGH;
 							else if(i == 1) capture_state = INTR_B_PULSE_HIGH;
 							else            capture_state = INTR_Z_PULSE_HIGH;
-							_pcapfunc[mc][i](capture_state);
+							if(_pcapfunc[mc][i] != NULL) _pcapfunc[mc][i](capture_state);
 							capture_state = 0;
 						}
 						else if(stat == MCPFAU_CAP_0TO1EDGE)
@@ -143,18 +144,17 @@ static int user_int(int irq, void* data) {
 							if(i == 0)      capture_state = INTR_A_PULSE_LOW;
 							else if(i == 1) capture_state = INTR_B_PULSE_LOW;
 							else            capture_state = INTR_Z_PULSE_LOW;
-							_pcapfunc[mc][i](capture_state);
+							if(_pcapfunc[mc][i] != NULL) _pcapfunc[mc][i](capture_state);
 							capture_state = 0;
 						}
 					}
-					handled |= 0x04;
 				}
 			}
 		}
 		// SSI mode have no interrupt event
 	}
 	
-	if(handled == 0x00) return ISR_NONE;
+	if(irq_handled == 0x00) return ISR_NONE;
 	return ISR_HANDLED;
 }
 
@@ -373,6 +373,9 @@ void Encoder::end() {
 	
 	detachInterrupt();
 	
+	io_DisableINT();
+	mcsif_Disable(mcn, mdn);
+	
 	if(mode == MODE_CAPTURE)
 	{
 		disable_MCINT(mcn, SIFB_CAP1INTBIT);
@@ -384,9 +387,7 @@ void Encoder::end() {
 		disable_MCINT(mcn, SIFB_TRIGRESETBIT);
 		disable_MCINT(mcn, SIFB_USEREVTBIT);
 	}
-	
-	io_DisableINT();
-	mcsif_Disable(mcn, mdn);
+
 	mode = _mcmode[mcn] = MODE_NOSET;
 	_setZPol = false;
 	io_RestoreINT();
@@ -398,7 +399,7 @@ void Encoder::end() {
 			if(_pcapfunc[i][j] != NULL) break;
 	}
 	
-	if(i == 4)
+	if(i == 4 && j == 3)
 	{
 		mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mcn));
 		if(irq_UninstallISR(used_irq, (void*)name) == false)
@@ -420,10 +421,9 @@ void Encoder::write(unsigned long cnt) {
 }
 
 static bool _pcapAttchINT = false; //only for MODE_CAPTURE
-static bool _pcapUsePulseIN = false;
 void Encoder::setDigitalFilter(unsigned long width) {
     if(mode == MODE_NOSET) return;
-    if(mode == MODE_CAPTURE && (_pcapAttchINT == true || _pcapUsePulseIN == true)) return;
+    if(mode == MODE_CAPTURE && _pcapAttchINT == true) return;
     
     mcsif_Disable(mcn, mdn);
     mcsif_SetInputFilter(mcn, mdn, width);
@@ -555,8 +555,7 @@ void Encoder::attachInterrupt(void (*callback)(int)) {
 	if(mode == MODE_NOSET) return;
 	
 	if(mode == MODE_CAPTURE && callback != NULL)
-	{   
-		if(_pcapUsePulseIN == true) return;
+	{
 		if(_pcapfunc[mcn][0] != NULL || _pcapfunc[mcn][1] != NULL || _pcapfunc[mcn][2] != NULL)	return;
 		if(interrupt_init(mcn) == false) return;
 		
@@ -616,11 +615,7 @@ void Encoder::detachInterrupt() {
 		mcsif_Disable(mcn, mdn);
 		
 		// Disable interrupt option
-		for(int i=0; i<3; i++)
-		{
-			sifIntMode[i](mcn, mdn, MCPFAU_CAP_DISABLE);
-			sifSetInt[i](mcn, mdn, 0L);
-	    }
+		for(i=0; i<3; i++) sifSetInt[i](mcn, mdn, 0L);
 		
 		io_DisableINT();
 		_pcapfunc[mcn][0] = NULL;
@@ -629,7 +624,7 @@ void Encoder::detachInterrupt() {
 		io_RestoreINT();
 		
 		_pcapAttchINT = false;
-		// not enable sif
+		mcsif_Enable(mcn, mdn);
 		return;
 	}
 	
@@ -657,8 +652,6 @@ unsigned long long int Encoder::_pulseIn(uint8_t pin, uint8_t state, unsigned lo
 	int stat;
 	
 	if(_pcapAttchINT == true || mode != MODE_CAPTURE || pin > 2) return 0L;
-	
-	_pcapUsePulseIN = true;
 	           
 	_timeout = timer_nowtime() + timeout;
 	if(state == HIGH)

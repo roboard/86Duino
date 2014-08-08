@@ -154,7 +154,7 @@ static void write_cmos(unsigned char address, unsigned char buf)
 	return ;
 
   pci_dev pcidev;
-  unsigned char reg;
+  unsigned long int reg;
   io_DisableINT();
   
   pcidev.bus = 0;

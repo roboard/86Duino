@@ -204,17 +204,16 @@ void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
 	if(use_pin_tone != 255 && use_pin_tone !=_pin) return; // tone() has been used before.
 	
 	io_DisableINT();
-	if(frequency >= 10000)
-		frequency = 10000;
-    if(duration <= 0)
-		use_pin_times = -1;
-    else
-	{  
-		if(frequency > 0)    
-			use_pin_times = duration / (((1.0/(float)frequency)*1000.0)/2.0);
+	if(frequency >= 10000) frequency = 10000;
+	if(frequency > 0)
+	{
+		if(duration == 0L)
+			use_pin_times = -1;
 		else
-			use_pin_times = 0;
-    }
+			use_pin_times = duration / (((1.0/(float)frequency)*1000.0)/2.0);
+	}
+	else
+		use_pin_times = 0;
 	io_RestoreINT();
 	
     if(use_pin_tone == 255)
