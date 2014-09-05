@@ -2,6 +2,9 @@
   UTouch.cpp - Arduino/chipKit library support for Color TFT LCD Touch screens 
   Copyright (C)2010-2014 Henning Karlsen. All right reserved
   
+  Modified 17 July 2014 by Oswald Kuo for 86Duino
+  Modified 1 September 2014 by Android Lin for 86Duino
+  
   Basic functionality of this library are based on the demo-code provided by
   ITead studio. You can find the latest version of the library at
   http://www.henningkarlsen.com/electronics

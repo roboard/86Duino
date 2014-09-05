@@ -2,8 +2,8 @@
 
 [ide]
 * Added MenuScroller function to avoid that Examples or Sketchbook list too long to view.
-* The USB_PID now can be updated immediately in eath compile after you select another 86duino board and press "Verify" button.
-* The DJGPP Compiler version is update to 2.04.
+* The USB PID now can be updated immediately after eath compile when you select another 86duino board and then press "Verify" button.
+* The DJGPP compiler version is updated to 2.04.
 
 [core]
 * Fixed a bug in can.cpp, wanalog.cpp, tone.cpp.
@@ -13,7 +13,11 @@
 * Added TimerOne library. (Compatible with Arduino TimerOne library: http://playground.arduino.cc/code/timer1)
 * Added UTFT library. (Compatible with Henning Karlsen UTFT library: http://henningkarlsen.com/electronics/library.php?id=52)
 * Added UTouch library. (Compatible with Henning Karlsen UTouch library: http://henningkarlsen.com/electronics/library.php?id=55)
-* Added SpiderL3S library. (It is a CC3000 wifi module that made by FUNMAKER group in Taiwan, web site: http://www.funmaker.com.tw/)
+* Added SpiderL3S library. (It is a CC3000 wifi module that made by FunMaker group in Taiwan, web site: http://www.funmaker.com.tw/)
+
+[bootloader]
+* For EduCake, it also can force enter to bootloader mode by shorting RING pin with RTS/DTR pin on RSR232 connector. 
+
 
 
 ### CODING 104 - 2014.07.07 ###

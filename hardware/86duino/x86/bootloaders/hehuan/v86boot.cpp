@@ -10,6 +10,8 @@
 #include "io.h"
 
 // #define DEBUG_MODE
+#define __EDUCAKE
+// #define __ONE_ZERO
 
 /***************************  Bootloader Functions ****************************/
 void init(void) {
@@ -66,10 +68,16 @@ void LEDPulse(void)
 #define BTL_MODE    (1)
 int GetBootLoaderMode(void) {
 	int mode = 0;
+
+#if defined __ONE_ZERO
 	io_outpb(0x0A88, 0x01); // RICH-IO PORT -> GPIO
 	io_outpb(0xf222, io_inpb(0xf222) & ~0x01); // GPIO -> INPUT
 	mode = io_inpb(0xf220) & 0x01; // Read SPICS1(GPIO80) PIN
 	io_outpb(0x0A88, 0x08); // GPIO -> RICH-IO PORT
+#elif defined __EDUCAKE
+	if((io_inpb(0x2ee) & 0x40) == 0) mode = 1;
+#endif
+
 	if(mode > 0)
 		return PRO_MODE;
 	else

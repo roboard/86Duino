@@ -341,7 +341,7 @@ public class BasicUploader extends Uploader  {
           if (!Base.isMacOS())
             Thread.sleep(300);
           
-          //uploadPort = waitForUploadPort(uploadPort, before);
+          uploadPort = waitForUploadPort(uploadPort, before);
         } else {
           Thread.sleep(400);
         }
@@ -361,8 +361,17 @@ public class BasicUploader extends Uploader  {
     
     String packageName = prefs.get("target_package");
     if(packageName.compareTo("86duino") == 0){
-      prefs.put("type", "18");
-      prefs.put("build.project_name", "v86boot");
+      String s = prefs.get("board");
+	  if(s.compareTo("EduCake") == 0)
+	  {
+	  	prefs.put("type", "18");
+        prefs.put("build.project_name", "v86boot_educake");
+	  }
+	  else
+	  {
+		prefs.put("type", "18");
+	    prefs.put("build.project_name", "v86boot");
+	  }
     }
     
     if (verbose)

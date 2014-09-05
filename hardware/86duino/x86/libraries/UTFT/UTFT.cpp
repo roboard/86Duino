@@ -2,6 +2,9 @@
   UTFT.cpp - Arduino/chipKit library support for Color TFT LCD Boards
   Copyright (C)2010-2014 Henning Karlsen. All right reserved
   
+  Modified 17 July 2014 by Oswald Kuo for 86Duino
+  Modified 1 September 2014 by Android Lin for 86Duino
+  
   This library is the continuation of my ITDB02_Graph, ITDB02_Graph16
   and RGB_GLCD libraries for Arduino and chipKit. As the number of 
   supported display modules and controllers started to increase I felt 
