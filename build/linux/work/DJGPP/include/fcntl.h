@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_fcntl_h_
@@ -8,6 +10,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -21,6 +28,9 @@ extern "C" {
 #define F_SETFL		6
 #define F_SETLK		7
 #define F_SETLKW	8
+#define F_GETLK64	9
+#define F_SETLK64	10
+#define F_SETLKW64	11
 
 #define F_UNLCK		0
 #define F_RDLCK		1
@@ -52,6 +62,14 @@ struct flock {
   short	l_whence;
 };
 
+struct flock64 {
+  offset_t     l_len;
+  pid_t        l_pid;
+  offset_t     l_start;
+  short        l_type;
+  short        l_whence;
+};
+
 extern int _fmode; /* O_TEXT or O_BINARY */
 
 int	open(const char *_path, int _oflag, ...);
@@ -59,6 +77,13 @@ int	creat(const char *_path, mode_t _mode);
 int	fcntl(int _fildes, int _cmd, ...);
 
 #ifndef _POSIX_SOURCE
+
+/* Additional non-POSIX flags for open(). */
+/* They are present on GNU libc. */
+#define O_NOLINK        0x4000
+#define O_NOFOLLOW      0x8000
+
+#define O_TEMPORARY	0x10000 /* Delete on close.  */
 
 #define SH_COMPAT	0x0000
 #define SH_DENYRW	0x0010
@@ -107,6 +132,7 @@ extern int __djgpp_share_flags;
 unsigned _get_volume_info (const char *_path, int *_max_file_len, int *_max_path_len, char *_filesystype);
 char _use_lfn (const char *_path);
 char *_lfn_gen_short_fname (const char *_long_fname, char *_short_fname);
+int _is_DOS83 (const char *_fname);
 
 #define _LFN_CTIME	1
 #define _LFN_ATIME	2

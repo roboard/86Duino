@@ -1,9 +1,13 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2002 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1997 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_locale_h_
 #define __dj_include_locale_h_
 
 #ifdef __cplusplus
+namespace std {
 extern "C" {
 #endif
 
@@ -36,10 +40,21 @@ struct lconv {
   char p_cs_precedes;
   char p_sep_by_space;
   char p_sign_posn;
+  char int_n_cs_precedes;
+  char int_n_sep_by_space;
+  char int_n_sign_posn;
+  char int_p_cs_precedes;
+  char int_p_sep_by_space;
+  char int_p_sign_posn;
 };
 
 struct lconv *	localeconv(void);
 char *		setlocale(int _category, const char *_locale);
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -54,6 +69,18 @@ char *		setlocale(int _category, const char *_locale);
 
 #ifdef __cplusplus
 }
+}
 #endif
 
 #endif /* !__dj_include_locale_h_ */
+
+
+#if defined(__cplusplus) && !defined(__dj_ENFORCE_ANSI_FREESTANDING)
+#ifndef __dj_via_cplusplus_header_
+
+using std::lconv;
+using std::localeconv;
+using std::setlocale;
+
+#endif /* !__dj_via_cplusplus_header_ */
+#endif /* __cplusplus && !__dj_ENFORCE_ANSI_FREESTANDING */

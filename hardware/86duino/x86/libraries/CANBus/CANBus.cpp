@@ -166,7 +166,7 @@ uint8_t Vortex86CAN::init_Mask(uint8_t num, uint8_t ext, uint32_t ulData)
 	
 	com_DisableBypass(can);
 	com_GetIDFilter(can, num, &_ext, &filt, &mask);
-	com_AddIDFilter(can, num, ext, filt, ulData);
+	com_AddIDFilter(can, num, ext & 0x01, filt, ulData);
 	
 	return CAN_OK;
 }
@@ -180,7 +180,7 @@ uint8_t Vortex86CAN::init_Filt(uint8_t num, uint8_t ext, uint32_t ulData)
 	
 	com_DisableBypass(can);
 	com_GetIDFilter(can, num, &_ext, &filt, &mask);
-	com_AddIDFilter(can, num, ext, ulData, mask);
+	com_AddIDFilter(can, num, ext & 0x01, ulData, mask);
 	
 	return CAN_OK;
 }

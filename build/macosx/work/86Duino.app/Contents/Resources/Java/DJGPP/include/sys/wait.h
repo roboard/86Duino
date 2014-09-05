@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_sys_wait_h_
@@ -8,6 +10,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -22,9 +29,10 @@ extern "C" {
 #define WTERMSIG(stat_val)	( ((stat_val) >> 8 ) & 0x3ff)
 #define WUNTRACED		0
 
+#ifndef _PID_T
 __DJ_pid_t
-#undef __DJ_pid_t
-#define __DJ_pid_t
+#define _PID_T
+#endif
 
 pid_t wait(int *stat_loc);
 pid_t waitpid(pid_t pid, int *stat_loc, int options);

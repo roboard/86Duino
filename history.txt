@@ -1,3 +1,20 @@
+### CODING 105 - 2014.09.05 ###
+
+[ide]
+* Added MenuScroller function to avoid that Examples or Sketchbook list too long to view.
+* The USB_PID now can be updated immediately in eath compile after you select another 86duino board and press "Verify" button.
+
+[core]
+* Fixed a bug in can.cpp, wanalog.cpp, tone.cpp.
+
+[libraries]
+* Fixed a bug in EEPROM library.
+* Added TimerOne library. (Compatible with Arduino TimerOne library: http://playground.arduino.cc/code/timer1)
+* Added UTFT library. (Compatible with Henning Karlsen UTFT library: http://henningkarlsen.com/electronics/library.php?id=52)
+* Added UTouch library. (Compatible with Henning Karlsen UTouch library: http://henningkarlsen.com/electronics/library.php?id=55)
+* Added SpiderL3S library. (It is a CC3000 wifi module that made by FUNMAKER group in Taiwan, product web site: http://www.funmaker.com.tw/chan-pin-xi-lie/chuang-ke-tao-jian/spider-l3/)
+
+
 ### CODING 104 - 2014.07.07 ###
 
 [ide]

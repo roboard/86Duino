@@ -27,7 +27,15 @@
 
 #define USB_VER							(0x0110)
 #define VENDOR_ID						(0x0525)
-#define PRODUCT_ID						(0x8036)
+
+#if defined __86DUINO_EDUCAKE
+	#define PRODUCT_ID					(0x8038)
+#elif defined __86DUINO_ONE
+	#define PRODUCT_ID					(0x8037)
+#elif defined __86DUINO_ZERO
+	#define PRODUCT_ID					(0x8036)
+#endif
+
 #define DEVICE_BCB						(0x0001)
 
 // -----------------------------------

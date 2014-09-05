@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_limits_h_
@@ -23,12 +25,32 @@ extern "C" {
 #define UINT_MAX 4294967295U
 #define ULONG_MAX 4294967295UL
 #define USHRT_MAX 65535
+
+  /* These are also defined by stdint.h.  */
+#ifndef WCHAR_MIN
 #define WCHAR_MIN 0
-#define WCHAR_MAX 127
-#define WINT_MIN 0
-#define WINT_MAX 32767
+#endif
+#ifndef WCHAR_MAX
+#define WCHAR_MAX 65535
+#endif
+#ifndef WINT_MIN
+#define WINT_MIN (-2147483647-1)
+#endif
+#ifndef WINT_MAX
+#define WINT_MAX 2147483647
+#endif
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 

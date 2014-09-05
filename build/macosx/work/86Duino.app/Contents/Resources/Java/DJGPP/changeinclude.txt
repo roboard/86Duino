@@ -12,3 +12,9 @@ kbctrl.h
 msctrl.h
 \s*#\s*include\s*[<"](IRremoteInt.h)[">]
 IRRInt.h
+\s*#\s*include\s*[<"](Spider_L3.h)[">]
+SpiderL3.h
+\s*#\s*include\s*[<"](WebClient.h)[">]
+WClient.h
+\s*#\s*include\s*[<"](WebServer.h)[">]
+WServer.h

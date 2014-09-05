@@ -188,7 +188,7 @@ it's result is 16MHz/above value, so that the lowest speed is 0.125MHz
 */
 void SPIClass::setClockDivider(uint16_t rate)
 {
-	if(rate == 0 && rate > 4095) return;
+	if(rate == 0 || rate > 4095) return;
 	if(SPI_IOaddr == 0) return;
 	if(rate > 15)
 		io_outpb(SPI_IOaddr + 6, (rate&0x0ff0)>>4);

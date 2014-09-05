@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1999 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1997 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
@@ -14,6 +16,11 @@ extern "C" {
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __STRICT_ANSI__
 
 #ifndef _POSIX_SOURCE
@@ -25,7 +32,6 @@ extern "C" {
 #define _IOERR    000200
 #define _IOSTRG   000400
 #define _IORW     001000
-#define _IOAPPEND 002000
 #define _IORMONCL 004000  /* remove on close, for temp files */
 /* if _flag & _IORMONCL, ._name_to_remove needs freeing */
 #define _IOUNGETC 010000  /* there is an ungetc'ed character in the buffer */

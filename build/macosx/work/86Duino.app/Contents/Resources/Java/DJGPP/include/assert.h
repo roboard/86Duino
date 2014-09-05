@@ -6,7 +6,11 @@
 #if defined(NDEBUG)
 #define assert(test) ((void)0) 
 #else
-#define assert(test) ((void)((test)||(__dj_assert(#test,__FILE__,__LINE__),0)))
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define assert(test) ((void)((test)||(__dj_assert(#test,__FILE__,__LINE__,__func__),0)))
+#else
+#define assert(test) ((void)((test)||(__dj_assert(#test,__FILE__,__LINE__,(char *)0),0)))
+#endif
 #endif
 
 #ifndef __dj_include_assert_h_
@@ -16,7 +20,7 @@
 extern "C" {
 #endif
 
-void	__dj_assert(const char *,const char *,int) __attribute__((__noreturn__));
+void	__dj_assert(const char *,const char *,int,const char *) __attribute__((__noreturn__));
 
 #ifdef __cplusplus
 }

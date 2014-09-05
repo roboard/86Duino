@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_conio_h_
@@ -8,6 +10,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -71,7 +78,7 @@ int     cscanf(const char *_format, ...) __attribute__((format(scanf,1,2)));
 void    delline(void);
 int     getch(void);
 int     getche(void);
-int     gettext(int _left, int _top, int _right, int _bottom, void *_destin);
+int     _conio_gettext(int _left, int _top, int _right, int _bottom, void *_destin);
 void    gettextinfo(struct text_info *_r);
 void    gotoxy(int _x, int _y);
 void    gppconio_init(void);
@@ -97,6 +104,19 @@ void    window(int _left, int _top, int _right, int _bottom);
 #define kbhit _conio_kbhit /* Who ever includes gppconio.h probably
                               also wants _conio_kbhit and not kbhit
                               from libc */
+
+/* This is to resolve the name clash between
+   gettext from conio.h and gettext from libintl.h.
+   IMPORTANT:
+   If both headers are included, the gettext keyword will always
+   make reference to the GNU gettext function declared in libintl.h
+   and never to the BORLAND-compatibility gettext function declared
+   in conio.h. In this case, BORLAND-compatibility gettext function
+   will only be available as _conio_gettext. */
+#ifndef __USE_GNU_GETTEXT
+# undef  gettext
+# define gettext _conio_gettext
+#endif
 
 #endif /* !_POSIX_SOURCE */
 #endif /* !__STRICT_ANSI__ */

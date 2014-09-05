@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2002 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_debug_syms_h_
 #define __dj_include_debug_syms_h_
@@ -8,13 +10,18 @@ extern "C" {
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __STRICT_ANSI__
 
 #ifndef _POSIX_SOURCE
 
 /* This is file SYMS.H */
 /*
-** Copyright (C) 1993 DJ Delorie, 24 Kirsten Ave, Rochester NH 03867-2954
+** Copyright (C) 1993 DJ Delorie, 334 North Rd, Deerfield NH 03037-1110
 **
 ** This file is distributed under the terms listed in the document
 ** "copying.dj", available from DJ Delorie at the address above.

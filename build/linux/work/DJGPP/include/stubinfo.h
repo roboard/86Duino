@@ -2,8 +2,8 @@
 #ifndef __dj_include_stub_h__
 #define __dj_include_stub_h__
 
-#define STUBINFO_MAGIC 0
 #define STUBINFO 0
+#define STUBINFO_MAGIC 0
 #define STUBINFO_SIZE 0x10
 #define STUBINFO_MINSTACK 0x14
 #define STUBINFO_MEMORY_HANDLE 0x18

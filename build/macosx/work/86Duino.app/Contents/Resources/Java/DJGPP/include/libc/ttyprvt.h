@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_libc_ttyprvt_h__
 #define __dj_include_libc_ttyprvt_h__
@@ -7,6 +9,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -45,6 +52,49 @@ struct tty_editline
   int col;
   char flag[_TTY_EDITLINE_SIZE];
   unsigned char buf[_TTY_EDITLINE_SIZE];
+};
+
+/* Information about the screen.  */
+struct tty_screen_info
+{
+  unsigned char init_attrib;
+  unsigned char attrib;
+  int max_row;
+  int max_col;
+  unsigned char active_page;
+  unsigned int norm_blink : 1;
+  unsigned int cur_blink : 1;
+  unsigned short init_cursor_shape;
+  void (*set_cursor)(int col, int row);
+  void (*get_cursor)(int *col, int *row);
+};
+
+
+/* Pointers to functions that manipulate the screen.  */
+
+struct tty_screen_interface
+{
+  /* Initialize the interface, if required.  */
+  void (*init)(void);
+  /* Write a character and update col and row.
+     May or may not update the cursor.  */
+  void (*write_ch)(unsigned char _ch, int *_col, int *_row);
+  /* Write a character and update the cursor.  */
+  void (*putch)(unsigned char _ch);
+  /* Write a character without updating the cursor.  */
+  void (*putch_at)(unsigned char _ch);
+  /* Write out a null-terminated string.  */
+  void (*puts)(const unsigned char *_s);
+  /* Scroll the lines y1 through y2 up to ydst. */
+  void (*scroll_up)(int _y1, int _y2, int _ydst);
+  /* Scroll the lines y1 through y2 down to ydst. */
+  void (*scroll_down)(int _y1, int _y2, int _ydst);
+  /* Scroll the characters between x1 and x2 right to xdst on line y.  */
+  void (*scroll_left)(int _y, int _x1, int _x2, int _xdst);
+  /* Scroll the characters between x1 and x2 left to xdst on line y.  */
+  void (*scroll_right)(int _y, int _x1, int _x2, int _xdst);
+  /* Clear the space between (x1, y1) and (x2, y2).  */
+  void (*clear)(int _x1, int _y1, int _x2, int _y2);
 };
 
 #if !defined (_POSIX_VDISABLE) || (_POSIX_VDISABLE == 0)
@@ -118,6 +168,11 @@ extern unsigned char __libc_tty_queue_buffer[];
 extern struct tty __libc_tty_internal;
 extern struct tty *__libc_tty_p;
 extern struct tty_editline __libc_tty_editline;
+extern struct tty_screen_interface __tty_direct_intface;
+extern struct tty_screen_interface __tty_vbios_intface;
+extern struct tty_screen_interface *__tty_screen_intface;
+extern struct tty_screen_info __tty_screen;
+
 
 /* termios hooks */
 extern ssize_t (*__libc_read_termios_hook)(int handle, void *buffer, size_t count,
@@ -127,7 +182,11 @@ extern ssize_t (*__libc_write_termios_hook)(int handle, const void *buffer, size
 extern int __libc_termios_hook_common_count;
 
 /* functions */
-void __libc_termios_init (void);
+void __libc_termios_init(void);
+void __libc_termios_init_read(void);
+void __libc_termios_init_write(void);
+extern int __libc_termios_exist_queue (void);
+int __libc_termios_puts_queue (const unsigned char *_str);
 
 #endif /* !_POSIX_SOURCE */
 #endif /* !__STRICT_ANSI__ */

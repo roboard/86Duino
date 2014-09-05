@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_go32_h_
@@ -9,6 +11,11 @@ extern "C" {
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __STRICT_ANSI__
 
 #ifndef _POSIX_SOURCE
@@ -16,9 +23,10 @@ extern "C" {
 #include <sys/version.h>
 #include <sys/djtypes.h>
 
+#ifndef _SIZE_T
 __DJ_size_t
-#undef __DJ_size_t
-#define __DJ_size_t
+#define _SIZE_T
+#endif
 
 typedef struct {
   unsigned long  size_of_this_structure_in_bytes;
@@ -54,6 +62,7 @@ extern __Go32_Info_Block _go32_info_block;
 #define _dos_ds _go32_info_block.selector_for_linear_memory
 
 #define __tb _go32_info_block.linear_address_of_transfer_buffer
+#define __tb_size _go32_info_block.size_of_transfer_buffer
 
 /* returns number of times hit since last call. (zero first time) */
 unsigned _go32_was_ctrl_break_hit(void);

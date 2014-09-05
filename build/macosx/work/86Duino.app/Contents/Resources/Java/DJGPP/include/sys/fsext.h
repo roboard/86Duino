@@ -1,3 +1,6 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2002 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_sys_fsext_h_
@@ -8,6 +11,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -31,7 +39,14 @@ typedef enum {
   __FSEXT_dup,
   __FSEXT_dup2,
   __FSEXT_fstat,
-  __FSEXT_stat
+  __FSEXT_stat,
+  __FSEXT_llseek,
+  __FSEXT_readlink,
+  __FSEXT_symlink,
+  __FSEXT_fchown,
+  __FSEXT_chmod,
+  __FSEXT_chown,
+  __FSEXT_fchmod
 } __FSEXT_Fnumber;
 
 /* _ready gets passed a fd and should return a mask of these,

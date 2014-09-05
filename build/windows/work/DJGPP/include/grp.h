@@ -1,3 +1,6 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_grp_h_
 #define __dj_include_grp_h_
@@ -8,17 +11,25 @@ extern "C" {
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __STRICT_ANSI__
 
 #include <sys/djtypes.h>
+
+#ifndef _GID_T
 __DJ_gid_t
-#undef __DJ_gid_t
-#define __DJ_gid_t
+#define _GID_T
+#endif
 
 struct group {
-  gid_t		gr_gid;
-  char **      	gr_mem;
-  char *	gr_name;
+  gid_t		gr_gid;		/* Group ID.	*/
+  char **      	gr_mem;		/* Member list.	*/
+  char *	gr_name;	/* Group name.	*/
+  char *	gr_passwd;	/* Password.	*/
 };
 
 struct group *	getgrgid(gid_t _gid);

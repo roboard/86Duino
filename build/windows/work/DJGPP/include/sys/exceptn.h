@@ -1,3 +1,4 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1999 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
@@ -10,15 +11,10 @@ extern "C" {
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
 
-#ifndef __STRICT_ANSI__
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
 
-#ifndef _POSIX_SOURCE
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef __dj_ENFORCE_ANSI_FREESTANDING
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -51,17 +47,6 @@ void __djgpp_exception_toggle(void);
 int  __djgpp_set_ctrl_c(int __enable);	/* On by default */
 int  __djgpp_set_sigint_key(int new_key);  /* Set key which raises SIGINT */
 int  __djgpp_set_sigquit_key(int new_key); /* Set key which raises SIGQUIT */
-
-#endif /* !_POSIX_SOURCE */
-#endif /* !__STRICT_ANSI__ */
-#endif /* !__dj_ENFORCE_ANSI_FREESTANDING */
-
-#ifndef __dj_ENFORCE_FUNCTION_CALLS
-#endif /* !__dj_ENFORCE_FUNCTION_CALLS */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* !_POSIX_SOURCE */
 #endif /* !__STRICT_ANSI__ */

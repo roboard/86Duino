@@ -1,3 +1,6 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2002 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_sys_system_h__
@@ -9,6 +12,11 @@ extern "C" {
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __STRICT_ANSI__
 
 #ifndef _POSIX_SOURCE
@@ -16,12 +24,13 @@ extern "C" {
 extern int _shell_command  (const char *_prog, const char *_cmdline);
 extern int _is_unixy_shell (const char *_prog);
 extern int _is_dos_shell   (const char *_prog);
+extern unsigned int _shell_cmdline_limit (const char *_prog);
 
 /* Checking for special executable formats */
 
 typedef struct {
   char magic[16];
-  int struct_length;
+  unsigned int struct_length;
   char go32[16];
   unsigned char buffer[0];
 } _v1_stubinfo;
@@ -39,6 +48,7 @@ typedef struct {
   unsigned object_format:4; /* What an object format */
 # define _V2_OBJECT_FORMAT_UNKNOWN 0x00
 # define _V2_OBJECT_FORMAT_COFF    0x01
+# define _V2_OBJECT_FORMAT_PE_COFF 0x02
 
   unsigned exec_format:4; /* What an executable format */
 # define _V2_EXEC_FORMAT_UNKNOWN    0x00

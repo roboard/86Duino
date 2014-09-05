@@ -1,3 +1,6 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2002 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_sys_stat_h_
 #define __dj_include_sys_stat_h_
@@ -7,6 +10,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -34,9 +42,10 @@ extern "C" {
 
 #include <sys/types.h>
 #include <sys/djtypes.h>
+#ifndef _TIME_T
 __DJ_time_t
-#undef __DJ_time_t
-#define __DJ_time_t
+#define _TIME_T
+#endif
 
 struct stat {
   time_t	st_atime;
@@ -48,12 +57,13 @@ struct stat {
   time_t	st_mtime;
   nlink_t	st_nlink;
   off_t		st_size;
-  off_t		st_blksize;
+  blksize_t	st_blksize;
   uid_t		st_uid;
-  dev_t		st_rdev; /* unused */
+  dev_t		st_rdev;
 };
 
 int	chmod(const char *_path, mode_t _mode);
+int	fchmod(int _fildes, mode_t _mode);
 int	fstat(int _fildes, struct stat *_buf);
 int	mkdir(const char *_path, mode_t _mode);
 int	mkfifo(const char *_path, mode_t _mode);
@@ -64,6 +74,8 @@ mode_t	umask(mode_t _cmask);
 
 /* POSIX.1 doesn't mention these at all */
 
+#define S_ISLNK(m)	(((m) & 0xf000) == 0x8000)
+
 #define S_IFMT		0xf000
 
 #define S_IFREG		0x0000
@@ -71,16 +83,20 @@ mode_t	umask(mode_t _cmask);
 #define S_IFCHR		0x2000
 #define S_IFDIR		0x3000
 #define S_IFIFO		0x4000
+#define S_IFLNK         0x8000
 #define S_IFFIFO	S_IFIFO
 
 #define S_IFLABEL	0x5000
 #define S_ISLABEL(m)	(((m) & 0xf000) == 0x5000)
 
 void	        _fixpath(const char *, char *);
+char *		__canonicalize_path(const char *, char *, size_t);
 unsigned short  _get_magic(const char *, int);
 int             _is_executable(const char *, int, const char *);
+int             lstat(const char * _path, struct stat * _buf);
 int		mknod(const char *_path, mode_t _mode, dev_t _dev);
 char          * _truename(const char *, char *);
+char          * _truename_sfn(const char *, char *);
 
 /* Bit-mapped variable _djstat_flags describes what expensive
    f?stat() features our application needs.  If you don't need a

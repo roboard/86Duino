@@ -1,5 +1,5 @@
-This is Info file dir, produced by Makeinfo version 1.68 from the input
-file dir.txi.
+This is ./../../info/dir, produced by makeinfo version 4.6 from
+./../../info/dir.txi.
 
 
 File: dir,  Node: Top,  Next: (dir),  Prev: (dir),  Up: (dir)
@@ -44,6 +44,8 @@ From djdevNNN.zip
 * texi2ps: (utils)texi2ps.	Convert texinfo files to Postscript.
 * update: (utils)update.	Conditionally copy one file to another.
 
+* djasm: (djasm).
+	The DJGPP 16-bit assembler
 
 
 From faqNNNb.zip
@@ -60,6 +62,21 @@ From gccNNNb.zip
 * GCC: (gcc).
 	The GNU C, C++, and Objective-C Compiler
 
+* g77: (g77).
+	The GNU Fortran compiler.
+
+* gxxFAQ: (gxxFAQ).
+        A List of frequently-asked questions for users of the GNU C++
+          compiler g++.
+
+* gxxint: (gxxint).
+        Documentation of the GNU C++ front-end internals.
+
+* Cpplib: (cppinternals).
+	Cpplib internals.
+
+* ObjC (objc-features).
+        Documentation of the GNU Objective-C runtime features.
 
 From bnuNNNb.zip
 
@@ -107,14 +124,18 @@ From txiNNNb.zip
 * Info-Standalone: (info-stnd).
 	This topic helps you use the standalone Info-Program (info.exe)
 
-* Makeinfo: (texinfo)makeinfo options.
+* infokey: (info-stnd)Invoking infokey.
+        Compile Info key customizations.
+
+* Makeinfo: (texinfo)Invoking makeinfo.
 	Convert a .texinfo file (.txi) to an info file suitable	for the
-	info reader or Emacs, into plain ASCII, or into HTML.
+	info reader or Emacs, into plain ASCII, into HTML, into XML,
+        or into DocBook.
 
 * Texinfo: (texinfo).
 	With one source file, make either a printed manual (through TeX)
-        or an Info file (through makeinfo).  This topic includes a full
-        description of the Texinfo language and related facilities,
+        or an on-line manual (through makeinfo).  This topic includes a
+        full description of the Texinfo language and related facilities,
         including Emacs commands to work with Texinfo files.
 
 * install-info: (texinfo)Invoking install-info.
@@ -136,17 +157,27 @@ From gdbNNNb.zip
 
 Miscellaneous GNU utilities
 
-
 * Autoconf: (autoconf).
 	GNU Autoconf, a tool to generate shell scripts which
         automatically configure a package for a given computer.
 
+* automake: (automake).		Making Makefile.in's
+* aclocal: (automake)Invoking aclocal.          Generating aclocal.m4
+
 * Bison: (bison).
 	The GNU yacc-like parser generator
+
+* Bash: (bash).                 The GNU Bourne-Again SHell.
 
 * cpio: (cpio).
 	A program to manage tape or disk archives, or to copy
         entire directory trees.
+
+* CVS: (cvs).                   A distributed configuration management
+                                  system.
+* cvsclient: (cvsclient).       The CVS client/server protocol docs.
+
+* DC: (dc).                     An arbitrary precision postfix desk calculator.
 
 * Diffutils: (diff).		GNU difference utilities.
 * cmp: (diff)Invoking cmp.	Find first difference.
@@ -201,11 +232,32 @@ Disk usage
 * Gawk: (gawk).
 	GNU Awk, an interpreted batch language for processing text files.
 
-* Grep: (grep).
-	Print lines matching patterns.
+* GDBM: (gdbm).         GNU hashed database library.
+
+* gmp: (gmp).           GNU Multiple Precision Arithmetic Library.
+
+* GnuGo: (gnugo).       The GNU Go game.
+
+* Gperf: (gperf).       GNU Perfect Hash Function Generator.
+
+* Grep: (grep).         Print lines matching patterns.
+
+* Groff: (groff).       The GNU troff document formatting system.
 
 * Gzip: (gzip).
 	The GNU file compressor.
+
+GNU Gettext Utilities
+* Gettext: (gettext).                           GNU gettext utilities.
+* gettextize: (gettext)gettextize Invocation.   Prepare a package for gettext.
+* msgfmt: (gettext)msgfmt Invocation.           Make MO files out of PO files.
+* msgmerge: (gettext)msgmerge Invocation.       Update two PO files into one.
+* xgettext: (gettext)xgettext Invocation.       Extract strings into a PO file.
+
+* help2man: (help2man).         Automatic manual page generation.
+
+* History: (history).           The GNU history library API.
+* Readline: (readline).         The GNU readline library API.
 
 * Id-utils: (id-utils).		GNU Identifier database utilities.
 * mkid: (id-utils)mkid invocation.	Creating an ID database.
@@ -222,6 +274,10 @@ Disk usage
 
 * Make: (make).
 	Automatically build programs from Makefiles.
+
+* Marst: (marst).       The GNU Algol-to-C Translator.
+
+* recode: (recode).     Conversion between character sets and encodings.
 
 * Sed: (sed).
 	A Stream EDitor.
@@ -266,6 +322,14 @@ Modified command invocation
 Delaying
 * sleep: (sh-utils)sleep invocation.	Delay for a specified time.
 
+* Shar utilities: (sharutils).          GNU shar utilities.
+* mail-files: (sharutils)mail-files invocation. Send files to remote site.
+* mailshar: (sharutils)mailshar invocation.     Make and send a shell archive.
+* remsync: (sharutils)remsync invocation.       Synchronize remote files.
+* shar: (sharutils)shar invocation.             Make a shell archive.
+* unshar: (sharutils)unshar invocation.         Explode a shell archive.
+* uudecode: (sharutils)uudecode invocation.     Restore file from 7-bits.
+* uuencode: (sharutils)uuencode invocation.     Force binary file to 7-bits.
 
 * Tar: (tar).
 	GNU Tar, a program for handling archives of files.
@@ -305,10 +369,9 @@ Operating on characters
 * expand: (textutils)expand invocation.		Convert tabs to spaces.
 * unexpand: (textutils)unexpand invocation.	Convert spaces to tabs.
 
-
+* Which: (which).       Show the full path of commands.
 
 TeX
-
 * Web2c: (web2c).	TeX, Metafont, and companion programs.
 TeX: Typesetting
 * tex: (web2c)tex invocation.		Typesetting.
@@ -370,6 +433,14 @@ RHIDE
 * SET's Editor: (editor).	AN EDITOR FOR PROGRAMMERS.
 * InfView: (infview).		InfView Documentation.
 * RHIDE: (rhide).		RHIDE, an IDE for DJGPP or Linux.
+
+Miscellaneous Utilities
+
+* Bzip2: (bzip2).		A program and library for data compression.
+
+Miscellaneous Documentation
+
+* Elisp: (elisp).	The Emacs Lisp Reference Manual.
 
 
 

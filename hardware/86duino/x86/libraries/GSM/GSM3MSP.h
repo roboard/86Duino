@@ -35,7 +35,7 @@ https://github.com/BlueVia/Official-Arduino
 #define __GSM3_MOBILESERVERPROVIDER__
 
 
-#include <GSM3MAPr.h>
+#include <GSM3MAP.h>
 #include <inttypes.h>
 #include <stddef.h>
 		

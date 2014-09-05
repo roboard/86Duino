@@ -34,7 +34,7 @@ https://github.com/BlueVia/Official-Arduino
 #ifndef _GSM3MOBILEMOCKUPPROVIDER_
 #define _GSM3MOBILEMOCKUPPROVIDER_
 
-#include <GSM3NP.h>
+#include <GSM3MNP.h>
 #include <GSM3MVP.h>
 		
 class GSM3MobileMockupProvider: public GSM3MobileNetworkProvider

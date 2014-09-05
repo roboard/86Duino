@@ -28,8 +28,12 @@ robotMotor.bootloader.name="Arduino Robot Motor bootloader"
 robotMotor.sketch.name="Arduino Robot"
 yun.bootloader.name="Arduino Yun bootloader"
 yun.sketch.name="Arduino Yun"
-86Duino.bootloader.name="86Duino"
-86Duino.sketch.name="86Duino"
+86DuinoZero.bootloader.name="86Duino bootloader"
+86DuinoZero.sketch.name="86Duino Zero"
+86DuinoOne.bootloader.name="86Duino bootloader"
+86DuinoOne.sketch.name="86Duino One"
+86DuinoEduCake.bootloader.name="86Duino bootloader"
+86DuinoEduCake.sketch.name="86Duino EduCake"
 
 [DefaultInstall]
 CopyINF=86duino.inf
@@ -75,8 +79,13 @@ DefaultDestDir=12
 %robotMotor.sketch.name%=DriverInstall, USB\VID_2341&PID_8039&MI_00
 %yun.bootloader.name%=DriverInstall, USB\VID_2341&PID_0041
 %yun.sketch.name%=DriverInstall, USB\VID_2341&PID_8041&MI_00
-%86Duino.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
-%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
+%86DuinoZero.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoZero.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
+%86DuinoOne.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoOne.sketch.name%=DriverInstall, USB\VID_0525&PID_8037&MI_00
+%86DuinoEduCake.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoEduCake.sketch.name%=DriverInstall, USB\VID_0525&PID_8038&MI_00
+
 
 [DeviceList.NTamd64]
 %due.bossa.name%=DriverInstall, USB\VID_03EB&PID_6124
@@ -103,8 +112,12 @@ DefaultDestDir=12
 %robotMotor.sketch.name%=DriverInstall, USB\VID_2341&PID_8039&MI_00
 %yun.bootloader.name%=DriverInstall, USB\VID_2341&PID_0041
 %yun.sketch.name%=DriverInstall, USB\VID_2341&PID_8041&MI_00
-%86Duino.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
-%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
+%86DuinoZero.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoZero.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
+%86DuinoOne.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoOne.sketch.name%=DriverInstall, USB\VID_0525&PID_8037&MI_00
+%86DuinoEduCake.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoEduCake.sketch.name%=DriverInstall, USB\VID_0525&PID_8038&MI_00
 
 [DeviceList.NTia64]
 %esplora.bootloader.name%=DriverInstall, USB\VID_2341&PID_003C
@@ -128,8 +141,12 @@ DefaultDestDir=12
 %robotMotor.sketch.name%=DriverInstall, USB\VID_2341&PID_8039&MI_00
 %yun.bootloader.name%=DriverInstall, USB\VID_2341&PID_0041
 %yun.sketch.name%=DriverInstall, USB\VID_2341&PID_8041&MI_00
-%86Duino.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
-%86Duino.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
+%86DuinoZero.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoZero.sketch.name%=DriverInstall, USB\VID_0525&PID_8036&MI_00
+%86DuinoOne.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoOne.sketch.name%=DriverInstall, USB\VID_0525&PID_8037&MI_00
+%86DuinoEduCake.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoEduCake.sketch.name%=DriverInstall, USB\VID_0525&PID_8038&MI_00
 
 [DriverInstall]
 include=mdmcpq.inf,usb.inf

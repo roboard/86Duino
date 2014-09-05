@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1996 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_sys_ioctl_h_
 #define __dj_include_sys_ioctl_h_
@@ -8,6 +10,11 @@ extern "C"{
 
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -77,13 +84,8 @@ of the xfer buffer in CX. Aaaaargh
 
 
 #define __IS_UNIX_IOCTL(a) ((a) & 0xd0000000U)
-#if 0
-/*
-** UNIX stuff
-**
-** This is subject to major changes in the near future.
-** Do not use it yet.
-*/
+
+/* UNIX stuff - Most of it disabled.  */
 
 /*
 ** __WARNING__ :
@@ -110,6 +112,24 @@ of the xfer buffer in CX. Aaaaargh
 /* this should be _IORW, but stdio got there first */
 #define _IOWR(x,y,t)    (IOC_INOUT|((sizeof(t)&IOCPARM_MASK)<<16)|(x<<8)|y)
 #endif /* _IO */
+
+/* 
+ * window size structure used with TXSETWIN and TXGETWIN.  This is 
+ * exactly the same as the Berkeley structure and can be used with 
+ * TIOCSWINSZ and TIOCGWINSZ -- in fact they are defined to be the 
+ * same.
+ */
+struct winsize {
+	unsigned short	ws_row;			/* rows, in characters */
+	unsigned short	ws_col;			/* columns, in characters */
+	unsigned short	ws_xpixel;		/* horizontal size, pixels */
+	unsigned short	ws_ypixel;		/* vertical size, pixels */
+};
+
+#define TIOCGWINSZ  _IOR('t', 104, struct winsize)      /* get window size */
+#define TIOCSWINSZ  _IOW('t', 103, struct winsize)      /* set window size */
+
+#if 0
 /* Common ioctl's for all disciplines which are handled in ttiocom */
 enum tty_ioctl {
     TXISATTY = ('X'<<8),    /* quick path for isatty */
@@ -132,19 +152,6 @@ enum tty_ioctl {
 union txname {				/* used with TXGETCD */
     int tx_which;			/* which name to get -- inbound */
     char tx_name[TTNAMEMAX];/* the name -- outbound */
-};
-
-/* 
- * window size structure used with TXSETWIN and TXGETWIN.  This is 
- * exactly the same as the Berkeley structure and can be used with 
- * TIOCSWINSZ and TIOCGWINSZ -- in fact they are defined to be the 
- * same.
- */
-struct winsize {
-	unsigned short	ws_row;			/* rows, in characters */
-	unsigned short	ws_col;			/* columns, in characters */
-	unsigned short	ws_xpixel;		/* horizontal size, pixels */
-	unsigned short	ws_ypixel;		/* vertical size, pixels */
 };
 
 struct tchars {
@@ -317,8 +324,6 @@ struct ttysize {
 #define TIOCMBIC    _IOW('t', 107, int)             /* bic modem bits */
 #define TIOCMGET    _IOR('t', 106, int)             /* get all modem bits */
 #define TIOCREMOTE  _IOW('t', 105, int)             /* remote input editing */
-#define TIOCGWINSZ  _IOR('t', 104, struct winsize)      /* get window size */
-#define TIOCSWINSZ  _IOW('t', 103, struct winsize)      /* set window size */
 #define TIOCUCNTL   _IOW('t', 102, int)         /* pty: set/clr usr cntl mode */
 #define UIOCCMD(n)  _IO('u', n)                         /* usr cntl op "n" */
 

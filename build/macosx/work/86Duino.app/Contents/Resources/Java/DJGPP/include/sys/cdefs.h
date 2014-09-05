@@ -1,3 +1,4 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1994 DJ Delorie, see COPYING.DJ for details */
 #undef __P
@@ -14,9 +15,9 @@
 #define	_SIGNED		signed
 #define	_DOTS		, ...
 #define	_VOID void
-#define	_EXFUN(name, proto)		name proto
-#define	_DEFUN(name, arglist, args)	name(args)
-#define	_DEFUN_VOID(name)		name(_NOARGS)
+#define	_EXFUN(name, proto)		(name) proto
+#define	_DEFUN(name, arglist, args)	(name)(args)
+#define	_DEFUN_VOID(name)		(name)(_NOARGS)
 #define	_CAST_VOID (void)
 #ifndef	_LONG_DOUBLE
 #define	_LONG_DOUBLE long double

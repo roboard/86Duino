@@ -1,4 +1,6 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2002 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_string_h_
@@ -16,9 +18,11 @@ extern "C" {
 #undef NULL
 
 #define NULL 0
+
+#ifndef _SIZE_T
 __DJ_size_t
-#undef __DJ_size_t
-#define __DJ_size_t
+#define _SIZE_T
+#endif
 
 void *	memchr(const void *_s, int _c, size_t _n);
 int	memcmp(const void *_s1, const void *_s2, size_t _n);
@@ -43,6 +47,11 @@ char *	strstr(const char *_s1, const char *_s2);
 char *	strtok(char *_s1, const char *_s2);
 size_t	strxfrm(char *_s1, const char *_s2, size_t _n);
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __STRICT_ANSI__
 
 #ifndef _POSIX_SOURCE
@@ -50,19 +59,18 @@ size_t	strxfrm(char *_s1, const char *_s2, size_t _n);
 #include <sys/movedata.h>
 
 int	bcmp(const void *_ptr1, const void *_ptr2, int _length);
-void *	bcopy(const void *_a, void *_b, size_t _len);
-#if __GNUC__ >= 3
-#define bzero(s, n) __builtin_bzero(s, n)
-#else
-void *	bzero(void *ptr, size_t _len);
-#endif
+void 	bcopy(const void *_a, void *_b, size_t _len);
+void 	bzero(void *ptr, size_t _len);
 int	ffs(int _mask);
-//char *  index(const char *_string, int _c);
+// char *  index(const char *_string, int _c);
 void *	memccpy(void *_to, const void *_from, int c, size_t n);
 int	memicmp(const void *_s1, const void *_s2, size_t _n);
 char *  rindex(const char *_string, int _c);
 char *	stpcpy(char *_dest, const char *_src);
+char *	stpncpy(char *_dest, const char *_src, size_t _n);
 char *	strdup(const char *_s);
+size_t	strlcat(char *_dest, const char *_src, size_t _size);
+size_t	strlcpy(char *_dest, const char *_src, size_t _size);
 char *	strlwr(char *_s);
 int	strcasecmp(const char *_s1, const char *_s2);
 int	stricmp(const char *_s1, const char *_s2);

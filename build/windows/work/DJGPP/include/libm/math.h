@@ -15,7 +15,7 @@
 
 /*
  * from: @(#)fdlibm.h 5.1 93/09/24
- * $Id: math.h,v 1.3 1999/07/04 14:37:08 eliz Exp $
+ * $Id: math.h,v 1.4 2003/03/22 12:09:08 ams Exp $
  */
 
 #ifndef _MATH_H_
@@ -33,8 +33,8 @@ union __dmath
   double d;
 };
 
-extern const union __dmath __infinity;
-#define HUGE_VAL (__infinity.d)
+extern double __dj_huge_val;
+#define HUGE_VAL (__dj_huge_val)
 
 /*
  * XOPEN/SVID

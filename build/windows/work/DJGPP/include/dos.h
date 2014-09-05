@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1999 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
@@ -7,6 +9,11 @@
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
 
 #ifndef __STRICT_ANSI__
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef _POSIX_SOURCE
 
@@ -130,42 +137,49 @@ extern "C" {
 #endif
 
 extern unsigned short   _osmajor, _osminor;
+extern unsigned short   _os_trueversion;
 extern const    char  * _os_flavor;
 extern int		_doserrno;
 
 unsigned short _get_dos_version(int);
 
+int _get_fat_size(const int _drive);
+int _get_fs_type(const int _drive, char *const _result_str);
+int _is_cdrom_drive(const int _drive);
+int _is_fat32(const int _drive);
+int _is_ram_drive(const int _drive);
+int _media_type(const int _drive);
 
-int int86(int ivec, union REGS *in, union REGS *out);
-int int86x(int ivec, union REGS *in, union REGS *out, struct SREGS *seg);
-int intdos(union REGS *in, union REGS *out);
-int intdosx(union REGS *in, union REGS *out, struct SREGS *seg);
-int bdos(int func, unsigned dx, unsigned al);
-int bdosptr(int func, void *dx, unsigned al);
+int int86(int _ivec, union REGS *in, union REGS *out);
+int int86x(int _ivec, union REGS *_in, union REGS *_out, struct SREGS *_seg);
+int intdos(union REGS *_in, union REGS *_out);
+int intdosx(union REGS *_in, union REGS *_out, struct SREGS *_seg);
+int bdos(int _func, unsigned _dx, unsigned _al);
+int bdosptr(int _func, void *_dx, unsigned _al);
 
-#define bdosptr(a, b, c) bdos(a, (unsigned)(b), c)
-#define intdos(a, b) int86(0x21, a, b)
-#define intdosx(a, b, c) int86x(0x21, a, b, c)
+#define bdosptr(_a, _b, _c) bdos(_a, (unsigned)(_b), _c)
+#define intdos(_a, _b) int86(0x21, _a, _b)
+#define intdosx(_a, _b, _c) int86x(0x21, _a, _b, _c)
 
 int enable(void);
 int disable(void);
 
-int getftime(int handle, struct ftime *ftimep);
-int setftime(int handle, struct ftime *ftimep);
+int getftime(int _handle, struct ftime *_ftimep);
+int setftime(int _handle, struct ftime *_ftimep);
 
 int getcbrk(void);
-int setcbrk(int new_value);
+int setcbrk(int _new_value);
 
 void getdate(struct date *);
 void gettime(struct time *);
 void setdate(struct date *);
 void settime(struct time *);
 
-void getdfree(unsigned char drive, struct dfree *ptr);
+void getdfree(unsigned char _drive, struct dfree *_ptr);
 
-//void delay(unsigned msec);
-/* int _get_default_drive(void);
-void _fixpath(const char *, char *); */
+// void delay(unsigned _msec);
+
+void __maybe_fix_w2k_ntvdm_bug(void);
 
 
 /*
@@ -229,6 +243,18 @@ struct _DOSERROR {
 };
 #define DOSERROR _DOSERROR
 
+struct _DOSERROR_STR {
+  char *exterror_str;
+  #ifdef __cplusplus
+  char *errclass_str;
+  #else
+  char *class_str;
+  #endif
+  char *action_str;
+  char *locus_str;
+};
+#define DOSERROR_STR _DOSERROR_STR
+
 unsigned int   _dos_creat(const char *_filename, unsigned int _attr, int *_handle);
 unsigned int   _dos_creatnew(const char *_filename, unsigned int _attr, int *_handle);
 unsigned int   _dos_open(const char *_filename, unsigned int _mode, int *_handle);
@@ -256,6 +282,8 @@ unsigned int   _dos_getdiskfree(unsigned int _drive, struct _diskfree_t *_disksp
 
 int            _dosexterr(struct _DOSERROR *_p_error);
 #define dosexterr(_ep) _dosexterr(_ep)
+int            _dostrerr(struct _DOSERROR *_p_error, struct _DOSERROR_STR *_p_str);
+#define dostrerr(_ep,_sp) _dostrerr(_ep,_sp)
 
 #define int386(_i, _ir, _or)         int86(_i, _ir, _or)
 #define int386x(_i, _ir, _or, _sr)   int86x(_i, _ir, _or, _sr)

@@ -136,10 +136,10 @@ static void read_flash_device_id(unsigned char *p)
 {
   enable_cs(spi_base);
   write_spi_byte(spi_base, 0x9f);// RDID command
-  disable_cs(spi_base);
+  //disable_cs(spi_base);
   
   //read device ID
-  enable_cs(spi_base);
+  //enable_cs(spi_base);
   p[0] = read_spi_byte(spi_base);
   p[1] = read_spi_byte(spi_base);
   p[2] = read_spi_byte(spi_base);

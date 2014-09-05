@@ -1,3 +1,4 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_inline_ctype_ha_
 #define __dj_include_inline_ctype_ha_
 
@@ -12,6 +13,7 @@
 #define __dj_ISSPACE	0x0100
 #define __dj_ISUPPER	0x0200
 #define __dj_ISXDIGIT	0x0400
+#define __dj_ISBLANK	0x0800
 
 extern unsigned short __dj_ctype_flags[];
 extern unsigned char __dj_ctype_toupper[];
@@ -29,7 +31,14 @@ extern unsigned char __dj_ctype_tolower[];
 #define isupper(c) (__dj_ctype_flags[(int)(c)+1] & __dj_ISUPPER)
 #define isxdigit(c) (__dj_ctype_flags[(int)(c)+1] & __dj_ISXDIGIT)
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#define isblank(c) (__dj_ctype_flags[(int)(c)+1] & __dj_ISBLANK)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #define tolower(c) (__dj_ctype_tolower[(int)(c)+1])
 #define toupper(c) (__dj_ctype_toupper[(int)(c)+1])
 
-#endif /* __dj_include_inline_ctype_hi_ */
+#endif /* __dj_include_inline_ctype_ha_ */

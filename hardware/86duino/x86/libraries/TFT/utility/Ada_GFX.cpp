@@ -33,7 +33,6 @@ POSSIBILITY OF SUCH DAMAGE.
 Modified 25 December 2013 by Oswald Kuo
 */
 
-#include <Serial.h>
 #include "Ada_GFX.h"
 #include "glcdfont.c"
 #define pgm_read_byte(addr) (*(const unsigned char *)(addr))

@@ -10,7 +10,7 @@
                               DJ Delorie
 
 
-          This is the README.1ST file for DJGPP Version 2.03
+          This is the README.1ST file for DJGPP Version 2.04
 
 ************************************************************************
 *  This file contains information on obtaining, installing, and using  *
@@ -55,12 +55,12 @@ FAQ      A short file which points you to other documents you should
 
 v2/
 unzip32  A free program to unzip the archive (like PKUNZIP)
-djdev203 DJGPP V2 Development Kit and Runtime
-djlsr203 DJGPP V2 Base Library Sources
-djtst203 DJGPP V2 Test Programs (for testing the C library)
-djcrx203 DJGPP V2 Cross-to-DOS Compiler Support Files (from djlsr/djdev)
-djtzn203 DJGPP V2 Timezone Files
-djtzs203 DJGPP V2 Timezone Sources
+djdev204 DJGPP V2 Development Kit and Runtime
+djlsr204 DJGPP V2 Base Library Sources
+djtst204 DJGPP V2 Test Programs (for testing the C library)
+djcrx204 DJGPP V2 Cross-to-DOS Compiler Support Files (from djlsr/djdev)
+djtzn204 DJGPP V2 Timezone Files
+djtzs204 DJGPP V2 Timezone Sources
 faq*b    The full FAQ list in various formats (Info, ASCII, HTML...)
 faq*s    The Texinfo sources of the FAQ and tools to generate all the
           different formats of the FAQ
@@ -101,23 +101,29 @@ See http://www.delorie.com/djgpp/zip-picker.html for a form-based
 guide to what to download.  In general, download the binary
 distributions only; most people don't need the source distributions.
 
-To build C programs, you'll need djdev203.zip, gcc*b.zip, and
+To build C programs, you'll need djdev204.zip, gcc*b.zip, and
 bnu*b.zip.  For C++, also get gpp*b.zip.
 
 To read the online manuals, get txi*b.zip and run "info".  If you don't
 have a DPMI server installed, you'll need csdpmi*b.zip.  (Windows, QDPMI,
-386Max, NWDOS, OpenDOS, OS/2, Win/NT and Linux DOSEmu all provide DPMI
-services, so you don't need CWSDPMI in those environments.)  For more
-details, download faq*b.zip (the full FAQ list) and read Chapter 4,
-"Where and What to Download".
+386Max, NWDOS, OpenDOS, OS/2, Windows NT, Windows 2000, Windows XP
+and Linux DOSEmu all provide DPMI services, so you don't need CWSDPMI
+in those environments.)  For more details, download faq*b.zip
+(the full FAQ list) and read Chapter 4, "Where and What to Download".
 
-If you have Windows ME, 2000 or XP, images dated before December 2001
-may not work properly, so make sure you get new distributions where
-possible if you are using a newer Windows release.
+If you have Windows ME, 2000 or XP, DJGPP executables dated before
+December 2001 may not work properly, so make sure you get new
+distributions where possible if you are using a newer Windows release.
 
 
 Installation
 ------------
+
+A 'long file name' or 'long directory name' has path components that
+are longer than 8 characters in the portion before the extension
+and longer than 3 characters in the extension.  A long file name may
+also have multiple extensions and contain some characters that are
+invalid in short file names (not including the quotes: "+,;=[]").
 
 1. Create a directory for DJGPP, say C:\DJGPP.  (WARNING: do NOT
    install DJGPP in a directory C:\DEV, D:\DEV, etc., or in any of their
@@ -139,9 +145,9 @@ Installation
 2. Unzip all the zip files from that directory, preserving the
    directory structure.  For example:
 
-	pkunzip -d djdev203
+	pkunzip -d djdev204
   or
-	unzip32 djdev203
+	unzip32 djdev204
 
    On Windows 9x, Windows/ME, Windows 2000 and Windows XP, use an unzip
    program which supports long file names.  Latest versions of InfoZip's
@@ -156,7 +162,7 @@ Installation
    the directory structure.  If you use WinZip, you MUST check the box
    "Use folder names".  If you use pkunzip, you must use the -d switch.
 
-   On Windows/NT (NT version 4 and below, not W2K!) use an unzip
+   On Windows NT (NT version 4 and below, not 2000 or XP!) use an unzip
    program which does NOT support long file names if you not plan on
    using the LFN TSR, as DJGPP programs cannot access long file names
    on NT4 without the TSR.  Again, unzip32.exe will do The Right Thing
@@ -314,16 +320,13 @@ other free editors can serve as an IDE.  The only task that these
 editors (including Emacs) cannot do is to run a debugger in a
 full-screen session.
 
-A DJGPP-specific IDE called RHIDE has recently been released and is
-now available to all DJGPP users.  It features a Turbo C-style
+An IDE called RHIDE supports DJGPP.  It features a Turbo C-style
 interface, auto-indentation, color syntax highlighting, automatic
 invocation of the DJGPP compiler, automatic Makefile generation, and
 easy access to the DJGPP online documentation.  RHIDE also
 incorporates integrated and/or standalone debugging using the same
-functionality as the GNU Debugger (gdb).  Since RHIDE is brand new,
-there are still revisions and bugfixes being made; visit
-http://www.tu-chemnitz.de/~sho/rho/rhide.html for the latest
-information and updates.
+functionality as the GNU Debugger (gdb).  Visit http://www.rhide.com/
+for the latest information and updates.
 
 
 
@@ -490,20 +493,41 @@ command line type "info info".  To find out even more, type
 
 
 
-Compatibility with V2.00
-------------------------
+Compatibility with previous 2.x versions
+----------------------------------------
 
 If you are upgrading from version 2.00 of DJGPP, you should completely
 reinstall all the packages you need to use.  Because of the different
 methods used by versions 2.01 and later to handle long command lines
-(and long filenames under Win95), mixing V2.00 programs with those
-from later versions can cause very subtle and difficult to debug
-problems.  See the FAQ section 16.6 for more information.
+(and long file names under Windows '95, '98, ME, 2000 and XP),
+mixing V2.00 programs with those from later versions can cause
+very subtle and difficult to debug problems.  See the FAQ section 16.6
+for more information.
+
+DJGPP uses files of a special format, to support symbolic links
+between files.  Version 2.04 introduced a new format for symlinks,
+to improve symlink support.  Versions 2.00 through 2.03 do not
+understand the new format symlinks and cannot resolve them.
+Version 2.04 understands the old and new symlink formats.
+Subtle and difficult to debug problems may be experienced, if programs
+built with version 2.04 are mixed with programs built
+with an earlier version.
+
+If you are upgrading from version 2.00 through 2.02 of DJGPP
+on Windows 2000 or XP, you should reinstall all the DJGPP packages.
+Programs built with version 2.02 and earlier are likely to fail
+on Windows 2000 and XP.
+
+If you are upgrading from version 2.03 of DJGPP on Windows 2000 or XP,
+you should reinstall all DJGPP packages dated after December 2001.
+Programs dated before December 2001 are likely to fail
+on Windows 2000 and XP.
 
 
 
-Compatibility with V1.x
------------------------
+
+Compatibility with 1.x versions
+-------------------------------
 
 Existing binaries compiled under DJGPP V1.x can be used for
 applications for which there is no v2.x version.  V1 programs cannot
@@ -515,7 +539,7 @@ say, using v1.x Make to run v2.x compiler.
 
 --- COPYRIGHT ---
 
-DJGPP V2 is Copyright (C) 1989-1999 by DJ Delorie.  Some parts of
+DJGPP V2 is Copyright (C) 1989-2002 by DJ Delorie.  Some parts of
 libc.a are Copyright (C) Regents of the University of California at
 Berkeley.
 

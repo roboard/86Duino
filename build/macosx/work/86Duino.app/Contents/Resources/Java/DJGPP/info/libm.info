@@ -1,5 +1,5 @@
-This is Info file ../../../info/libm.info, produced by Makeinfo version
-1.68 from the input file libm.texinfo.
+This is ../../../info/libm.info, produced by makeinfo version 4.6 from
+libm.texinfo.
 
 START-INFO-DIR-ENTRY
 * libm::                        An ANSI-C conforming mathematical library.
@@ -46,7 +46,7 @@ File: libm.info,  Node: Math,  Next: Reentrancy,  Prev: Top,  Up: Top
 Mathematical Functions (`libm/math.h')
 **************************************
 
-   This chapter groups a wide variety of mathematical functions.  The
+This chapter groups a wide variety of mathematical functions.  The
 corresponding definitions and declarations are in `libm/math.h'.  If
 you want to use these functions with programs which
 `#include <math.h>', you need to define the symbol `_USE_LIBM_MATH_H'
@@ -116,7 +116,7 @@ File: libm.info,  Node: version,  Next: acos,  Up: Math
 Version of library
 ==================
 
-   There are four different versions of the math library routines: IEEE,
+There are four different versions of the math library routines: IEEE,
 POSIX, X/Open, or SVID.  The version may be selected at runtime by
 setting the global variable `_LIB_VERSION', defined in `libm/math.h',
 to one of the following constants: `_IEEE_', `_POSIX_', `_XOPEN_', or
@@ -161,9 +161,8 @@ Syntax
 
 Description
 
-------------
 
-   `acos' computes the inverse cosine (arc cosine) of the input value.
+`acos' computes the inverse cosine (arc cosine) of the input value.
 Arguments to `acos' must be in the range -1 to 1.
 
    `acosf' is identical to `acos', except that it performs its
@@ -171,13 +170,12 @@ calculations on `floats'.
 
 Return Value
 
--------------
 
-   `acos' and `acosf' return values in radians, in the range of 0 to pi.
+`acos' and `acosf' return values in radians, in the range of 0 to pi.
 
-   If X is not between -1 and 1, the returned value is NaN (not a
-number) the global variable `errno' is set to `EDOM', and a `DOMAIN
-error' message is sent as standard error output.
+If X is not between -1 and 1, the returned value is NaN (not a number)
+the global variable `errno' is set to `EDOM', and a `DOMAIN error'
+message is sent as standard error output.
 
    You can modify error handling for these functions using `matherr'.
 
@@ -196,9 +194,8 @@ Syntax
 
 Description
 
-------------
 
-   `acosh' calculates the inverse hyperbolic cosine of X.  `acosh' is
+`acosh' calculates the inverse hyperbolic cosine of X.  `acosh' is
 defined as
       log(X + sqrt(X*X-1))
 
@@ -208,9 +205,8 @@ defined as
 
 Return Value
 
--------------
 
-   `acosh' and `acoshf' return the calculated value.  If X less than 1,
+`acosh' and `acoshf' return the calculated value.  If X less than 1,
 the return value is NaN and `errno' is set to `EDOM'.
 
    You can change the error-handling behavior with the non-ANSI
@@ -218,10 +214,9 @@ the return value is NaN and `errno' is set to `EDOM'.
 
 Portability
 
-------------
 
-   Neither `acosh' nor `acoshf' are ANSI C.  They are not recommended
-for portable programs.
+Neither `acosh' nor `acoshf' are ANSI C.  They are not recommended for
+portable programs.
 
 
 File: libm.info,  Node: asin,  Next: asinh,  Prev: acosh,  Up: Math
@@ -238,9 +233,8 @@ Syntax
 
 Description
 
-------------
 
-   `asin' computes the inverse sine (arc sine) of the argument X.
+`asin' computes the inverse sine (arc sine) of the argument X.
 Arguments to `asin' must be in the range -1 to 1.
 
    `asinf' is identical to `asin', other than taking and returning
@@ -250,13 +244,12 @@ floats.
 
 Return Value
 
--------------
 
-   `asin' returns values in radians, in the range of -pi/2 to pi/2.
+`asin' returns values in radians, in the range of -pi/2 to pi/2.
 
-   If X is not in the range -1 to 1, `asin' and `asinf' return NaN (not
-a number), set the global variable `errno' to `EDOM', and issue a
-`DOMAIN error' message.
+If X is not in the range -1 to 1, `asin' and `asinf' return NaN (not a
+number), set the global variable `errno' to `EDOM', and issue a `DOMAIN
+error' message.
 
    You can change this error treatment using `matherr'.
 
@@ -275,9 +268,8 @@ Syntax
 
 Description
 
-------------
 
-   `asinh' calculates the inverse hyperbolic sine of X.  `asinh' is
+`asinh' calculates the inverse hyperbolic sine of X.  `asinh' is
 defined as
       sgn(X) * log(abs(X) + sqrt(1+X*X))
 
@@ -285,15 +277,13 @@ defined as
 
 Return Value
 
--------------
 
-   `asinh' and `asinhf' return the calculated value.
+`asinh' and `asinhf' return the calculated value.
 
 Portability
 
-------------
 
-   Neither `asinh' nor `asinhf' are ANSI C.
+Neither `asinh' nor `asinhf' are ANSI C.
 
 
 File: libm.info,  Node: atan,  Next: atan2,  Prev: asinh,  Up: Math
@@ -310,23 +300,20 @@ Syntax
 
 Description
 
-------------
 
-   `atan' computes the inverse tangent (arc tangent) of the input value.
+`atan' computes the inverse tangent (arc tangent) of the input value.
 
    `atanf' is identical to `atan', save that it operates on `floats'.
 
 Return Value
 
--------------
 
-   `atan' returns a value in radians, in the range of -pi/2 to pi/2.
+`atan' returns a value in radians, in the range of -pi/2 to pi/2.
 
 Portability
 
-------------
 
-   `atan' is ANSI C.  `atanf' is an extension.
+`atan' is ANSI C.  `atanf' is an extension.
 
 
 File: libm.info,  Node: atan2,  Next: atanh,  Prev: atan,  Up: Math
@@ -343,9 +330,8 @@ Syntax
 
 Description
 
-------------
 
-   `atan2' computes the inverse tangent (arc tangent) of Y/X.  `atan2'
+`atan2' computes the inverse tangent (arc tangent) of Y/X.  `atan2'
 produces the correct result even for angles near pi/2 or -pi/2 (that
 is, when X is near 0).
 
@@ -354,10 +340,9 @@ is, when X is near 0).
 
 Return Value
 
--------------
 
-   `atan2' and `atan2f' return a value in radians, in the range of -pi
-to pi.
+`atan2' and `atan2f' return a value in radians, in the range of -pi to
+pi.
 
    If both X and Y are 0.0, `atan2' causes a `DOMAIN' error.
 
@@ -365,9 +350,8 @@ to pi.
 
 Portability
 
-------------
 
-   `atan2' is ANSI C.  `atan2f' is an extension.
+`atan2' is ANSI C.  `atan2f' is an extension.
 
 
 File: libm.info,  Node: atanh,  Next: jN,  Prev: atan2,  Up: Math
@@ -384,18 +368,16 @@ Syntax
 
 Description
 
-------------
 
-   `atanh' calculates the inverse hyperbolic tangent of X.
+`atanh' calculates the inverse hyperbolic tangent of X.
 
    `atanhf' is identical, other than taking and returning `float'
 values.
 
 Return Value
 
--------------
 
-   `atanh' and `atanhf' return the calculated value.
+`atanh' and `atanhf' return the calculated value.
 
    If |X| is greater than 1, the global `errno' is set to `EDOM' and
 the result is a NaN.  A `DOMAIN error' is reported.
@@ -407,9 +389,8 @@ infinity with the same sign as `x'.  A `SING error' is reported.
 
 Portability
 
-------------
 
-   Neither `atanh' nor `atanhf' are ANSI C.
+Neither `atanh' nor `atanhf' are ANSI C.
 
 
 File: libm.info,  Node: jN,  Next: cbrt,  Prev: atanh,  Up: Math
@@ -436,9 +417,8 @@ Syntax
 
 Description
 
-------------
 
-   The Bessel functions are a family of functions that solve the
+The Bessel functions are a family of functions that solve the
 differential equation
        2               2    2
       x  y'' + xy' + (x  - p )y  = 0
@@ -455,15 +435,13 @@ calculations, but on `float' rather than `double' values.
 
 Return Value
 
--------------
 
-   The value of each Bessel function at X is returned.
+The value of each Bessel function at X is returned.
 
 Portability
 
-------------
 
-   None of the Bessel functions are in ANSI C.
+None of the Bessel functions are in ANSI C.
 
 
 File: libm.info,  Node: cbrt,  Next: copysign,  Prev: jN,  Up: Math
@@ -480,21 +458,18 @@ Syntax
 
 Description
 
-------------
 
-   `cbrt' computes the cube root of the argument.
+`cbrt' computes the cube root of the argument.
 
 Return Value
 
--------------
 
-   The cube root is returned.
+The cube root is returned.
 
 Portability
 
-------------
 
-   `cbrt' is in System V release 4.  `cbrtf' is an extension.
+`cbrt' is in System V release 4.  `cbrtf' is an extension.
 
 
 File: libm.info,  Node: copysign,  Next: cosh,  Prev: cbrt,  Up: Math
@@ -511,27 +486,23 @@ Syntax
 
 Description
 
-------------
 
-   `copysign' constructs a number with the magnitude (absolute value)
-of its first argument, X, and the sign of its second argument, Y.
+`copysign' constructs a number with the magnitude (absolute value) of
+its first argument, X, and the sign of its second argument, Y.
 
    `copysignf' does the same thing; the two functions differ only in
 the type of their arguments and result.
 
 Return Value
 
--------------
 
-   `copysign' returns a `double' with the magnitude of X and the sign
-of Y.  `copysignf' returns a `float' with the magnitude of X and the
-sign of Y.
+`copysign' returns a `double' with the magnitude of X and the sign of Y.
+`copysignf' returns a `float' with the magnitude of X and the sign of Y.
 
 Portability
 
-------------
 
-   `copysign' is not required by either ANSI C or the System V Interface
+`copysign' is not required by either ANSI C or the System V Interface
 Definition (Issue 2).
 
 
@@ -549,10 +520,9 @@ Syntax
 
 Description
 
-------------
 
-   `cosh' computes the hyperbolic cosine of the argument X.  `cosh(X)'
-is defined as
+`cosh' computes the hyperbolic cosine of the argument X.  `cosh(X)' is
+defined as
       (exp(x) + exp(-x))/2
 
    Angles are specified in radians.  `coshf' is identical, save that it
@@ -560,10 +530,9 @@ takes and returns `float'.
 
 Return Value
 
--------------
 
-   The computed value is returned.  When the correct value would create
-an overflow,  `cosh' returns the value `HUGE_VAL' with the appropriate
+The computed value is returned.  When the correct value would create an
+overflow,  `cosh' returns the value `HUGE_VAL' with the appropriate
 sign, and the global value `errno' is set to `ERANGE'.
 
    You can modify error handling for these functions using the function
@@ -571,9 +540,8 @@ sign, and the global value `errno' is set to `ERANGE'.
 
 Portability
 
-------------
 
-   `cosh' is ANSI.  `coshf' is an extension.
+`cosh' is ANSI.  `coshf' is an extension.
 
 
 File: libm.info,  Node: erf,  Next: exp,  Prev: cosh,  Up: Math
@@ -592,9 +560,8 @@ Syntax
 
 Description
 
-------------
 
-   `erf' calculates an approximation to the "error function", which
+`erf' calculates an approximation to the "error function", which
 estimates the probability that an observation will fall within X
 standard deviations of the mean (assuming a normal distribution).
 
@@ -608,16 +575,14 @@ and result types.
 
 Return Value
 
--------------
 
-   For positive arguments, `erf' and all its variants return a
+For positive arguments, `erf' and all its variants return a
 probability--a number between 0 and 1.
 
 Portability
 
-------------
 
-   None of the variants of `erf' are ANSI C.
+None of the variants of `erf' are ANSI C.
 
 
 File: libm.info,  Node: exp,  Next: expm1,  Prev: erf,  Up: Math
@@ -634,29 +599,26 @@ Syntax
 
 Description
 
-------------
 
-   `exp' and `expf' calculate the exponential of X, that is, e raised
-to the power X (where e is the base of the natural system of
-logarithms, approximately 2.71828).
+`exp' and `expf' calculate the exponential of X, that is, e raised to
+the power X (where e is the base of the natural system of logarithms,
+approximately 2.71828).
 
    You can use the (non-ANSI) function `matherr' to specify error
 handling for these functions.
 
 Return Value
 
--------------
 
-   On success, `exp' and `expf' return the calculated value.  If the
+On success, `exp' and `expf' return the calculated value.  If the
 result underflows, the returned value is `0'.  If the result overflows,
 the returned value is `HUGE_VAL'.  In either case, `errno' is set to
 `ERANGE'.
 
 Portability
 
-------------
 
-   `exp' is ANSI C.  `expf' is an extension.
+`exp' is ANSI C.  `expf' is an extension.
 
 
 File: libm.info,  Node: expm1,  Next: fabs,  Prev: exp,  Up: Math
@@ -673,9 +635,8 @@ Syntax
 
 Description
 
-------------
 
-   `expm1' and `expm1f' calculate the exponential of X and subtract 1,
+`expm1' and `expm1f' calculate the exponential of X and subtract 1,
 that is, e raised to the power X minus 1 (where e is the base of the
 natural system of logarithms, approximately 2.71828).  The result is
 accurate even for small values of X, where using `exp(X)-1' would lose
@@ -683,16 +644,14 @@ many significant digits.
 
 Return Value
 
--------------
 
-   e raised to the power X, minus 1.
+e raised to the power X, minus 1.
 
 Portability
 
-------------
 
-   Neither `expm1' nor `expm1f' is required by ANSI C or by the System
-V Interface Definition (Issue 2).
+Neither `expm1' nor `expm1f' is required by ANSI C or by the System V
+Interface Definition (Issue 2).
 
 
 File: libm.info,  Node: fabs,  Next: floor,  Prev: expm1,  Up: Math
@@ -709,22 +668,19 @@ Syntax
 
 Description
 
-------------
 
-   `fabs' and `fabsf' calculate the absolute value (magnitude) of the
+`fabs' and `fabsf' calculate the absolute value (magnitude) of the
 argument X, by direct manipulation of the bit representation of X.
 
 Return Value
 
--------------
 
-   The calculated value is returned.  No errors are detected.
+The calculated value is returned.  No errors are detected.
 
 Portability
 
-------------
 
-   `fabs' is ANSI.  `fabsf' is an extension.
+`fabs' is ANSI.  `fabsf' is an extension.
 
 
 File: libm.info,  Node: floor,  Next: fmod,  Prev: fabs,  Up: Math
@@ -743,24 +699,20 @@ Syntax
 
 Description
 
-------------
 
-   `floor' and `floorf' find the nearest integer less than or equal to
-X.  `ceil' and `ceilf' find the nearest integer greater than or equal
-to X.
+`floor' and `floorf' find the nearest integer less than or equal to X.
+`ceil' and `ceilf' find the nearest integer greater than or equal to X.
 
 Return Value
 
--------------
 
-   `floor' and `ceil' return the integer result as a double.  `floorf'
-and `ceilf' return the integer result as a float.
+`floor' and `ceil' return the integer result as a double.  `floorf' and
+`ceilf' return the integer result as a float.
 
 Portability
 
-------------
 
-   `floor' and `ceil' are ANSI.  `floorf' and `ceilf' are extensions.
+`floor' and `ceil' are ANSI.  `floorf' and `ceilf' are extensions.
 
 
 File: libm.info,  Node: fmod,  Next: frexp,  Prev: floor,  Up: Math
@@ -777,17 +729,15 @@ Syntax
 
 Description
 
-------------
 
-   The `fmod' and `fmodf' functions compute the floating-point
-remainder of X/Y (X modulo Y).
+The `fmod' and `fmodf' functions compute the floating-point remainder
+of X/Y (X modulo Y).
 
 Return Value
 
--------------
 
-   The `fmod' function returns the value X-I*Y, for the largest integer
-I such that, if Y is nonzero, the result has the same sign as X and
+The `fmod' function returns the value X-I*Y, for the largest integer I
+such that, if Y is nonzero, the result has the same sign as X and
 magnitude less than the magnitude of Y.
 
    `fmod(X,0)' returns NaN, and sets `errno' to `EDOM'.
@@ -796,9 +746,8 @@ magnitude less than the magnitude of Y.
 
 Portability
 
-------------
 
-   `fmod' is ANSI C. `fmodf' is an extension.
+`fmod' is ANSI C. `fmodf' is an extension.
 
 
 File: libm.info,  Node: frexp,  Next: gamma,  Prev: fmod,  Up: Math
@@ -815,9 +764,8 @@ Syntax
 
 Description
 
-------------
 
-   All non zero, normal numbers can be described as M * 2**P.  `frexp'
+All non zero, normal numbers can be described as M * 2**P.  `frexp'
 represents the double VAL as a mantissa M and a power of two P. The
 resulting mantissa will always be greater than or equal to `0.5', and
 less than `1.0' (as long as VAL is nonzero). The power of two will be
@@ -830,16 +778,14 @@ than doubles.
 
 Return Value
 
--------------
 
-   `frexp' returns the mantissa M. If VAL is `0', infinity, or Nan,
+`frexp' returns the mantissa M. If VAL is `0', infinity, or Nan,
 `frexp' will set `*'EXP to `0' and return VAL.
 
 Portability
 
-------------
 
-   `frexp' is ANSI.  `frexpf' is an extension.
+`frexp' is ANSI.  `frexpf' is an extension.
 
 
 File: libm.info,  Node: gamma,  Next: hypot,  Prev: frexp,  Up: Math
@@ -862,9 +808,8 @@ Syntax
 
 Description
 
-------------
 
-   `gamma' calculates the natural logarithm of the gamma function of X.
+`gamma' calculates the natural logarithm of the gamma function of X.
 The gamma function (`exp(gamma(X))') is a generalization of factorial,
 and retains the property that `exp(gamma(N))' is equivalent to
 `N*exp(gamma(N-1))'.  Accordingly, the results of the gamma function
@@ -893,9 +838,8 @@ variable `errno' if an error occurs).
 
 Return Value
 
--------------
 
-   Normally, the computed result is returned.
+Normally, the computed result is returned.
 
    When X is a nonpositive integer, `gamma' returns `HUGE_VAL' and
 `errno' is set to `EDOM'.  If the result overflows, `gamma' returns
@@ -905,9 +849,8 @@ Return Value
 
 Portability
 
-------------
 
-   Neither `gamma' nor `gammaf' is ANSI C.
+Neither `gamma' nor `gammaf' is ANSI C.
 
 File: libm.info,  Node: hypot,  Next: ilogb,  Prev: gamma,  Up: Math
 
@@ -923,26 +866,23 @@ Syntax
 
 Description
 
-------------
 
-   `hypot' calculates the Euclidean distance `sqrt(X*X + Y*Y)' between
-the origin (0,0) and a point represented by the Cartesian coordinates
+`hypot' calculates the Euclidean distance `sqrt(X*X + Y*Y)' between the
+origin (0,0) and a point represented by the Cartesian coordinates
 (X,Y).  `hypotf' differs only in the type of its arguments and result.
 
 Return Value
 
--------------
 
-   Normally, the distance value is returned.  On overflow, `hypot'
-returns `HUGE_VAL' and sets `errno' to `ERANGE'.
+Normally, the distance value is returned.  On overflow, `hypot' returns
+`HUGE_VAL' and sets `errno' to `ERANGE'.
 
    You can change the error treatment with `matherr'.
 
 Portability
 
-------------
 
-   `hypot' and `hypotf' are not ANSI C.
+`hypot' and `hypotf' are not ANSI C.
 
 File: libm.info,  Node: ilogb,  Next: infinity,  Prev: hypot,  Up: Math
 
@@ -958,28 +898,24 @@ Syntax
 
 Description
 
-------------
 
-   All non zero, normal numbers can be described as M * 2**P.  `ilogb'
-and `ilogbf' examine the argument VAL, and return P.  The functions
-`frexp' and `frexpf' are similar to `ilogb' and `ilogbf', but also
-return M.
+All non zero, normal numbers can be described as M * 2**P.  `ilogb' and
+`ilogbf' examine the argument VAL, and return P.  The functions `frexp'
+and `frexpf' are similar to `ilogb' and `ilogbf', but also return M.
 
 Return Value
 
--------------
 
-   `ilogb' and `ilogbf' return the power of two used to form the
-floating point argument.  If VAL is `0', they return `- INT_MAX'
-(`INT_MAX' is defined in limits.h).  If VAL is infinite, or NaN, they
-return `INT_MAX'.
+`ilogb' and `ilogbf' return the power of two used to form the floating
+point argument.  If VAL is `0', they return `- INT_MAX' (`INT_MAX' is
+defined in limits.h).  If VAL is infinite, or NaN, they return
+`INT_MAX'.
 
 Portability
 
-------------
 
-   Neither `ilogb' nor `ilogbf' is required by ANSI C or by the System
-V Interface Definition (Issue 2).
+Neither `ilogb' nor `ilogbf' is required by ANSI C or by the System V
+Interface Definition (Issue 2).
 
 File: libm.info,  Node: infinity,  Next: isnan,  Prev: ilogb,  Up: Math
 
@@ -995,10 +931,9 @@ Syntax
 
 Description
 
-------------
 
-   `infinity' and `infinityf' return the special number IEEE infinity
-in double and single precision arithmetic respectivly.
+`infinity' and `infinityf' return the special number IEEE infinity in
+double and single precision arithmetic respectivly.
 
 
 File: libm.info,  Node: isnan,  Next: ldexp,  Prev: infinity,  Up: Math
@@ -1019,9 +954,8 @@ Syntax
 
 Description
 
-------------
 
-   These functions provide information on the floating point argument
+These functions provide information on the floating point argument
 supplied.
 
    There are five major number formats -
@@ -1040,6 +974,7 @@ supplied.
 
 `NAN'
      A number with an all 1's exponent and a non zero fraction.
+
 
    `isnan' returns 1 if the argument is a nan. `isinf' returns 1 if the
 argument is infinity.  `finite' returns 1 if the argument is zero,
@@ -1062,17 +997,15 @@ Syntax
 
 Description
 
-------------
 
-   `ldexp' calculates the value VAL times 2 to the power EXPON.
-`ldexpf' is identical, save that it takes and returns `float' rather
-than `double' values.
+`ldexp' calculates the value VAL times 2 to the power EXPON.  `ldexpf'
+is identical, save that it takes and returns `float' rather than
+`double' values.
 
 Return Value
 
--------------
 
-   `ldexp' returns the calculated value.
+`ldexp' returns the calculated value.
 
    Underflow and overflow both set `errno' to `ERANGE'.  On underflow,
 `ldexp' and `ldexpf' return 0.0.  On overflow, `ldexp' returns plus or
@@ -1080,9 +1013,8 @@ minus `HUGE_VAL'.
 
 Portability
 
-------------
 
-   `ldexp' is ANSI, `ldexpf' is an extension.
+`ldexp' is ANSI, `ldexpf' is an extension.
 
 
 File: libm.info,  Node: log,  Next: log10,  Prev: ldexp,  Up: Math
@@ -1099,29 +1031,26 @@ Syntax
 
 Description
 
-------------
 
-   Return the natural logarithm of X, that is, its logarithm base e
-(where e is the base of the natural system of logarithms, 2.71828...).
-`log' and `logf' are identical save for the return and argument types.
+Return the natural logarithm of X, that is, its logarithm base e (where
+e is the base of the natural system of logarithms, 2.71828...).  `log'
+and `logf' are identical save for the return and argument types.
 
    You can use the (non-ANSI) function `matherr' to specify error
 handling for these functions.
 
 Return Value
 
--------------
 
-   Normally, returns the calculated value.  When X is zero, the
-returned value is `-HUGE_VAL' and `errno' is set to `ERANGE'.  When X
-is negative, the returned value is `-HUGE_VAL' and `errno' is set to
+Normally, returns the calculated value.  When X is zero, the returned
+value is `-HUGE_VAL' and `errno' is set to `ERANGE'.  When X is
+negative, the returned value is `-HUGE_VAL' and `errno' is set to
 `EDOM'.  You can control the error behavior via `matherr'.
 
 Portability
 
-------------
 
-   `log' is ANSI, `logf' is an extension.
+`log' is ANSI, `logf' is an extension.
 
 
 File: libm.info,  Node: log10,  Next: log1p,  Prev: log,  Up: Math
@@ -1138,26 +1067,23 @@ Syntax
 
 Description
 
-------------
 
-   `log10' returns the base 10 logarithm of X.  It is implemented as
+`log10' returns the base 10 logarithm of X.  It is implemented as
 `log(X) / log(10)'.
 
    `log10f' is identical, save that it takes and returns `float' values.
 
 Return Value
 
--------------
 
-   `log10' and `log10f' return the calculated value.
+`log10' and `log10f' return the calculated value.
 
    See the description of `log' for information on errors.
 
 Portability
 
-------------
 
-   `log10' is ANSI C.  `log10f' is an extension.
+`log10' is ANSI C.  `log10f' is an extension.
 
 
 File: libm.info,  Node: log1p,  Next: matherr,  Prev: log10,  Up: Math
@@ -1174,27 +1100,23 @@ Syntax
 
 Description
 
-------------
 
-   `log1p' calculates the natural logarithm of `1+X'.  You can use
-`log1p' rather than ``log(1+X)'' for greater precision when X is very
-small.
+`log1p' calculates the natural logarithm of `1+X'.  You can use `log1p'
+rather than ``log(1+X)'' for greater precision when X is very small.
 
    `log1pf' calculates the same thing, but accepts and returns `float'
 values rather than `double'.
 
 Return Value
 
--------------
 
-   `log1p' returns a `double', the natural log of `1+X'.  `log1pf'
-returns a `float', the natural log of `1+X'.
+`log1p' returns a `double', the natural log of `1+X'.  `log1pf' returns
+a `float', the natural log of `1+X'.
 
 Portability
 
-------------
 
-   Neither `log1p' nor `log1pf' is required by ANSI C or by the System V
+Neither `log1p' nor `log1pf' is required by ANSI C or by the System V
 Interface Definition (Issue 2).
 
 
@@ -1211,11 +1133,10 @@ Syntax
 
 Description
 
-------------
 
-   `matherr' is called whenever a math library function generates an
-error.  You can replace `matherr' by your own subroutine to customize
-error treatment.  The customized `matherr' must return 0 if it fails to
+`matherr' is called whenever a math library function generates an error.
+You can replace `matherr' by your own subroutine to customize error
+treatment.  The customized `matherr' must return 0 if it fails to
 resolve the error, and non-zero if the error is resolved.
 
    When `matherr' returns a nonzero value, no error message is printed
@@ -1277,9 +1198,8 @@ errors as follows:
 
 Return Value
 
--------------
 
-   The library definition for `matherr' returns `0' in all cases.
+The library definition for `matherr' returns `0' in all cases.
 
    You can change the calling function's result from a customized
 `matherr' by modifying `e->retval', which propagates backs to the
@@ -1291,9 +1211,8 @@ an error message.
 
 Portability
 
-------------
 
-   `matherr' is not ANSI C.
+`matherr' is not ANSI C.
 
 
 File: libm.info,  Node: modf,  Next: nan,  Prev: matherr,  Up: Math
@@ -1310,9 +1229,8 @@ Syntax
 
 Description
 
-------------
 
-   `modf' splits the double VAL apart into an integer part and a
+`modf' splits the double VAL apart into an integer part and a
 fractional part, returning the fractional part and storing the integer
 part in `*IPART'.  No rounding whatsoever is done; the sum of the
 integer and fractional parts is guaranteed to be exactly  equal to VAL.
@@ -1322,16 +1240,14 @@ that it takes and returns `float' rather than `double' values.
 
 Return Value
 
--------------
 
-   The fractional part is returned.  Each result has the same sign as
-the supplied argument VAL.
+The fractional part is returned.  Each result has the same sign as the
+supplied argument VAL.
 
 Portability
 
-------------
 
-   `modf' is ANSI C. `modff' is an extension.
+`modf' is ANSI C. `modff' is an extension.
 
 
 File: libm.info,  Node: nan,  Next: nextafter,  Prev: modf,  Up: Math
@@ -1348,10 +1264,9 @@ Syntax
 
 Description
 
-------------
 
-   `nan' and `nanf' return an IEEE NaN (Not a Number) in double and
-single precision arithmetic respectivly.
+`nan' and `nanf' return an IEEE NaN (Not a Number) in double and single
+precision arithmetic respectivly.
 
 
 File: libm.info,  Node: nextafter,  Next: pow,  Prev: nan,  Up: Math
@@ -1368,25 +1283,22 @@ Syntax
 
 Description
 
-------------
 
-   `nextafter' returns the double) precision floating point number
-closest to VAL in the direction toward DIR.  `nextafterf' performs the
-same operation in single precision.  For example, `nextafter(0.0,1.0)'
+`nextafter' returns the double precision floating point number closest
+to VAL in the direction toward DIR.  `nextafterf' performs the same
+operation in single precision.  For example, `nextafter(0.0,1.0)'
 returns the smallest positive number which is representable in double
 precision.
 
 Return Value
 
--------------
 
-   Returns the next closest number to VAL in the direction toward DIR.
+Returns the next closest number to VAL in the direction toward DIR.
 
 Portability
 
-------------
 
-   Neither `nextafter' nor `nextafterf' is required by ANSI C or by the
+Neither `nextafter' nor `nextafterf' is required by ANSI C or by the
 System V Interface Definition (Issue 2).
 
 
@@ -1404,15 +1316,13 @@ Syntax
 
 Description
 
-------------
 
-   `pow' and `powf' calculate X raised to the exp1.0nt Y.
+`pow' and `powf' calculate X raised to the exp1.0nt Y.
 
 Return Value
 
--------------
 
-   On success, `pow' and `powf' return the value calculated.
+On success, `pow' and `powf' return the value calculated.
 
    When the argument values would produce overflow, `pow' returns
 `HUGE_VAL' and set `errno' to `ERANGE'.  If the argument X passed to
@@ -1424,9 +1334,8 @@ then `errno' is set to `EDOM'.  If X and Y are both 0, then `pow' and
 
 Portability
 
-------------
 
-   `pow' is ANSI C. `powf' is an extension.
+`pow' is ANSI C. `powf' is an extension.
 
 File: libm.info,  Node: rint,  Next: scalbn,  Prev: pow,  Up: Math
 
@@ -1444,23 +1353,20 @@ Syntax
 
 Description
 
-------------
 
-   `rint' and `rintf' returns their argument rounded to the nearest
+`rint' and `rintf' returns their argument rounded to the nearest
 integer.  `remainder' and `remainderf' find the remainder of X/Y; this
 value is in the range -Y/2 .. +Y/2.
 
 Return Value
 
--------------
 
-   `rint' and `remainder' return the integer result as a double.
+`rint' and `remainder' return the integer result as a double.
 
 Portability
 
-------------
 
-   `rint' and `remainder' are System V release 4.  `rintf' and
+`rint' and `remainder' are System V release 4.  `rintf' and
 `remainderf' are extensions.
 
 
@@ -1478,24 +1384,21 @@ Syntax
 
 Description
 
-------------
 
-   `scalbn' and `scalbnf' scale X by N, returning X times 2 to the
-power N.  The result is computed by manipulating the exponent, rather
-than by actually performing an exponentiation or multiplication.
+`scalbn' and `scalbnf' scale X by N, returning X times 2 to the power
+N.  The result is computed by manipulating the exponent, rather than by
+actually performing an exponentiation or multiplication.
 
 Return Value
 
--------------
 
-   X times 2 to the power N.
+X times 2 to the power N.
 
 Portability
 
-------------
 
-   Neither `scalbn' nor `scalbnf' is required by ANSI C or by the
-System V Interface Definition (Issue 2).
+Neither `scalbn' nor `scalbnf' is required by ANSI C or by the System V
+Interface Definition (Issue 2).
 
 
 File: libm.info,  Node: sqrt,  Next: tan,  Prev: sinh,  Up: Math
@@ -1512,24 +1415,21 @@ Syntax
 
 Description
 
-------------
 
-   `sqrt' computes the positive square root of the argument.  You can
+`sqrt' computes the positive square root of the argument.  You can
 modify error handling for this function with `matherr'.
 
 Return Value
 
--------------
 
-   On success, the square root is returned. If X is real and positive,
+On success, the square root is returned. If X is real and positive,
 then the result is positive.  If X is real and negative, the global
 value `errno' is set to `EDOM' (domain error).
 
 Portability
 
-------------
 
-   `sqrt' is ANSI C.  `sqrtf' is an extension.
+`sqrt' is ANSI C.  `sqrtf' is an extension.
 
 
 File: libm.info,  Node: sin,  Next: sinh,  Prev: scalbn,  Up: Math
@@ -1548,9 +1448,8 @@ Syntax
 
 Description
 
-------------
 
-   `sin' and `cos' compute (respectively) the sine and cosine of the
+`sin' and `cos' compute (respectively) the sine and cosine of the
 argument X.  Angles are specified in radians.
 
    `sinf' and `cosf' are identical, save that they take and return
@@ -1558,15 +1457,13 @@ argument X.  Angles are specified in radians.
 
 Return Value
 
--------------
 
-   The sine or cosine of X is returned.
+The sine or cosine of X is returned.
 
 Portability
 
-------------
 
-   `sin' and `cos' are ANSI C.  `sinf' and `cosf' are extensions.
+`sin' and `cos' are ANSI C.  `sinf' and `cosf' are extensions.
 
 
 File: libm.info,  Node: sinh,  Next: sqrt,  Prev: sin,  Up: Math
@@ -1583,9 +1480,8 @@ Syntax
 
 Description
 
-------------
 
-   `sinh' computes the hyperbolic sine of the argument X.  Angles are
+`sinh' computes the hyperbolic sine of the argument X.  Angles are
 specified in radians.   `sinh'(X) is defined as
       (exp(X) - exp(-X))/2
 
@@ -1593,9 +1489,8 @@ specified in radians.   `sinh'(X) is defined as
 
 Return Value
 
--------------
 
-   The hyperbolic sine of X is returned.
+The hyperbolic sine of X is returned.
 
    When the correct result is too large to be representable (an
 overflow),  `sinh' returns `HUGE_VAL' with the appropriate sign, and
@@ -1605,9 +1500,8 @@ sets the global value `errno' to `ERANGE'.
 
 Portability
 
-------------
 
-   `sinh' is ANSI C.  `sinhf' is an extension.
+`sinh' is ANSI C.  `sinhf' is an extension.
 
 
 File: libm.info,  Node: tan,  Next: tanh,  Prev: sqrt,  Up: Math
@@ -1624,24 +1518,21 @@ Syntax
 
 Description
 
-------------
 
-   `tan' computes the tangent of the argument X.  Angles are specified
-in radians.
+`tan' computes the tangent of the argument X.  Angles are specified in
+radians.
 
    `tanf' is identical, save that it takes and returns `float' values.
 
 Return Value
 
--------------
 
-   The tangent of X is returned.
+The tangent of X is returned.
 
 Portability
 
-------------
 
-   `tan' is ANSI. `tanf' is an extension.
+`tan' is ANSI. `tanf' is an extension.
 
 
 File: libm.info,  Node: tanh,  Prev: tan,  Up: Math
@@ -1658,10 +1549,9 @@ Syntax
 
 Description
 
-------------
 
-   `tanh' computes the hyperbolic tangent of the argument X.  Angles
-are specified in radians.
+`tanh' computes the hyperbolic tangent of the argument X.  Angles are
+specified in radians.
 
    `tanh(X)' is defined as
       sinh(X)/cosh(X)
@@ -1669,15 +1559,13 @@ are specified in radians.
 
 Return Value
 
--------------
 
-   The hyperbolic tangent of X is returned.
+The hyperbolic tangent of X is returned.
 
 Portability
 
-------------
 
-   `tanh' is ANSI C.  `tanhf' is an extension.
+`tanh' is ANSI C.  `tanhf' is an extension.
 
 
 File: libm.info,  Node: Reentrancy,  Next: Index,  Prev: Math,  Up: Top
@@ -1818,49 +1706,49 @@ Index
 
 
 Tag Table:
-Node: Top1205
-Node: Math1421
-Node: version3910
-Node: acos5312
-Node: acosh6133
-Node: asin7006
-Node: asinh7832
-Node: atan8455
-Node: atan29025
-Node: atanh9873
-Node: jN10781
-Node: cbrt12116
-Node: copysign12565
-Node: cosh13441
-Node: erf14302
-Node: exp15383
-Node: expm116213
-Node: fabs16990
-Node: floor17574
-Node: fmod18328
-Node: frexp19148
-Node: gamma20136
-Node: hypot22400
-Node: ilogb23176
-Node: infinity24085
-Node: isnan24513
-Node: ldexp25794
-Node: log26542
-Node: log1027470
-Node: log1p28124
-Node: matherr28911
-Node: modf31512
-Node: nan32502
-Node: nextafter32882
-Node: pow33732
-Node: rint34596
-Node: scalbn35393
-Node: sqrt36076
-Node: sin36761
-Node: sinh37459
-Node: tan38328
-Node: tanh38851
-Node: Reentrancy39467
-Node: Index40292
+Node: Top1179
+Node: Math1395
+Node: version3881
+Node: acos5280
+Node: acosh6065
+Node: asin6889
+Node: asinh7679
+Node: atan8253
+Node: atan28774
+Node: atanh9573
+Node: jN10432
+Node: cbrt11718
+Node: copysign12118
+Node: cosh12944
+Node: erf13756
+Node: exp14788
+Node: expm115569
+Node: fabs16297
+Node: floor16832
+Node: fmod17536
+Node: frexp18307
+Node: gamma19246
+Node: hypot21461
+Node: ilogb22188
+Node: infinity23048
+Node: isnan23460
+Node: ldexp24726
+Node: log25426
+Node: log1026306
+Node: log1p26911
+Node: matherr27649
+Node: modf30200
+Node: nan31141
+Node: nextafter31505
+Node: pow32305
+Node: rint33120
+Node: scalbn33868
+Node: sqrt34502
+Node: sin35138
+Node: sinh35787
+Node: tan36607
+Node: tanh37081
+Node: Reentrancy37648
+Node: Index38473
 
 End Tag Table

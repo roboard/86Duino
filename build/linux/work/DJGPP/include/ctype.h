@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2002 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1994 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_ctype_h_
 #define __dj_include_ctype_h_
@@ -22,11 +24,30 @@ int	isxdigit(int c);
 int	tolower(int c);
 int	toupper(int c);
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+int	isblank(int c);
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __dj_ENFORCE_FUNCTION_CALLS
 #include <inlines/ctype.ha>
 #endif /* !__dj_ENFORCE_FUNCTION_CALLS */
-  
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
+
 #ifndef __STRICT_ANSI__
+
+int	_tolower(int c);
+int	_toupper(int c);
+
+#ifndef __dj_ENFORCE_FUNCTION_CALLS
+#include <inlines/ctype.hp>
+#endif /* !__dj_ENFORCE_FUNCTION_CALLS */
 
 #ifndef _POSIX_SOURCE
 

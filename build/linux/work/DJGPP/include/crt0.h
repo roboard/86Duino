@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1996 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
@@ -9,6 +11,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -163,6 +170,16 @@ extern int _crt0_startup_flags;
 
 #define _CRT0_FLAG_KEEP_QUOTES			0x4000
 
+/* If set, non-move sbrk() should discard (ignore) memory blocks which are
+** returned by DPMI which would require address wrap to access (at addresses
+** below the CS/DS base address).  This bit is automatically set on Win NT 
+** systems which require it.  It may be manually set on other systems which 
+** don't require it to retain a more normal memory space layout and better
+** memory protection.  This bit can be set but should never be cleared.
+*/
+
+#define _CRT0_DISABLE_SBRK_ADDRESS_WRAP		0x8000
+
 /*****************************************************************************\
  *  Access to the memory handles used by the non-move sbrk algorithm.  
  *  The handle is the SI:DI DPMI handle; the address is the offset relative 
@@ -176,6 +193,7 @@ typedef struct {
 
 extern __djgpp_sbrk_handle __djgpp_memory_handle_list[256];
 __djgpp_sbrk_handle *__djgpp_memory_handle(unsigned address);
+extern unsigned __djgpp_memory_handle_size[256];
 
 #endif /* !_POSIX_SOURCE */
 #endif /* !__STRICT_ANSI__ */

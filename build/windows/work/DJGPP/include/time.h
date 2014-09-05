@@ -1,3 +1,5 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1999 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
@@ -21,15 +23,18 @@ extern "C" {
 #undef NULL
 
 #define NULL 0
+#ifndef _CLOCK_T
 __DJ_clock_t
-#undef __DJ_clock_t
-#define __DJ_clock_t
+#define _CLOCK_T
+#endif
+#ifndef _SIZE_T
 __DJ_size_t
-#undef __DJ_size_t
-#define __DJ_size_t
+#define _SIZE_T
+#endif
+#ifndef _TIME_T
 __DJ_time_t
-#undef __DJ_time_t
-#define __DJ_time_t
+#define _TIME_T
+#endif
 
 struct tm {
   int tm_sec;
@@ -54,6 +59,11 @@ struct tm *	localtime(const time_t *_tod);
 time_t		mktime(struct tm *_tptr);
 size_t		strftime(char *_s, size_t _n, const char *_format, const struct tm *_tptr);
 time_t		time(time_t *_tod);
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
@@ -89,6 +99,16 @@ int		select(int _nfds, fd_set *_readfds, fd_set *_writefds, fd_set *_exceptfds, 
 int		settimeofday(struct timeval *_tp, ...);
 void		tzsetwall(void);
 uclock_t	uclock(void);
+
+unsigned long long _rdtsc(void);
+
+extern __inline__ unsigned long long
+_rdtsc(void)
+{
+  unsigned long long result;
+  __asm__ __volatile__ ("rdtsc" : "=A"(result) );
+  return result;
+}
 
 #endif /* !_POSIX_SOURCE */
 #endif /* !__STRICT_ANSI__ */

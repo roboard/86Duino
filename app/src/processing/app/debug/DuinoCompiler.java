@@ -151,7 +151,7 @@ public class DuinoCompiler implements MessageConsumer {
       
     // 1. compile the sketch (already in the buildPath)
     sketch.setCompilingProgress(30);
-    mainHave(_buildPath);
+    delete_target_files(_buildPath);
     dosbox_mount="d:/";
     ofile_path="d:/";
     compileSketch(includePaths);
@@ -916,18 +916,38 @@ public class DuinoCompiler implements MessageConsumer {
       }
     }  
   }
-  void mainHave(String buildPath) throws RunnerException {
+  void delete_target_files(String buildPath) throws RunnerException {
     String filePath = buildPath + File.separator + "86DUINO.EXE";
+    String ofp = idepath + "/DJGPP/compile/USB_DESC.O";
+    String dfp = idepath + "/DJGPP/compile/USB_DESC.D";
     File file = new File(filePath);
+    File f1 = new File(ofp);
+    File f2 = new File(dfp);
     if(file.exists()){
       file.delete();
     }
+    if(f1.exists()){
+      f1.delete();
+    }
+    if(f2.exists()){
+      f2.delete();
+    }
     if(Base.isLinux() || Base.isMacOS()){
       filePath = buildPath + File.separator + "86duino.exe";
+      ofp = idepath + "/DJGPP/compile/usb_desc.o";
+      dfp = idepath + "/DJGPP/compile/usb_desc.d";
       file = new File(filePath);
+      f1 = new File(ofp);
+      f2 = new File(dfp);
       if(file.exists()){
         file.delete();
       }
+      if(f1.exists()){
+      f1.delete();
+	  }
+	  if(f2.exists()){
+	    f2.delete();
+	  }
     }
   }
   boolean compileSusses(String buildPath) throws RunnerException {

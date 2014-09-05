@@ -623,15 +623,12 @@ DMPAPI(bool) can_GetIDFilter(void *vcan, int index, int *ext_id, unsigned long *
 	idf = io_In32(can->ioHandle, can->IDF);
 	idm = io_In32(can->ioHandle, can->IDM);
 	io_RestoreINT();
-	
-	if (!(idf & 0x80000000UL))
-		return false;
 		
 	*ext_id = (int)((idf & 0x40000000UL) >> 30);
 	*filter = idf & 0x1FFFFFFFUL;
 	*mask   = idm & 0x1FFFFFFFUL;
 	
-	return true;
+	return (idf & 0x80000000UL) ? true : false;
 }
 
 DMPAPI(bool) can_DelIDFilter(void *vcan, int index)

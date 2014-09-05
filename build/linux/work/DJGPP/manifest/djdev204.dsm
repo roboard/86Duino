@@ -1,0 +1,37 @@
+#
+# DSM for djdev 2.04 binaries
+#
+
+dsm-file-version: 1.1
+dsm-version: 0.6.0
+dsm-name: djdev204
+
+dsm-author: Richard Dawe
+
+name: djdev
+version: 2.04 beta 1
+type: binaries
+sources-dsm: djlsr204
+manifest: djdev204
+
+short-description: DJGPP Development Kit and Runtime
+license: Mostly the GNU General and Library General Public Licenses with some allowed exceptions - see copying.dj.
+web-site: http://www.delorie.com/djgpp/
+newsgroup: comp.os.msdos.djgpp
+newsgroup-email-gateway: djgpp@delorie.com
+
+simtelnet-path: v2/
+zip: djdev204.zip
+
+#builtin-post-install-script: echo Welcome to the world of DJGPP!
+
+pre-install-readme: readme.1st
+
+replaces: djdev < 2.04 beta 1
+requires: DPMI
+
+# For reading docs
+depends-on: info-reader
+
+# Provides
+provides: djgpp-dev-env

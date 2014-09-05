@@ -99,8 +99,11 @@ int analogRead(uint8_t pin) {
 	
 	for(time = timer_nowtime(); (io_inpb(BaseAddress + 2) & 0x01) == 0;)
 	{
-		if(timer_nowtime() - time > TimeOut)
+		if((timer_nowtime() - time) > TimeOut)
+		{
+			io_RestoreINT();
 			return 0xffff;
+		}
 	}
 	
     d = io_inpw(BaseAddress + 4);

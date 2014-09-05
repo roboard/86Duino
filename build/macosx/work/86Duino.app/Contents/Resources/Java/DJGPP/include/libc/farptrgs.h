@@ -1,5 +1,6 @@
 /* special version for libc - uses %gs instead of %fs.  Ignore comments */
 
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (c) 1995 DJ Delorie.  Permission granted to use for any
    purpose, provided this copyright remains attached and unmodified.
@@ -59,6 +60,11 @@ extern "C" {
 #endif
 
 #ifndef __dj_ENFORCE_ANSI_FREESTANDING
+
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
+  || !defined(__STRICT_ANSI__)
+
+#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
 
 #ifndef __STRICT_ANSI__
 
