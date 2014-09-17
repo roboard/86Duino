@@ -17,7 +17,7 @@
 * Added TimerOne library. (Compatible with Arduino TimerOne library: http://playground.arduino.cc/code/timer1)
 * Added UTFT library. (Compatible with Henning Karlsen UTFT library: http://henningkarlsen.com/electronics/library.php?id=52)
 * Added UTouch library. (Compatible with Henning Karlsen UTouch library: http://henningkarlsen.com/electronics/library.php?id=55)
-* Added Adafruit_CC3000 library. (Know how connect Adafruit CC3000 WiFi Shield with 86Duino according to this page: http://www.86duino.com/?p=8370)
+* Added Adafruit_CC3000 WiFi library. (Know how connect Adafruit CC3000 WiFi Shield with 86Duino according to this page: http://www.86duino.com/?p=8370)
 * Added SpiderL3S library. It is a CC3000 WiFi Module that made by FunMaker group in Taiwan.
 
 [bootloader]
@@ -41,7 +41,7 @@
 * Modified a compatible problem for Wire library.
 * Add Encoder library. Support Step/DIR, A/B phase, CW/CCW, Capture, SSI hardware counter modes. It's resolution is 10ns.
 * Add IRrmote library.
-* Add USB HOST library.
+* Add USB HOST library. (When using the USB Mouse, may first need to connect a USB HUB to 86Duino, then connect USB Mouse to USB HUB)
 * Fix the bug for Servo ISR.
 * Due to tone and IRrmote use a PWM module as their timer, so servo will use GPIO to simulate PWM signal if you use the 32 PIN.
 
