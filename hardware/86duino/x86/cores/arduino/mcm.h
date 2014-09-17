@@ -754,6 +754,9 @@ unsigned long mcenc_ReadCAPFIFO(int mc, int module, unsigned long* data) ;
 void mcenc_SetRLDTRIG(int mc, int module, unsigned long mode);
 unsigned long mcenc_ReadRLDTRIG(int mc, int module);
 
+unsigned long mcenc_ReadPINAInput(int mc, int module);
+unsigned long mcenc_ReadPINBInput(int mc, int module);
+unsigned long mcenc_ReadPINZInput(int mc, int module);
 
 
 void mcenc_SetCtrlREG(int mc, int module, unsigned long val);
@@ -843,6 +846,9 @@ unsigned long mchall_ReadCtrlREG(int mc, int module);
 void mchall_SetCapCtrlREG(int mc, int module, unsigned long val);
 unsigned long mchall_ReadCapCtrlREG(int mc, int module);
 
+unsigned long mchall_ReadPINAInput(int mc, int module);
+unsigned long mchall_ReadPINBInput(int mc, int module);
+unsigned long mchall_ReadPINZInput(int mc, int module);
 
 
 // ^^^^^^^^^^^^^^^^^^^^^^^   Pulse & Fault Capture Mode  ^^^^^^^^^^^^^^^^^^^^^^^
@@ -877,7 +883,9 @@ unsigned long mcpfau_ReadCAPFIFO1(int mc, int module, unsigned long* data);
 unsigned long mcpfau_ReadCAPFIFO2(int mc, int module, unsigned long* data);
 unsigned long mcpfau_ReadCAPFIFO3(int mc, int module, unsigned long* data);
 
-
+unsigned long mcpfau_ReadPIN1Input(int mc, int module);
+unsigned long mcpfau_ReadPIN2Input(int mc, int module);
+unsigned long mcpfau_ReadPIN3Input(int mc, int module);
 
 #define MCPFAU_POL_NORMAL            (0x00L << 31)
 #define MCPFAU_POL_INVERSE           (0x01L << 31)

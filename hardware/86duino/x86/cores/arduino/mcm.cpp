@@ -1331,6 +1331,18 @@ unsigned long mcenc_ReadRLDTRIG(int mc, int module) {
     return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_ENC_CAPCTRLREG) & 0x00300000L;
 }
 
+unsigned long mcenc_ReadPINAInput(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_ENC_STATREG) >> 7) & 0x01L);
+}
+
+unsigned long mcenc_ReadPINBInput(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_ENC_STATREG) >> 6) & 0x01L);
+}
+
+unsigned long mcenc_ReadPINZInput(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_ENC_STATREG) >> 5) & 0x01L);
+}
+
 
 
 void mcenc_SetCtrlREG(int mc, int module, unsigned long val) {
@@ -1447,6 +1459,18 @@ unsigned long mchall_ReadCAPFIFO(int mc, int module, unsigned long* data) {
     return tmp & 0xf0000000L;
 }
 
+unsigned long mchall_ReadPINAInput(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_HALL_STATREG) >> 7) & 0x01L);
+}
+
+unsigned long mchall_ReadPINBInput(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_HALL_STATREG) >> 6) & 0x01L);
+}
+
+unsigned long mchall_ReadPINZInput(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_HALL_STATREG) >> 5) & 0x01L);
+}
+
 
 
 void mchall_SetCtrlREG(int mc, int module, unsigned long val) {
@@ -1499,6 +1523,18 @@ void mcpfau_SetCapInterval3(int mc, int module, unsigned long capivl) {
     unsigned long reg = MCSIF_modOffset[module] + MCSIF_PFAU_CAPCTRLREG3;
 
     mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfffffe00L) | (capivl & 0x1ffL));
+}
+
+unsigned long mcpfau_ReadPIN1Input(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_PFAU_STATREG) >> 7) & 0x01L);
+}
+
+unsigned long mcpfau_ReadPIN2Input(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_PFAU_STATREG) >> 6) & 0x01L);
+}
+
+unsigned long mcpfau_ReadPIN3Input(int mc, int module) {
+    return ((mc_inp(mc, MCSIF_modOffset[module] + MCSIF_PFAU_STATREG) >> 5) & 0x01L);
 }
 
 unsigned long mcpfau_ReadCAPSTAT1(int mc, int module) {

@@ -36,15 +36,17 @@ static char* name = "attachInt";
 static int mcint_offset[2] = {0, 24};
 
 static void clear_INTSTATUS(int mc) {
-    mc_outp(mc, 0x04, 0xff000000L); //for EX
+    mc_outp(mc, 0x04, 0xff000000L); //for EX SIFB
 }
 
 #define MCMINT_ENABLE_REG  (0x00)
 #define MCMINT_STAT_REG    (0x04)
 
 // define SIFB interrupt bits for encoder mode
-#define SIFB_USEREVTBIT        (30)
 #define SIFB_TRIGRESETBIT      (31)
+#define SIFB_USEREVTBIT        (30)
+#define SIFB_PCNT_OV           (25)
+#define SIFB_PCNT_UV           (24)
 
 // define SIFB interrupt bits for pulse & capture mode
 #define SIFB_CAP1INTBIT        (29)
@@ -87,9 +89,10 @@ static volatile unsigned long _encmode[4] = {0, 0, 0, 0};
 static volatile unsigned long long int pulseInData[4][3][2] = {0L};
 static unsigned long long int ovdata[3] = {0L, 0L, 0L};
 static volatile int capture_state = 0; // for MODE_CAPTURE
-// static int test_count[3] = {0, 0, 0}; // for debugging
+//static int test_count[3] = {0, 0, 0}; // for debugging
+//static unsigned long test_count = 0;
 static int user_int(int irq, void* data) {
-	int i, mc, irq_handled = 0;
+	int i, mc, irq_handled = 0, ovcounter = 0, uvcounter = 0, idxcounter = 0;
 	unsigned long capdata, stat;
 	
 	// detect all sensor interface
@@ -99,18 +102,52 @@ static int user_int(int irq, void* data) {
 		
 		if(_mcmode[mc] != MODE_SSI && _mcmode[mc] != MODE_CAPTURE)
 		{
+			while(mcenc_ReadCAPSTAT(mc, MCSIF_MODULEB) != MCENC_CAPFIFO_EMPTY)
+			{
+				stat = mcenc_ReadCAPFIFO(mc, MCSIF_MODULEB, &capdata);
+				if(stat == MCENC_CAP_PCNT_OVERFLOW)
+				{
+					clear_interrupt_state(mc, SIFB_PCNT_OV);
+					irq_handled |= 0x01;
+					ovcounter++;
+				}
+				else if(stat == MCENC_CAP_PCNT_UNDERFLOW)
+				{
+					clear_interrupt_state(mc, SIFB_PCNT_UV);
+					irq_handled |= 0x01;
+					uvcounter++;
+				}
+				else if(stat == MCENC_CAP_IDXCOND)
+				{
+					clear_interrupt_state(mc, SIFB_TRIGRESETBIT);
+					irq_handled |= 0x01;
+					idxcounter++;
+				}
+			}
+			
+			if((_encmode[mc] & INTR_OVERFLOW) == INTR_OVERFLOW && _encfunc[mc] != NULL)
+			{
+				for(;ovcounter > 0; ovcounter--)
+					_encfunc[mc](INTR_OVERFLOW);
+			}
+			
+			if((_encmode[mc] & INTR_UNDERFLOW) == INTR_UNDERFLOW && _encfunc[mc] != NULL)
+			{
+				for(;uvcounter > 0; uvcounter--)
+					_encfunc[mc](INTR_UNDERFLOW);
+			}
+			
+			if((_encmode[mc] & INTR_INDEX) == INTR_INDEX && _encfunc[mc] != NULL)
+			{
+				for(;idxcounter > 0; idxcounter--)
+					_encfunc[mc](INTR_INDEX);
+			}
+			
 			if(check_interrupt_enable(mc, SIFB_USEREVTBIT) == true && check_interrupt_state(mc, SIFB_USEREVTBIT) == true) // USER EVT
 			{
 				clear_interrupt_state(mc, SIFB_USEREVTBIT);
-				irq_handled |= 0x01;
-				if((_encmode[mc] & INTR_COMPARE) == INTR_COMPARE && _encfunc[mc] != NULL) _encfunc[mc](INTR_COMPARE);
-			}
-			
-			if(check_interrupt_enable(mc, SIFB_TRIGRESETBIT) == true && check_interrupt_state(mc, SIFB_TRIGRESETBIT) == true) // USER EVT
-			{
-				clear_interrupt_state(mc, SIFB_TRIGRESETBIT);
 				irq_handled |= 0x02;
-				if((_encmode[mc] & INTR_INDEX) == INTR_INDEX && _encfunc[mc] != NULL) _encfunc[mc](INTR_INDEX);
+				if((_encmode[mc] & INTR_COMPARE) == INTR_COMPARE && _encfunc[mc] != NULL) _encfunc[mc](INTR_COMPARE);
 			}
 		}
 		else if(_mcmode[mc] == MODE_CAPTURE)
@@ -121,8 +158,8 @@ static int user_int(int irq, void* data) {
 				{
 					clear_interrupt_state(mc, SIFB_CAP1INTBIT+i);
 					irq_handled |= 0x04;
-					
-					while(readCapStat[i](mc, MCSIF_MODULEB) != MCENC_CAPFIFO_EMPTY)
+					                                           
+					while(readCapStat[i](mc, MCSIF_MODULEB) != MCPFAU_CAPFIFO_EMPTY)
 					{
 						stat = readCapFIFO[i](mc, MCSIF_MODULEB, &capdata);
 						if(stat == MCPFAU_CAP_CAPCNT_OVERFLOW)
@@ -159,8 +196,8 @@ static int user_int(int irq, void* data) {
 }
 
 /*
-int Encoder::readtestcount() {
-	return test_count[0];
+unsigned long Encoder::readtestcount() {
+	return test_count;
 }
 */
 
@@ -179,6 +216,7 @@ static void _defaultEncoderSetting(int mc, int md) {
 	mcenc_SetCntMin(mc, md, 0L);
     mcenc_SetCntMax(mc, md, 0xffffffffL);
     mcenc_SetResetMode(mc, md, MCENC_RESET_INC_CNTMIN + MCENC_RESET_DEC_CNTMAX);
+    mcenc_SetCntIdx(mc, md, 0L);
     mcenc_SetTrigResetMode(mc, md, MCENC_TRIGRESET_IDXCOND_0TO1);
     mcenc_SetPulCnt(mc, md, 0L);
 }
@@ -188,6 +226,7 @@ Encoder::Encoder(int mc) {
 	mcn = mc;
 	mode = MODE_NOSET;
 	_setZPol = false;
+	_dir = 0;
 }
 
 
@@ -390,6 +429,7 @@ void Encoder::end() {
 
 	mode = _mcmode[mcn] = MODE_NOSET;
 	_setZPol = false;
+	_dir = 0;
 	io_RestoreINT();
 	
 	for(i=0; i<4; i++)
@@ -434,10 +474,12 @@ void Encoder::setIndexReset(bool condition) {
 	if(mode == MODE_NOSET || mode == MODE_CAPTURE || mode == MODE_SSI) return;
 	
 	mcsif_Disable(mcn, mdn);
+	
 	if(condition == true)
 	{
 		mcenc_SetResetMode(mcn, mdn, MCENC_RESET_INC_CNTMINIDX + MCENC_RESET_DEC_CNTMAXIDX);
-		
+        mcenc_SetCapMode(mcn, mdn, MCENC_CAP_PCNT_DISABLE + MCENC_CAP_EXTRIG_DISABLE + MCENC_CAP_IDXCOND_ENABLE); // start to use FIFO (mean that capture event will occur)
+
 		if(_setZPol == false) // if you use setInputPolarity() to set Z pin's pol to inverse before setIndexReset()
 		{
 			// In fact, below actions are same as mcenc_SetIdxCond(mcn, mdn, MCENC_PDIR_IDXCOND_Z, MCENC_ICZ1);
@@ -455,6 +497,8 @@ void Encoder::setIndexReset(bool condition) {
 	}
 	else
 	{
+		if((_encmode[mcn] & (INTR_INDEX | INTR_OVERFLOW | INTR_UNDERFLOW)) == 0)
+			mcenc_SetCapMode(mcn, mdn, MCENC_CAP_PCNT_DISABLE + MCENC_CAP_EXTRIG_DISABLE + MCENC_CAP_IDXCOND_DISABLE);
 		mcenc_SetIdxCond(mcn, mdn, MCENC_PDIR_IDXCOND_DISABLE, 0L);
 		mcenc_SetResetMode(mcn, mdn, MCENC_RESET_INC_CNTMIN + MCENC_RESET_DEC_CNTMAX);
 		
@@ -462,6 +506,7 @@ void Encoder::setIndexReset(bool condition) {
 		_encmode[mcn] &= ~(INTR_INDEX);
 		io_RestoreINT();
 	}
+    
 	mcsif_Enable(mcn, mdn);
 }
 
@@ -485,6 +530,46 @@ void Encoder::setComparator(unsigned long evncnt, bool condition) {
 	io_RestoreINT();
 	
 	mcsif_Enable(mcn, mdn);
+}
+
+void Encoder::setRange(unsigned long val, bool condition) {
+	if(mode == MODE_NOSET || mode == MODE_CAPTURE || mode == MODE_SSI) return;
+	if(val == 0L) return;
+    
+	mcsif_Disable(mcn, mdn);
+    
+	if(condition == true)
+	{
+		mcenc_SetCapMode(mcn, mdn, MCENC_CAP_PCNT_DISABLE + MCENC_CAP_EXTRIG_DISABLE + MCENC_CAP_IDXCOND_ENABLE); // start to use FIFO (mean that capture event will occur)
+		io_DisableINT();
+		_encmode[mcn] |= INTR_OVERFLOW;
+		_encmode[mcn] |= INTR_UNDERFLOW;
+		io_RestoreINT();
+	}
+	else
+	{
+		if((_encmode[mcn] & (INTR_INDEX | INTR_OVERFLOW | INTR_UNDERFLOW)) == 0 && condition == false)
+			mcenc_SetCapMode(mcn, mdn, MCENC_CAP_PCNT_DISABLE + MCENC_CAP_EXTRIG_DISABLE + MCENC_CAP_IDXCOND_DISABLE);
+		io_DisableINT();
+		_encmode[mcn] &= ~(INTR_OVERFLOW);
+		_encmode[mcn] &= ~(INTR_UNDERFLOW);
+		io_RestoreINT();
+	}
+	
+	mcenc_SetCntMax(mcn, mdn, val);
+	
+	mcsif_Enable(mcn, mdn);
+}
+
+// return
+// 1 : Forward
+// -1 : Reverse
+// 0xff : error mode
+int Encoder::directionRead(void) {
+	unsigned long ret;
+	if(mode == MODE_NOSET || mode == MODE_CAPTURE || mode == MODE_SSI) return 0xff;
+	if(mcenc_ReadDIR(mcn, mdn) == 0L) ret = 1; else ret = -1;
+	return ((_dir == 0) ? ret : ((ret == 1) ? -1 : 1));
 }
 
 unsigned long Encoder::read() {
@@ -598,6 +683,8 @@ void Encoder::attachInterrupt(void (*callback)(int)) {
 		clear_INTSTATUS(mcn);
 		enable_MCINT(mcn, SIFB_TRIGRESETBIT);
 		enable_MCINT(mcn, SIFB_USEREVTBIT);
+		enable_MCINT(mcn, SIFB_PCNT_OV);
+		enable_MCINT(mcn, SIFB_PCNT_UV);
 		
 		// Enable interrupt option
 		mcenc_SetCapInterval(mcn, mdn, 1L);
@@ -640,6 +727,8 @@ void Encoder::detachInterrupt() {
 	_encfunc[mcn] = NULL;
 	_encmode[mcn] &= ~(INTR_COMPARE);
 	_encmode[mcn] &= ~(INTR_INDEX);
+	_encmode[mcn] &= ~(INTR_OVERFLOW);
+	_encmode[mcn] &= ~(INTR_UNDERFLOW);
 	io_RestoreINT();
 	
 	// re-enable sif
@@ -733,18 +822,22 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
 		if(pinA == LOW && pinB == HIGH)
 		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PDIR_DIR0_INC1TO0 + MCENC_PDIR_DIR1_DEC1TO0);
+			_dir = 0;
 		}
 		else if(pinA == HIGH && pinB == LOW)
 		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PDIR_DIR0_DEC0TO1 + MCENC_PDIR_DIR1_INC0TO1);
+			_dir = 1;
 		}
 		else if(pinA == LOW && pinB == LOW)
 		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PDIR_DIR0_DEC1TO0 + MCENC_PDIR_DIR1_INC1TO0);
+			_dir = 1;
 		}
 		else // all HIGH
 		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PDIR_DIR0_INC0TO1 + MCENC_PDIR_DIR1_DEC0TO1);
+			_dir = 0;
 		}
 		
 		if(pinZ == LOW)
@@ -785,9 +878,15 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
 	else if(mode == MODE_AB_PHASE)
 	{
 		if((pinA == LOW && pinB == LOW) || (pinA == HIGH && pinB == HIGH))
+		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PAB_DIR0_INCA + MCENC_PAB_DIR1_DECA);
+			_dir = 0;
+		}
 		else
+		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PAB_DIR0_DECA + MCENC_PAB_DIR1_INCA);
+			_dir = 1;
+		}
 		
 		if(pinZ == LOW)
 		{
@@ -804,10 +903,12 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
 		if(pinB == LOW)
 		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PDIR_DIR0_DECBOTH + MCENC_PDIR_DIR1_INCBOTH);
+			_dir = 1;
 		}
 		else // all HIGH
 		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PDIR_DIR0_INCBOTH + MCENC_PDIR_DIR1_DECBOTH);
+			_dir = 0;
 		}
 		
 		if(pinZ == LOW)
@@ -831,9 +932,15 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
 	else if(mode == MODE_AB_PHASE_x2)
 	{
 		if((pinA == LOW && pinB == LOW) || (pinA == HIGH && pinB == HIGH))
+		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PAB_DIR0_INCAB + MCENC_PAB_DIR1_DECAB);
+			_dir = 0;
+		}
 		else
+		{
 			mcenc_SetCntMode(mcn, mdn, MCENC_PAB_DIR0_DECAB + MCENC_PAB_DIR1_INCAB);
+			_dir = 1;
+		}
 		
 		if(pinZ == LOW)
 		{

@@ -34,6 +34,8 @@ yun.sketch.name="Arduino Yun"
 86DuinoOne.sketch.name="86Duino One"
 86DuinoEduCake.bootloader.name="86Duino bootloader"
 86DuinoEduCake.sketch.name="86Duino EduCake"
+86DuinoSysImage.bootloader.name="86Duino bootloader"
+86DuinoSysImage.sketch.name="86Duino SysImage"
 
 [DefaultInstall]
 CopyINF=86duino.inf
@@ -85,6 +87,8 @@ DefaultDestDir=12
 %86DuinoOne.sketch.name%=DriverInstall, USB\VID_0525&PID_8037&MI_00
 %86DuinoEduCake.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
 %86DuinoEduCake.sketch.name%=DriverInstall, USB\VID_0525&PID_8038&MI_00
+%86DuinoSysImage.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoSysImage.sketch.name%=DriverInstall, USB\VID_0525&PID_8088&MI_00
 
 
 [DeviceList.NTamd64]
@@ -118,6 +122,8 @@ DefaultDestDir=12
 %86DuinoOne.sketch.name%=DriverInstall, USB\VID_0525&PID_8037&MI_00
 %86DuinoEduCake.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
 %86DuinoEduCake.sketch.name%=DriverInstall, USB\VID_0525&PID_8038&MI_00
+%86DuinoSysImage.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoSysImage.sketch.name%=DriverInstall, USB\VID_0525&PID_8088&MI_00
 
 [DeviceList.NTia64]
 %esplora.bootloader.name%=DriverInstall, USB\VID_2341&PID_003C
@@ -147,6 +153,8 @@ DefaultDestDir=12
 %86DuinoOne.sketch.name%=DriverInstall, USB\VID_0525&PID_8037&MI_00
 %86DuinoEduCake.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
 %86DuinoEduCake.sketch.name%=DriverInstall, USB\VID_0525&PID_8038&MI_00
+%86DuinoSysImage.bootloader.name%=DriverInstall, USB\VID_0525&PID_a4a5
+%86DuinoSysImage.sketch.name%=DriverInstall, USB\VID_0525&PID_8088&MI_00
 
 [DriverInstall]
 include=mdmcpq.inf,usb.inf

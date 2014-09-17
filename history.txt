@@ -1,8 +1,9 @@
-### CODING 105 - 2014.09.05 ###
+### CODING 105 - 2014.09.15 ###
 
 [ide]
 * Added MenuScroller function to avoid that Examples or Sketchbook list too long to view.
 * The USB PID now can be updated immediately after eath compile when you select another 86duino board and then press "Verify" button.
+  To show board's name in your Device Manager, need to re-install the driver again from drivers directory.
 * The DJGPP compiler version is updated to 2.04.
 
 [core]
@@ -10,13 +11,17 @@
 
 [libraries]
 * Fixed a bug in EEPROM library.
+* Added two functions in Encoder library:
+  setRange() : set the upbound of encoder counter and enable counter overflow and counter underflow interrupt events.
+  directionRead() : get the external device's rotating/moving direction.
 * Added TimerOne library. (Compatible with Arduino TimerOne library: http://playground.arduino.cc/code/timer1)
 * Added UTFT library. (Compatible with Henning Karlsen UTFT library: http://henningkarlsen.com/electronics/library.php?id=52)
 * Added UTouch library. (Compatible with Henning Karlsen UTouch library: http://henningkarlsen.com/electronics/library.php?id=55)
-* Added SpiderL3S library. (It is a CC3000 wifi module that made by FunMaker group in Taiwan, web site: http://www.funmaker.com.tw/)
+* Added Adafruit_CC3000 library. (Know how connect Adafruit CC3000 WiFi Shield with 86Duino according to this page: http://www.86duino.com/?p=8370)
+* Added SpiderL3S library. It is a CC3000 WiFi Module that made by FunMaker group in Taiwan.
 
 [bootloader]
-* For EduCake, it also can force enter to bootloader mode by shorting RING pin with RTS/DTR pin on RSR232 connector. 
+* For EduCake, it also can enter to bootloader mode by shorting RING pin with RTS/DTR pin on RSR232 connector. 
 
 
 

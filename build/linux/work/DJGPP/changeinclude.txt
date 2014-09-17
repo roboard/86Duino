@@ -18,3 +18,5 @@ SpiderL3.h
 WClient.h
 \s*#\s*include\s*[<"](WebServer.h)[">]
 WServer.h
+\s*#\s*include\s*[<"](Adafruit_CC3000.h)[">]
+AdaWifi.h

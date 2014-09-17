@@ -39,12 +39,14 @@
 // attachInterrupt flag
 #define INTR_COMPARE        (0x01)
 #define INTR_INDEX          (0x02)
-#define INTR_A_PULSE_LOW    (0x03)
-#define INTR_A_PULSE_HIGH   (0x04)
-#define INTR_B_PULSE_LOW    (0x05)
-#define INTR_B_PULSE_HIGH   (0x06)
-#define INTR_Z_PULSE_LOW    (0x07)
-#define INTR_Z_PULSE_HIGH   (0x08)
+#define INTR_OVERFLOW       (0x04)
+#define INTR_UNDERFLOW      (0x08)
+#define INTR_A_PULSE_LOW    (0x80)
+#define INTR_A_PULSE_HIGH   (0x81)
+#define INTR_B_PULSE_LOW    (0x82)
+#define INTR_B_PULSE_HIGH   (0x83)
+#define INTR_Z_PULSE_LOW    (0x84)
+#define INTR_Z_PULSE_HIGH   (0x85)
 
 class Encoder
 {
@@ -62,6 +64,7 @@ class Encoder
 		unsigned long long int _pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
 		
 		bool _setZPol;
+		int _dir;
 	public:
 		Encoder(int mc);
 
@@ -72,11 +75,13 @@ class Encoder
 		void setIndexReset(bool condition=true);
 		void setInputPolarity(bool pinA, bool pinB, bool pinZ); // parameters: HIGH/LOW
 		void setComparator(unsigned long evncnt, bool condition=true);
-
+		void setRange(unsigned long val=0xFFFFFFFFL, bool condition=true);
+		
 		void write(unsigned long cnt);
 		unsigned long read(void);
 		unsigned long readNanoseconds(void); // for pulse capture mode in interrupt callback
 		int indexRead(void);
+		int directionRead(void);
 
 		unsigned long pulseInNanoseconds(uint8_t pin, uint8_t state, unsigned long timeout);
 		unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
@@ -85,7 +90,7 @@ class Encoder
 		void attachInterrupt(void (*callback)(int)); // for Pulse/DIR and CW/CCW and Pulse A/B 
 		void detachInterrupt();
 		
-		// int readtestcount(); //for debugging
+		//unsigned long readtestcount(); //for debugging
 };
 
 extern Encoder Enc0;
