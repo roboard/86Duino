@@ -1,9 +1,7 @@
-### CODING 105 - 2014.09.15 ###
+### CODING 105 - 2014.09.18 ###
 
 [ide]
 * Added MenuScroller function to avoid that Examples or Sketchbook list too long to view.
-* The USB PID now can be updated immediately after eath compile when you select another 86duino board and then press "Verify" button.
-  To show board's name in your Device Manager, need to re-install the driver again from drivers directory.
 * The DJGPP compiler version is updated to 2.04.
 
 [core]

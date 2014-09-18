@@ -25,9 +25,11 @@
 
 #include "USB_Desc.h"
 
-#define USB_VER							(0x0110)
-#define VENDOR_ID						(0x0525)
+#define USB_VER						(0x0110)
+#define VENDOR_ID					(0x0525)
+#define PRODUCT_ID					(0x8036)
 
+/*
 #if defined __86DUINO_EDUCAKE
 	#define PRODUCT_ID					(0x8038)
 #elif defined __86DUINO_ONE
@@ -35,8 +37,9 @@
 #elif defined __86DUINO_ZERO
 	#define PRODUCT_ID					(0x8036)
 #endif
+*/
 
-#define DEVICE_BCB						(0x0001)
+#define DEVICE_BCB					(0x0001)
 
 // -----------------------------------
 //      USB Standard Descriptors
