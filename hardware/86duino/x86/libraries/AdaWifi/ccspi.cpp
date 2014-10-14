@@ -5,6 +5,9 @@
 *
 * Adapted for use with the Arduino/AVR by KTOWN (Kevin Townsend) 
 * & Limor Fried for Adafruit Industries
+* 
+* Modified 15 September 2014 by Android Lin for 86Duino board
+* 
 * This library works with the Adafruit CC3000 breakout 
 *	----> https://www.adafruit.com/products/1469
 * Adafruit invests time and resources providing this open source code,

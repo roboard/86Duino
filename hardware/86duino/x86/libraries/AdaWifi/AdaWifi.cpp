@@ -4,6 +4,8 @@
   @author   KTOWN (Kevin Townsend for Adafruit Industries)
   @license  BSD (see license.txt)
 
+  Modified 15 September 2014 by Android Lin for 86Duino board
+  
   This is a library for the Adafruit CC3000 WiFi breakout board
   This library works with the Adafruit CC3000 breakout
   ----> https://www.adafruit.com/products/1469

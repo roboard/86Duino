@@ -11,7 +11,7 @@
 # 字體顏色
 status.notice.fgcolor = #000066
 # 背景顏色
-status.notice.bgcolor = #0099FF
+status.notice.bgcolor = #62AAF8
 # 發生錯誤時的字體顏色
 status.error.fgcolor = #CC0000
 # 發生錯誤時的背景顏色
@@ -33,7 +33,7 @@ status.font = SansSerif,plain,12
 # TAB 列的顏色
 #
 # 背景顏色
-header.bgcolor = #0066FF
+header.bgcolor = #0088CC
 # user 滑鼠有選到 TAB 的字體顏色
 header.text.selected.color = #005B5B
 # user 滑鼠未選到 TAB 的字體顏色
@@ -50,11 +50,11 @@ header.text.font = SansSerif,plain,12
 console.font = Monospaced,plain,11
 console.font.macosx = Monaco,plain,10
 # 訊息框的背景顏色
-console.color = #000066
+console.color = #111111
 # 正確訊息輸出的字體顏色
-console.output.color = #FFFFFF
+console.output.color = #AAAAAA
 # 錯誤訊息輸出的字體顏色
-console.error.color = #CC0000
+console.error.color = #E34C00
 
 # GUI - BUTTONS
 # buttons.bgcolor = #006468
@@ -72,7 +72,7 @@ buttons.status.color = #FFFF00
 # 最下面狀態列的字體顏色   
 linestatus.color = #00CCFF
 # 最下面狀態列的背景顏色
-linestatus.bgcolor = #000000
+linestatus.bgcolor = #004D99
 
 # EDITOR - DETAILS
 # foreground and background colors

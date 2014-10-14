@@ -217,6 +217,7 @@ public class Preferences {
     table.put("runtime.hardware.path", hardwareFolder.getAbsolutePath());
     table.put("runtime.ide.path", hardwareFolder.getParentFile().getAbsolutePath());
     table.put("runtime.ide.version", "" + Base.REVISION);
+    table.put("runtime.ide86.version", "" + Base.REVISION86);
     
     // check for platform-specific properties in the defaults
     String platformExt = "." + Base.platform.getName();

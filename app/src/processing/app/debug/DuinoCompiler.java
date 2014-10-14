@@ -900,9 +900,9 @@ public class DuinoCompiler implements MessageConsumer {
         out.write("all : clean everything\n\n");
         out.write("clean :\n\t-rm -f $(INIFILES) $(EXEFILES) $(OBJFILES)\n\n");
         out.write("-include $(INIFILES:.o=.d)\n\n");
-        String filenamee;
+        String filenamee;                                                                                                                                                                                                                                                       
         for(int i = 0; i < file_path.size(); i++){
-          out.write(file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".d "+": "+file_name.get(i)+"\n\tgcc "+prefs.get("compiler.cpp.flags")+" -o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+"$< $(IFALGS)\n");      
+          out.write(file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".d "+": "+file_name.get(i)+"\n\tgcc "+prefs.get("compiler.cpp.flags")+" -DARDUINO="+prefs.get("runtime.ide.version")+" -D_86DUINO="+prefs.get("runtime.ide86.version")+" -o "+file_path.get(i).substring(0,file_path.get(i).lastIndexOf("."))+".o "+"$< $(IFALGS)\n");      
           }
         out.write("\n");
         out.write("86duino.exe : $(INIFILES)\n\tgcc "+prefs.get("compiler.c.exe.flags")+" -o $@ $(INIFILES) $(LIBFILES)\n");
