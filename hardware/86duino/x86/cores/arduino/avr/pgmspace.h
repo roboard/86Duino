@@ -114,4 +114,6 @@ DMP_INLINE(size_t) strnlen_P(PGM_P s1, size_t len) {
     return len;
 }
 
+#define _BV(bit) (1 << (bit))
+
 #endif /* __PGMSPACE_H_ */
