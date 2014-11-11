@@ -1,6 +1,7 @@
 /*
 LCD12864
 Created by Markos Kyritsis
+Modified 01 November 2014 by Android Lin for 86Duino
 This code is completely open source, and you may edit it however you like. 
 Please support the Arduino community, and upload any bug fixes to the relative
 page. 

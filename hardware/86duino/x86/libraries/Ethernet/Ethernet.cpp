@@ -1,7 +1,3 @@
-#ifndef SWS_SOCK_COMPAT
-#define SWS_SOCK_COMPAT
-#endif
-#include "sws_sock.h"
 #include "SwsSock.h"
 #include "Ethernet.h"
 #include "Dhcp.h"

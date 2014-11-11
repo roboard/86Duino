@@ -34,50 +34,65 @@
 #include "SwsSock.h"
 
 /* Constructor */
-EthernetUDP::EthernetUDP() : _sock(INVALID_SOCKET)
+EthernetUDP::EthernetUDP()
 {
 	TxSize = 0;
 	RxHead = 0;
 	RxTail = 0;
 	RxSize = 0;
+	sws = (struct SwsSockInfo*)malloc(sizeof(struct SwsSockInfo));
+	if (sws) {
+		memset(sws, 0, sizeof(struct SwsSockInfo));
+		sws->_sock = SWS_INVALID_SOCKET;
+	}
+}
+
+EthernetUDP::~EthernetUDP()
+{
+	if (sws) {
+		free(sws);
+		sws = NULL;
+	}
 }
 
 /* Start EthernetUDP socket, listening at local port PORT */
 uint8_t EthernetUDP::begin(uint16_t port) {
-	struct sockaddr_in sin;
-	u_long lArg = 1;
+	struct SWS_sockaddr_in sin;
+	SWS_u_long lArg = 1;
 	int yes = 1, no = 0;
 	
-	if (_sock != INVALID_SOCKET)
+	if (sws == NULL) return 0;
+	
+	if (sws->_sock != SWS_INVALID_SOCKET)
 		return 0;
 	
-	_sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (_sock == INVALID_SOCKET)
+	sws->_sock = SWS_socket(SWS_AF_INET, SWS_SOCK_DGRAM, 0);
+    if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
 	bzero(&sin, sizeof(sin));
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = SwsSock.getULLocalIp();
-    sin.sin_port = htons(port);
+    sin.sin_family = SWS_AF_INET;
+    sin.sin_addr.SWS_s_addr = SwsSock.getULLocalIp();
+    sin.sin_port = SWS_htons(port);
 	
-	if (bind(_sock, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		_sock = INVALID_SOCKET;
+	if (SWS_bind(sws->_sock, (struct SWS_sockaddr *)&sin, sizeof(sin)) != 0) {
+		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+		SWS_close(sws->_sock);
+		sws->_sock = SWS_INVALID_SOCKET;
 		return 0;
     }
 	
-	if (ioctlsocket(_sock, FIONBIO, &lArg) < 0) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		_sock = INVALID_SOCKET;
+	if (SWS_ioctl(sws->_sock, SWS_FIONBIO, &lArg) < 0) {
+		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+		SWS_close(sws->_sock);
+		sws->_sock = SWS_INVALID_SOCKET;
 		return 0;
 	}
 	
-	if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(int)) < 0) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		_sock = INVALID_SOCKET;
+	if (SWS_setsockopt(sws->_sock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char*)&yes, sizeof(int)) < 0) {
+		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+		SWS_close(sws->_sock);
+		sws->_sock = SWS_INVALID_SOCKET;
 		return 0;
 	}
 	
@@ -100,15 +115,16 @@ int EthernetUDP::available()
 /* Release any resources being used by this EthernetUDP instance */
 void EthernetUDP::stop()
 {
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return;
 	
 	flush();
-	shutdown(_sock, SD_BOTH);
-	closesocket(_sock);
+	SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+	SWS_close(sws->_sock);
 
 	TxSize = 0;
-	_sock = INVALID_SOCKET;
+	sws->_sock = SWS_INVALID_SOCKET;
 }
 
 int EthernetUDP::beginPacket(const char *host, uint16_t port)
@@ -129,18 +145,19 @@ int EthernetUDP::beginPacket(const char *host, uint16_t port)
 int EthernetUDP::beginPacket(IPAddress ip, uint16_t port)
 {
 	uint8_t *ipchar;
-	u_long iplong;
+	SWS_u_long iplong;
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return 0;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
 	ipchar = rawIPAddress(ip);
 	memcpy(&iplong, ipchar, 4);
 	
-	bzero(&txaddr, sizeof(txaddr));
-    txaddr.sin_family = AF_INET;
-    txaddr.sin_addr.s_addr = iplong;
-    txaddr.sin_port = htons(port);
+	bzero(&sws->txaddr, sizeof(sws->txaddr));
+    sws->txaddr.sin_family = SWS_AF_INET;
+    sws->txaddr.sin_addr.SWS_s_addr = iplong;
+    sws->txaddr.sin_port = SWS_htons(port);
 	
 	TxSize = 0;
 	
@@ -151,12 +168,13 @@ int EthernetUDP::endPacket()
 {
 	int rc, curByte;
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return 0;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
 	curByte = 0;
 	while (TxSize > 0) {
-		rc = sendto(_sock, &TxBuffer[curByte], TxSize, 0, (struct sockaddr *)&txaddr, sizeof(txaddr));
+		rc = SWS_sendto(sws->_sock, &TxBuffer[curByte], TxSize, 0, (struct SWS_sockaddr *)&sws->txaddr, sizeof(sws->txaddr));
 		
 		if (rc > 0) {
 			curByte += rc;
@@ -180,7 +198,8 @@ size_t EthernetUDP::write(const uint8_t *buffer, size_t size)
 {
 	size_t bytes_written = 0;
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return 0;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
 	while (TxSize < UDP_TX_PACKET_MAX_SIZE && size > 0) {
@@ -199,19 +218,20 @@ int EthernetUDP::parsePacket()
 	if (RxSize > 0)
 		return RxSize;
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return 0;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
-	len = sizeof(rxaddr);
-	rc = recvfrom(_sock, buf, UDP_RX_PACKET_MAX_SIZE, 0, (struct sockaddr *)&rxaddr, &len);
+	len = sizeof(sws->rxaddr);
+	rc = SWS_recvfrom(sws->_sock, buf, UDP_RX_PACKET_MAX_SIZE, 0, (struct SWS_sockaddr *)&sws->rxaddr, &len);
 	
 	if (rc > 0) {
 	
 		uint8_t tmpBuf[4];
 		
-		memcpy(tmpBuf, &rxaddr.sin_addr.s_addr, 4);
+		memcpy(tmpBuf, &sws->rxaddr.sin_addr.SWS_s_addr, 4);
 		_remoteIP = tmpBuf;
-		_remotePort = ntohs(rxaddr.sin_port);
+		_remotePort = SWS_ntohs(sws->rxaddr.sin_port);
 		
 		i = 0;
 		while (rc > 0) {
@@ -253,19 +273,20 @@ int EthernetUDP::read(unsigned char* buf, size_t size)
 			if (RxHead >= UDP_RX_PACKET_MAX_SIZE)
 				RxHead = 0;
 		}
-	}
-	else if (_sock != INVALID_SOCKET && size > 0) {
+	} else if (sws == NULL) {
+		return -1;
+	} else if (sws->_sock != SWS_INVALID_SOCKET && size > 0) {
 	
-		len = sizeof(rxaddr);
-		rc = recvfrom(_sock, &buf[cur], size, 0, (struct sockaddr *)&rxaddr, &len);
+		len = sizeof(sws->rxaddr);
+		rc = SWS_recvfrom(sws->_sock, &buf[cur], size, 0, (struct SWS_sockaddr *)&sws->rxaddr, &len);
 		
 		if (rc > 0) {
 		
 			uint8_t tmpBuf[4];
 			
-			memcpy(tmpBuf, &rxaddr.sin_addr.s_addr, 4);
+			memcpy(tmpBuf, &sws->rxaddr.sin_addr.SWS_s_addr, 4);
 			_remoteIP = tmpBuf;
-			_remotePort = ntohs(rxaddr.sin_port);
+			_remotePort = SWS_ntohs(sws->rxaddr.sin_port);
 			
 			size -= rc;
 			cur += rc;
@@ -281,7 +302,8 @@ int EthernetUDP::read(unsigned char* buf, size_t size)
 
 int EthernetUDP::peek()
 {
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return -1;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return -1;
 		
 	if (!available())
@@ -299,10 +321,11 @@ void EthernetUDP::flush()
 	RxHead = 0;
 	RxTail = 0;
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return;
 	
-	len = sizeof(rxaddr);
-	while ((rc = recvfrom(_sock, &val, 1, 0, (struct sockaddr *)&rxaddr, &len)) > 0);
+	len = sizeof(sws->rxaddr);
+	while ((rc = SWS_recvfrom(sws->_sock, &val, 1, 0, (struct SWS_sockaddr *)&sws->rxaddr, &len)) > 0);
 }
 

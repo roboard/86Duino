@@ -1,5 +1,7 @@
 /*
  * ks0108_Arduino.h - User specific configuration for Arduino GLCD library
+ * 
+ * Modified 01 November 2014 by Android Lin for 86Duino  
  *
  * Use this file to set io pins
  * This version is for a standard ks0108 display

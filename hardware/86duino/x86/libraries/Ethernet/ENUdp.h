@@ -39,11 +39,6 @@
 #ifndef ethernetudp_h
 #define ethernetudp_h
 
-#ifndef SWS_SOCK_COMPAT
-#define SWS_SOCK_COMPAT
-#endif
-#include "sws_sock.h"
-
 #include <Udp.h>
 
 #define UDP_TX_PACKET_MAX_SIZE (512)
@@ -51,12 +46,11 @@
 
 class EthernetUDP : public UDP {
 private:
-  SOCKET _sock;
+  struct SwsSockInfo *sws;
+  
   uint16_t _port; // local port to listen on
   IPAddress _remoteIP; // remote IP address for the incoming packet whilst it's being processed
   uint16_t _remotePort; // remote port for the incoming packet whilst it's being processed
-  struct sockaddr_in txaddr;
-  struct sockaddr_in rxaddr;
   uint8_t TxBuffer[UDP_TX_PACKET_MAX_SIZE];
   uint8_t RxBuffer[UDP_RX_PACKET_MAX_SIZE];
   int TxSize;
@@ -66,6 +60,7 @@ private:
 
 public:
   EthernetUDP();  // Constructor
+  ~EthernetUDP();
   virtual uint8_t begin(uint16_t);	// initialize, start listening on specified port. Returns 1 if successful, 0 if there are no sockets available to use
   virtual void stop();  // Finish with the UDP socket
 

@@ -72,18 +72,18 @@ int SwsSockClass::setDhcp(unsigned long timeout, unsigned long responseTimeout)
 	return 1;
 }
 
-u_long SwsSockClass::getULLocalIp()
+SWS_u_long SwsSockClass::getULLocalIp()
 {
 	char host_name[128];
-	struct hostent *Host;
-	u_long ipaddr;
+	struct SWS_hostent *Host;
+	SWS_u_long ipaddr;
 	
-	if (gethostname(host_name, sizeof(host_name)) != 0) {
+	if (SWS_gethostname(host_name, sizeof(host_name)) != 0) {
 		ipaddr = 0UL;
 	}
 	else {
-		Host = gethostbyname(host_name);
-		ipaddr = *(u_long*)Host->h_addr_list[0];
+		Host = SWS_gethostbyname(host_name);
+		ipaddr = *(SWS_u_long*)Host->h_addr_list[0];
 	}
 	
 	return ipaddr;
@@ -91,7 +91,7 @@ u_long SwsSockClass::getULLocalIp()
 
 uint8_t *SwsSockClass::getLocalIp()
 {
-	u_long ipaddr = getULLocalIp();
+	SWS_u_long ipaddr = getULLocalIp();
 	
 	_SwsSockLocalIp[0] = (uint8_t)(ipaddr);
 	_SwsSockLocalIp[1] = (uint8_t)(ipaddr >> 8);
@@ -101,9 +101,9 @@ uint8_t *SwsSockClass::getLocalIp()
 	return (uint8_t*)_SwsSockLocalIp;
 }
 
-u_long SwsSockClass::getULSubnetMask()
+SWS_u_long SwsSockClass::getULSubnetMask()
 {
-	u_long ipaddr;
+	SWS_u_long ipaddr;
 	size_t len;
 	
 	len = sizeof(ipaddr);
@@ -116,7 +116,7 @@ u_long SwsSockClass::getULSubnetMask()
 
 uint8_t *SwsSockClass::getSubnetMask()
 {
-	u_long ipaddr = getULSubnetMask();
+	SWS_u_long ipaddr = getULSubnetMask();
 	
 	_SwsSockNetMask[3] = (uint8_t)(ipaddr);
 	_SwsSockNetMask[2] = (uint8_t)(ipaddr >> 8);
@@ -126,9 +126,9 @@ uint8_t *SwsSockClass::getSubnetMask()
 	return (uint8_t*)_SwsSockNetMask;
 }
 
-u_long SwsSockClass::getULGatewayIp()
+SWS_u_long SwsSockClass::getULGatewayIp()
 {
-	u_long ipaddr;
+	SWS_u_long ipaddr;
 	size_t len;
 	
 	len = sizeof(ipaddr);
@@ -141,7 +141,7 @@ u_long SwsSockClass::getULGatewayIp()
 
 uint8_t *SwsSockClass::getGatewayIp()
 {
-	u_long ipaddr = getULGatewayIp();
+	SWS_u_long ipaddr = getULGatewayIp();
 	
 	_SwsSockGateway[3] = (uint8_t)(ipaddr);
 	_SwsSockGateway[2] = (uint8_t)(ipaddr >> 8);
@@ -151,14 +151,14 @@ uint8_t *SwsSockClass::getGatewayIp()
 	return (uint8_t*)_SwsSockGateway;
 }
 
-u_long SwsSockClass::getULDnsServerIp()
+SWS_u_long SwsSockClass::getULDnsServerIp()
 {
 	return SWS_DnsGetPriServer();
 }
 
 uint8_t *SwsSockClass::getDnsServerIp()
 {
-	u_long ipaddr = getULDnsServerIp();
+	SWS_u_long ipaddr = getULDnsServerIp();
 	
 	_SwsSockDnsServerIp[3] = (uint8_t)(ipaddr);
 	_SwsSockDnsServerIp[2] = (uint8_t)(ipaddr >> 8);

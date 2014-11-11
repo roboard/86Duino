@@ -1,6 +1,8 @@
 /*
   gText.cpp - Support for Text output on a graphical device 
   Copyright (c) 2009,2010  Bill Perry and Michael Margolis
+  
+  Modified 01 November 2014 by Android Lin
 
   vi:ts=4
  

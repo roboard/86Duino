@@ -1,4 +1,5 @@
 /*  Copyright (c) 2009 by Alex Leone <acleone ~AT~ gmail.com>
+    Modified 01 November 2014 by Android Lin for 86Duino
 
     This file is part of the Arduino TLC5940 Library.
 

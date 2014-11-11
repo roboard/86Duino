@@ -1,6 +1,7 @@
 /*
 LCD12864
 Created by Markos Kyritsis
+Modified 01 November 2014 by Android Lin for 86Duino
 This code is completely open source, and you may edit it however you like. 
 Please support the Arduino community, and upload any bug fixes to the relative
 page. 
@@ -65,9 +66,9 @@ byte checkAND[8];
 byte delaytime;
 byte DEFAULTTIME;
 
-static const byte RS = 17; 
-static const byte RW = 16;  
-static const byte EN = 18;  
+static const byte RS = 42; 
+static const byte RW = 43;  
+static const byte EN = 44;  
 static const byte D0  = 8;  
 static const byte D1  = 9; 
 static const byte D2  = 10;  
@@ -76,7 +77,7 @@ static const byte D4  = 4;
 static const byte D5  = 5;  
 static const byte D6  = 6;  
 static const byte D7  = 7; 
-static const byte CSEL1  = 14; 
+static const byte CSEL1  = 2; 
 
 
 

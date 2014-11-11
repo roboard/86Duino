@@ -1,5 +1,7 @@
 /*
  * glcd_Config.h - User specific configuration for Arduino GLCD library
+ * 
+ * Modified 01 November 2014 by Android Lin for 86Duino  
  *
  * This file is shipped to automatically configure the library for a 
  * 128x64 ks0108 panel using the wiring described in the documentation.

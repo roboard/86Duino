@@ -24,6 +24,7 @@ extern "C" {
   #include "string.h"
 }
 
+#include "SwsSock.h"
 #include "Arduino.h"
 
 #include "Ethernet.h"
@@ -31,36 +32,42 @@ extern "C" {
 #include "ENServer.h"
 #include "Dns.h"
 
-static int swssock_connect(SOCKET s, const sockaddr *addr, int size)
+static int swssock_connect(SWS_SOCKET s, const SWS_sockaddr *addr, int size)
 {
 	int rc;
-	fd_set fds;
-	struct timeval seltime;
+	SWS_fd_set fds;
+	struct SWS_timeval seltime;
 	
-	connect(s, addr, size);
+	SWS_connect(s, addr, size);
 
-	FD_ZERO(&fds);
-	FD_SET(s,&fds);
+	SWS_FdZero(&fds);
+	SWS_FdSet(s,&fds);
 
 	seltime.tv_sec = 10;
 	seltime.tv_usec = 0;
 
-	if (select(0, NULL, &fds, NULL, &seltime) <= 0)
+	if (SWS_select(NULL, &fds, NULL, &seltime) <= 0)
 		return -1;
 
 	return 0;
 }
 
-EthernetClient::EthernetClient() : _sock(INVALID_SOCKET)
+EthernetClient::EthernetClient()
 {
 	_id = -1;
 	pServer = NULL;
+	sws = (struct SwsSockInfo*)malloc(sizeof(struct SwsSockInfo));
+	if (sws) {
+		memset(sws, 0, sizeof(struct SwsSockInfo));
+		sws->_sock = SWS_INVALID_SOCKET;
+	}
 }
 
-EthernetClient::EthernetClient(SOCKET sock) : _sock(sock)
+EthernetClient::EthernetClient(struct SwsSockInfo *info)
 {
 	_id = -1;
 	pServer = NULL;
+	sws = info;
 }
 
 int EthernetClient::connect(const char* host, uint16_t port)
@@ -80,53 +87,56 @@ int EthernetClient::connect(const char* host, uint16_t port)
 
 int EthernetClient::connect(IPAddress ip, uint16_t port)
 {
-	struct sockaddr_in pin;
+	struct SWS_sockaddr_in pin;
 	int yes = 1;
 	uint8_t *ipchar;
-	u_long iplong, lArg = 1;
-	struct linger linger;
+	SWS_u_long iplong, lArg = 1;
+	struct SWS_linger linger;
 	
-	if (_sock != INVALID_SOCKET)
+	if (sws == NULL) return 0;
+	
+	if (sws->_sock != SWS_INVALID_SOCKET)
 		stop();
 	
 	ipchar = rawIPAddress(ip);
 	memcpy(&iplong, ipchar, 4);
 	
 	bzero(&pin, sizeof(pin));
-    pin.sin_family = AF_INET;
-    pin.sin_addr.s_addr = iplong;
-    pin.sin_port = htons(port);
+    pin.sin_family = SWS_AF_INET;
+    pin.sin_addr.SWS_s_addr = iplong;
+    pin.sin_port = SWS_htons(port);
 	
-	_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (_sock == INVALID_SOCKET)
+	sws->_sock = SWS_socket(SWS_AF_INET, SWS_SOCK_STREAM, 0);
+    if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
-	if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(int)) < 0) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		_sock = INVALID_SOCKET;
+	if (SWS_setsockopt(sws->_sock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char*)&yes, sizeof(int)) < 0) {
+		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+		SWS_close(sws->_sock);
+		sws->_sock = SWS_INVALID_SOCKET;
 		return 0;
 	}
 	
 	linger.l_onoff = 1;
 	linger.l_linger = 1; 
-	if (setsockopt(_sock, SOL_SOCKET, SO_LINGER, (const char*)&linger, sizeof(linger)) < 0) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		return INVALID_SOCKET;
+	if (SWS_setsockopt(sws->_sock, SWS_SOL_SOCKET, SWS_SO_LINGER, (const char*)&linger, sizeof(linger)) < 0) {
+		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+		SWS_close(sws->_sock);
+		sws->_sock = SWS_INVALID_SOCKET;
+		return 0;
 	}
 	
-	if (ioctlsocket(_sock, FIONBIO, &lArg) < 0) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		_sock = INVALID_SOCKET;
+	if (SWS_ioctl(sws->_sock, SWS_FIONBIO, &lArg) < 0) {
+		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+		SWS_close(sws->_sock);
+		sws->_sock = SWS_INVALID_SOCKET;
 		return 0;
 	}
 
-    if (swssock_connect(_sock, (const sockaddr*)&pin, sizeof(pin)) == -1) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		_sock = INVALID_SOCKET;
+    if (swssock_connect(sws->_sock, (const SWS_sockaddr*)&pin, sizeof(pin)) == -1) {
+		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+		SWS_close(sws->_sock);
+		sws->_sock = SWS_INVALID_SOCKET;
 		return 0;
     }
 	
@@ -146,10 +156,11 @@ size_t EthernetClient::write(const uint8_t *buf, size_t size)
 	int rc;
 	size_t n = 0;
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return 0;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
-	rc = send(_sock, buf, size, 0);
+	rc = SWS_send(sws->_sock, buf, size, 0);
 	if (rc > 0) {
 		n = rc;
 	}
@@ -167,9 +178,10 @@ int EthernetClient::available()
 	if (_RegLen > 0)
 		cur = 1;
 	
-	if (_sock != INVALID_SOCKET) {
+	if (sws == NULL) return 0;
+	if (sws->_sock != SWS_INVALID_SOCKET) {
 	
-		rc = recv(_sock, buf, BUFFER_SIZE-cur, MSG_PEEK);
+		rc = SWS_recv(sws->_sock, buf, BUFFER_SIZE-cur, SWS_MSG_PEEK);
 		
 		if (rc > 0)
 			cur += rc;
@@ -199,9 +211,10 @@ int EthernetClient::read(uint8_t *buf, size_t size)
 		size--;
 	}
 	
-	if (_sock != INVALID_SOCKET && size > 0) {
+	if (sws == NULL) return 0;
+	if (sws->_sock != SWS_INVALID_SOCKET && size > 0) {
 		
-		rc = recv(_sock, &buf[cur], size, 0);
+		rc = SWS_recv(sws->_sock, &buf[cur], size, 0);
 		if (rc > 0)
 			cur += rc;
 	}
@@ -220,10 +233,11 @@ int EthernetClient::peek()
 		return val;
 	}
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return -1;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return -1;
 	
-	if (recv(_sock, &val, 1, MSG_PEEK) <= 0)
+	if (SWS_recv(sws->_sock, &val, 1, SWS_MSG_PEEK) <= 0)
 		return -1;
 	
 	return val;
@@ -233,20 +247,23 @@ void EthernetClient::flush()
 {
 	uint8_t val;
 	
-	if (_sock == INVALID_SOCKET)
+	if (sws == NULL) return;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return;
 		
-	while (recv(_sock, &val, 1, 0) > 0);
+	while (SWS_recv(sws->_sock, &val, 1, 0) > 0);
 }
 
 void EthernetClient::stop()
 {
 	flush();
 	
-	if (_sock != INVALID_SOCKET) {
-		shutdown(_sock, SD_BOTH);
-		closesocket(_sock);
-		_sock = INVALID_SOCKET;
+	if (sws) {
+		if (sws->_sock != SWS_INVALID_SOCKET) {
+			SWS_shutdown(sws->_sock, SWS_SD_BOTH);
+			SWS_close(sws->_sock);
+			sws->_sock = SWS_INVALID_SOCKET;
+		}
 	}
 	if (pServer != NULL) {
 		pServer->closeServerSocket(this->_id);
@@ -260,11 +277,12 @@ uint8_t EthernetClient::connected()
 	
 	if (available() > 0)
 		return 1;
-		
-	if (_sock == INVALID_SOCKET)
+	
+	if (sws == NULL) return 0;
+	if (sws->_sock == SWS_INVALID_SOCKET)
 		return 0;
 	
-	rc = recv(_sock, &val, 1, 0);
+	rc = SWS_recv(sws->_sock, &val, 1, 0);
 	if (rc == 0)
 		return 0;
 	
@@ -278,7 +296,8 @@ uint8_t EthernetClient::connected()
 
 uint8_t EthernetClient::status()
 {
-	return _sock != INVALID_SOCKET;
+	if (sws == NULL) return sws != NULL;
+	return sws->_sock != SWS_INVALID_SOCKET;
 }
 
 // the next function allows us to use the client returned by
@@ -286,5 +305,6 @@ uint8_t EthernetClient::status()
 
 EthernetClient::operator bool()
 {
-	return _sock != INVALID_SOCKET;
+	if (sws == NULL) return sws != NULL;
+	return sws->_sock != SWS_INVALID_SOCKET;
 }

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <project name="Arduino" default="build">
   <!--echo message="os.name = ${os.name}" /-->
   <!--echo message="os.arch = ${os.arch}" /-->
@@ -101,7 +101,7 @@
     <unzip dest="${target.path}" src="shared/reference.zip" overwrite="false"/>
     
     <!-- Write the revision file! -->
-    <echo file="${target.path}/lib/version.txt" message="Coding 105" />
+    <echo file="${target.path}/lib/version.txt" message="Coding 106" />
   </target>
 
   

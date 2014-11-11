@@ -1,17 +1,6 @@
 /*
-  MsTimer2.h - Using timer2 with 1ms resolution
-  Javier Valencia <javiervalencia80@gmail.com>
-  
-  History:
-  	29/May/09 - V0.5 added support for Atmega1280 (thanks to Manuel Negri)
-  	19/Mar/09 - V0.4 added support for ATmega328P (thanks to Jerome Despatis)
-  	11/Jun/08 - V0.3 
-  		changes to allow working with different CPU frequencies
-  		added support for ATMega128 (using timer2)
-  		compatible with ATMega48/88/168/8
-	10/May/08 - V0.2 added some security tests and volatile keywords
-	9/May/08 - V0.1 released working on ATMEGA168 only
-	
+  MsTimer2.cpp - DM&P Vortex86 MsTimer2 library
+  Copyright (c) 2014 Android Lin <acen@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public

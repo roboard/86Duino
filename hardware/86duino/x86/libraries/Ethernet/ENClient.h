@@ -1,11 +1,6 @@
 #ifndef ethernetclient_h
 #define ethernetclient_h
 
-#ifndef SWS_SOCK_COMPAT
-#define SWS_SOCK_COMPAT
-#endif
-#include "sws_sock.h"
-
 #include "Arduino.h"	
 #include "Print.h"
 #include "Client.h"
@@ -13,11 +8,10 @@
 
 #define BUFFER_SIZE (512)
 
-class EthernetClient : public Client {
-
+class EthernetClient : public Client
+{
 public:
   EthernetClient();
-  EthernetClient(SOCKET sock);
 
   uint8_t status();
   virtual int connect(IPAddress ip, uint16_t port);
@@ -37,9 +31,13 @@ public:
   
   using Print::write;
   
-  SOCKET _sock;
-  int _id;
   class EthernetServer *pServer;
+  
+private:
+  struct SwsSockInfo *sws;
+  EthernetClient(struct SwsSockInfo *info);
+  
+  int _id;
   
   uint8_t _RegBuf;
   uint8_t _RegLen;

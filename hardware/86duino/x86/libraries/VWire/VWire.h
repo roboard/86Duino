@@ -5,6 +5,7 @@
 // 
 // Author: Mike McCauley (mikem@airspayce.com) DO NOT CONTACT THE AUTHOR DIRECTLY: USE THE LISTS
 // Copyright (C) 2008 Mike McCauley
+// Modified 01 November 2014 by Android Lin for 86Duino
 // $Id: VirtualWire.h,v 1.14 2014/03/26 01:09:36 mikem Exp mikem $
 
 /// \mainpage VirtualWire library for Arduino and other boards

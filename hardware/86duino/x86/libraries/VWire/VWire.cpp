@@ -4,6 +4,7 @@
 //
 // Author: Mike McCauley (mikem@airspayce.com)
 // Copyright (C) 2008 Mike McCauley
+// Modified 01 November 2014 by Android Lin for 86Duino
 // $Id: VirtualWire.cpp,v 1.18 2014/03/26 01:09:36 mikem Exp mikem $
 
 #include "VWire.h"

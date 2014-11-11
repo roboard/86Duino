@@ -20,10 +20,6 @@
    to get more information.)
 */
 
-#ifndef SWS_SOCK_COMPAT
-#define SWS_SOCK_COMPAT
-#endif
-#include "sws_sock.h"
 #include "SwsSock.h"
 #include "ENUdp.h"
 
@@ -103,8 +99,8 @@ int DNSClient::inet_aton(const char* aIPAddrString, IPAddress& aResult)
 
 int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult)
 {
-	u_long result;
-	struct hostent *Host;
+	SWS_u_long result;
+	struct SWS_hostent *Host;
 	
     // See if it's a numeric IP address
     if (inet_aton(aHostname, aResult))
@@ -118,11 +114,11 @@ int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult)
         return 0;
 	
     // Find a socket to use
-	Host = gethostbyname(aHostname);
+	Host = SWS_gethostbyname(aHostname);
 	if (Host == NULL)
 		return 0;
 	
-	result = *(u_long*)Host->h_addr_list[0];
+	result = *(SWS_u_long*)Host->h_addr_list[0];
 	
 	aResult[0] = (uint8_t)(result);
 	aResult[1] = (uint8_t)(result >> 8);

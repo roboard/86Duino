@@ -1,5 +1,6 @@
 // Adafruit Motor shield library
 // copyright Adafruit Industries LLC, 2009
+// Modified 01 November 2014 by Android Lin for 86Duino
 // this code is public domain, enjoy!
 
 /*

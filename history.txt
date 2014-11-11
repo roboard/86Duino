@@ -1,3 +1,23 @@
+### CODING 106 - 2014.11.11 ###
+
+[ide]
+* Added the "ARDUINO" define to improve compatibility.
+
+[core]
+* Added avr/pgmspace.h file to improve compatibility.
+* Added WProgram.h file to to improve compatibility.
+
+[libraries]
+* Fixed a conflict issue when compiling Ethernet and OneWrie library together.
+* Added GLCD Library. Support the GLCD KS0108 Module.
+* Added LCD12864 library. Support the GLCD ST7920 Module.
+* Added MsTimer2 library. Provide the second timer for 86Duino.
+* Added Adafruit Motor Shield library. Support to control stepper motor/PWM servo/DC motor by using Adafruit's Motor Shield.
+* Added VirtualWire library. Support the radio modules like Sparkfun WRL-10534 and WRL-10532.
+* Added RF12 library. This is experimental library in this version, and it is just compiled pass, is not tested.
+
+
+
 ### CODING 105 - 2014.09.18 ###
 
 [ide]

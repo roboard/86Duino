@@ -12,9 +12,6 @@
 #ifndef __DMP_SWSSOCK_H
 #define __DMP_SWSSOCK_H
 
-#ifndef SWS_SOCK_COMPAT
-#define SWS_SOCK_COMPAT
-#endif
 #include "sws_sock.h"
 
 #include <stdint.h>
@@ -22,6 +19,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct SwsSockInfo {
+	SWS_SOCKET _sock;
+	SWS_fd_set rfds;
+	struct SWS_sockaddr_in txaddr;
+	struct SWS_sockaddr_in rxaddr;
+};
 
 class SwsSockClass {
 
@@ -35,10 +39,10 @@ public:
 	uint8_t *getGatewayIp();
 	uint8_t *getDnsServerIp();
 	
-	u_long getULLocalIp();
-	u_long getULSubnetMask();
-	u_long getULGatewayIp();
-	u_long getULDnsServerIp();
+	SWS_u_long getULLocalIp();
+	SWS_u_long getULSubnetMask();
+	SWS_u_long getULGatewayIp();
+	SWS_u_long getULDnsServerIp();
 	
 	void setIPAddress(uint8_t*);
 	void setGatewayIp(uint8_t*);

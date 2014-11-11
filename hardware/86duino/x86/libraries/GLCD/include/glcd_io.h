@@ -2,6 +2,8 @@
   glcd_io.h
   Copyright (c) 2009 Bill Perry
   
+  Modified 01 November 2014 by Android Lin
+  
   vi:ts=4
 
   This file is part of the Arduino GLCD library.
