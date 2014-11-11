@@ -2,6 +2,7 @@
 
 [ide]
 * Added the "ARDUINO" define to improve compatibility.
+* Updated the UI color.
 
 [core]
 * Added avr/pgmspace.h file to improve compatibility.
