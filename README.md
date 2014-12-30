@@ -18,7 +18,7 @@ page: https://github.com/roboard/86Duino/issues
 Please refer to the 86Duino Getting-Started page for installation instructions 
 on Windows XP/7/8, Mac OS X, and Linux: http://www.86duino.com/?page_id=2844
 
-Alternatively, since the 86Duino IDE is compatible to Arduino 1.5.2, you can 
+Alternatively, since the 86Duino IDE is compatible to Arduino 1.5.8, you can 
 also refer to Arduino's installation guides: 
 http://arduino.cc/en/Guide/HomePage
 

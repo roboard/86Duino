@@ -19,7 +19,7 @@ http://www.86duino.com/?page_id=85&lang=TW
 86Duino 網站的新手上路專區，提供 Windows XP/7/8、Mac OS X、Linux
 平台上的 86Duino IDE 詳細安裝步驟：http://www.86duino.com/?page_id=2844&lang=TW
 
-另外，因為 86Duino IDE 相容於 Arduino 1.5.2，故您也可參考 Arduino
+另外，因為 86Duino IDE 相容於 Arduino 1.5.8，故您也可參考 Arduino
 網站中的教學文件來安裝 IDE：http://arduino.cc/en/Guide/HomePage
 
 
