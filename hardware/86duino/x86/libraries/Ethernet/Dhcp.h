@@ -1,7 +1,7 @@
 #ifndef Dhcp_h
 #define Dhcp_h
 
-#include "ENUdp.h"
+#include "EthernetUdp.h"
 
 class DhcpClass {
 

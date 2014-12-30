@@ -1,7 +1,0 @@
-bits/c++allocator.h bits/cxxallocator.h
-bits/c++config.h bits/cxxconfig.h
-bits/extc++.h bits/extcxx.h
-bits/c++io.h bits/cxxio.h
-bits/c++locale.h bits/cxxlocale.h
-bits/stdc++.h bits/stdcxx.h
-bits/stdtr1c++.h bits/stdtr1cxx.h

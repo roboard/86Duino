@@ -3,8 +3,8 @@
 #define _ARDUINO_TFT_H
 
 #include "Arduino.h"
-#include "utility/Ada_GFX.h"
-#include "utility/Ada_ST77.h"
+#include "utility/Adafruit_GFX.h"
+#include "utility/Adafruit_ST7735.h"
 
 /// The Arduino LCD is a ST7735-based device.
 /// By default, it is mounted horizontally.

@@ -1,6 +1,6 @@
 /*
   Block.h - Part of DM&P Vortex86 EEPROM library
-  Copyright (c) 2013 Vic Cheng <vic@dmp.com.tw>. All right reserved.
+  Copyright (c) 2013 Vic Chen <vic@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -38,11 +38,13 @@ private:
   SPIFlash  * _data;
   SPIFlash  * _data_redundancy;
   SPIFlash  * _counter;
+  SPIFlash  * _counter_flag;
   
   unsigned char * _data_buffer;
   
   unsigned short _data_position;
   unsigned short _counter_position;
+  unsigned short _counter_flag_position;
   
   unsigned short _addr;
   
@@ -51,6 +53,7 @@ private:
   void AllocBuffers();
   void CalculateRealData();
   void CheckCounterResetState();
+  void CheckCounterFlag();
   void SetRedundancyFlag();
   void WriteCounter();
   void WriteCounterRedundancy(unsigned char bit);

@@ -5,9 +5,9 @@
 
 #include <Arduino.h>
 #include <inttypes.h>
-#include "IPAddres.h"
-#include "ENClient.h"
-#include "ENServer.h"
+#include "IPAddress.h"
+#include "EthernetClient.h"
+#include "EthernetServer.h"
 #include "Dhcp.h"
 
 class EthernetClass {

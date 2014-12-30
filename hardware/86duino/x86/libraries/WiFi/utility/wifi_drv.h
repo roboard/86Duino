@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "wifi_spi.h"
-#include "IPAddres.h"
+#include "IPAddress.h"
 
 // Key index length
 #define KEY_IDX_LEN     1

@@ -24,7 +24,7 @@
 #include <stdio.h> // for size_t
 
 #include "WString.h"
-#include "Printabl.h"
+#include "Printable.h"
 
 #define DEC 10
 #define HEX 16

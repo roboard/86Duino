@@ -77,7 +77,8 @@ typedef volatile struct can_bus
 	unsigned short IO_Addr;             /* CAN bus IO space address */
 	unsigned long  MMIO_Addr;           /* CAN bus memory space address */
 	
-	unsigned long  TimeOut;
+	unsigned long  RxTimeOut;
+	unsigned long  TxTimeOut;
 	unsigned long  BitTime;             /* Bit-Time */
 	
 	int            NowState;            /* CAN bus now state */
@@ -138,7 +139,7 @@ DMPAPI(bool) can_SetBPS(void *vcan, unsigned long bps);
 #define CAN_BPS_20K     (0x80641144UL)
 #define CAN_BPS_10K     (0x80501888UL)
 
-DMPAPI(void) can_SetTimeOut(void *vcan, unsigned long timeout);
+DMPAPI(void) can_SetTimeOut(void *vcan, unsigned long rx_timeout, unsigned long tx_timeout);
 #define CAN_NO_TIMEOUT  (-1)
 
 /* CAN-BUS Identifier list has 32 filter. Note: index = 0 ~ 31. */

@@ -18,8 +18,6 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software Foundation,
  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
- $Id$
  */
 package processing.app.helpers;
 
@@ -28,15 +26,40 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import processing.app.Base;
 import processing.core.PApplet;
 
+@SuppressWarnings("serial")
 public class PreferencesMap extends LinkedHashMap<String, String> {
 
   public PreferencesMap(Map<String, String> table) {
     super(table);
+  }
+
+  /**
+   * Create a PreferencesMap and load the content of the file passed as
+   * argument.
+   * 
+   * Is equivalent to:
+   * 
+   * <pre>
+   * PreferencesMap map = new PreferencesMap();
+   * map.load(file);
+   * </pre>
+   * 
+   * @param file
+   * @throws IOException
+   */
+  public PreferencesMap(File file) throws IOException {
+    super();
+    load(file);
   }
 
   public PreferencesMap() {
@@ -50,8 +73,21 @@ public class PreferencesMap extends LinkedHashMap<String, String> {
    * @throws FileNotFoundException
    * @throws IOException
    */
-  public void load(File file) throws FileNotFoundException, IOException {
+  public void load(File file) throws IOException {
     load(new FileInputStream(file));
+  }
+
+  protected String processPlatformSuffix(String key, String suffix, boolean isCurrentPlatform) {
+    if (key == null)
+      return null;
+    // Key does not end with the given suffix? Process as normal
+    if (!key.endsWith(suffix))
+      return key;
+    // Not the current platform? Ignore this key
+    if (!isCurrentPlatform)
+      return null;
+    // Strip the suffix from the key
+    return key.substring(0, key.length() - suffix.length());
   }
 
   /**
@@ -68,40 +104,65 @@ public class PreferencesMap extends LinkedHashMap<String, String> {
 
       int equals = line.indexOf('=');
       if (equals != -1) {
-        String key = line.substring(0, equals);
-        String value = line.substring(equals + 1);
-        put(key.trim(), value.trim());
-      }
-    }
+        String key = line.substring(0, equals).trim();
+        String value = line.substring(equals + 1).trim();
 
-    // This is needed to avoid ConcurrentAccessExceptions
-    Set<String> keys = new HashSet<String>(keySet());
+        key = processPlatformSuffix(key, ".linux", Base.isLinux());
+        key = processPlatformSuffix(key, ".windows", Base.isWindows());
+        key = processPlatformSuffix(key, ".macosx", Base.isMacOS());
 
-    // Override keys that have OS specific versions
-    for (String key : keys) {
-      boolean replace = false;
-      if (Base.isLinux() && key.endsWith(".linux"))
-        replace = true;
-      if (Base.isWindows() && key.endsWith(".windows"))
-        replace = true;
-      if (Base.isMacOS() && key.endsWith(".macos"))
-        replace = true;
-      if (replace) {
-        int dot = key.lastIndexOf('.');
-        String overridenKey = key.substring(0, dot);
-        put(overridenKey, get(key));
+        if (key != null)
+          put(key, value);
       }
     }
   }
 
   /**
-   * Create a new Map<String, PreferenceMap> where the keys are the first level
-   * of the current mapping. E.g. the folowing mapping:<br />
+   * Create a new PreferenceMap that contains all the top level pairs of the
+   * current mapping. E.g. the folowing mapping:<br />
    * 
    * <pre>
    * Map (
+   *     alpha = Alpha
    *     alpha.some.keys = v1
    *     alpha.other.keys = v2
+   *     beta = Beta
+   *     beta.some.keys = v3
+   *   )
+   * </pre>
+   * 
+   * will generate the following result:
+   * 
+   * <pre>
+   * Map (
+   *     alpha = Alpha
+   *     beta = Beta
+   *   )
+   * </pre>
+   * 
+   * @return
+   */
+  public PreferencesMap topLevelMap() {
+    PreferencesMap res = new PreferencesMap();
+    for (String key : keySet()) {
+      if (key.contains("."))
+        continue;
+      res.put(key, get(key));
+    }
+    return res;
+  }
+
+  /**
+   * Create a new Map<String, PreferenceMap> where keys are the first level of
+   * the current mapping. Top level pairs are discarded. E.g. the folowing
+   * mapping:<br />
+   * 
+   * <pre>
+   * Map (
+   *     alpha = Alpha
+   *     alpha.some.keys = v1
+   *     alpha.other.keys = v2
+   *     beta = Beta
    *     beta.some.keys = v3
    *   )
    * </pre>
@@ -120,7 +181,7 @@ public class PreferencesMap extends LinkedHashMap<String, String> {
    * 
    * @return
    */
-  public Map<String, PreferencesMap> createFirstLevelMap() {
+  public Map<String, PreferencesMap> firstLevelMap() {
     Map<String, PreferencesMap> res = new LinkedHashMap<String, PreferencesMap>();
     for (String key : keySet()) {
       int dot = key.indexOf('.');
@@ -138,13 +199,15 @@ public class PreferencesMap extends LinkedHashMap<String, String> {
   }
 
   /**
-   * Create a new PreferenceMap using a subtree of the current mapping. E.g.
-   * with the folowing mapping:<br />
+   * Create a new PreferenceMap using a subtree of the current mapping. Top
+   * level pairs are ignored. E.g. with the following mapping:<br />
    * 
    * <pre>
    * Map (
+   *     alpha = Alpha
    *     alpha.some.keys = v1
    *     alpha.other.keys = v2
+   *     beta = Beta
    *     beta.some.keys = v3
    *   )
    * </pre>
@@ -161,7 +224,7 @@ public class PreferencesMap extends LinkedHashMap<String, String> {
    * @param parent
    * @return
    */
-  public PreferencesMap createSubTree(String parent) {
+  public PreferencesMap subTree(String parent) {
     PreferencesMap res = new PreferencesMap();
     parent += ".";
     int parentLen = parent.length();
@@ -172,5 +235,65 @@ public class PreferencesMap extends LinkedHashMap<String, String> {
     return res;
   }
 
-  private static final long serialVersionUID = 2330591567444282843L;
+  public String toString(String indent) {
+    String res = indent + "{\n";
+    SortedSet<String> treeSet = new TreeSet<String>(keySet());
+    for (String k : treeSet)
+      res += indent + k + " = " + get(k) + "\n";
+    return res;
+  }
+
+  /**
+   * Returns the value to which the specified key is mapped, or throws a
+   * PreferencesMapException if not found
+   * 
+   * @param k
+   *          the key whose associated value is to be returned
+   * @return the value to which the specified key is mapped
+   * @throws PreferencesMapException
+   */
+  public String getOrExcept(String k) throws PreferencesMapException {
+    String r = get(k);
+    if (r == null)
+      throw new PreferencesMapException(k);
+    return r;
+  }
+
+  @Override
+  public String toString() {
+    return toString("");
+  }
+
+  /**
+   * Creates a new File instance by converting the value of the key into an
+   * abstract pathname. If the the given key doesn't exists or his value is the
+   * empty string, the result is <b>null</b>.
+   * 
+   * @param key
+   * @return
+   */
+  public File getFile(String key) {
+    if (!containsKey(key))
+      return null;
+    String path = get(key).trim();
+    if (path.length() == 0)
+      return null;
+    return new File(path);
+  }
+
+  /**
+   * Creates a new File instance by converting the value of the key into an
+   * abstract pathname with the specified sub folder. If the the given key
+   * doesn't exists or his value is the empty string, the result is <b>null</b>.
+   * 
+   * @param key
+   * @param subFolder
+   * @return
+   */
+  public File getFile(String key, String subFolder) {
+    File file = getFile(key);
+    if (file == null)
+      return null;
+    return new File(file, subFolder);
+  }
 }

@@ -1,0 +1,130 @@
+This is a port of zlib 1.2.8 to MSDOS/DJGPP.
+
+1.:     DJGPP specific changes.
+        =======================
+
+        The only DJGPP specific change is that vsnprintf and snprintf functions
+        from DJGPP's repository are provided.  Apart from this, only the usual
+        configuration files have been added.  As usual they are located in the
+        /djgpp directory.
+
+        Please read the docs.
+
+
+2.:     Installing the binary package.
+        ==============================
+
+2.1.:   Copy the binary distribution into the top DJGPP installation directory,
+        just unzip it preserving the directory structure running *ONE* of the
+        following commands:
+          unzip32 zlib128b.zip      or
+          djtarx zlib128b.zip       or
+          pkunzip -d zlib128b.zip
+
+
+
+3.:     Building the binaries from sources.
+        ===================================
+
+3.1.:   Create a temporary directory and copy the source package into the
+        directory.  If you download the source distribution from one of the
+        DJGPP sites, just unzip it preserving the directory structure
+        running *ONE* of the following commands:
+          unzip32 zlib128s.zip      or
+          djtarx zlib128s.zip       or
+          pkunzip -d zlib128s.zip
+
+3.2.:   To build the binaries you will need the following binary packages:
+          djdev203.zip (or a later but NOT a prior version)
+          bsh204b.zip  (or a later but NOT a prior version)
+          gccNNNb.zip, gppNNN.zip, bnuNNNb.zip, makNNNb.zip, filNNNb.zip,
+          shlNNNb.zip, txtNNNb.zip, txiNNNb.zip, grepNNNb.zip, and
+          sedNNNb.zip
+
+        If you want to run the check you will need also:
+          difNNNb.zip
+
+        All this packages can be found in the v2gnu directory of ftp.delorie.com
+        and any mirror.  NNN stands for the newest port versions available when
+        this port was build but older may do the work as well.
+
+3.3.:   The package has been configured for both DJGPP 2.03 and DJGPP 2.04.
+        There is a separate build directory for DJGPP 2.03 and for DJGPP 2.04
+        under the top srcdir (aka zlib-1.2-8).  To build the binaries
+        using the 2.03 version of DJGPP cd into _build.203; if you prefer to
+        build the binaries using DJGPP 2.04 cd into _build.204.  If for some
+        reason you want to reconfigure the package cd into the corresponding
+        build directory and run the following commands:
+          del config.cache
+          make clean
+          ..\djgpp\config ./..
+
+        Please note that you *MUST* delete the config.cache file in the djgpp
+        subdir or you will not really reconfigure the sources because the
+        configuration informations will be read from the cache file instead
+        of being newly computed.
+
+        config.bat, among other things, will start the configure script passing
+        to it a couple of arguments.  You can control these argument passing the
+        following command line arguments to config.bat:
+          nls or no-nls, default no-nls.  No NLS support.
+          cache or no-cache, default cache.
+          dep or no-dep, default no-dep.  No dependency tracking.
+          silent or no-silent, default silent.  Controls the verbosity of the
+                                                build process.
+        All other configure specific options are not controled by config.bat so
+        they are passed verbatim to the configure script if they are supplied.
+        If no arguments are passed to config.bat then the default values are
+        used.
+
+
+        To build the programs in a directory other than where the sources are,
+        you must add the parameter that specifies the source directory,
+        e.g:
+          x:\src\contrib\zlib-1.2-8\djgpp\config x:/src/contrib/zlib-1.2-8
+
+        Lets assume you want to build the binaries in a directory placed on a
+        different drive (z:\build in this case) from where the sources are,
+        then you will run the following commands:
+          z:
+          md \build
+          cd \build
+          x:\src\contrib\zlib-1.2-8\djgpp\config x:/src/contrib/zlib-1.2-8
+
+        The order of the options and the srcdir option does not matter.  You
+        *MUST* use forward slashes to specify the source directory.
+
+        The batch file will set same environment variables, make MSDOS specific
+        modifications to the Makefile.in's and supply all other needed options
+        to the configure script.
+
+3.4.:   To compile the package run from the directory where you have configured
+        the sources the command:
+          make
+
+3.5.:   Now you can run the tests if you like. From the directory where you have
+        configured the sources run the command:
+          make test
+
+        No test should fail.
+
+3.6.:   To install the binaries, header, library, catalogs, and info docs
+        run the following command from the top srcdir:
+          make install
+
+        This will install the products into your DJGPP installation tree given
+        by the default prefix "/dev/env/DJDIR".  If you prefer to install them
+        into some other directory you will have to set prefix to the appropiate
+        value:
+          make install prefix=z:/some/other/place
+
+
+
+        Send zlib specific bug reports to <zlib@gzip.org>.
+        Send suggestions and bug reports concerning the DJGPP port to
+        comp.os.msdos.djgpp or <djgpp@delorie.com>.
+
+
+Enjoy.
+
+        Guerrero, Juan Manuel <juan.guerrero@gmx.de>

@@ -1,3 +1,25 @@
+### CODING 207 - 2014.12.30 ###
+[ide]
+* Use the cross-compiler to compile DJGPP program without DOSBOX and also get a faster compiling speed.
+* Compatible with Arduino IDE 1.5.8
+* Compiler version: GCC is updated to 4.9.2 version and binutil to 2.24 version.
+* New compiling system have not the limit of 8 word filename.
+
+[core]
+* Added the "USE_USBCON" define to improve compatibility for the rosserail package.
+* All the name of .cpp/.h files are recovered to origin for compatibility.
+
+[libraries]
+* Added RF12 library, support RFM12B wireless transceiver.
+* Added RF24 library, support nRF24L01 wireless transceiver.
+* Added Mirf library. (another popular library for the nRF24L01 wireless transceiver)
+* Added RadioHead library, support RFM22/RF69/nRF24L01... wireless transceiver.
+* Updated the EEPROM library. Dont depend on COMS and work normally.
+* Fixed a ISR uninstall behavior in Encoder Library.
+* Fixed a Ethernet bug: re-connect to server for 16 times will cause error.
+* Fixed a Serial timeout setting issue for compatibility of rosserail package.
+* All the name of .cpp/.h files are recovered to origin for compatibility.
+
 ### CODING 106 - 2014.11.11 ###
 
 [ide]
@@ -12,6 +34,7 @@
 * Fixed a conflict issue when compiling Ethernet and OneWrie library together.
 * Added GLCD Library. Support the GLCD KS0108 Module.
 * Added LCD12864 library. Support the GLCD ST7920 Module.
+* Added TLC5940 library. Support more PWM channels output.
 * Added MsTimer2 library. Provide the second timer for 86Duino.
 * Added Adafruit Motor Shield library. Support to control stepper motor/PWM servo/DC motor by using Adafruit's Motor Shield.
 * Added VirtualWire library. Support the radio modules like Sparkfun WRL-10534 and WRL-10532.

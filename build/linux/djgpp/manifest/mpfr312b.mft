@@ -1,0 +1,16 @@
+gnu/mpfr-3.12/COPYING.LESSER
+gnu/mpfr-3.12/authors
+gnu/mpfr-3.12/bugs
+gnu/mpfr-3.12/check.log
+gnu/mpfr-3.12/copying
+gnu/mpfr-3.12/news
+gnu/mpfr-3.12/readme
+gnu/mpfr-3.12/readme.djgpp
+gnu/mpfr-3.12/todo
+include/mpf2mpfr.h
+include/mpfr.h
+info/mpfr.info
+lib/libmpfr.a
+lib/libmpfr.la
+manifest/mpfr312b.mft
+manifest/mpfr312b.ver

@@ -28,8 +28,8 @@
 #include <avr/pgmspace.h>
 
 #include "WString.h"
-#include "include/Streamg.h" 
-#include "include/glcddev.h"
+#include "include/Streaming.h" 
+#include "include/glcd_Device.h"
 
 #define GTEXT_VERSION 1 // software version of this code
 

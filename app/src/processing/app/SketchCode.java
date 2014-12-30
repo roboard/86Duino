@@ -27,7 +27,7 @@ package processing.app;
 import java.io.*;
 
 import javax.swing.text.Document;
-import javax.swing.undo.*;
+
 import static processing.app.I18n._;
 
 
@@ -55,7 +55,7 @@ public class SketchCode {
    * Editor.undo will be set to this object when this code is the tab
    * that's currently the front.
    */
-  private UndoManager undo = new UndoManager();
+  private LastUndoableEditAwareUndoManager undo = new LastUndoableEditAwareUndoManager();
 
   // saved positions from last time this tab was used
   private int selectionStart;
@@ -87,7 +87,7 @@ public class SketchCode {
 
   protected void makePrettyName() {
     prettyName = file.getName();
-    int dot = prettyName.indexOf('.');
+    int dot = prettyName.lastIndexOf('.');
     prettyName = prettyName.substring(0, dot);
   }
 
@@ -143,9 +143,6 @@ public class SketchCode {
 
   public String getFileName() {
     return file.getName();
-  }
-  public String getPath() {
-    return file.getPath();
   }
   
   
@@ -224,7 +221,7 @@ public class SketchCode {
   }
   
   
-  public UndoManager getUndo() {
+  public LastUndoableEditAwareUndoManager getUndo() {
     return undo;
   }
   

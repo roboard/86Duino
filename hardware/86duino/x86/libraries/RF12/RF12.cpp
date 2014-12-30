@@ -1,9 +1,11 @@
 /// @file
 /// RFM12B driver implementation
 // 2009-02-09 <jc@wippler.nl> http://opensource.org/licenses/mit-license.php
+// Modified by Android Lin <acen@dmp.com.tw> to support 86Duino boards
 
 #include "RF12.h"
 #include "REEPROM.h"
+#include "mcm.h"
 
 #if ARDUINO >= 100
 #include <Arduino.h> // Arduino 1.0
@@ -80,16 +82,8 @@
 
 #else
 
-// ATmega168, ATmega328, etc.
-#define RFM_IRQ     2
-// #define SS_DDR      DDRB
-// #define SS_PORT     PORTB
-// #define SS_BIT      2     // for PORTB: 2 = d.10, 1 = d.9, 0 = d.8
-
-// #define SPI_SS      10    // PB2, pin 16
-// #define SPI_MOSI    11    // PB3, pin 17
-// #define SPI_MISO    12    // PB4, pin 18
-// #define SPI_SCK     13    // PB5, pin 19
+// 86Duino
+#define RFM_IRQ     42
 
 #endif 
 
@@ -263,7 +257,8 @@ void rf12_spiInit () {
 	io_outpb(SPI_IOaddr + 4, 0x01); // set CS = high
   
 	// Set SS to high so a connected chip will be "deselected" by default
-	digitalWrite(SS, HIGH);
+	pinMode(cs_pin, OUTPUT);
+	digitalWrite(cs_pin, HIGH);
 	    
     // pinMode(RFM_IRQ, INPUT_PULLUP);
 }
@@ -311,7 +306,7 @@ static uint16_t rf12_xferSlow (uint16_t cmd) {
     // slow down to under 2.5 MHz
 
     digitalWrite(cs_pin, LOW);
-    uint16_t reply = rf12_byte(cmd >> 8) << 8;
+    uint16_t reply = (uint16_t)(rf12_byte(cmd >> 8)) << 8;
     reply |= rf12_byte(cmd);
     digitalWrite(cs_pin, HIGH);
 
@@ -488,7 +483,7 @@ static void rf12_recvStart () {
 /// @see http://jeelabs.org/2010/12/11/rf12-acknowledgements/
 uint8_t rf12_recvDone () {
     if (rxstate == TXRECV && (rxfill >= rf12_len + 5 || rxfill >= RF_MAX)) {
-        rxstate = TXIDLE;
+		rxstate = TXIDLE;
         if (rf12_len > RF12_MAXDATA)
             rf12_crc = 1; // force bad crc if packet length is invalid
         if (!(rf12_hdr & RF12_HDR_DST) || (nodeid & NODE_ID) == 31 ||
@@ -622,6 +617,11 @@ void rf12_sendWait (uint8_t mode) {
         */
 }
 
+
+long ReadWlanInterruptPin(void){
+	return mcpfau_ReadPIN1Input(0, 1);
+}
+
 /// @details
 /// Call this once with the node ID (0-31), frequency band (0-3), and
 /// optional group (0-255 for RFM12B, only 212 allowed for RFM12).
@@ -665,9 +665,8 @@ uint8_t rf12_initialize (uint8_t id, uint8_t band, uint8_t g, uint16_t f) {
     
     // wait until RFM12B is out of power-up reset, this takes several *seconds*
     rf12_xfer(RF_TXREG_WRITE); // in case we're still in OOK mode
-    while (digitalRead(RFM_IRQ) == 0)
+    while (ReadWlanInterruptPin() == 0)
         rf12_xfer(0x0000);
-        
     rf12_xfer(0x80C7 | (band << 4)); // EL (ena TX), EF (ena RX FIFO), 12.0pF 
     rf12_xfer(0xA000 + frequency); // 96-3960 freq range of values within band 
     rf12_xfer(0xC606); // approx 49.2 Kbps, i.e. 10000/29/(1+6) Kbps
@@ -720,7 +719,7 @@ uint8_t rf12_initialize (uint8_t id, uint8_t band, uint8_t g, uint16_t f) {
 */
 
     if ((nodeid & NODE_ID) != 0)
-        attachInterrupt(0, rf12_interrupt, CHANGE);
+        attachInterrupt(0, rf12_interrupt, LOW);
     else
         detachInterrupt(0);
 //#endif

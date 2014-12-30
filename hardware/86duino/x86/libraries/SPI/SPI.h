@@ -57,13 +57,13 @@ byte SPIClass::transfer(byte data) {
 }
 
 void SPIClass::attachInterrupt() {
-	//if(SPI_IOaddr == 0) return;
-	//io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) | 0x01);
+	if(SPI_IOaddr == 0) return;
+	io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) | 0x01);
 }
 
 void SPIClass::detachInterrupt() {
-	//if(SPI_IOaddr == 0) return;
-	//io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) & 0xFE);
+	if(SPI_IOaddr == 0) return;
+	io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) & 0xFE);
 }
 
 #endif

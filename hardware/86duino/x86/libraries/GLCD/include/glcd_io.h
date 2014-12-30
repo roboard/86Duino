@@ -38,7 +38,7 @@
 #include "common.h"
 #endif
 
-#include "include/ardio.h"    // these macros map arduino pins
+#include "include/arduino_io.h"    // these macros map arduino pins
 
 /*
  * Must set AVRIO modes before including avrio

@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "arduino.h"
-#include "usb.h"
+#include "Arduino.h"
+#include "USBCore.h"
 #include "USBAPI.h"
 #define USE_COMMON
 #include "common.h"

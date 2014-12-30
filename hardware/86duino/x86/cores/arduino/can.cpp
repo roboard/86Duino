@@ -245,7 +245,8 @@ DMPAPI(void *) CreateCANBus(int IO_Space)
 		goto WITHOUT_CANBUS_FAIL;
 		
 	can->InUse         = false;
-	can->TimeOut       = CAN_NO_TIMEOUT;
+	can->RxTimeOut     = CAN_NO_TIMEOUT;
+	can->TxTimeOut     = CAN_NO_TIMEOUT;
 	
 	can->BitTime       = CAN_BPS_1000K;
 	
@@ -551,13 +552,14 @@ DMPAPI(bool) can_SetBPS(void *vcan, unsigned long bps)
 	return true;
 }
 
-DMPAPI(void) can_SetTimeOut(void *vcan, unsigned long timeout)
+DMPAPI(void) can_SetTimeOut(void *vcan, unsigned long rx_timeout, unsigned long tx_timeout)
 {
 	CAN_Bus *can = (CAN_Bus *)vcan;
 	
 	if (can == NULL) { err_print((char*)"%s: CAN bus is null.\n", __FUNCTION__); return; }
 	
-	can->TimeOut = timeout;
+	can->RxTimeOut = rx_timeout;
+	can->TxTimeOut = tx_timeout;
 }
 
 DMPAPI(bool) can_AddIDFilter(void *vcan, int index, int ext_id, unsigned long filter, unsigned long mask)
@@ -840,10 +842,10 @@ DMPAPI(bool) can_Read(void *vcan, CANFrame *pack)
 		return false;
 	}
 	
-	if (can->TimeOut != CAN_NO_TIMEOUT)
+	if (can->RxTimeOut != CAN_NO_TIMEOUT)
 	{
 		pretime = timer_nowtime();
-		while (QueueEmpty(can->rcvd) && (timer_nowtime() - pretime) < can->TimeOut); 
+		while (QueueEmpty(can->rcvd) && (timer_nowtime() - pretime) < can->RxTimeOut); 
 		
 		if (QueueEmpty(can->rcvd)) {
 			if (CAN_TIMEOUT_DEBUG)
@@ -912,10 +914,10 @@ DMPAPI(bool) can_Write(void *vcan, CANFrame *pack)
 		return false;
 	}
 	
-	if (can->TimeOut != CAN_NO_TIMEOUT)
+	if (can->TxTimeOut != CAN_NO_TIMEOUT)
 	{
 		pretime = timer_nowtime();
-		while (QueueFull(can->xmit) && (timer_nowtime() - pretime) < can->TimeOut); 
+		while (QueueFull(can->xmit) && (timer_nowtime() - pretime) < can->TxTimeOut); 
 		
 		if (QueueFull(can->xmit)) {
 			if (CAN_TIMEOUT_DEBUG)

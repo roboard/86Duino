@@ -21,7 +21,7 @@
 */
 
 #include "SwsSock.h"
-#include "ENUdp.h"
+#include "EthernetUdp.h"
 
 #include "Dns.h"
 #include <string.h>

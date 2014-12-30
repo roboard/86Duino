@@ -46,7 +46,7 @@ void Vortex86CAN::begin(uint32_t speed)
 	
 	if ((can = com_Init(CAN_BUS)) == NULL) return;
 	com_SetBPS(can, speed);
-	com_SetTimeOut(can, 1000UL);
+	com_SetTimeOut(can, 0L, 500L);
 	com_EnableBypass(can);
 }
 

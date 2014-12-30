@@ -46,7 +46,7 @@
 */
 
 #include "UTFT.h"
-#include "parduino.h"
+#include "pins_arduino.h"
 #include "io.h"
 
 #if defined __86DUINO_ONE
@@ -221,79 +221,79 @@ void UTFT::InitLCD(byte orientation)
 	switch(display_model)
 	{
 #ifndef DISABLE_HX8347A
-	#include "tftdrv/hx8347a/initlcd.h"
+	#include "tft_drivers/hx8347a/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9327
-	#include "tftdrv/ili9327/initlcd.h"
+	#include "tft_drivers/ili9327/initlcd.h"
 #endif
 #ifndef DISABLE_SSD1289
-	#include "tftdrv/ssd1289/initlcd.h"
+	#include "tft_drivers/ssd1289/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9325C
-	#include "tftdrv/ili9325c/initlcd.h"
+	#include "tft_drivers/ili9325c/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9325D
-	#include "tftdrv/ili9325d/default/initlcd.h"
+	#include "tft_drivers/ili9325d/default/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9325D_ALT
-	#include "tftdrv/ili9325d/alt/initlcd.h"
+	#include "tft_drivers/ili9325d/alt/initlcd.h"
 #endif
 #ifndef DISABLE_HX8340B_8
-	#include "tftdrv/hx8340b/8/initlcd.h"
+	#include "tft_drivers/hx8340b/8/initlcd.h"
 #endif
 #ifndef DISABLE_HX8340B_S
-	#include "tftdrv/hx8340b/s/initlcd.h"
+	#include "tft_drivers/hx8340b/s/initlcd.h"
 #endif
 #ifndef DISABLE_ST7735
-	#include "tftdrv/st7735/initlcd.h"
+	#include "tft_drivers/st7735/initlcd.h"
 #endif
 #ifndef DISABLE_PCF8833
-	#include "tftdrv/pcf8833/initlcd.h"
+	#include "tft_drivers/pcf8833/initlcd.h"
 #endif
 #ifndef DISABLE_S1D19122
-	#include "tftdrv/s1d19122/initlcd.h"
+	#include "tft_drivers/s1d19122/initlcd.h"
 #endif
 #ifndef DISABLE_HX8352A
-	#include "tftdrv/hx8352a/initlcd.h"
+	#include "tft_drivers/hx8352a/initlcd.h"
 #endif
 #ifndef DISABLE_SSD1963_480
-	#include "tftdrv/ssd1963/480/initlcd.h"
+	#include "tft_drivers/ssd1963/480/initlcd.h"
 #endif
 #ifndef DISABLE_SSD1963_800
-	#include "tftdrv/ssd1963/800/initlcd.h"
+	#include "tft_drivers/ssd1963/800/initlcd.h"
 #endif
 #ifndef DISABLE_SSD1963_800_ALT
-	#include "tftdrv/ssd1963/800alt/initlcd.h"
+	#include "tft_drivers/ssd1963/800alt/initlcd.h"
 #endif
 #ifndef DISABLE_S6D1121
-	#include "tftdrv/s6d1121/initlcd.h"
+	#include "tft_drivers/s6d1121/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9320
-	#include "tftdrv/ili9320/initlcd.h"
+	#include "tft_drivers/ili9320/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9481
-	#include "tftdrv/ili9481/initlcd.h"
+	#include "tft_drivers/ili9481/initlcd.h"
 #endif
 #ifndef DISABLE_S6D0164
-	#include "tftdrv/s6d0164/initlcd.h"
+	#include "tft_drivers/s6d0164/initlcd.h"
 #endif
 #ifndef DISABLE_ST7735S
-	#include "tftdrv/st7735s/initlcd.h"
+	#include "tft_drivers/st7735s/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9341_S4P
-	#include "tftdrv/ili9341/s4p/initlcd.h"
+	#include "tft_drivers/ili9341/s4p/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9341_S5P
-	#include "tftdrv/ili9341/s5p/initlcd.h"
+	#include "tft_drivers/ili9341/s5p/initlcd.h"
 #endif
 #ifndef DISABLE_R61581
-	#include "tftdrv/r61581/initlcd.h"
+	#include "tft_drivers/r61581/initlcd.h"
 #endif
 #ifndef DISABLE_ILI9486
-	#include "tftdrv/ili9486/initlcd.h"
+	#include "tft_drivers/ili9486/initlcd.h"
 #endif
 #ifndef DISABLE_CPLD
-	#include "tftdrv/cpld/initlcd.h"
+	#include "tft_drivers/cpld/initlcd.h"
 #endif
 	}
 
@@ -320,79 +320,79 @@ void UTFT::setXY(word x1, word y1, word x2, word y2)
 	switch(display_model)
 	{
 #ifndef DISABLE_HX8347A
-	#include "tftdrv/hx8347a/setxy.h"
+	#include "tft_drivers/hx8347a/setxy.h"
 #endif
 #ifndef DISABLE_HX8352A
-	#include "tftdrv/hx8352a/setxy.h"
+	#include "tft_drivers/hx8352a/setxy.h"
 #endif
 #ifndef DISABLE_ILI9327
-	#include "tftdrv/ili9327/setxy.h"
+	#include "tft_drivers/ili9327/setxy.h"
 #endif
 #ifndef DISABLE_SSD1289
-	#include "tftdrv/ssd1289/setxy.h"
+	#include "tft_drivers/ssd1289/setxy.h"
 #endif
 #ifndef DISABLE_ILI9325C
-	#include "tftdrv/ili9325c/setxy.h"
+	#include "tft_drivers/ili9325c/setxy.h"
 #endif
 #ifndef DISABLE_ILI9325D
-	#include "tftdrv/ili9325d/default/setxy.h"
+	#include "tft_drivers/ili9325d/default/setxy.h"
 #endif
 #ifndef DISABLE_ILI9325D_ALT
-	#include "tftdrv/ili9325d/alt/setxy.h"
+	#include "tft_drivers/ili9325d/alt/setxy.h"
 #endif
 #ifndef DISABLE_HX8340B_8
-	#include "tftdrv/hx8340b/8/setxy.h"
+	#include "tft_drivers/hx8340b/8/setxy.h"
 #endif
 #ifndef DISABLE_HX8340B_S
-	#include "tftdrv/hx8340b/s/setxy.h"
+	#include "tft_drivers/hx8340b/s/setxy.h"
 #endif
 #ifndef DISABLE_ST7735
-	#include "tftdrv/st7735/setxy.h"
+	#include "tft_drivers/st7735/setxy.h"
 #endif
 #ifndef DISABLE_S1D19122
-	#include "tftdrv/s1d19122/setxy.h"
+	#include "tft_drivers/s1d19122/setxy.h"
 #endif
 #ifndef DISABLE_PCF8833
-	#include "tftdrv/pcf8833/setxy.h"
+	#include "tft_drivers/pcf8833/setxy.h"
 #endif
 #ifndef DISABLE_SSD1963_480
-	#include "tftdrv/ssd1963/480/setxy.h"
+	#include "tft_drivers/ssd1963/480/setxy.h"
 #endif
 #ifndef DISABLE_SSD1963_800
-	#include "tftdrv/ssd1963/800/setxy.h"
+	#include "tft_drivers/ssd1963/800/setxy.h"
 #endif
 #ifndef DISABLE_SSD1963_800_ALT
-	#include "tftdrv/ssd1963/800alt/setxy.h"
+	#include "tft_drivers/ssd1963/800alt/setxy.h"
 #endif
 #ifndef DISABLE_S6D1121
-	#include "tftdrv/s6d1121/setxy.h"
+	#include "tft_drivers/s6d1121/setxy.h"
 #endif
 #ifndef DISABLE_ILI9320
-	#include "tftdrv/ili9320/setxy.h"
+	#include "tft_drivers/ili9320/setxy.h"
 #endif
 #ifndef DISABLE_ILI9481
-	#include "tftdrv/ili9481/setxy.h"
+	#include "tft_drivers/ili9481/setxy.h"
 #endif
 #ifndef DISABLE_S6D0164
-	#include "tftdrv/s6d0164/setxy.h"
+	#include "tft_drivers/s6d0164/setxy.h"
 #endif
 #ifndef DISABLE_ST7735S
-	#include "tftdrv/st7735s/setxy.h"
+	#include "tft_drivers/st7735s/setxy.h"
 #endif
 #ifndef DISABLE_ILI9341_S4P
-	#include "tftdrv/ili9341/s4p/setxy.h"
+	#include "tft_drivers/ili9341/s4p/setxy.h"
 #endif
 #ifndef DISABLE_ILI9341_S5P
-	#include "tftdrv/ili9341/s5p/setxy.h"
+	#include "tft_drivers/ili9341/s5p/setxy.h"
 #endif
 #ifndef DISABLE_R61581
-	#include "tftdrv/r61581/setxy.h"
+	#include "tft_drivers/r61581/setxy.h"
 #endif
 #ifndef DISABLE_ILI9486
-	#include "tftdrv/ili9486/setxy.h"
+	#include "tft_drivers/ili9486/setxy.h"
 #endif
 #ifndef DISABLE_CPLD
-	#include "tftdrv/cpld/setxy.h"
+	#include "tft_drivers/cpld/setxy.h"
 #endif
 	}
 }

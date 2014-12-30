@@ -2,10 +2,7 @@
 
 /*
   Part of the Processing project - http://processing.org
-   and of the 86Duino project - http://www.86duino.com/
 
-  Copyright (c) 2013    Oswald Kuo <oswald@dmp.com.tw>
-                        Android Lin <acen@dmp.com.tw>
   Copyright (c) 2004-10 Ben Fry and Casey Reas
   Copyright (c) 2001-04 Massachusetts Institute of Technology
 
@@ -30,17 +27,28 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.*;
 
+import org.apache.commons.logging.impl.LogFactoryImpl;
+import org.apache.commons.logging.impl.NoOpLog;
+
+import cc.arduino.packages.DiscoveryManager;
+import processing.app.debug.TargetBoard;
 import processing.app.debug.TargetPackage;
 import processing.app.debug.TargetPlatform;
+import processing.app.debug.TargetPlatformException;
 import processing.app.helpers.FileUtils;
-import processing.app.helpers.Maps;
 import processing.app.helpers.PreferencesMap;
 import processing.app.helpers.filefilters.OnlyDirs;
 import processing.app.helpers.filefilters.OnlyFilesWithExtension;
-import processing.app.javax.swing.filechooser.FileNameExtensionFilter;import processing.app.tools.MapWithSubkeys;
+import processing.app.javax.swing.filechooser.FileNameExtensionFilter;
+import processing.app.packages.Library;
+import processing.app.packages.LibraryList;
+import processing.app.tools.MenuScroller;
 import processing.app.tools.ZipDeflater;
 import processing.core.*;
 import static processing.app.I18n._;
@@ -53,10 +61,10 @@ import static processing.app.I18n._;
  * files and images, etc) that comes from that.
  */
 public class Base {
-  public static final int REVISION = 151;
-  public static final int REVISION86 = 106;
+  public static final int REVISION = 158;
+  public static final int REVISION86 = 207;
   /** This might be replaced by main() if there's a lib/version.txt file. */
-  static String VERSION_NAME = "0151";
+  static String VERSION_NAME = "207";
   /** Set true if this a proper release rather than a numbered revision. */
   static public boolean RELEASE = false;
 
@@ -75,6 +83,8 @@ public class Base {
   }
   static Platform platform;
 
+  private static DiscoveryManager discoveryManager = new DiscoveryManager();
+  
   static private boolean commandLine;
 
   // A single instance of the preferences window
@@ -93,10 +103,10 @@ public class Base {
   static private List<File> librariesFolders;
 
   // maps library name to their library folder
-  static private Map<String, File> libraries;
+  static private LibraryList libraries;
 
   // maps #included files to their library folder
-  static Map<String, File> importToLibraryTable;
+  static Map<String, Library> importToLibraryTable;
 
   // classpath for all known libraries for p5
   // (both those in the p5/libs folder and those with lib subfolders
@@ -108,25 +118,60 @@ public class Base {
   // Location for untitled items
   static File untitledFolder;
 
+  // Current directory to use for relative paths specified on the
+  // commandline
+  static String currentDirectory = System.getProperty("user.dir");
+
   // p5 icon for the window
 //  static Image icon;
 
 //  int editorCount;
   List<Editor> editors = Collections.synchronizedList(new ArrayList<Editor>());
   Editor activeEditor;
+  private final Map<String, Map<String, Object>> boardsViaNetwork;
 
+  static File portableFolder = null;
+  static final String portableSketchbookFolder = "sketchbook";
 
   static public void main(String args[]) throws Exception {
+    System.setProperty(LogFactoryImpl.LOG_PROPERTY, NoOpLog.class.getCanonicalName());
+    Logger.getLogger("javax.jmdns").setLevel(Level.OFF);
+
     initPlatform();
 
+    // Portable folder
+    portableFolder = getContentFile("portable");
+    if (!portableFolder.exists())
+      portableFolder = null;
+
+    String preferencesFile = null;
+
+    // Do a first pass over the commandline arguments, the rest of them
+    // will be processed by the Base constructor. Note that this loop
+    // does not look at the last element of args, to prevent crashing
+    // when no parameter was specified to an option. Later, Base() will
+    // then show an error for these.
+    for (int i = 0; i < args.length - 1; i++) {
+      if (args[i].equals("--preferences-file")) {
+        ++i;
+        preferencesFile = args[i];
+        continue;
+      }
+      if (args[i].equals("--curdir")) {
+        i++;
+        currentDirectory = args[i];
+        continue;
+      }
+    }
+
     // run static initialization that grabs all the prefs
-    Preferences.init(null);
+    Preferences.init(absoluteFile(preferencesFile));
 
     try {
       File versionFile = getContentFile("lib/version.txt");
       if (versionFile.exists()) {
         String version = PApplet.loadStrings(versionFile)[0];
-        if (!version.equals(VERSION_NAME)) {
+        if (!version.equals(VERSION_NAME) && !version.equals("${version}")) {
           String[] token = version.split(" ");
 		  VERSION_NAME = _(token[0]);
 		  for(int i=1; i<token.length; i++)
@@ -137,6 +182,10 @@ public class Base {
     } catch (Exception e) {
       e.printStackTrace();
     }
+
+    // help 3rd party installers find the correct hardware path
+    Preferences.set("last.ide." + VERSION_NAME + ".hardwarepath", getHardwarePath());
+    Preferences.set("last.ide." + VERSION_NAME + ".daterun", "" + (new Date()).getTime() / 1000);
 
 //    if (System.getProperty("mrj.version") != null) {
 //      //String jv = System.getProperty("java.version");
@@ -246,9 +295,26 @@ public class Base {
     }
   }
 
+  // Returns a File object for the given pathname. If the pathname
+  // is not absolute, it is interpreted relative to the current
+  // directory when starting the IDE (which is not the same as the
+  // current working directory!).
+  static public File absoluteFile(String path) {
+    if (path == null) return null;
+
+    File file = new File(path);
+    if (!file.isAbsolute()) {
+      file = new File(currentDirectory, path);
+    }
+    return file;
+  }
+
+  protected static enum ACTION { GUI, NOOP, VERIFY, UPLOAD, GET_PREF };
 
   public Base(String[] args) throws Exception {
     platform.init(this);
+
+    this.boardsViaNetwork = new ConcurrentHashMap<String, Map<String, Object>>();
 
     // Get the sketchbook path, and make sure it's set properly
     String sketchbookPath = Preferences.get("sketchbook.path");
@@ -256,14 +322,18 @@ public class Base {
     // If a value is at least set, first check to see if the folder exists.
     // If it doesn't, warn the user that the sketchbook folder is being reset.
     if (sketchbookPath != null) {
-      File skechbookFolder = new File(sketchbookPath);
-      if (!skechbookFolder.exists()) {
+      File sketchbookFolder;
+      if (portableFolder != null)
+        sketchbookFolder = new File(portableFolder, sketchbookPath);
+      else
+        sketchbookFolder = Base.absoluteFile(sketchbookPath);
+      if (!sketchbookFolder.exists()) {
         Base.showWarning(_("Sketchbook folder disappeared"),
-                         _("The sketchbook folder no longer exists.\n" +
-                           "86Duino will switch to the default sketchbook\n" +
-                           "location, and create a new sketchbook folder if\n" +
-                           "necessary. 86Duino will then stop talking about\n" +
-                           "himself in the third person."), null);
+                _("The sketchbook folder no longer exists.\n" +
+                        "86Duino will switch to the default sketchbook\n" +
+                        "location, and create a new sketchbook folder if\n" +
+                        "necessary. 86Duino will then stop talking about\n" +
+                        "himself in the third person."), null);
         sketchbookPath = null;
       }
     }
@@ -271,7 +341,10 @@ public class Base {
     // If no path is set, get the default sketchbook folder for this platform
     if (sketchbookPath == null) {
       File defaultFolder = getDefaultSketchbookFolder();
-      Preferences.set("sketchbook.path", defaultFolder.getAbsolutePath());
+      if (portableFolder != null)
+        Preferences.set("sketchbook.path", portableSketchbookFolder);
+      else
+        Preferences.set("sketchbook.path", defaultFolder.getAbsolutePath());
       if (!defaultFolder.exists()) {
         defaultFolder.mkdirs();
       }
@@ -280,116 +353,285 @@ public class Base {
     packages = new TreeMap<String, TargetPackage>();
     loadHardware(getHardwareFolder());
     loadHardware(getSketchbookHardwareFolder());
+    if (packages.size() == 0) {
+      System.out.println(_("No valid configured cores found! Exiting..."));
+      System.exit(3);
+    }
+    
     // Setup board-dependent variables.
     onBoardOrPortChange();
 
-    boolean opened = false;
-    boolean doUpload = false;
-    boolean doVerify = false;
-    boolean doVerbose = false;
-    String selectBoard = null;
-    String selectPort = null;
+    ACTION action = ACTION.GUI;
+    boolean doVerboseBuild = false;
+    boolean doVerboseUpload = false;
+    boolean forceSavePrefs = false;
+    String getPref = null;
+    List<String> filenames = new LinkedList<String>();
+
+    // Map of possible actions and corresponding options
+    final Map<String, ACTION> actions = new HashMap<String, ACTION>();
+    actions.put("--verify", ACTION.VERIFY);
+    actions.put("--upload", ACTION.UPLOAD);
+    actions.put("--get-pref", ACTION.GET_PREF);
+
     // Check if any files were passed in on the command line
     for (int i = 0; i < args.length; i++) {
-      if (args[i].equals("--upload")) {
-        doUpload = true;
-        continue;
-      }
-      if (args[i].equals("--verify")) {
-        doVerify = true;
+      ACTION a = actions.get(args[i]);
+      if (a != null) {
+        if (action != ACTION.GUI && action != ACTION.NOOP) {
+          String[] valid = actions.keySet().toArray(new String[0]);
+          String mess = I18n.format(_("Can only pass one of: {0}"), PApplet.join(valid, ", "));
+          showError(null, mess, 3);
+        }
+        if (a == ACTION.GET_PREF) {
+          i++;
+          if (i >= args.length)
+            showError(null, _("Argument required for --get-pref"), 3);
+          getPref = args[i];
+        }
+        action = a;
         continue;
       }
       if (args[i].equals("--verbose") || args[i].equals("-v")) {
-        doVerbose = true;
+        doVerboseBuild = true;
+        doVerboseUpload = true;
+        if (action == ACTION.GUI)
+          action = ACTION.NOOP;
+        continue;
+      }
+      if (args[i].equals("--verbose-build")) {
+        doVerboseBuild = true;
+        if (action == ACTION.GUI)
+          action = ACTION.NOOP;
+        continue;
+      }
+      if (args[i].equals("--verbose-upload")) {
+        doVerboseUpload = true;
+        if (action == ACTION.GUI)
+          action = ACTION.NOOP;
         continue;
       }
       if (args[i].equals("--board")) {
         i++;
-        if (i < args.length)
-          selectBoard = args[i];
+        if (i >= args.length)
+          showError(null, _("Argument required for --board"), 3);
+        processBoardArgument(args[i]);
+        if (action == ACTION.GUI)
+          action = ACTION.NOOP;
         continue;
       }
       if (args[i].equals("--port")) {
         i++;
-        if (i < args.length)
-          selectPort = args[i];
+        if (i >= args.length)
+          showError(null, _("Argument required for --port"), 3);
+        Base.selectSerialPort(args[i]);
+        if (action == ACTION.GUI)
+          action = ACTION.NOOP;
         continue;
       }
-      String path = args[i];
+      if (args[i].equals("--curdir")) {
+        i++;
+        if (i >= args.length)
+          showError(null, _("Argument required for --curdir"), 3);
+        // Argument should be already processed by Base.main(...)
+        continue;
+      }
+      if (args[i].equals("--pref")) {
+        i++;
+        if (i >= args.length)
+          showError(null, _("Argument required for --pref"), 3);
+        processPrefArgument(args[i]);
+        if (action == ACTION.GUI)
+          action = ACTION.NOOP;
+        continue;
+      }
+      if (args[i].equals("--save-prefs")) {
+        forceSavePrefs = true;
+        continue;
+      }
+      if (args[i].equals("--preferences-file")) {
+        i++;
+        if (i >= args.length)
+          showError(null, _("Argument required for --preferences-file"), 3);
+        // Argument should be already processed by Base.main(...)
+        continue;
+      }
+      if (args[i].startsWith("--"))
+        showError(null, I18n.format(_("unknown option: {0}"), args[i]), 3);
+
+      filenames.add(args[i]);
+    }
+
+    if ((action == ACTION.UPLOAD || action == ACTION.VERIFY) && filenames.size() != 1)
+      showError(null, _("Must specify exactly one sketch file"), 3);
+
+    if ((action == ACTION.NOOP || action == ACTION.GET_PREF) && filenames.size() != 0)
+      showError(null, _("Cannot specify any sketch files"), 3);
+
+    if ((action != ACTION.UPLOAD && action != ACTION.VERIFY) && (doVerboseBuild || doVerboseUpload))
+      showError(null, _("--verbose, --verbose-upload and --verbose-build can only be used together with --verify or --upload"), 3);
+
+    for (String path: filenames) {
+      // Correctly resolve relative paths
+      File file = absoluteFile(path);
+
       // Fix a problem with systems that use a non-ASCII languages. Paths are
       // being passed in with 8.3 syntax, which makes the sketch loader code
       // unhappy, since the sketch folder naming doesn't match up correctly.
       // http://dev.processing.org/bugs/show_bug.cgi?id=1089
       if (isWindows()) {
         try {
-          File file = new File(args[i]);
-          path = file.getCanonicalPath();
+          file = file.getCanonicalFile();
         } catch (IOException e) {
           e.printStackTrace();
         }
       }
-      if (handleOpen(path) != null) {
-        opened = true;
+
+      boolean showEditor = (action == ACTION.GUI);
+      if (!forceSavePrefs)
+        Preferences.setDoSave(showEditor);
+      if (handleOpen(file, nextEditorLocation(), showEditor) == null) {
+        String mess = I18n.format(_("Failed to open sketch: \"{0}\""), path);
+        // Open failure is fatal in upload/verify mode
+        if (action == ACTION.VERIFY || action == ACTION.UPLOAD)
+          showError(null, mess, 2);
+        else
+          showWarning(null, mess, null);
       }
     }
 
-    if (doUpload || doVerify) {
-      if (!opened) {
-        System.out.println(_("Can't open source sketch!"));
-        System.exit(2);
-      }
-      Thread.sleep(2000);
-      // Set verbosity for command line build
-      Preferences.set("build.verbose", "" + doVerbose);
-      Preferences.set("upload.verbose", "" + doVerbose);
+    // Save the preferences. For GUI mode, this happens in the quit
+    // handler, but for other modes we should also make sure to save
+    // them.
+    Preferences.save();
 
-      // Do board selection if requested
-      Editor editor = editors.get(0);
-      if (selectBoard != null)
-        selectBoard(selectBoard, editor);
-      
-      if (doUpload) {
-        // Build and upload
-        if (selectPort != null)
-          editor.selectSerialPort(selectPort);
-        editor.exportHandler.run();
-      } else {
-        // Build only
-        editor.runHandler.run();
-      }
-      
-      // Error during build or upload
-      int res = editor.status.mode;
-      if (res == EditorStatus.ERR)
-        System.exit(1);
-      
-      // No errors exit gracefully
-      System.exit(0);
-    }
+    switch (action) {
+      case VERIFY:
+      case UPLOAD:
+        // Set verbosity for command line build
+        Preferences.set("build.verbose", "" + doVerboseBuild);
+        Preferences.set("upload.verbose", "" + doVerboseUpload);
 
-    // Check if there were previously opened sketches to be restored
-    if (restoreSketches())
-      opened = true;
+        // Make sure these verbosity preferences are only for the
+        // current session
+        Preferences.setDoSave(false);
 
-    // Create a new empty window (will be replaced with any files to be opened)
-    if (!opened) {
-      handleNew();
-    }
+        Editor editor = editors.get(0);
 
-    // Check for updates
-    if (Preferences.getBoolean("update.check")) {
-      new UpdateCheck(this);
+        if (action == ACTION.UPLOAD) {
+          // Build and upload
+          editor.exportHandler.run();
+        } else {
+          // Build only
+          editor.runHandler.run();
+        }
+
+        // Error during build or upload
+        int res = editor.status.mode;
+        if (res == EditorStatus.ERR)
+          System.exit(1);
+
+        // No errors exit gracefully
+        System.exit(0);
+        break;
+      case GUI:
+        // Check if there were previously opened sketches to be restored
+        restoreSketches();
+
+        // Create a new empty window (will be replaced with any files to be opened)
+        if (editors.isEmpty()) {
+          handleNew();
+        }
+
+        // Check for updates
+        if (Preferences.getBoolean("update.check")) {
+          new UpdateCheck(this);
+        }
+        break;
+      case NOOP:
+        // Do nothing (intended for only changing preferences)
+        System.exit(0);
+        break;
+      case GET_PREF:
+        String value = Preferences.get(getPref, null);
+        if (value != null) {
+          System.out.println(value);
+          System.exit(0);
+        } else {
+          System.exit(4);
+        }
+        break;
     }
   }
 
+  protected void processBoardArgument(String selectBoard) {
+    // No board selected? Nothing to do
+    if (selectBoard == null)
+        return;
+
+    String[] split = selectBoard.split(":", 4);
+
+    if (split.length < 3) {
+      showError(null, I18n.format(_("{0}: Invalid board name, it should be of the form \"package:arch:board\" or \"package:arch:board:options\""), selectBoard), 3);
+    }
+
+    TargetPackage targetPackage = getTargetPackage(split[0]);
+    if (targetPackage == null) {
+      showError(null, I18n.format(_("{0}: Unknown package"), split[0]), 3);
+    }
+
+    TargetPlatform targetPlatform = targetPackage.get(split[1]);
+    if (targetPlatform == null) {
+      showError(null, I18n.format(_("{0}: Unknown architecture"), split[1]), 3);
+    }
+
+    TargetBoard targetBoard = targetPlatform.getBoard(split[2]);
+    if (targetBoard == null) {
+      showError(null, I18n.format(_("{0}: Unknown board"), split[2]), 3);
+    }
+
+    selectBoard(targetBoard);
+
+    if (split.length > 3) {
+      String[] options = split[3].split(",");
+      for (String option : options) {
+        String[] keyValue = option.split("=", 2);
+
+        if (keyValue.length != 2)
+            showError(null, I18n.format(_("{0}: Invalid option, should be of the form \"name=value\""), option, targetBoard.getId()), 3);
+        String key = keyValue[0].trim();
+        String value = keyValue[1].trim();
+
+        if (!targetBoard.hasMenu(key))
+          showError(null, I18n.format(_("{0}: Invalid option for board \"{1}\""), key, targetBoard.getId()), 3);
+        if (targetBoard.getMenuLabel(key, value) == null)
+          showError(null, I18n.format(_("{0}: Invalid option for \"{1}\" option for board \"{2}\""), value, key, targetBoard.getId()), 3);
+
+        Preferences.set("custom_" + key, targetBoard.getId() + "_" + value);
+      }
+    }
+  }
+
+  protected void processPrefArgument(String arg) {
+    String[] split = arg.split("=", 2);
+    if (split.length != 2 || split[0].isEmpty())
+      showError(null, I18n.format(_("{0}: Invalid argument to --pref, should be of the form \"pref=value\""), arg), 3);
+
+    Preferences.set(split[0], split[1]);
+  }
+
+  public Map<String, Map<String, Object>> getBoardsViaNetwork() {
+    return new HashMap<String, Map<String, Object>>(boardsViaNetwork);
+  }
 
   /**
    * Post-constructor setup for the editor area. Loads the last
    * sketch that was used (if any), and restores other Editor settings.
    * The complement to "storePreferences", this is called when the
    * application is first launched.
+   * @throws Exception 
    */
-  protected boolean restoreSketches() {
+  protected boolean restoreSketches() throws Exception {
     // figure out window placement
 
     Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
@@ -424,6 +666,14 @@ public class Base {
     int opened = 0;
     for (int i = 0; i < count; i++) {
       String path = Preferences.get("last.sketch" + i + ".path");
+      if (portableFolder != null) {
+        File absolute = new File(portableFolder, path);
+        try {
+          path = absolute.getCanonicalPath();
+        } catch (IOException e) {
+          // path unchanged.
+        }
+      }
       int[] location;
       if (windowPositionValid) {
         String locationStr = Preferences.get("last.sketch" + i + ".location");
@@ -432,7 +682,7 @@ public class Base {
         location = nextEditorLocation();
       }
       // If file did not exist, null will be returned for the Editor
-      if (handleOpen(path, location) != null) {
+      if (handleOpen(new File(path), location, true) != null) {
         opened++;
       }
     }
@@ -462,6 +712,11 @@ public class Base {
           !editor.getSketch().isModified()) {
         continue;
       }
+      if (portableFolder != null) {
+        path = FileUtils.relativePath(portableFolder.toString(), path);
+        if (path == null)
+          continue;
+      }
       Preferences.set("last.sketch" + index + ".path", path);
 
       int[] location = editor.getPlacement();
@@ -480,6 +735,11 @@ public class Base {
     String untitledPath = untitledFolder.getAbsolutePath();
     if (path.startsWith(untitledPath)) {
       path = "";
+    } else
+    if (portableFolder != null) {
+      path = FileUtils.relativePath(portableFolder.toString(), path);
+      if (path == null)
+        path = "";
     }
     Preferences.set("last.sketch" + index + ".path", path);
   }
@@ -520,11 +780,11 @@ public class Base {
 
 
   protected int[] nextEditorLocation() {
-    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
     int defaultWidth = Preferences.getInteger("editor.window.width.default");
     int defaultHeight = Preferences.getInteger("editor.window.height.default");
 
     if (activeEditor == null) {
+      Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getBounds();
       // If no current active editor, use default placement
       return new int[] {
           (screen.width - defaultWidth) / 2,
@@ -533,13 +793,15 @@ public class Base {
       };
 
     } else {
+      Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+
       // With a currently active editor, open the new window
       // using the same dimensions, but offset slightly.
       synchronized (editors) {
         final int OVER = 50;
         // In release 0160, don't
         //location = activeEditor.getPlacement();
-        Editor lastOpened = editors.get(editors.size() - 1);
+        Editor lastOpened = activeEditor;
         int[] location = lastOpened.getPlacement();
         // Just in case the bounds for that window are bad
         location[0] += OVER;
@@ -578,7 +840,7 @@ public class Base {
    * @param shift whether shift is pressed, which will invert prompt setting
    * @param noPrompt disable prompt, no matter the setting
    */
-  protected String createNewUntitled() throws IOException {
+  protected File createNewUntitled() throws IOException {
     File newbieDir = null;
     String newbieName = null;
 
@@ -621,19 +883,23 @@ public class Base {
 
     // Make an empty pde file
     File newbieFile = new File(newbieDir, newbieName + ".ino");
-    new FileOutputStream(newbieFile);  // create the file
-    return newbieFile.getAbsolutePath();
+    if (!newbieFile.createNewFile()) {
+      throw new IOException();
+    }
+    FileUtils.copyFile(new File(getContentFile("examples"), "01.Basics" + File.separator + "BareMinimum" + File.separator + "BareMinimum.ino"), newbieFile);
+    return newbieFile;
   }
 
 
   /**
    * Create a new untitled document in a new sketch window.
+   * @throws Exception 
    */
-  public void handleNew() {
+  public void handleNew() throws Exception {
     try {
-      String path = createNewUntitled();
-      if (path != null) {
-        Editor editor = handleOpen(path);
+      File file = createNewUntitled();
+      if (file != null) {
+        Editor editor = handleOpen(file);
         editor.untitled = true;
       }
 
@@ -662,9 +928,9 @@ public class Base {
 
   protected void handleNewReplaceImpl() {
     try {
-      String path = createNewUntitled();
-      if (path != null) {
-        activeEditor.handleOpenInternal(path);
+      File file = createNewUntitled();
+      if (file != null) {
+        activeEditor.handleOpenInternal(file);
         activeEditor.untitled = true;
       }
 //      return true;
@@ -680,14 +946,14 @@ public class Base {
    * Open a sketch, replacing the sketch in the current window.
    * @param path Location of the primary pde file for the sketch.
    */
-  public void handleOpenReplace(String path) {
+  public void handleOpenReplace(File file) {
     if (!activeEditor.checkModified()) {
       return;  // sketch was modified, and user canceled
     }
     // Close the running window, avoid window boogers with multiple sketches
     activeEditor.internalCloseRunner();
 
-    boolean loaded = activeEditor.handleOpenInternal(path);
+    boolean loaded = activeEditor.handleOpenInternal(file);
     if (!loaded) {
       // replace the document without checking if that's ok
       handleNewReplaceImpl();
@@ -697,56 +963,51 @@ public class Base {
 
   /**
    * Prompt for a sketch to open, and open it in a new window.
+   * @throws Exception 
    */
-  public void handleOpenPrompt() {
+  public void handleOpenPrompt() throws Exception {
     // get the frontmost window frame for placing file dialog
-    FileDialog fd = new FileDialog(activeEditor,
-                                   _("Open an 86Duino sketch..."),
-                                   FileDialog.LOAD);
-    // This was annoying people, so disabled it in 0125.
-    //fd.setDirectory(Preferences.get("sketchbook.path"));
-    //fd.setDirectory(getSketchbookPath());
+    JFileChooser fd = new JFileChooser(Preferences.get("last.folder", Base.getSketchbookFolder().getAbsolutePath()));
+    fd.setDialogTitle(_("Open an Arduino sketch..."));
+    fd.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    fd.setFileFilter(new FileNameExtensionFilter(_("Sketches (*.ino, *.pde)"), "ino", "pde"));
 
-    // Only show .pde files as eligible bachelors
-    fd.setFilenameFilter(new FilenameFilter() {
-        public boolean accept(File dir, String name) {
-          return name.toLowerCase().endsWith(".ino")
-              || name.toLowerCase().endsWith(".pde");
-        }
-      });
+    Dimension preferredSize = fd.getPreferredSize();
+    fd.setPreferredSize(new Dimension(preferredSize.width + 200, preferredSize.height + 200));
 
-    fd.setVisible(true);
+    int returnVal = fd.showOpenDialog(activeEditor);
 
-    String directory = fd.getDirectory();
-    String filename = fd.getFile();
+    if (returnVal != JFileChooser.APPROVE_OPTION) {
+      return;
+    }
 
-    // User canceled selection
-    if (filename == null) return;
+    File inputFile = fd.getSelectedFile();
 
-    File inputFile = new File(directory, filename);
-    handleOpen(inputFile.getAbsolutePath());
+    Preferences.set("last.folder", inputFile.getAbsolutePath());
+    handleOpen(inputFile);
   }
 
 
   /**
    * Open a sketch in a new window.
-   * @param path Path to the pde file for the sketch in question
+   * @param file File to open
    * @return the Editor object, so that properties (like 'untitled')
    *         can be set by the caller
+   * @throws Exception 
    */
-  public Editor handleOpen(String path) {
-    return handleOpen(path, nextEditorLocation());
+  public Editor handleOpen(File file) throws Exception {
+    return handleOpen(file, nextEditorLocation(), true);
   }
 
 
-  protected Editor handleOpen(String path, int[] location) {
+  protected Editor handleOpen(File file, int[] location, boolean showEditor) throws Exception {
 //    System.err.println("entering handleOpen " + path);
 
-    File file = new File(path);
     if (!file.exists()) return null;
 
 //    System.err.println("  editors: " + editors);
     // Cycle through open windows to make sure that it's not already open.
+    String path = file.getAbsolutePath();
     for (Editor editor : editors) {
       if (editor.getSketch().getMainFilePath().equals(path)) {
         editor.toFront();
@@ -770,7 +1031,7 @@ public class Base {
 //    }
 
 //    System.err.println("  creating new editor");
-    Editor editor = new Editor(this, path, location);
+    Editor editor = new Editor(this, file, location);
 //    Editor editor = null;
 //    try {
 //      editor = new Editor(this, path, location);
@@ -807,7 +1068,8 @@ public class Base {
 
     // now that we're ready, show the window
     // (don't do earlier, cuz we might move it based on a window being closed)
-    editor.setVisible(true);
+    if (showEditor)
+      editor.setVisible(true);
 
 //    System.err.println("exiting handleOpen");
 
@@ -862,7 +1124,11 @@ public class Base {
 
       // This will store the sketch count as zero
       editors.remove(editor);
-      Editor.serialMonitor.closeSerialPort();
+      try {
+        Editor.serialMonitor.close();
+      } catch (Exception e) {
+        //ignore
+      }
       storeSketches();
 
       // Save out the current prefs state
@@ -900,7 +1166,11 @@ public class Base {
     // If quit is canceled, this will be replaced anyway
     // by a later handleQuit() that is not canceled.
     storeSketches();
-    Editor.serialMonitor.closeSerialPort();
+    try {
+      Editor.serialMonitor.close();
+    } catch (Exception e) {
+      // ignore
+    }
 
     if (handleQuitEach()) {
       // make sure running sketches close before quitting
@@ -971,7 +1241,11 @@ public class Base {
     item = Editor.newJMenuItem(_("Open..."), 'O');
     item.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-          handleOpenPrompt();
+          try {
+            handleOpenPrompt();
+          } catch (Exception e1) {
+            e1.printStackTrace();
+          }
         }
       });
     menu.add(item);
@@ -1007,67 +1281,57 @@ public class Base {
     }
   }
 
-  public Map<String, File> getIDELibs() {
+  public LibraryList getIDELibs() {
     if (libraries == null)
-      return new HashMap<String, File>();
-    Map<String, File> ideLibs = new HashMap<String, File>(libraries);
-    for (String lib : libraries.keySet()) {
-      if (FileUtils.isSubDirectory(getSketchbookFolder(), libraries.get(lib)))
-        ideLibs.remove(lib);
-    }
-    return ideLibs;
+      return new LibraryList();
+    LibraryList res = new LibraryList(libraries);
+    res.removeAll(getUserLibs());
+    return res;
   }
 
-  public Map<String, File> getUserLibs() {
+  public LibraryList getUserLibs() {
     if (libraries == null)
-      return new HashMap<String, File>();
-    Map<String, File> userLibs = new HashMap<String, File>(libraries);
-    for (String lib : libraries.keySet()) {
-      if (!FileUtils.isSubDirectory(getSketchbookFolder(), libraries.get(lib)))
-        userLibs.remove(lib); 
-    }
-    return userLibs;
+      return new LibraryList();
+    return libraries.filterLibrariesInSubfolder(getSketchbookFolder());
   }
 
-  public void rebuildImportMenu(JMenu importMenu, final Editor editor) {
+  public void rebuildImportMenu(JMenu importMenu) {
     importMenu.removeAll();
 
     JMenuItem addLibraryMenuItem = new JMenuItem(_("Add Library..."));
     addLibraryMenuItem.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        Base.this.handleAddLibrary(editor);
+        Base.this.handleAddLibrary();
         Base.this.onBoardOrPortChange();
-        Base.this.rebuildImportMenu(Editor.importMenu, editor);
+        Base.this.rebuildImportMenu(Editor.importMenu);
         Base.this.rebuildExamplesMenu(Editor.examplesMenu);
       }
     });
     importMenu.add(addLibraryMenuItem);
-
+    importMenu.addSeparator();
+    
     // Split between user supplied libraries and IDE libraries
     TargetPlatform targetPlatform = getTargetPlatform();
+    
     if (targetPlatform != null) {
-      Map<String, File> ideLibs = getIDELibs();
-      Map<String, File> userLibs = getUserLibs();
+      LibraryList ideLibs = getIDELibs();
+      LibraryList userLibs = getUserLibs();
       try {
         // Find the current target. Get the platform, and then select the
         // correct name and core path.
         PreferencesMap prefs = targetPlatform.getPreferences();
-        String targetname = prefs.get("name");
-
-        if (false) {
-          // Hack to extract these words by gettext tool.
-          // These phrases are actually defined in the "platform.txt".
-          String notused = _("Arduino AVR Boards");
-          notused = _("Arduino ARM (32-bits) Boards");
+        if (prefs != null) {
+          String platformName = prefs.get("name");
+          if (platformName != null) {
+            JMenuItem platformItem = new JMenuItem(_(platformName));
+            platformItem.setEnabled(false);
+            importMenu.add(platformItem);
+          }
         }
-
-        JMenuItem platformItem = new JMenuItem(_(targetname));
-        platformItem.setEnabled(false);
-        importMenu.add(platformItem);
         if (ideLibs.size() > 0) {
           importMenu.addSeparator();
           addLibraries(importMenu, ideLibs);
-        } 
+        }
         if (userLibs.size() > 0) {
           importMenu.addSeparator();
           addLibraries(importMenu, userLibs);
@@ -1087,44 +1351,33 @@ public class Base {
       if (found) menu.addSeparator();
 
       // Add examples from libraries
-      Map<String, File> ideLibs = getIDELibs();
-      List<String> names = new ArrayList<String>(ideLibs.keySet());
-      Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
-      for (String name : names) {
-        File folder = ideLibs.get(name);
-        addSketchesSubmenu(menu, name, folder, false);
-        // Allows "fat" libraries to have examples in the root folder
-        if (folder.getName().equals(Base.getTargetPlatform().getName()))
-          addSketchesSubmenu(menu, name, folder.getParentFile(), false);
-      }
+      LibraryList ideLibs = getIDELibs();
+      ideLibs.sort();
+      for (Library lib : ideLibs)
+        addSketchesSubmenu(menu, lib, false);
 
-      Map<String, File> userLibs = getUserLibs();
+      LibraryList userLibs = getUserLibs();
       if (userLibs.size()>0) {
         menu.addSeparator();
-        names = new ArrayList<String>(userLibs.keySet());
-        Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
-        for (String name : names) {
-          File folder = userLibs.get(name);
-          addSketchesSubmenu(menu, name, folder, false);
-          // Allows "fat" libraries to have examples in the root folder
-          if (folder.getName().equals(Base.getTargetPlatform().getName()))
-            addSketchesSubmenu(menu, name, folder.getParentFile(), false);
-        }
+        userLibs.sort();
+        for (Library lib : userLibs)
+          addSketchesSubmenu(menu, lib, false);
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  public Map<String, File> scanLibraries(List<File> folders) {
-    Map<String, File> res = new HashMap<String, File>();
+  public LibraryList scanLibraries(List<File> folders) throws IOException {
+    LibraryList res = new LibraryList();
     for (File folder : folders)
-      res.putAll(scanLibraries(folder));
+      res.addOrReplaceAll(scanLibraries(folder));
     return res;
   }
 
-  public Map<String, File> scanLibraries(File folder) {
-    Map<String, File> res = new HashMap<String, File>();
+  public LibraryList scanLibraries(File folder) throws IOException {
+    LibraryList res = new LibraryList();
+
     String list[] = folder.list(new OnlyDirs());
     // if a bad folder or something like that, this might come back null
     if (list == null)
@@ -1141,69 +1394,72 @@ public class Base {
         continue;
       }
 
-      subfolder = scanFatLibrary(subfolder);
-
-      // (also replace previously found libs with the same name) 
-      if (subfolder != null)
-        res.put(libName, subfolder);
+      try {
+        Library lib = Library.create(subfolder);
+        // (also replace previously found libs with the same name)
+        if (lib != null)
+          res.addOrReplace(lib);
+      } catch (IOException e) {
+        System.out.println(I18n.format(_("Invalid library found in {0}: {1}"),
+                                       subfolder, e.getMessage()));
+      }
     }
     return res;
-  }
-
-  /**
-   * Scans inside a "FAT" (multi-platform) library folder to see if it contains
-   * a version suitable for the actual selected architecture. If a suitable
-   * version is found the folder containing that version is returned, otherwise
-   * <b>null</b> is returned.<br />
-   * <br />
-   * If a non-"FAT" library is detected, we assume that the library is suitable
-   * for the current architecture and the libFolder parameter is returned.<br />
-   *
-   * @param libFolder
-   * @return
-   */
-  public File scanFatLibrary(File libFolder) {
-    // A library is considered "fat" if it contains a file called
-    // "library.properties"
-    File libraryPropFile = new File(libFolder, "library.properties");
-    if (!libraryPropFile.exists() || !libraryPropFile.isFile())
-      return libFolder;
-
-    // Search for a subfolder for actual architecture, return null if not found
-    File archSubfolder = new File(libFolder, Base.getTargetPlatform().getName());
-    if (!archSubfolder.exists() || !archSubfolder.isDirectory())
-      return null;
-    return archSubfolder;
   }
 
   public void onBoardOrPortChange() {
     TargetPlatform targetPlatform = getTargetPlatform();
     if (targetPlatform == null)
       return;
-    
+
     // Calculate paths for libraries and examples
     examplesFolder = getContentFile("examples");
     toolsFolder = getContentFile("tools");
 
     File platformFolder = targetPlatform.getFolder();
-    librariesFolders = new ArrayList<File>();  
-    //String selectBoard = Preferences.get("board");
-    //if(selectBoard.compareTo("86DuinoZERO") != 0 && selectBoard.compareTo("86DuinoONE") != 0 && selectBoard.compareTo("EduCake") != 0)
+    librariesFolders = new ArrayList<File>();
     librariesFolders.add(getContentFile("libraries"));
+    String core = getBoardPreferences().get("build.core");
+    if (core.contains(":")) {
+      String referencedCore = core.split(":")[0];
+      TargetPlatform referencedPlatform = Base.getTargetPlatform(referencedCore, targetPlatform.getId());
+      if (referencedPlatform != null) {
+      File referencedPlatformFolder = referencedPlatform.getFolder();
+        librariesFolders.add(new File(referencedPlatformFolder, "libraries"));
+      }
+    }
     librariesFolders.add(new File(platformFolder, "libraries"));
     librariesFolders.add(getSketchbookLibrariesFolder());
 
     // Scan for libraries in each library folder.
     // Libraries located in the latest folders on the list can override
     // other libraries with the same name.
-    libraries = scanLibraries(librariesFolders);
+    try {
+      libraries = scanLibraries(librariesFolders);
+    } catch (IOException e) {
+      showWarning(_("Error"), _("Error loading libraries"), e);
+    }
 
     // Populate importToLibraryTable
-    importToLibraryTable = new HashMap<String, File>();
-    for (File subfolder : libraries.values()) {
-      String packages[] = headerListFromIncludePath(subfolder);
-      for (String pkg : packages)
-        importToLibraryTable.put(pkg, subfolder);
+    importToLibraryTable = new HashMap<String, Library>();
+    for (Library lib : libraries) {
+      try {
+        String headers[] = headerListFromIncludePath(lib.getSrcFolder());
+        for (String header : headers) {
+          Library old = importToLibraryTable.get(header);
+          if (old != null) {
+            // If a library was already found with this header, keep
+            // it if the library's name matches the header name.
+            String name = header.substring(0, header.length() - 2);
+            if (old.getFolder().getPath().endsWith(name))
+              continue;
+          }
+          importToLibraryTable.put(header, lib);
+        }
+      } catch (IOException e) {
+        showWarning(_("Error"), I18n
+            .format("Unable to list header files in {0}", lib.getSrcFolder()), e);
+      }
     }
 
     // Update editors status bar
@@ -1211,12 +1467,8 @@ public class Base {
       editor.onBoardOrPortChange();
   }
 
-  public void rebuildBoardsMenu(JMenu toolsMenu, final Editor editor) {
-    JMenu boardsMenu = makeOrGetBoardMenu(toolsMenu, _("Board"));
-
-    String selPackage = Preferences.get("target_package");
-    String selPlatform = Preferences.get("target_platform");
-    String selBoard = Preferences.get("board");
+  public void rebuildBoardsMenu(JMenu toolsMenu, Editor editor) throws Exception {
+    JMenu boardsMenu = getBoardCustomMenu();
 
     boolean first = true;
 
@@ -1225,97 +1477,40 @@ public class Base {
     ButtonGroup boardsButtonGroup = new ButtonGroup();
     Map<String, ButtonGroup> buttonGroupsMap = new HashMap<String, ButtonGroup>();
 
+    // Generate custom menus for all platforms
+    Set<String> titles = new HashSet<String>();
+    for (TargetPackage targetPackage : packages.values()) {
+      for (TargetPlatform targetPlatform : targetPackage.platforms())
+        titles.addAll(targetPlatform.getCustomMenus().values());
+    }
+    for (String title : titles)
+      makeBoardCustomMenu(toolsMenu, _(title));
+    
     // Cycle through all packages
     for (TargetPackage targetPackage : packages.values()) {
-      String packageName = targetPackage.getName();
       // For every package cycle through all platform
       for (TargetPlatform targetPlatform : targetPackage.platforms()) {
-        String platformName = targetPlatform.getName();
-        Map<String, PreferencesMap> boards = targetPlatform.getBoards();
 
-        if (targetPlatform.getPreferences().get("name") == null || targetPlatform.getBoards().isEmpty()) {
-          continue;
-        }
-
-        // Add a title for each group of boards
-        if (!first) {
+        // Add a separator from the previous platform
+        if (!first)
           boardsMenu.add(new JSeparator());
-        }
         first = false;
 
-        JMenuItem separator = new JMenuItem(_(targetPlatform.getPreferences().get("name")));
-        separator.setEnabled(false);
-        boardsMenu.add(separator);
+        // Add a title for each platform
+        String platformLabel = targetPlatform.getPreferences().get("name"); 
+        if (platformLabel != null && !targetPlatform.getBoards().isEmpty()) {
+          JMenuItem menuLabel = new JMenuItem(_(platformLabel));
+          menuLabel.setEnabled(false);
+          boardsMenu.add(menuLabel);
+        }
 
-        // For every platform cycle through all boards
-        for (final String boardID : targetPlatform.getBoards().keySet()) {
-          // Setup a menu item for the current board
-          String boardName = boards.get(boardID).get("name");
-          @SuppressWarnings("serial")
-          Action action = new AbstractAction(boardName) {
-            public void actionPerformed(ActionEvent actionevent) {
-              selectBoard((String) getValue("b"), editor);
-            }
-          };
-          action.putValue("b", packageName + ":" + platformName + ":" + boardID);
-
-          JRadioButtonMenuItem item = new JRadioButtonMenuItem(action);
+        // Cycle through all boards of this platform
+        for (TargetBoard board : targetPlatform.getBoards().values()) {
+          JMenuItem item = createBoardMenusAndCustomMenus(menuItemsToClickAfterStartup,
+                                                          buttonGroupsMap,
+                                                          board, targetPlatform, targetPackage);
           boardsMenu.add(item);
           boardsButtonGroup.add(item);
-
-          if (selBoard.equals(boardID) && selPackage.equals(packageName)
-              && selPlatform.equals(platformName)) {
-            menuItemsToClickAfterStartup.add(item);
-          }
-
-          if (targetPlatform.getCustomMenus() != null) {
-            List<String> customMenuIDs = new LinkedList<String>(targetPlatform.getCustomMenus().getKeys());
-            for (int i = 0; i < customMenuIDs.size(); i++) {
-              final String customMenuID = customMenuIDs.get(i);
-              JMenu menu = makeOrGetBoardMenu(toolsMenu, _(targetPlatform.getCustomMenus().getValueOf(customMenuID)));
-              MapWithSubkeys customMenu = targetPlatform.getCustomMenus().get(customMenuID);
-              if (customMenu.getKeys().contains(boardID)) {
-                MapWithSubkeys boardCustomMenu = customMenu.get(boardID);
-                final int currentIndex = i + 1 + 1; //plus 1 to skip the first board menu, plus 1 to keep the custom menu next to this one
-                for (final String customMenuOption : boardCustomMenu.getKeys()) {
-                  @SuppressWarnings("serial")
-                  Action subAction = new AbstractAction(_(boardCustomMenu.getValueOf(customMenuOption))) {
-
-                    public void actionPerformed(ActionEvent e) {
-                      Preferences.set("target_package", (String) getValue("package"));
-                      Preferences.set("target_platform", (String) getValue("platform"));
-                      Preferences.set("board", (String) getValue("board"));
-                      Preferences.set("custom_" + customMenuID, boardID + "_" + (String) getValue("custom_menu_option"));
-
-                      filterVisibilityOfSubsequentBoardMenus((String) getValue("board"), currentIndex);
-
-                      onBoardOrPortChange();
-                      Sketch.buildSettingChanged();
-                      rebuildImportMenu(Editor.importMenu, editor);
-                      rebuildExamplesMenu(Editor.examplesMenu);
-                    }
-                  };
-                  subAction.putValue("board", boardID);
-                  subAction.putValue("custom_menu_option", customMenuOption);
-                  subAction.putValue("package", packageName);
-                  subAction.putValue("platform", platformName);
-
-                  if (!buttonGroupsMap.containsKey(customMenuID)) {
-                    buttonGroupsMap.put(customMenuID, new ButtonGroup());
-                  }
-
-                  item = new JRadioButtonMenuItem(subAction);
-                  menu.add(item);
-                  buttonGroupsMap.get(customMenuID).add(item);
-
-                  String selectedCustomMenuEntry = Preferences.get("custom_" + customMenuID);
-                  if (selBoard.equals(boardID) && (boardID + "_" + customMenuOption).equals(selectedCustomMenuEntry)) {
-                    menuItemsToClickAfterStartup.add(item);
-                  }
-                }
-              }
-            }
-          }
         }
       }
     }
@@ -1330,16 +1525,87 @@ public class Base {
     }
   }
 
-  private static void filterVisibilityOfSubsequentBoardMenus(String boardID, int fromIndex) {
+  private JRadioButtonMenuItem createBoardMenusAndCustomMenus(
+          List<JMenuItem> menuItemsToClickAfterStartup,
+          Map<String, ButtonGroup> buttonGroupsMap,
+          TargetBoard board, TargetPlatform targetPlatform, TargetPackage targetPackage)
+      throws Exception {
+    String selPackage = Preferences.get("target_package");
+    String selPlatform = Preferences.get("target_platform");
+    String selBoard = Preferences.get("board");
+
+    String boardId = board.getId();
+    String packageName = targetPackage.getId();
+    String platformName = targetPlatform.getId();
+    
+    // Setup a menu item for the current board
+    @SuppressWarnings("serial")
+    Action action = new AbstractAction(board.getName()) {
+      public void actionPerformed(ActionEvent actionevent) {
+        selectBoard((TargetBoard)getValue("b"));
+        filterVisibilityOfSubsequentBoardMenus((TargetBoard)getValue("b"), 1);
+
+        onBoardOrPortChange();
+        Sketch.buildSettingChanged();
+        rebuildImportMenu(Editor.importMenu);
+        rebuildExamplesMenu(Editor.examplesMenu);
+      }
+    };
+    action.putValue("b", board);
+
+    JRadioButtonMenuItem item = new JRadioButtonMenuItem(action);
+
+    if (selBoard.equals(boardId) && selPackage.equals(packageName)
+        && selPlatform.equals(platformName)) {
+      menuItemsToClickAfterStartup.add(item);
+    }
+
+    PreferencesMap customMenus = targetPlatform.getCustomMenus();
+    for (final String menuId : customMenus.keySet()) {
+      String title = customMenus.get(menuId);
+      JMenu menu = getBoardCustomMenu(_(title));
+      
+      if (board.hasMenu(menuId)) {
+        PreferencesMap boardCustomMenu = board.getMenuLabels(menuId);
+        for (String customMenuOption : boardCustomMenu.keySet()) {
+          @SuppressWarnings("serial")
+          Action subAction = new AbstractAction(_(boardCustomMenu.get(customMenuOption))) {
+            public void actionPerformed(ActionEvent e) {
+              Preferences.set("custom_" + menuId, ((TargetBoard)getValue("board")).getId() + "_" + getValue("custom_menu_option"));
+            }
+          };
+          subAction.putValue("board", board);
+          subAction.putValue("custom_menu_option", customMenuOption);
+
+          if (!buttonGroupsMap.containsKey(menuId)) {
+            buttonGroupsMap.put(menuId, new ButtonGroup());
+          }
+
+          JRadioButtonMenuItem subItem = new JRadioButtonMenuItem(subAction);
+          menu.add(subItem);
+          buttonGroupsMap.get(menuId).add(subItem);
+
+          String selectedCustomMenuEntry = Preferences.get("custom_" + menuId);
+          if (selBoard.equals(boardId) && (boardId + "_" + customMenuOption).equals(selectedCustomMenuEntry)) {
+            menuItemsToClickAfterStartup.add(subItem);
+          }
+        }
+      }
+    }
+    
+    return item;
+  }
+
+  private static void filterVisibilityOfSubsequentBoardMenus(TargetBoard board, int fromIndex) {
     for (int i = fromIndex; i < Editor.boardsMenus.size(); i++) {
       JMenu menu = Editor.boardsMenus.get(i);
       for (int m = 0; m < menu.getItemCount(); m++) {
         JMenuItem menuItem = menu.getItem(m);
-        menuItem.setVisible(menuItem.getAction().getValue("board").equals(boardID));
+        menuItem.setVisible(menuItem.getAction().getValue("board").equals(board));
       }
-      menu.setEnabled(ifThereAreVisibleItemsOn(menu));
+      menu.setVisible(ifThereAreVisibleItemsOn(menu));
 
-      if (menu.isEnabled()) {
+      if (menu.isVisible()) {
         JMenuItem visibleSelectedOrFirstMenuItem = selectVisibleSelectedOrFirstMenuItem(menu);
         if (!visibleSelectedOrFirstMenuItem.isSelected()) {
           visibleSelectedOrFirstMenuItem.setSelected(true);
@@ -1358,16 +1624,22 @@ public class Base {
     return false;
   }
 
-  private JMenu makeOrGetBoardMenu(JMenu toolsMenu, String label) {
-    for (JMenu menu : Editor.boardsMenus) {
-      if (label.equals(menu.getText())) {
-        return menu;
-      }
-    }
+  private JMenu makeBoardCustomMenu(JMenu toolsMenu, String label) {
     JMenu menu = new JMenu(label);
     Editor.boardsMenus.add(menu);
     toolsMenu.add(menu);
     return menu;
+  }
+
+  private JMenu getBoardCustomMenu() throws Exception {
+    return getBoardCustomMenu(_("Board"));
+  }
+  
+  private JMenu getBoardCustomMenu(String label) throws Exception {
+    for (JMenu menu : Editor.boardsMenus)
+      if (label.equals(menu.getText()))
+        return menu;
+    throw new Exception("Custom menu not found!");
   }
 
   private static JMenuItem selectVisibleSelectedOrFirstMenuItem(JMenu menu) {
@@ -1402,20 +1674,26 @@ public class Base {
   }
 
 
-  private void selectBoard(String selectBoard, Editor editor) {
-    String[] split = selectBoard.split(":");
-    Preferences.set("target_package", split[0]);
-    Preferences.set("target_platform", split[1]);
-    Preferences.set("board", split[2]);
+  private void selectBoard(TargetBoard targetBoard) {
+    TargetPlatform targetPlatform = targetBoard.getContainerPlatform();
+    TargetPackage targetPackage = targetPlatform.getContainerPackage();
 
-    filterVisibilityOfSubsequentBoardMenus(split[2], 1);
+    Preferences.set("target_package", targetPackage.getId());
+    Preferences.set("target_platform", targetPlatform.getId());
+    Preferences.set("board", targetBoard.getId());
 
-    onBoardOrPortChange();
-    Sketch.buildSettingChanged();
-    rebuildImportMenu(Editor.importMenu, editor);
-    rebuildExamplesMenu(Editor.examplesMenu);
+    File platformFolder = targetPlatform.getFolder();
+    Preferences.set("runtime.platform.path", platformFolder.getAbsolutePath());
+    Preferences.set("runtime.hardware.path", platformFolder.getParentFile().getAbsolutePath());
   }
 
+  public static void selectSerialPort(String port) {
+    Preferences.set("serial.port", port);
+    if (port.startsWith("/dev/"))
+      Preferences.set("serial.port.file", port.substring(5));
+    else
+      Preferences.set("serial.port.file", port);
+  }
 
   public void rebuildProgrammerMenu(JMenu menu) {
     menu.removeAll();
@@ -1423,7 +1701,7 @@ public class Base {
     for (TargetPackage targetPackage : packages.values()) {
       for (TargetPlatform targetPlatform : targetPackage.platforms()) {
         for (String programmer : targetPlatform.getProgrammers().keySet()) {
-          String id = targetPackage.getName() + ":" + programmer;
+          String id = targetPackage.getId() + ":" + programmer;
 
           @SuppressWarnings("serial")
           AbstractAction action = new AbstractAction(targetPlatform
@@ -1449,35 +1727,46 @@ public class Base {
    * should replace the sketch in the current window, or false when the
    * sketch should open in a new window.
    */
-  protected boolean addSketches(JMenu menu, File folder,
-                                final boolean replaceExisting) throws IOException {
+  protected boolean addSketches(JMenu menu, File folder, final boolean replaceExisting) throws IOException {
     if (folder == null)
       return false;
-    
-    // skip .DS_Store files, etc (this shouldn't actually be necessary)
+
     if (!folder.isDirectory()) return false;
 
-    String[] list = folder.list();
+    File[] files = folder.listFiles();
     // If a bad folder or unreadable or whatever, this will come back null
-    if (list == null) return false;
+    if (files == null) return false;
 
-    // Alphabetize list, since it's not always alpha order
-    Arrays.sort(list, String.CASE_INSENSITIVE_ORDER);
+    // Alphabetize files, since it's not always alpha order
+    Arrays.sort(files, new Comparator<File>() {
+      @Override
+      public int compare(File file, File file2) {
+        return file.getName().compareToIgnoreCase(file2.getName());
+      }
+    });
 
     boolean ifound = false;
 
-    for (String name : list) {
-      if ((name.charAt(0) == '.') ||
-          name.equals("CVS")) continue;
+    for (File subfolder : files) {
+      if (FileUtils.isSCCSOrHiddenFile(subfolder)) {
+        continue;
+      }
 
-      File subfolder = new File(folder, name);
       if (!subfolder.isDirectory()) continue;
 
-      if (addSketchesSubmenu(menu, name, subfolder, replaceExisting))
+      if (addSketchesSubmenu(menu, subfolder.getName(), subfolder, replaceExisting)) {
         ifound = true;
+      }
     }
 
-    return ifound;  // actually ignored, but..
+    return ifound;
+  }
+
+  private boolean addSketchesSubmenu(JMenu menu, Library lib,
+                                     boolean replaceExisting)
+      throws IOException {
+    return addSketchesSubmenu(menu, lib.getName(), lib.getFolder(),
+                              replaceExisting);
   }
 
   private boolean addSketchesSubmenu(JMenu menu, String name, File folder,
@@ -1486,20 +1775,25 @@ public class Base {
     ActionListener listener = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         String path = e.getActionCommand();
-        if (new File(path).exists()) {
+        File file = new File(path);
+        if (file.exists()) {
           boolean replace = replaceExisting;
           if ((e.getModifiers() & ActionEvent.SHIFT_MASK) != 0) {
             replace = !replace;
           }
           if (replace) {
-            handleOpenReplace(path);
+            handleOpenReplace(file);
           } else {
-            handleOpen(path);
+            try {
+              handleOpen(file);
+            } catch (Exception e1) {
+              e1.printStackTrace();
+            }
           }
         } else {
           showWarning(_("Sketch Does Not Exist"),
                       _("The selected sketch no longer exists.\n"
-                          + "You may need to restart 86Duino to update\n"
+                          + "You may need to restart Arduino to update\n"
                           + "the sketchbook menu."), null);
         }
       }
@@ -1541,29 +1835,35 @@ public class Base {
     // not a sketch folder, but maybe a subfolder containing sketches
     JMenu submenu = new JMenu(name);
     boolean found = addSketches(submenu, folder, replaceExisting);
-    if (found)
+    if (found) {
       menu.add(submenu);
+      MenuScroller.setScrollerFor(submenu);
+    }
     return found;
   }
 
-  protected void addLibraries(JMenu menu, Map<String, File> libs) throws IOException {
+  protected void addLibraries(JMenu menu, LibraryList libs) throws IOException {
 
-    List<String> list = new ArrayList<String>(libs.keySet());
-    Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
+    LibraryList list = new LibraryList(libs);
+    list.sort();
 
-    ActionListener listener = new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        activeEditor.getSketch().importLibrary(e.getActionCommand());
-      }
-    };
-
-    for (String name : list) {
-      File folder = libs.get(name);
+    for (Library lib : list) {
+      @SuppressWarnings("serial")
+      AbstractAction action = new AbstractAction(lib.getName()) {
+        public void actionPerformed(ActionEvent event) {
+          Library l = (Library) getValue("library");
+          try {
+            activeEditor.getSketch().importLibrary(l);
+          } catch (IOException e) {
+            showWarning(_("Error"), I18n.format("Unable to list header files in {0}", l.getSrcFolder()), e);
+          }
+        }
+      };
+      action.putValue("library", lib);
 
       // Add new element at the bottom
-      JMenuItem item = new JMenuItem(name);
-      item.addActionListener(listener);
-      item.setActionCommand(folder.getAbsolutePath());
+      JMenuItem item = new JMenuItem(action);
+      item.putClientProperty("library", lib);
       menu.add(item);
 
       // XXX: DAM: should recurse here so that library folders can be nested
@@ -1575,8 +1875,12 @@ public class Base {
    * the header files in its sub-folders, as those should be included from
    * within the header files at the top-level).
    */
-  static public String[] headerListFromIncludePath(File path) {
-    return path.list(new OnlyFilesWithExtension(".h"));
+  static public String[] headerListFromIncludePath(File path) throws IOException {
+    String[] list = path.list(new OnlyFilesWithExtension(".h"));
+    if (list == null) {
+      throw new IOException();
+    }
+    return list;
   }
 
   protected void loadHardware(File folder) {
@@ -1593,11 +1897,16 @@ public class Base {
 
     for (String target : list) {
       // Skip reserved 'tools' folder.
-      
       if (target.equals("tools"))
         continue;
       File subfolder = new File(folder, target);
-      packages.put(target, new TargetPackage(target, subfolder));
+      
+      try {
+        packages.put(target, new TargetPackage(target, subfolder));
+      } catch (TargetPlatformException e) {
+        System.out.println("WARNING: Error loading hardware folder " + target);
+        System.out.println("  " + e.getMessage());
+      }
     }
   }
 
@@ -1750,11 +2059,14 @@ public class Base {
 
 
   static public File getSettingsFolder() {
+    if (portableFolder != null)
+      return portableFolder;
+
     File settingsFolder = null;
 
     String preferencesPath = Preferences.get("settings.path");
     if (preferencesPath != null) {
-      settingsFolder = new File(preferencesPath);
+      settingsFolder = absoluteFile(preferencesPath);
 
     } else {
       try {
@@ -1769,8 +2081,8 @@ public class Base {
     if (!settingsFolder.exists()) {
       if (!settingsFolder.mkdirs()) {
         showError(_("Settings issues"),
-                  _("86Duino cannot run because it could not\n" +
-                    "create a folder to store your settings."), null);
+                _("86Duino cannot run because it could not\n" +
+                        "create a folder to store your settings."), null);
       }
     }
     return settingsFolder;
@@ -1793,8 +2105,9 @@ public class Base {
     if (buildFolder == null) {
       String buildPath = Preferences.get("build.path");
       if (buildPath != null) {
-        buildFolder = new File(buildPath);
-
+        buildFolder = Base.absoluteFile(buildPath);
+        if (!buildFolder.exists())
+          buildFolder.mkdirs();
       } else {
         //File folder = new File(getTempFolder(), "build");
         //if (!folder.exists()) folder.mkdirs();
@@ -1829,7 +2142,7 @@ public class Base {
   }
 
 
-  static public Map<String, File> getLibraries() {
+  static public LibraryList getLibraries() {
     return libraries;
   }
 
@@ -1880,6 +2193,15 @@ public class Base {
     return path;
   }
 
+  /**
+   * Returns a specific TargetPackage
+   *
+   * @param packageName
+   * @return
+   */
+  static public TargetPackage getTargetPackage(String packageName) {
+    return packages.get(packageName);
+  }
 
   /**
    * Returns the currently selected TargetPlatform.
@@ -1911,26 +2233,42 @@ public class Base {
     return getTargetPlatform(pack, Preferences.get("target_platform"));
   }
 
-  static public Map<String, String> getBoardPreferences() {
-    TargetPlatform target = getTargetPlatform();
-    String board = Preferences.get("board");
-    Map<String, String> boardPreferences = Maps.merge(target.getBoards().get(board), new LinkedHashMap<String, String>());
-    if (target.getCustomMenus() != null) {
-      for (String customMenuID : target.getCustomMenus().getKeys()) {
-        MapWithSubkeys boardCustomMenu = target.getCustomMenus().get(customMenuID).get(board);
-        String selectedCustomMenuEntry = Preferences.get("custom_" + customMenuID);
-        if (boardCustomMenu != null && selectedCustomMenuEntry != null && selectedCustomMenuEntry.startsWith(board)) {
-          String menuEntryId = selectedCustomMenuEntry.substring(selectedCustomMenuEntry.indexOf("_") + 1);
-          Maps.merge(boardCustomMenu.get(menuEntryId).getValues(), boardPreferences);
-          boardPreferences.put("name", boardPreferences.get("name") + ", " + boardCustomMenu.getValueOf(menuEntryId));
-        }
+  static public PreferencesMap getBoardPreferences() {
+    TargetBoard board = getTargetBoard();
+    
+    PreferencesMap prefs = new PreferencesMap(board.getPreferences());
+    for (String menuId : board.getMenuIds()) {
+      String entry = Preferences.get("custom_" + menuId);
+      if (board.hasMenu(menuId) && entry != null &&
+          entry.startsWith(board.getId())) {
+        String selectionId = entry.substring(entry.indexOf("_") + 1);
+        prefs.putAll(board.getMenuPreferences(menuId, selectionId));
+        prefs.put("name", prefs.get("name") + ", " +
+            board.getMenuLabel(menuId, selectionId));
       }
     }
-    return boardPreferences;
+    return prefs;
   }
 
+  public static TargetBoard getTargetBoard() {
+    String boardId = Preferences.get("board");
+    return getTargetPlatform().getBoard(boardId);
+  }
+
+  static public File getPortableFolder() {
+    return portableFolder;
+  }
+
+
+  static public String getPortableSketchbookFolder() {
+    return portableSketchbookFolder;
+  }
+
+
   static public File getSketchbookFolder() {
-    return new File(Preferences.get("sketchbook.path"));
+    if (portableFolder != null)
+      return new File(portableFolder, Preferences.get("sketchbook.path"));
+    return absoluteFile(Preferences.get("sketchbook.path"));
   }
 
 
@@ -1962,6 +2300,9 @@ public class Base {
 
 
   protected File getDefaultSketchbookFolder() {
+    if (portableFolder != null)
+      return new File(portableFolder, portableSketchbookFolder);
+
     File sketchbookFolder = null;
     try {
       sketchbookFolder = platform.getDefaultSketchbookFolder();
@@ -2056,43 +2397,17 @@ public class Base {
   // .................................................................
 
 
-  /**
-   * Prompt for a fodler and return it as a File object (or null).
-   * Implementation for choosing directories that handles both the
-   * Mac OS X hack to allow the native AWT file dialog, or uses
-   * the JFileChooser on other platforms. Mac AWT trick obtained from
-   * <A HREF="http://lists.apple.com/archives/java-dev/2003/Jul/msg00243.html">this post</A>
-   * on the OS X Java dev archive which explains the cryptic note in
-   * Apple's Java 1.4 release docs about the special System property.
-   */
   static public File selectFolder(String prompt, File folder, Frame frame) {
-    if (Base.isMacOS()) {
-      if (frame == null) frame = new Frame(); //.pack();
-      FileDialog fd = new FileDialog(frame, prompt, FileDialog.LOAD);
-      if (folder != null) {
-        fd.setDirectory(folder.getParent());
-        //fd.setFile(folder.getName());
-      }
-      System.setProperty("apple.awt.fileDialogForDirectories", "true");
-      fd.setVisible(true);
-      System.setProperty("apple.awt.fileDialogForDirectories", "false");
-      if (fd.getFile() == null) {
-        return null;
-      }
-      return new File(fd.getDirectory(), fd.getFile());
+    JFileChooser fc = new JFileChooser();
+    fc.setDialogTitle(prompt);
+    if (folder != null) {
+      fc.setSelectedFile(folder);
+    }
+    fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-    } else {
-      JFileChooser fc = new JFileChooser();
-      fc.setDialogTitle(prompt);
-      if (folder != null) {
-        fc.setSelectedFile(folder);
-      }
-      fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-
-      int returned = fc.showOpenDialog(new JDialog());
-      if (returned == JFileChooser.APPROVE_OPTION) {
-        return fc.getSelectedFile();
-      }
+    int returned = fc.showOpenDialog(new JDialog());
+    if (returned == JFileChooser.APPROVE_OPTION) {
+      return fc.getSelectedFile();
     }
     return null;
   }
@@ -2231,12 +2546,20 @@ public class Base {
   }
 
 
+  static public void showError(String title, String message, Throwable e) {
+    showError(title, message, e, 1);
+  }
+
+  static public void showError(String title, String message, int exit_code) {
+    showError(title, message, null, exit_code);
+  }
+
   /**
    * Show an error message that's actually fatal to the program.
    * This is an error that can't be recovered. Use showWarning()
    * for errors that allow P5 to continue running.
    */
-  static public void showError(String title, String message, Throwable e) {
+  static public void showError(String title, String message, Throwable e, int exit_code) {
     if (title == null) title = _("Error");
 
     if (commandLine) {
@@ -2247,7 +2570,7 @@ public class Base {
                                     JOptionPane.ERROR_MESSAGE);
     }
     if (e != null) e.printStackTrace();
-    System.exit(1);
+    System.exit(exit_code);
   }
 
 
@@ -2724,7 +3047,7 @@ public class Base {
     }
   }
 
-  public void handleAddLibrary(Editor editor) {
+  public void handleAddLibrary() {
     JFileChooser fileChooser = new JFileChooser(System.getProperty("user.home"));
     fileChooser.setDialogTitle(_("Select a zip file or a folder containing the library you'd like to add"));
     fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -2733,7 +3056,7 @@ public class Base {
     Dimension preferredSize = fileChooser.getPreferredSize();
     fileChooser.setPreferredSize(new Dimension(preferredSize.width + 200, preferredSize.height + 200));
 
-    int returnVal = fileChooser.showOpenDialog(editor);
+    int returnVal = fileChooser.showOpenDialog(activeEditor);
 
     if (returnVal != JFileChooser.APPROVE_OPTION) {
       return;
@@ -2755,7 +3078,7 @@ public class Base {
           }
           sourceFile = foldersInTmpFolder[0];
         } catch (IOException e) {
-          editor.statusError(e);
+          activeEditor.statusError(e);
           return;
         }
       }
@@ -2768,26 +3091,30 @@ public class Base {
             + "Library names must contain only basic letters and numbers.\n"
             + "(ASCII only and no spaces, and it cannot start with a number)"),
                                   libName);
-        editor.statusError(mess);
+        activeEditor.statusError(mess);
         return;
       }
 
       // copy folder
       File destinationFolder = new File(getSketchbookLibrariesFolder(), sourceFile.getName());
       if (!destinationFolder.mkdir()) {
-        editor.statusError(I18n.format(_("A library named {0} already exists"), sourceFile.getName()));
+        activeEditor.statusError(I18n.format(_("A library named {0} already exists"), sourceFile.getName()));
         return;
       }
       try {
         FileUtils.copy(sourceFile, destinationFolder);
       } catch (IOException e) {
-        editor.statusError(e);
+        activeEditor.statusError(e);
         return;
       }
-      editor.statusNotice(_("Library added to your libraries. Check \"Import library\" menu"));
+      activeEditor.statusNotice(_("Library added to your libraries. Check \"Import library\" menu"));
     } finally {
       // delete zip created temp folder, if exists
       FileUtils.recursiveDelete(tmpFolder);
     }
+  }
+
+  public static DiscoveryManager getDiscoveryManager() {
+    return discoveryManager;
   }
 }

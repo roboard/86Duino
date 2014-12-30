@@ -24,7 +24,7 @@
     Tlc5940 library header file. */
 
 #include <Arduino.h>
-#include "tlc_cfg.h"
+#include "tlc_config.h"
 
 
 #define set_XLAT_interrupt()

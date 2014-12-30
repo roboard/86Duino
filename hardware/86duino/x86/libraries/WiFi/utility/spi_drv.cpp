@@ -1,7 +1,7 @@
 
 #include "Arduino.h"
 #include "spi_drv.h"                   
-#include "parduino.h"
+#include "pins_arduino.h"
 //#define _DEBUG_
 extern "C" {
 #include "debug.h"

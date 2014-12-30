@@ -32,7 +32,7 @@
 
 #include <avr/pgmspace.h>
 #include "glcd.h"
-#include "glcdcfg.h" 
+#include "glcd_Config.h" 
 
 #define BITMAP_FIX // enables a bitmap rendering fix/patch
 

@@ -2,9 +2,7 @@
 
 /*
   Part of the Processing project - http://processing.org
-   and of the 86Duino project - http://www.86duino.com/
-   
-  Copyright (c) 2013    Oswald Kuo <oswald@dmp.com.tw>
+
   Copyright (c) 2005-06 Ben Fry and Casey Reas
 
   This program is free software; you can redistribute it and/or modify
@@ -102,8 +100,8 @@ public class UpdateCheck implements Runnable {
       Preferences.set("update.last", String.valueOf(now));
 
       String prompt =
-        _("A new version of 86Duino is available,\n" +
-          "would you like to visit the 86Duino download page?");
+        _("A new version of Arduino is available,\n" +
+          "would you like to visit the Arduino download page?");
         
       if (base.activeEditor != null) {
         if (latest > Base.REVISION) {

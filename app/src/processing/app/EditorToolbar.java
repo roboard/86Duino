@@ -335,9 +335,13 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
 
     case NEW:
       if (shiftPressed) {
-        editor.base.handleNew();
+        try {
+          editor.base.handleNew();
+        } catch (Exception e1) {
+          e1.printStackTrace();
+        }
       } else {
-      editor.base.handleNewReplace();
+        editor.base.handleNewReplace();
       }
       break;
 
@@ -346,12 +350,11 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       break;
 
     case EXPORT:
-      Editor.serialMonitor.setVisible(false);
       editor.handleExport(e.isShiftDown());
       break;
 
     case SERIAL:
-      editor.handleSerial(true);
+      editor.handleSerial();
       break;
     }
   }

@@ -1,7 +1,7 @@
 /*
  * IRrecord: record and play back IR signals as a minimal 
  * An IR detector/demodulator must be connected to the input RECV_PIN.
- * An IR LED must be connected to the output PWM pin 3.
+ * An IR LED must be connected to the output PWM pin 10.
  * A button must be connected to the input BUTTON_PIN; this is the
  * send button.
  * A visible LED can be connected to STATUS_PIN to provide status.

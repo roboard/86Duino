@@ -25,7 +25,7 @@
 
 #include <avr/pgmspace.h>
 #include "include/gText.h"
-#include "glcdcfg.h"
+#include "glcd_Config.h"
 
 #ifndef GLCD_NO_PRINTF
 extern "C"

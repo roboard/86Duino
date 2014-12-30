@@ -27,7 +27,7 @@
 
 #include "dmpcfg.h"
 #include "uart.h"
-#include "usb.h"
+#include "USBCore.h"
 #include "can.h"
 
 #ifdef __cplusplus
@@ -41,7 +41,7 @@ typedef struct
 	
 	DMPAPI(void) (*Close)(void *);
 	DMPAPI(bool) (*SetBPS)(void *, unsigned long); // only for UART & CAN
-	DMPAPI(void) (*SetTimeOut)(void *, unsigned long);
+	DMPAPI(void) (*SetTimeOut)(void *, unsigned long, unsigned long);
 	
 	DMPAPI(unsigned int) (*Read)(void *);
 	DMPAPI(int)  (*Receive)(void *, unsigned char *, int);
@@ -162,7 +162,7 @@ DMPAPI(bool) com_SetBPS(COMPort *port, unsigned long bps);
 #define COM_CAN_BPS_50K                 (CAN_BPS_50K)
 #define COM_CAN_BPS_20K                 (CAN_BPS_20K)
 #define COM_CAN_BPS_10K                 (CAN_BPS_10K)
-DMPAPI(void) com_SetTimeOut(COMPort *port, unsigned long timeout);
+DMPAPI(void) com_SetTimeOut(COMPort *port, unsigned long rx_timeout, unsigned long tx_timeout);
 #define NO_TIMEOUT         (-1)
 
 DMPAPI(unsigned int) com_Read(COMPort *port); // not for CAN bus

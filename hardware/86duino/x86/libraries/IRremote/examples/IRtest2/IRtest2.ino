@@ -1,9 +1,9 @@
 /*
  * Test send/receive functions of IRremote, using a pair of Arduinos.
  *
- * Arduino #1 should have an IR LED connected to the send pin (3).
+ * Arduino #1 should have an IR LED connected to the send pin (10).
  * Arduino #2 should have an IR detector/demodulator connected to the
- * receive pin (11) and a visible LED connected to pin 3.
+ * receive pin (11) and a visible LED connected to pin 10.
  *
  * The cycle:
  *  Arduino #1 will wait 2 seconds, then run through the tests.

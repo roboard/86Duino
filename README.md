@@ -1,11 +1,11 @@
 86Duino
 ---------
 
-_VERSION_: Coding 106
+_VERSION_: Coding 207
 
 This is the IDE of the open-source 86Duino electronic platforms, which is 
-compatible to Arduino 1.5.2. The binaries of this IDE for Windows, Linux, 
-and Mac can be downloaded from: http://www.86duino.com/?page_id=2
+compatible to Arduino 1.5.8. The binaries of this IDE for Windows, Linux, 
+and Mac can be downloaded from: http://www.86duino.com/?page_id=8918
 
 If you find any software/hardware bug, or want to provide software patches or 
 to request enhancements about 86Duino, please report to the 86Duino 

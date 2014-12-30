@@ -1,7 +1,7 @@
 #ifndef WiFi_Spi_h
 #define WiFi_Spi_h
 
-#include "wl_def.h"
+#include "wl_definitions.h"
 
 #define CMD_FLAG        0
 #define REPLY_FLAG      1<<7

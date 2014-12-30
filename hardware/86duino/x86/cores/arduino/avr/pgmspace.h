@@ -62,32 +62,34 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 #define PGM_VOID_P const prog_void *
 #endif
 
-#define memcmp_P(a, b, c)        memcmp(a, b, c)
-#define memchr_P(a, b, c)        memchr(a, b, c)
-#define memcpy_P(a, b, c)        memcpy(a, b, c)
+#define memcmp_P(a, b, c)        memcmp((a), (b), (c))
+#define memchr_P(a, b, c)        memchr((a), (b), (c))
+#define memcpy_P(a, b, c)        memcpy((a), (b), (c))
 //extern void *memmem_P(const void *, size_t, PGM_VOID_P, size_t) __ATTR_PURE__;
-#define memrchr_P(a, b, c)       memchr(a, b, c)
-#define strcat_P(a, b)           strcat(a, b)
-#define strchr_P(a, b)           strchr(a, b)
+#define memrchr_P(a, b, c)       memchr((a), (b), (c))
+#define strcat_P(a, b)           strcat((a), (b))
+#define strchr_P(a, b)           strchr((a), (b))
 //extern PGM_P strchrnul_P(PGM_P, int __val) __ATTR_CONST__;
-#define strcmp_P(a, b)           strcmp(a, b)
-#define strcpy_P(a, b)           strcpy(a, b)
-#define strcasecmp_P(a, b)       strcasecmp(a, b)
+#define strcmp_P(a, b)           strcmp((a), (b))
+#define strcpy_P(a, b)           strcpy((a), (b))
+#define strcasecmp_P(a, b)       strcasecmp((a), (b))
 //extern char *strcasestr_P(const char *, PGM_P) __ATTR_PURE__;
-#define strcspn_P(a, b)          strcspn(a, b)
-#define strlcat_P(a, b)          strlcat(a, b)
-#define strlcpy_P(a, b)          strlcpy(a, b)
-#define strlen_P(a)              strlen(a)
+#define strcspn_P(a, b)          strcspn((a), (b))
+#define strlcat_P(a, b)          strlcat((a), (b))
+#define strlcpy_P(a, b)          strlcpy((a), (b))
+#define strlen_P(a)              strlen((a))
 //extern size_t strnlen_P(PGM_P, size_t) __ATTR_CONST__; /* program memory can't change */
-#define strncmp_P(a, b, c)       strncmp(a, b, c)
-#define strncasecmp_P(a, b, c)   strncasecmp(a, b, c)
-#define strncat_P(a, b, c)       strncat(a, b, c)
-#define strncpy_P(a, b, c)       strncpy(a, b, c)
-#define strpbrk_P(a, b)          strpbrk(a, b)
-#define strrchr_P(a, b)          strrchr(a, b)
-#define strsep_P(a, b)           strsep(a, b)
-#define strspn_P(a, b)           strspn(a, b)
-#define strstr_P(a, b)           strstr(a, b)
+#define strncmp_P(a, b, c)       strncmp((a), (b), (c))
+#define strncasecmp_P(a, b, c)   strncasecmp((a), (b), (c))
+#define strncat_P(a, b, c)       strncat((a), (b), (c))
+#define strncpy_P(a, b, c)       strncpy((a), (b), (c))
+#define strpbrk_P(a, b)          strpbrk((a), (b))
+#define strrchr_P(a, b)          strrchr((a), (b))
+#define strsep_P(a, b)           strsep((a), (b))
+#define strspn_P(a, b)           strspn((a), (b))
+#define strstr_P(a, b)           strstr((a), (b))
+
+#define printf_P                 printf
 
 #ifdef __cplusplus
 }

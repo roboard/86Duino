@@ -1,6 +1,6 @@
 /*
   EEPROM.cpp - DM&P Vortex86 EEPROM library
-  Copyright (c) 2013 Vic Cheng <vic@dmp.com.tw>. All right reserved.
+  Copyright (c) 2013 Vic Chen <vic@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -57,6 +57,7 @@ EEPROMClass::EEPROMClass(void)
   _data = new EEPROMBlock*[ADDRESS];
   
   //init 16K EEPROM 
+
   for(int i = 0; i < ADDRESS; ++i)
   {
     _data[i] = new EEPROMBlock(i);
@@ -71,7 +72,6 @@ EEPROMClass::~EEPROMClass(void)
     delete _data[i];
 
   delete [](_data);
-  _bank = EEPROM_16K;
 }
  
 /******************************************************************************

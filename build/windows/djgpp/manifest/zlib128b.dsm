@@ -1,0 +1,59 @@
+#
+# DSM for zlib 1.2.8 binaries.
+# Written by Juan Manuel Guerrero <juan.guerrero@gmx.de> 2013-05-13
+#
+
+dsm-file-version: 1.0
+dsm-name: zlib128b
+dsm-version: 0.6.1
+
+type: binaries
+
+dsm-author: Juan Manuel Guerrero
+dsm-author-email: juan.guerrero@gmx.de
+
+name: zlib
+version: 1.2.8 release 1
+manifest: zlib128b
+documentation-dsm: zlib128d
+sources-dsm: zlib128s
+short-description: Binaries for zlib library version 1.2.8.
+long-description: zlib 1.2.8 is a general purpose data compression library.\n\
+All the code is thread safe.
+
+license:  GNU GPL
+author: Jean-loup Gailly
+author-email: jloup@gzip.org
+author: Mark Adler
+author-email: madler@alumni.caltech.edu
+maintainer: Jean-loup Gailly
+maintainer-email: jloup@gzip.org
+# For reporting bugs.
+mailing-list: zlib@gzip.org
+# The home page of zlib.
+web-site: http://www.zlib.org
+# The ftp site of zlib.
+ftp-site:
+# For discussing DJGPP- and DOS/Windows-specific aspects.
+mailing-list: djgpp@delorie.com
+newsgroup: comp.os.msdos.djgpp
+
+porter: Juan Manuel Guerrero
+porter-email: juan.guerrero@gmx.de
+
+simtelnet-path: v2tk/
+zip: zlib128b.zip
+
+changelog: contrib/zlib-1.2-8/ChangeLog
+
+pre-install-readme: contrib/zlib-1.2-8/README
+pre-install-readme: contrib/zlib-1.2-8/djgpp/README
+
+# These are required to build zlib:
+requires: DPMI 0.9
+
+replaces: zlib < 1.2.8 release 1
+
+# For reading the docs.
+depends-on: man
+depends-on: less

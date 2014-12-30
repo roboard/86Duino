@@ -22,7 +22,7 @@
 #ifndef EEPROM_h
 #define EEPROM_h
 
-#include "Block.h"
+#include "RBlock.h"
 
 #define EEPROM_200B    (0)
 #define EEPROM_16K     (1)

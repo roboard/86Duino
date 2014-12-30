@@ -284,14 +284,14 @@ DMPAPI(bool) com_SetBPS(COMPort *port, unsigned long bps)
 	return port->SetBPS(port->func, bps);
 }
 
-DMPAPI(void) com_SetTimeOut(COMPort *port, unsigned long timeout)
+DMPAPI(void) com_SetTimeOut(COMPort *port, unsigned long rx_timeout, unsigned long tx_timeout)
 {
 	if (port->SetTimeOut == NULL)
 	{
 		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
 		return;
 	}
-	port->SetTimeOut(port->func, timeout);
+	port->SetTimeOut(port->func, rx_timeout, tx_timeout);
 }
 
 DMPAPI(unsigned int) com_Read(COMPort *port)

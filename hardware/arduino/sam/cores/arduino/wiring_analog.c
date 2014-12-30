@@ -130,6 +130,7 @@ uint32_t analogRead(uint32_t ulPin)
 #endif
 
 #if defined __SAM3X8E__ || defined __SAM3X8H__
+	static uint32_t latestSelectedChannel = -1;
 	switch ( g_APinDescription[ulPin].ulAnalogChannel )
 	{
 		// Handling ADC 12 bits channels
@@ -147,7 +148,12 @@ uint32_t analogRead(uint32_t ulPin)
 		case ADC11 :
 
 			// Enable the corresponding channel
-			adc_enable_channel( ADC, ulChannel );
+			if (ulChannel != latestSelectedChannel) {
+				adc_enable_channel( ADC, ulChannel );
+				if ( latestSelectedChannel != (uint32_t)-1 )
+					adc_disable_channel( ADC, latestSelectedChannel );
+				latestSelectedChannel = ulChannel;
+			}
 
 			// Start the ADC
 			adc_start( ADC );
@@ -159,9 +165,6 @@ uint32_t analogRead(uint32_t ulPin)
 			// Read the value
 			ulValue = adc_get_latest_value(ADC);
 			ulValue = mapResolution(ulValue, ADC_RESOLUTION, _readResolution);
-
-			// Disable the corresponding channel
-			adc_disable_channel(ADC, ulChannel);
 
 			break;
 
@@ -243,8 +246,8 @@ void analogWrite(uint32_t ulPin, uint32_t ulValue) {
 
 			// Write user value
 			ulValue = mapResolution(ulValue, _writeResolution, DACC_RESOLUTION);
-			while ((dacc_get_interrupt_status(DACC_INTERFACE) & DACC_ISR_TXRDY) == 0);
 			dacc_write_conversion_data(DACC_INTERFACE, ulValue);
+			while ((dacc_get_interrupt_status(DACC_INTERFACE) & DACC_ISR_EOC) == 0);
 			return;
 		}
 	}
@@ -290,7 +293,7 @@ void analogWrite(uint32_t ulPin, uint32_t ulValue) {
 		ETCChannel channel = g_APinDescription[ulPin].ulTCChannel;
 		static const uint32_t channelToChNo[] = { 0, 0, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2 };
 		static const uint32_t channelToAB[]   = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
-		static const Tc *channelToTC[] = {
+		static Tc *channelToTC[] = {
 			TC0, TC0, TC0, TC0, TC0, TC0,
 			TC1, TC1, TC1, TC1, TC1, TC1,
 			TC2, TC2, TC2, TC2, TC2, TC2 };

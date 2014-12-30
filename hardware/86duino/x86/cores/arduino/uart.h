@@ -65,7 +65,8 @@ typedef volatile struct serial_port
 	unsigned char old_ier;				//
 	unsigned char old_lcr;				//
 	unsigned char old_mcr;				//
-	unsigned long old_TimeOut;			//
+	unsigned long old_RxTimeOut;		//
+	unsigned long old_TxTimeOut;		//
 
 	unsigned char lsb;					// the configuration of comport at now time
 	unsigned char msb;					//
@@ -75,7 +76,8 @@ typedef volatile struct serial_port
 	unsigned char fcr;					//
 	unsigned char lsr;					//
 	unsigned char msr;					//
-	unsigned long TimeOut;				//
+	unsigned long RxTimeOut;			//
+	unsigned long TxTimeOut;			//
 	
 	int RFIFO_Size;						// comport FIFO size
 	int WFIFO_Size;						//
@@ -168,7 +170,7 @@ DMPAPI(void) uart_SetFlowControl(void *vport, int control);
 #define NO_CONTROL         (0)
 #define RTS_CTS            (1)
 #define XON_XOFF           (2)
-DMPAPI(void) uart_SetTimeOut(void *vport, unsigned long timeout);
+DMPAPI(void) uart_SetTimeOut(void *vport, unsigned long rx_timeout, unsigned long tx_timeout);
 #define UART_NO_TIMEOUT         (-1)
 DMPAPI(unsigned char) uart_GetLSR(void *vport);
 DMPAPI(unsigned char) uart_GetMSR(void *vport);

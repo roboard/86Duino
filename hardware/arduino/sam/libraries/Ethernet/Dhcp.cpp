@@ -1,13 +1,13 @@
 // DHCP Library v0.3 - April 25, 2009
 // Author: Jordan Terrell - blog.jordanterrell.com
 
-#include "w5100.h"
+#include "utility/w5100.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include "Dhcp.h"
 #include "Arduino.h"
-#include "util.h"
+#include "utility/util.h"
 
 int DhcpClass::beginWithDHCP(uint8_t *mac, unsigned long timeout, unsigned long responseTimeout)
 {
@@ -43,6 +43,7 @@ int DhcpClass::request_DHCP_lease(){
     _dhcpTransactionId = random(1UL, 2000UL);
     _dhcpInitialTransactionId = _dhcpTransactionId;
 
+    _dhcpUdpSocket.stop();
     if (_dhcpUdpSocket.begin(DHCP_CLIENT_PORT) == 0)
     {
       // Couldn't get a socket

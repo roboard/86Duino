@@ -1,7 +1,25 @@
+/*
+  WiFiClient.cpp - Library for Arduino Wifi shield.
+  Copyright (c) 2011-2014 Arduino.  All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
 extern "C" {
   #include "utility/wl_definitions.h"
   #include "utility/wl_types.h"
-  #include "socket.h"
   #include "string.h"
   #include "utility/debug.h"
 }
@@ -9,7 +27,7 @@ extern "C" {
 #include "WiFi.h"
 #include "WiFiClient.h"
 #include "WiFiServer.h"
-#include "server_drv.h"
+#include "utility/server_drv.h"
 
 
 uint16_t WiFiClient::_srcport = 1024;
@@ -104,7 +122,10 @@ int WiFiClient::read() {
 
 
 int WiFiClient::read(uint8_t* buf, size_t size) {
-  if (!ServerDrv::getDataBuf(_sock, buf, &size))
+  // sizeof(size_t) is architecture dependent
+  // but we need a 16 bit data type here
+  uint16_t _size = size;
+  if (!ServerDrv::getDataBuf(_sock, buf, &_size))
       return -1;
   return 0;
 }
@@ -129,13 +150,13 @@ void WiFiClient::stop() {
     return;
 
   ServerDrv::stopClient(_sock);
+  WiFiClass::_state[_sock] = NA_STATE;
 
-  unsigned long start = millis();
-  
+  int count = 0;
+  // wait maximum 5 secs for the connection to close
+  while (status() != CLOSED && ++count < 50)
+    delay(100);
 
-  // wait a second for the connection to close
-  while (status() != CLOSED && millis() - start < 1000)
-    delay(1);
   _sock = 255;
 }
 
@@ -149,7 +170,7 @@ uint8_t WiFiClient::connected() {
     return !(s == LISTEN || s == CLOSED || s == FIN_WAIT_1 ||
     		s == FIN_WAIT_2 || s == TIME_WAIT ||
     		s == SYN_SENT || s== SYN_RCVD ||
-             (s == CLOSE_WAIT && !available()));
+    		(s == CLOSE_WAIT));
   }
 }
 
@@ -169,7 +190,7 @@ WiFiClient::operator bool() {
 uint8_t WiFiClient::getFirstSocket()
 {
     for (int i = 0; i < MAX_SOCK_NUM; i++) {
-      if (WiFiClass::_state[i] == 0)
+      if (WiFiClass::_state[i] == NA_STATE)
       {
           return i;
       }

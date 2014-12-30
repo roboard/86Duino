@@ -5,13 +5,13 @@
 #include <string.h>
 #include <math.h>
 #include "v86clock.h"
-#include "parduino.h"
+#include "pins_arduino.h"
 #include "io.h"
 
 #include "binary.h"
 #include "stdint.h"
 
-#include "WChar.h"
+#include "WCharacter.h"
 #include "WString.h"
 
 #ifdef __cplusplus
@@ -139,7 +139,7 @@ extern bool Global_irq_Init;
 extern bool timer1_pin32_isUsed; // defined in tone.cpp
 #define Serial4    Serial485
 #define Serial6    Serial232
-#include "Hserial.h"
+#include "HardwareSerial.h"
 
 uint16_t makeWord(uint16_t w);
 uint16_t makeWord(byte h, byte l);

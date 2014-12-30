@@ -20,7 +20,7 @@
 #include "io.h"
 #define USE_COMMON
 #include "common.h"
-#include "usb.h"
+#include "USBCore.h"
 #include "mcm.h"
 #include "irq.h"
 
@@ -100,18 +100,19 @@ bool init() {
     
 	//CDC
 	USBDEV = CreateUSBDevice();
-    if(USBDEV == NULL)
-    {
-        printf("init error\n");
-        return false;
-    }
+	if(USBDEV == NULL)
+	{
+		printf("init error\n");
+		return false;
+	}
     
-    usb_SetUSBPins(USBDEV, 7, 0, 7, 1);
-    if(usb_Init(USBDEV) == false)
-    {
-        printf("init2 error\n");
-        return false;
-    }
+	usb_SetUSBPins(USBDEV, 7, 0, 7, 1);
+	usb_SetTimeOut(USBDEV, 0L, 500L); // USB RX timerout is 0ms and TX timeout is 500ms
+	if(usb_Init(USBDEV) == false)
+	{
+		printf("init2 error\n");
+		return false;
+	}
     
 	//io_Close();
 	return true;

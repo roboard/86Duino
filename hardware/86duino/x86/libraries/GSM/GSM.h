@@ -38,20 +38,20 @@ https://github.com/BlueVia/Official-Arduino
 // This file simplifies the use of the GSM3 library
 // First we include everything. 
 
-#include <GSM3CB.h>
-#include <GSM3MCM.h>
-#include <GSM3MCS.h>
-#include <GSM3MNR.h>
-#include <GSM3MSS.h>
-#include <GSM3SAP.h>
-#include <GSM3SBM.h>
-#include <GSM3SCP.h>
-#include <GSM3SDNP.h>
-#include <GSM3SMV.h>
-#include <GSM3SPM.h>
-#include <GSM3SSN.h>
-#include <GSM3SMSS.h>
-#include <GSM3VCS.h>
+#include <GSM3CircularBuffer.h>
+#include <GSM3MobileCellManagement.h>
+#include <GSM3MobileClientService.h>
+#include <GSM3MobileNetworkRegistry.h>
+#include <GSM3MobileServerService.h>
+#include <GSM3ShieldV1AccessProvider.h>
+#include <GSM3ShieldV1BandManagement.h>
+#include <GSM3ShieldV1ClientProvider.h>
+#include <GSM3ShieldV1DataNetworkProvider.h>
+#include <GSM3ShieldV1ModemVerification.h>
+#include <GSM3ShieldV1PinManagement.h>
+#include <GSM3ShieldV1ScanNetworks.h>
+#include <GSM3SMSService.h>
+#include <GSM3VoiceCallService.h>
 
 #define GSM GSM3ShieldV1AccessProvider
 #define GPRS GSM3ShieldV1DataNetworkProvider

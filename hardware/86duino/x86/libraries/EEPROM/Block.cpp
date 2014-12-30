@@ -1,6 +1,6 @@
 /*
   Block.cpp - Part of DM&P Vortex86 EEPROM library
-  Copyright (c) 2013 Vic Cheng <vic@dmp.com.tw>. All right reserved.
+  Copyright (c) 2013 Vic Chen <vic@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -125,10 +125,7 @@ static void write_cmos(unsigned char address, unsigned char buf)
 
 
 EEPROMBlock::EEPROMBlock(unsigned short in_addr)
-:_data(NULL), _data_redundancy(NULL), _counter(NULL),
- _data_buffer(NULL),
- _data_position(0xffff), _counter_position(0xffff),
- _redundancy(false), _addr(0x0000)
+:_data(NULL), _data_redundancy(NULL), _counter(NULL),_data_buffer(NULL),_data_position(0xffff), _counter_position(0xffff),_counter_flag_position(0xffff),_redundancy(false), _addr(0x0000)
 {
   if(in_addr >= ADDRESS)
   {
@@ -137,15 +134,18 @@ EEPROMBlock::EEPROMBlock(unsigned short in_addr)
   _addr = in_addr;
   
   //create three SPIFlash spaces.
-  _data = new SPIFlash(_addr * 3 + 0);
-  _data_redundancy = new SPIFlash(_addr * 3 + 1);
-  _counter = new SPIFlash(_addr * 3 + 2);
-
+  _data = new SPIFlash(_addr * 4 + 0);
+  _data_redundancy = new SPIFlash(_addr * 4 + 1);
+  _counter = new SPIFlash(_addr * 4 + 2);
+  _counter_flag = new SPIFlash(_addr * 4 + 3);
+  
   _data_buffer = new unsigned char[SECTORSIZE];
   if(_data_buffer == NULL)
   {
 	return;
   }
+  //check if _counter_flag is broken or not.
+  CheckCounterFlag();
   
   CheckCounterResetState();
   SetRedundancyFlag(); //set _redundancy flag
@@ -250,7 +250,7 @@ void EEPROMBlock::CalculateRealData()
 
 	if(addr >= DATASIZE)
 	  continue;
-	_data_position = i;
+	_data_position = i+3;
 	
 	_data_buffer[addr] = _data_buffer[i+2];
   }
@@ -260,15 +260,131 @@ void EEPROMBlock::CalculateRealData()
 //make sure counter is in a right status.
 void EEPROMBlock::CheckCounterResetState()
 {
-  //read CMOS to check need reset or not
+  //read _counter_flag to check need reset or not
   unsigned char data;
-  
-  data = read_cmos(EEPROM_OFFSET_CMOS + _addr / BYTESIZE);
-  if((data >> (_addr % BYTESIZE)) & 0x01) //check bit is 1 or 0, if 1 reset counter
+  for(int i = 0; i < SECTORSIZE; ++i)
   {
-    _counter->reset();
-	data = data & (0xff ^ (0x01 << (_addr % BYTESIZE))); //cleaer bit to zero
-	write_cmos(EEPROM_OFFSET_CMOS + _addr / BYTESIZE, data);
+    data = _counter_flag->read(i);
+	if(data == 0xff) //ok
+	{
+	    _counter_flag_position = i;
+		return;
+	}
+	else if(data == 0x00) //have not found the end yet
+		continue;
+	else
+	{
+	  unsigned char bit1, bit0;
+	  for(int j = 0; j < BYTESIZE; j+=2)
+	  {
+	    bit1 = (data >> (BYTESIZE - 1 - j)) & 0x01;
+		bit0 = (data >> (BYTESIZE - 1 - (j+1))) & 0x01;
+		
+		if(bit1 == 1 && bit0 == 1) //need not Reset
+		{
+		  _counter_flag_position = i;
+		  break;
+		}
+		else if(bit1 == 1 && bit0 == 0) //broken
+		{
+		  _counter_flag->reset();
+		  _counter_flag_position = 0;
+		  break;
+		}
+		else if(bit1 == 0 && bit0 == 1) //not finish reset yet
+		{
+		  _counter->reset();
+
+		  //write back
+		  _counter_flag->write(i, (0x00FF) >> (j + 2));
+		  if(j == (BYTESIZE - 2))
+		  {
+			if(i == (SECTORSIZE - 1))
+			{
+				_counter_flag->reset();
+				_counter_flag_position = 0;
+			}
+			else
+				_counter_flag_position = i + 1;
+		  }
+		  else 
+			_counter_flag_position = i;
+		  break;
+		}
+	  }
+	  return;
+	}
+  }
+  _counter_flag->reset();
+  _counter_flag_position = 0;
+}
+
+//make sure counter flag in a correct state
+void EEPROMBlock::CheckCounterFlag()
+{
+  //read _counter_flag data
+  bool zero = true;
+  
+  unsigned char data;
+  for(int i = 0; i < SECTORSIZE; ++i)
+  {
+	data = _counter_flag->read(i);
+	if(data == 0x00) //used already
+	{
+	  if(zero == true)
+		continue;
+	  else //broken
+	  {
+		zero = false;
+		_counter_flag->reset();
+		break;
+	  }
+	}
+	else if(data == 0xff)
+	{
+	  zero = false;
+	  continue;
+	}
+	else
+	{
+	  if(zero == false) //broken
+	  {
+		_counter_flag->reset();
+		_counter_flag_position = 0;
+		break;
+	  }
+	  //1. check if  sequential 0 and 1.
+	  bool exit_flag = false;
+	  unsigned char temp;
+	  for(int i = 0; i < BYTESIZE; ++i)
+	  {
+	    temp = (data >> (BYTESIZE - 1 - i)) &0x01;
+		if(temp == 0 && zero == true) //ok
+		  ;
+		else if(temp == 1 && zero == true) //switch to 1
+		{
+		  zero = false;
+		}
+		else if(temp == 1 && zero == false) //ok
+		  ;
+		else //(temp == 0 && zero == false)
+		{
+		  //broken
+		  zero = false;
+		  exit_flag = true;
+		  _counter_flag->reset();
+		  break;
+		}	
+	  }
+	  if(exit_flag)
+		break;
+		
+	}
+	
+  }
+  if(zero == true)
+  {
+	_counter_flag->reset();
   }
 }
 
@@ -279,12 +395,12 @@ void EEPROMBlock::SetRedundancyFlag()
   for(int i = 0; i < SECTORSIZE; ++i)
   {
     data = _counter->read(i);
-	if(data == 0xff) //not cleared yet
+	if(data == 0xff) 
 	{
 	  //all data behind this byte should be 0xff
 	  _counter_position = i;
 	  _redundancy = false;
-	  break;
+	  return;
 	}
 	else if( data == 0x00) //cleared
 	{
@@ -304,32 +420,62 @@ void EEPROMBlock::SetRedundancyFlag()
 	  }
 	  //Set flag
 	  _redundancy = number_of_ones % 2; //1 = use redundancy
-	  break;
+	  
+	  return;
 	}
   }
+  _redundancy = false;
+  _counter_position = SECTORSIZE;
 }
 
 
 void EEPROMBlock::WriteCounter()
 {
   //1. check if counter is full or not
+  unsigned char data;
   if(_counter_position >= SECTORSIZE) //full
   {
-    //a.write cmos to 1
-	unsigned char data;
-	data = read_cmos(EEPROM_OFFSET_CMOS + _addr / BYTESIZE);
-	data = data | (0x01 << (_addr % BYTESIZE));//set bit to 1.
-	write_cmos(EEPROM_OFFSET_CMOS + _addr / BYTESIZE, data);
-	//b. reset counter
+	//Check if counter flag is full or not
+	if(_counter_flag_position >= SECTORSIZE)
+	{
+	  _counter_flag->reset();
+	  _counter_flag_position = 0;
+	}
+	
+	data = _counter_flag->read(_counter_flag_position);
+	//look for 1
+	unsigned char mask = 0x00ff;
+	char offset = 0;
+	for(char i = 0; i < BYTESIZE; ++i)
+	{
+	  //__asm__ __volatile__ ("" : : : "memory");
+	  //printf(", %x %x", data & mask, mask);
+	  if((data & mask) == mask)//got 1
+	  {
+	    offset = i;
+		break;
+	  }
+	  mask >>= 1;
+	}
+	//write counter_flag 0 for bit 1 
+	mask = 0xff;
+	mask >>= (offset + 1);
+	
+	_counter_flag->write(_counter_flag_position, mask);
+	
+	//Start Reset _counter
 	_counter->reset();
 	_counter_position = 0;
 	
-	//c. write cmos to 0
-	data = data & (0xff ^ (0x01 << (_addr % BYTESIZE)));//clear bit to 0
-	write_cmos(EEPROM_OFFSET_CMOS + _addr / BYTESIZE, data);	
+	//write counter_flag 0 for bit 0
+	mask = 0xff;
+	mask >>= (offset + 2);
+	_counter_flag->write(_counter_flag_position, mask);
+	if(mask == 0x00)
+	  _counter_flag_position++;
+	  
   }
   //2. write counter bit
-  unsigned char data;
   data = _counter->read(_counter_position);
   //find leading one
   for(int i = BYTESIZE - 1; i >= 0; --i)
@@ -346,4 +492,3 @@ void EEPROMBlock::WriteCounter()
   //3. set redundancy flag
   _redundancy = !_redundancy;
 }
-

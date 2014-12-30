@@ -442,8 +442,9 @@ void Encoder::end() {
 	if(i == 4 && j == 3)
 	{
 		mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mcn));
+		if(used_irq == 0xff) return;
 		if(irq_UninstallISR(used_irq, (void*)name) == false)
-		    printf("irq_install fail\n");
+		    printf("irq_uninstall fail\n");
 		else
 			used_irq = 0xff;
 	}

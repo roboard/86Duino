@@ -1,5 +1,6 @@
 /*
-  Copyright (c) 2012 Arduino.  All right reserved.
+  Arduino.h - Main include file for the Arduino SDK
+  Copyright (c) 2005-2013 Arduino Team.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -8,8 +9,8 @@
 
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-  See the GNU Lesser General Public License for more details.
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
@@ -24,7 +25,14 @@
 #include <string.h>
 #include <math.h>
 
+// some libraries and sketches depend on this
+// AVR stuff, assuming Arduino.h or WProgram.h
+// automatically includes it...
+#include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+
 #include "binary.h"
+#include "itoa.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -41,29 +49,14 @@ extern "C"{
 
 void yield(void);
 
-#include "wiring.h"
-#include "wiring_digital.h"
-#include "wiring_analog.h"
-#include "wiring_shift.h"
-#include "WInterrupts.h"
-
 /* sketch */
 extern void setup( void ) ;
 extern void loop( void ) ;
 
-// Get the bit location within the hardware port of the given virtual pin.
-// This comes from the pins_*.c file for the active board configuration.
-//
-#define digitalPinToPort(P)        ( g_APinDescription[P].pPort )
-#define digitalPinToBitMask(P)     ( g_APinDescription[P].ulPin )
-#define digitalPinToTimer(P)       (  )
-//#define analogInPinToBit(P)        ( )
-#define portOutputRegister(port)   ( &(port->PIO_ODSR) )
-#define portInputRegister(port)    ( &(port->PIO_PDSR) )
-//#define portModeRegister(P)        (  )
-
 //#define NOT_A_PIN 0  // defined in pio.h/EPioType
 #define NOT_A_PORT           0
+
+#define NOT_AN_INTERRUPT -1
 
 typedef enum _EExt_Interrupts
 {
@@ -194,6 +187,12 @@ extern const PinDescription g_APinDescription[] ;
 
 // Include board variant
 #include "variant.h"
+
+#include "wiring.h"
+#include "wiring_digital.h"
+#include "wiring_analog.h"
+#include "wiring_shift.h"
+#include "WInterrupts.h"
 
 // USB Device
 #define USB_VID            0x2341 // arduino LLC vid

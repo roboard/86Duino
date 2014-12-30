@@ -1,2 +1,0 @@
-#! /bin/sh
-exec /dev/env/DJDIR/bin/bison -y "$@"

@@ -1,0 +1,358 @@
+Making check in doc
+make.exe[1]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12/doc'
+make.exe[1]: Nothing to be done for `check'.
+make.exe[1]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12/doc'
+Making check in src
+make.exe[1]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12/src'
+c:/comp/djgpp/bin/make.exe  check-am
+make.exe[2]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12/src'
+make.exe[2]: Nothing to be done for `check-am'.
+make.exe[2]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12/src'
+make.exe[1]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12/src'
+Making check in tests
+make.exe[1]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12/tests'
+c:/comp/djgpp/bin/make.exe  libfrtests.la tversion.exe tinternals.exe tinits.exe tisqrt.exe tsgn.exe tcheck.exe tisnan.exe texceptions.exe tset_exp.exe tset.exe mpf_compat.exe mpfr_compat.exe reuse.exe tabs.exe tacos.exe tacosh.exe tadd.exe tadd1sp.exe tadd_d.exe tadd_ui.exe tagm.exe tai.exe tasin.exe tasinh.exe tatan.exe tatanh.exe taway.exe tbuildopt.exe tcan_round.exe tcbrt.exe tcmp.exe tcmp2.exe tcmp_d.exe tcmp_ld.exe tcmp_ui.exe tcmpabs.exe tcomparisons.exe tconst_catalan.exe tconst_euler.exe tconst_log2.exe tconst_pi.exe tcopysign.exe tcos.exe tcosh.exe tcot.exe tcoth.exe tcsc.exe tcsch.exe td_div.exe td_sub.exe tdigamma.exe tdim.exe tdiv.exe tdiv_d.exe tdiv_ui.exe teint.exe teq.exe terf.exe texp.exe texp10.exe texp2.exe texpm1.exe tfactorial.exe tfits.exe tfma.exe tfmod.exe tfms.exe tfprintf.exe tfrac.exe tfrexp.exe tgamma.exe tget_flt.exe tget_d.exe tget_d_2exp.exe tget_f.exe tget_ld_2exp.exe tget_set_d64.exe tget_sj.exe tget_str.exe tget_z.exe tgmpop.exe tgrandom.exe thyperbolic.exe thypot.exe tinp_str.exe tj0.exe tj1.exe tjn.exe tl2b.exe tlgamma.exe tli2.exe tlngamma.exe tlog.exe tlog10.exe tlog1p.exe tlog2.exe tmin_prec.exe tminmax.exe tmodf.exe tmul.exe tmul_2exp.exe tmul_d.exe tmul_ui.exe tnext.exe tout_str.exe toutimpl.exe tpow.exe tpow3.exe tpow_all.exe tpow_z.exe tprintf.exe trandom.exe trec_sqrt.exe tremquo.exe trint.exe troot.exe tround_prec.exe tsec.exe tsech.exe tset_d.exe tset_f.exe tset_ld.exe tset_q.exe tset_si.exe tset_sj.exe tset_str.exe tset_z.exe tset_z_exp.exe tsi_op.exe tsin.exe tsin_cos.exe tsinh.exe tsinh_cosh.exe tsprintf.exe tsqr.exe tsqrt.exe tsqrt_ui.exe tstckintc.exe tstdint.exe tstrtofr.exe tsub.exe tsub1sp.exe tsub_d.exe tsub_ui.exe tsubnormal.exe tsum.exe tswap.exe ttan.exe ttanh.exe ttrunc.exe tui_div.exe tui_pow.exe tui_sub.exe turandom.exe tvalist.exe ty0.exe ty1.exe tyn.exe tzeta.exe tzeta_ui.exe tversion.exe
+make.exe[2]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12/tests'
+make.exe[2]: `libfrtests.la' is up to date.
+make.exe[2]: `tversion.exe' is up to date.
+make.exe[2]: `tinternals.exe' is up to date.
+make.exe[2]: `tinits.exe' is up to date.
+make.exe[2]: `tisqrt.exe' is up to date.
+make.exe[2]: `tsgn.exe' is up to date.
+make.exe[2]: `tcheck.exe' is up to date.
+make.exe[2]: `tisnan.exe' is up to date.
+make.exe[2]: `texceptions.exe' is up to date.
+make.exe[2]: `tset_exp.exe' is up to date.
+make.exe[2]: `tset.exe' is up to date.
+make.exe[2]: `mpf_compat.exe' is up to date.
+make.exe[2]: `mpfr_compat.exe' is up to date.
+make.exe[2]: `reuse.exe' is up to date.
+make.exe[2]: `tabs.exe' is up to date.
+make.exe[2]: `tacos.exe' is up to date.
+make.exe[2]: `tacosh.exe' is up to date.
+make.exe[2]: `tadd.exe' is up to date.
+make.exe[2]: `tadd1sp.exe' is up to date.
+make.exe[2]: `tadd_d.exe' is up to date.
+make.exe[2]: `tadd_ui.exe' is up to date.
+make.exe[2]: `tagm.exe' is up to date.
+make.exe[2]: `tai.exe' is up to date.
+make.exe[2]: `tasin.exe' is up to date.
+make.exe[2]: `tasinh.exe' is up to date.
+make.exe[2]: `tatan.exe' is up to date.
+make.exe[2]: `tatanh.exe' is up to date.
+make.exe[2]: `taway.exe' is up to date.
+make.exe[2]: `tbuildopt.exe' is up to date.
+make.exe[2]: `tcan_round.exe' is up to date.
+make.exe[2]: `tcbrt.exe' is up to date.
+make.exe[2]: `tcmp.exe' is up to date.
+make.exe[2]: `tcmp2.exe' is up to date.
+make.exe[2]: `tcmp_d.exe' is up to date.
+make.exe[2]: `tcmp_ld.exe' is up to date.
+make.exe[2]: `tcmp_ui.exe' is up to date.
+make.exe[2]: `tcmpabs.exe' is up to date.
+make.exe[2]: `tcomparisons.exe' is up to date.
+make.exe[2]: `tconst_catalan.exe' is up to date.
+make.exe[2]: `tconst_euler.exe' is up to date.
+make.exe[2]: `tconst_log2.exe' is up to date.
+make.exe[2]: `tconst_pi.exe' is up to date.
+make.exe[2]: `tcopysign.exe' is up to date.
+make.exe[2]: `tcos.exe' is up to date.
+make.exe[2]: `tcosh.exe' is up to date.
+make.exe[2]: `tcot.exe' is up to date.
+make.exe[2]: `tcoth.exe' is up to date.
+make.exe[2]: `tcsc.exe' is up to date.
+make.exe[2]: `tcsch.exe' is up to date.
+make.exe[2]: `td_div.exe' is up to date.
+make.exe[2]: `td_sub.exe' is up to date.
+make.exe[2]: `tdigamma.exe' is up to date.
+make.exe[2]: `tdim.exe' is up to date.
+make.exe[2]: `tdiv.exe' is up to date.
+make.exe[2]: `tdiv_d.exe' is up to date.
+make.exe[2]: `tdiv_ui.exe' is up to date.
+make.exe[2]: `teint.exe' is up to date.
+make.exe[2]: `teq.exe' is up to date.
+make.exe[2]: `terf.exe' is up to date.
+make.exe[2]: `texp.exe' is up to date.
+make.exe[2]: `texp10.exe' is up to date.
+make.exe[2]: `texp2.exe' is up to date.
+make.exe[2]: `texpm1.exe' is up to date.
+make.exe[2]: `tfactorial.exe' is up to date.
+make.exe[2]: `tfits.exe' is up to date.
+make.exe[2]: `tfma.exe' is up to date.
+make.exe[2]: `tfmod.exe' is up to date.
+make.exe[2]: `tfms.exe' is up to date.
+make.exe[2]: `tfprintf.exe' is up to date.
+make.exe[2]: `tfrac.exe' is up to date.
+make.exe[2]: `tfrexp.exe' is up to date.
+make.exe[2]: `tgamma.exe' is up to date.
+make.exe[2]: `tget_flt.exe' is up to date.
+make.exe[2]: `tget_d.exe' is up to date.
+make.exe[2]: `tget_d_2exp.exe' is up to date.
+make.exe[2]: `tget_f.exe' is up to date.
+make.exe[2]: `tget_ld_2exp.exe' is up to date.
+make.exe[2]: `tget_set_d64.exe' is up to date.
+make.exe[2]: `tget_sj.exe' is up to date.
+make.exe[2]: `tget_str.exe' is up to date.
+make.exe[2]: `tget_z.exe' is up to date.
+make.exe[2]: `tgmpop.exe' is up to date.
+make.exe[2]: `tgrandom.exe' is up to date.
+make.exe[2]: `thyperbolic.exe' is up to date.
+make.exe[2]: `thypot.exe' is up to date.
+make.exe[2]: `tinp_str.exe' is up to date.
+make.exe[2]: `tj0.exe' is up to date.
+make.exe[2]: `tj1.exe' is up to date.
+make.exe[2]: `tjn.exe' is up to date.
+make.exe[2]: `tl2b.exe' is up to date.
+make.exe[2]: `tlgamma.exe' is up to date.
+make.exe[2]: `tli2.exe' is up to date.
+make.exe[2]: `tlngamma.exe' is up to date.
+make.exe[2]: `tlog.exe' is up to date.
+make.exe[2]: `tlog10.exe' is up to date.
+make.exe[2]: `tlog1p.exe' is up to date.
+make.exe[2]: `tlog2.exe' is up to date.
+make.exe[2]: `tmin_prec.exe' is up to date.
+make.exe[2]: `tminmax.exe' is up to date.
+make.exe[2]: `tmodf.exe' is up to date.
+make.exe[2]: `tmul.exe' is up to date.
+make.exe[2]: `tmul_2exp.exe' is up to date.
+make.exe[2]: `tmul_d.exe' is up to date.
+make.exe[2]: `tmul_ui.exe' is up to date.
+make.exe[2]: `tnext.exe' is up to date.
+make.exe[2]: `tout_str.exe' is up to date.
+make.exe[2]: `toutimpl.exe' is up to date.
+make.exe[2]: `tpow.exe' is up to date.
+make.exe[2]: `tpow3.exe' is up to date.
+make.exe[2]: `tpow_all.exe' is up to date.
+make.exe[2]: `tpow_z.exe' is up to date.
+make.exe[2]: `tprintf.exe' is up to date.
+make.exe[2]: `trandom.exe' is up to date.
+make.exe[2]: `trec_sqrt.exe' is up to date.
+make.exe[2]: `tremquo.exe' is up to date.
+make.exe[2]: `trint.exe' is up to date.
+make.exe[2]: `troot.exe' is up to date.
+make.exe[2]: `tround_prec.exe' is up to date.
+make.exe[2]: `tsec.exe' is up to date.
+make.exe[2]: `tsech.exe' is up to date.
+make.exe[2]: `tset_d.exe' is up to date.
+make.exe[2]: `tset_f.exe' is up to date.
+make.exe[2]: `tset_ld.exe' is up to date.
+make.exe[2]: `tset_q.exe' is up to date.
+make.exe[2]: `tset_si.exe' is up to date.
+make.exe[2]: `tset_sj.exe' is up to date.
+make.exe[2]: `tset_str.exe' is up to date.
+make.exe[2]: `tset_z.exe' is up to date.
+make.exe[2]: `tset_z_exp.exe' is up to date.
+make.exe[2]: `tsi_op.exe' is up to date.
+make.exe[2]: `tsin.exe' is up to date.
+make.exe[2]: `tsin_cos.exe' is up to date.
+make.exe[2]: `tsinh.exe' is up to date.
+make.exe[2]: `tsinh_cosh.exe' is up to date.
+make.exe[2]: `tsprintf.exe' is up to date.
+make.exe[2]: `tsqr.exe' is up to date.
+make.exe[2]: `tsqrt.exe' is up to date.
+make.exe[2]: `tsqrt_ui.exe' is up to date.
+make.exe[2]: `tstckintc.exe' is up to date.
+make.exe[2]: `tstdint.exe' is up to date.
+make.exe[2]: `tstrtofr.exe' is up to date.
+make.exe[2]: `tsub.exe' is up to date.
+make.exe[2]: `tsub1sp.exe' is up to date.
+make.exe[2]: `tsub_d.exe' is up to date.
+make.exe[2]: `tsub_ui.exe' is up to date.
+make.exe[2]: `tsubnormal.exe' is up to date.
+make.exe[2]: `tsum.exe' is up to date.
+make.exe[2]: `tswap.exe' is up to date.
+make.exe[2]: `ttan.exe' is up to date.
+make.exe[2]: `ttanh.exe' is up to date.
+make.exe[2]: `ttrunc.exe' is up to date.
+make.exe[2]: `tui_div.exe' is up to date.
+make.exe[2]: `tui_pow.exe' is up to date.
+make.exe[2]: `tui_sub.exe' is up to date.
+make.exe[2]: `turandom.exe' is up to date.
+make.exe[2]: `tvalist.exe' is up to date.
+make.exe[2]: `ty0.exe' is up to date.
+make.exe[2]: `ty1.exe' is up to date.
+make.exe[2]: `tyn.exe' is up to date.
+make.exe[2]: `tzeta.exe' is up to date.
+make.exe[2]: `tzeta_ui.exe' is up to date.
+make.exe[2]: `tversion.exe' is up to date.
+make.exe[2]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12/tests'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[2]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12/tests'
+[tversion] GMP: header 5.1.1, library 5.1.1
+[tversion] MPFR tuning parameters from src/x86/mparam.h
+PASS: tversion.exe
+PASS: tinternals.exe
+PASS: tinits.exe
+PASS: tisqrt.exe
+PASS: tsgn.exe
+PASS: tcheck.exe
+PASS: tisnan.exe
+PASS: texceptions.exe
+PASS: tset_exp.exe
+PASS: tset.exe
+PASS: mpf_compat.exe
+PASS: mpfr_compat.exe
+PASS: reuse.exe
+PASS: tabs.exe
+PASS: tacos.exe
+PASS: tacosh.exe
+PASS: tadd.exe
+PASS: tadd1sp.exe
+PASS: tadd_d.exe
+PASS: tadd_ui.exe
+PASS: tagm.exe
+PASS: tai.exe
+PASS: tasin.exe
+PASS: tasinh.exe
+PASS: tatan.exe
+PASS: tatanh.exe
+PASS: taway.exe
+PASS: tbuildopt.exe
+PASS: tcan_round.exe
+PASS: tcbrt.exe
+PASS: tcmp.exe
+PASS: tcmp2.exe
+PASS: tcmp_d.exe
+PASS: tcmp_ld.exe
+PASS: tcmp_ui.exe
+PASS: tcmpabs.exe
+PASS: tcomparisons.exe
+PASS: tconst_catalan.exe
+PASS: tconst_euler.exe
+PASS: tconst_log2.exe
+PASS: tconst_pi.exe
+PASS: tcopysign.exe
+PASS: tcos.exe
+PASS: tcosh.exe
+PASS: tcot.exe
+PASS: tcoth.exe
+PASS: tcsc.exe
+PASS: tcsch.exe
+PASS: td_div.exe
+PASS: td_sub.exe
+PASS: tdigamma.exe
+PASS: tdim.exe
+PASS: tdiv.exe
+PASS: tdiv_d.exe
+PASS: tdiv_ui.exe
+PASS: teint.exe
+PASS: teq.exe
+PASS: terf.exe
+PASS: texp.exe
+PASS: texp10.exe
+PASS: texp2.exe
+PASS: texpm1.exe
+PASS: tfactorial.exe
+PASS: tfits.exe
+PASS: tfma.exe
+PASS: tfmod.exe
+PASS: tfms.exe
+PASS: tfprintf.exe
+PASS: tfrac.exe
+PASS: tfrexp.exe
+PASS: tgamma.exe
+PASS: tget_flt.exe
+PASS: tget_d.exe
+PASS: tget_d_2exp.exe
+PASS: tget_f.exe
+PASS: tget_ld_2exp.exe
+SKIP: tget_set_d64.exe
+PASS: tget_sj.exe
+PASS: tget_str.exe
+PASS: tget_z.exe
+PASS: tgmpop.exe
+PASS: tgrandom.exe
+PASS: thyperbolic.exe
+PASS: thypot.exe
+PASS: tinp_str.exe
+PASS: tj0.exe
+PASS: tj1.exe
+PASS: tjn.exe
+PASS: tl2b.exe
+PASS: tlgamma.exe
+PASS: tli2.exe
+PASS: tlngamma.exe
+PASS: tlog.exe
+PASS: tlog10.exe
+PASS: tlog1p.exe
+PASS: tlog2.exe
+PASS: tmin_prec.exe
+PASS: tminmax.exe
+PASS: tmodf.exe
+PASS: tmul.exe
+PASS: tmul_2exp.exe
+PASS: tmul_d.exe
+PASS: tmul_ui.exe
+PASS: tnext.exe
+PASS: tout_str.exe
+PASS: toutimpl.exe
+PASS: tpow.exe
+PASS: tpow3.exe
+PASS: tpow_all.exe
+PASS: tpow_z.exe
+PASS: tprintf.exe
+PASS: trandom.exe
+PASS: trec_sqrt.exe
+PASS: tremquo.exe
+PASS: trint.exe
+PASS: troot.exe
+PASS: tround_prec.exe
+PASS: tsec.exe
+PASS: tsech.exe
+PASS: tset_d.exe
+PASS: tset_f.exe
+PASS: tset_ld.exe
+PASS: tset_q.exe
+PASS: tset_si.exe
+PASS: tset_sj.exe
+PASS: tset_str.exe
+PASS: tset_z.exe
+PASS: tset_z_exp.exe
+PASS: tsi_op.exe
+PASS: tsin.exe
+PASS: tsin_cos.exe
+PASS: tsinh.exe
+PASS: tsinh_cosh.exe
+PASS: tsprintf.exe
+PASS: tsqr.exe
+PASS: tsqrt.exe
+PASS: tsqrt_ui.exe
+PASS: tstckintc.exe
+PASS: tstdint.exe
+PASS: tstrtofr.exe
+PASS: tsub.exe
+PASS: tsub1sp.exe
+PASS: tsub_d.exe
+PASS: tsub_ui.exe
+PASS: tsubnormal.exe
+PASS: tsum.exe
+PASS: tswap.exe
+PASS: ttan.exe
+PASS: ttanh.exe
+PASS: ttrunc.exe
+PASS: tui_div.exe
+PASS: tui_pow.exe
+PASS: tui_sub.exe
+PASS: turandom.exe
+PASS: tvalist.exe
+PASS: ty0.exe
+PASS: ty1.exe
+PASS: tyn.exe
+PASS: tzeta.exe
+PASS: tzeta_ui.exe
+[tversion] GMP: header 5.1.1, library 5.1.1
+[tversion] MPFR tuning parameters from src/x86/mparam.h
+PASS: tversion.exe
+====================
+All 160 tests passed
+(1 test was not run)
+====================
+make.exe[2]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12/tests'
+make.exe[1]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12/tests'
+Making check in tune
+make.exe[1]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12/tune'
+make.exe[1]: Nothing to be done for `check'.
+make.exe[1]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12/tune'
+make.exe[1]: Entering directory `g:/djdev/mpfr/gnu/mpfr-3.12'
+make.exe[1]: Nothing to be done for `check-am'.
+make.exe[1]: Leaving directory `g:/djdev/mpfr/gnu/mpfr-3.12'

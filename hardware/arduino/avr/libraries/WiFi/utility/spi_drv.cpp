@@ -1,34 +1,44 @@
+/*
+  spi_drv.cpp - Library for Arduino Wifi shield.
+  Copyright (c) 2011-2014 Arduino.  All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
 
 #include "Arduino.h"
-#include "spi_drv.h"                   
+#include <SPI.h>
+#include "utility/spi_drv.h"                   
 #include "pins_arduino.h"
 //#define _DEBUG_
 extern "C" {
-#include "debug.h"
+#include "utility/debug.h"
 }
 
-#define DATAOUT 	11 // MOSI
-#define DATAIN  	12 // MISO
-#define SPICLOCK  	13 // sck
+#define DATAOUT     11 // MOSI
+#define DATAIN      12 // MISO
+#define SPICLOCK    13 // sck
 #define SLAVESELECT 10 // ss
-#define SLAVEREADY 	7  // handshake pin
-#define WIFILED 	9  // led on wifi shield
+#define SLAVEREADY  7  // handshake pin
+#define WIFILED     9  // led on wifi shield
 
-#define DELAY_100NS do { asm volatile("nop"); }while(0);
-#define DELAY_SPI(X) { int ii=0; do {  asm volatile("nop"); }while(++ii<X);}
+#define DELAY_SPI(X) { int ii=0; do { asm volatile("nop"); } while (++ii < (X*F_CPU/16000000)); }
 #define DELAY_TRANSFER() DELAY_SPI(10)
 
 void SpiDrv::begin()
 {
-	  // Set direction register for SCK and MOSI pin.
-	  // MISO pin automatically overrides to INPUT.
-	  // When the SS pin is set as OUTPUT, it can be used as
-	  // a general purpose output port (it doesn't influence
-	  // SPI operations).
-
-	  pinMode(SCK, OUTPUT);
-	  pinMode(MOSI, OUTPUT);
-	  pinMode(SS, OUTPUT);
+	  SPI.begin();
 	  pinMode(SLAVESELECT, OUTPUT);
 	  pinMode(SLAVEREADY, INPUT);
 	  pinMode(WIFILED, OUTPUT);
@@ -42,17 +52,10 @@ void SpiDrv::begin()
 #ifdef _DEBUG_
 	  INIT_TRIGGER()
 #endif
-
-	  // Warning: if the SS pin ever becomes a LOW INPUT then SPI
-	  // automatically switches to Slave, so the data direction of
-	  // the SS pin MUST be kept as OUTPUT.
-	  SPCR |= _BV(MSTR);
-	  SPCR |= _BV(SPE);
-	  //SPSR |= _BV(SPI2X);
 }
 
 void SpiDrv::end() {
-  SPCR &= ~_BV(SPE);
+    SPI.end();
 }
 
 void SpiDrv::spiSlaveSelect()
@@ -66,23 +69,10 @@ void SpiDrv::spiSlaveDeselect()
     digitalWrite(SLAVESELECT,HIGH);
 }
 
-void delaySpi()
-{
-	int i = 0;
-	const int DELAY = 1000;
-	for (;i<DELAY;++i)
-	{
-		int a =a+1;
-	}
-}
 
 char SpiDrv::spiTransfer(volatile char data)
 {
-    SPDR = data;                    // Start the transmission
-    while (!(SPSR & (1<<SPIF)))     // Wait the end of the transmission
-    {
-    };
-    char result = SPDR;
+    char result = SPI.transfer(data);
     DELAY_TRANSFER();
 
     return result;                    // return the received byte

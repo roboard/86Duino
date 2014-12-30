@@ -18,7 +18,7 @@
  */
 
 #include "IRremote.h"
-#include "IRRInt.h"
+#include "IRremoteInt.h"
 #include "irq.h"
 
 
@@ -31,17 +31,17 @@ static int iroutpin = TIMER_PWM_PIN; // default use pin 10 to send IR signal
 
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, 0x00ffffffL); //for EX
 }
 
 static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
+    mc_outp(mc, 0x00, 0x00L);  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
+	mc_outp(mc, 0x00, used_int<<mcint_offset[md]);
 }
 
 static char* name = "IRremote";
@@ -70,12 +70,8 @@ void rcvInit(double us) {
 	static bool oneshot = false;
 	if(oneshot == false)
 	{
-		if(timer1_pin32_isUsed == false)
-		{
-			pinMode(TIMER_PIN, INPUT);
-			digitalWrite(TIMER_PIN, LOW);
-		}
-		
+		pinMode(TIMER_PIN, INPUT);
+		digitalWrite(TIMER_PIN, LOW);
 	    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
 	    mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 	    mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
@@ -231,10 +227,7 @@ void IRrecv::blink13(int blinkflag)
 // As soon as a SPACE gets long, ready is set, state switches to IDLE, timing of SPACE continues.
 // As soon as first MARK arrives, gap width is recorded, ready is cleared, and new logging starts
 static int isr_handler(int irq, void* data) {
-    unsigned long irintmask = PULSE_END_INT << mcint_offset[md];
-    if((mc_inp(mc, 0x04) & irintmask) == 0L) return ISR_NONE;
-    
-	mc_outp(mc, 0x04, (PULSE_END_INT << mcint_offset[md]));
+    mc_outp(mc, 0x04, (PULSE_END_INT << mcint_offset[md]));
 
     uint8_t irdata = (uint8_t)digitalRead(irparams.recvpin);
 

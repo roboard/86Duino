@@ -1,0 +1,543 @@
+c:/comp/djgpp/bin/make.exe  check-recursive
+make.exe[1]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00'
+Making check in tests
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+Making check in .
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+c:/comp/djgpp/bin/make.exe  libtests.la t-bswap.exe t-constants.exe t-count_zeros.exe t-gmpmax.exe t-hightomask.exe t-modlinv.exe t-popc.exe t-parity.exe t-sub.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+make.exe[4]: `libtests.la' is up to date.
+make.exe[4]: `t-bswap.exe' is up to date.
+make.exe[4]: `t-constants.exe' is up to date.
+make.exe[4]: `t-count_zeros.exe' is up to date.
+make.exe[4]: `t-gmpmax.exe' is up to date.
+make.exe[4]: `t-hightomask.exe' is up to date.
+make.exe[4]: `t-modlinv.exe' is up to date.
+make.exe[4]: `t-popc.exe' is up to date.
+make.exe[4]: `t-parity.exe' is up to date.
+make.exe[4]: `t-sub.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+PASS: t-bswap.exe
+PASS: t-constants.exe
+PASS: t-count_zeros.exe
+PASS: t-gmpmax.exe
+PASS: t-hightomask.exe
+PASS: t-modlinv.exe
+PASS: t-popc.exe
+PASS: t-parity.exe
+PASS: t-sub.exe
+==================
+All 9 tests passed
+==================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+Making check in devel
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/devel'
+make.exe[3]: Nothing to be done for `check'.
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/devel'
+Making check in mpn
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpn'
+c:/comp/djgpp/bin/make.exe  t-asmtype.exe t-aors_1.exe t-divrem_1.exe t-mod_1.exe t-fat.exe t-get_d.exe t-instrument.exe t-iord_u.exe t-mp_bases.exe t-perfsqr.exe t-scan.exe logic.exe t-toom22.exe t-toom32.exe t-toom33.exe t-toom42.exe t-toom43.exe t-toom44.exe t-toom52.exe t-toom53.exe t-toom54.exe t-toom62.exe t-toom63.exe t-toom6h.exe t-toom8h.exe t-toom2-sqr.exe t-toom3-sqr.exe t-toom4-sqr.exe t-toom6-sqr.exe t-toom8-sqr.exe t-mul.exe t-mullo.exe t-mulmod_bnm1.exe t-sqrmod_bnm1.exe t-mulmid.exe t-hgcd.exe t-hgcd_appr.exe t-matrix22.exe t-invert.exe t-div.exe t-bdiv.exe t-broot.exe t-brootinv.exe t-minvert.exe t-sizeinbase.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpn'
+make.exe[4]: `t-asmtype.exe' is up to date.
+make.exe[4]: `t-aors_1.exe' is up to date.
+make.exe[4]: `t-divrem_1.exe' is up to date.
+make.exe[4]: `t-mod_1.exe' is up to date.
+make.exe[4]: `t-fat.exe' is up to date.
+make.exe[4]: `t-get_d.exe' is up to date.
+make.exe[4]: `t-instrument.exe' is up to date.
+make.exe[4]: `t-iord_u.exe' is up to date.
+make.exe[4]: `t-mp_bases.exe' is up to date.
+make.exe[4]: `t-perfsqr.exe' is up to date.
+make.exe[4]: `t-scan.exe' is up to date.
+make.exe[4]: `logic.exe' is up to date.
+make.exe[4]: `t-toom22.exe' is up to date.
+make.exe[4]: `t-toom32.exe' is up to date.
+make.exe[4]: `t-toom33.exe' is up to date.
+make.exe[4]: `t-toom42.exe' is up to date.
+make.exe[4]: `t-toom43.exe' is up to date.
+make.exe[4]: `t-toom44.exe' is up to date.
+make.exe[4]: `t-toom52.exe' is up to date.
+make.exe[4]: `t-toom53.exe' is up to date.
+make.exe[4]: `t-toom54.exe' is up to date.
+make.exe[4]: `t-toom62.exe' is up to date.
+make.exe[4]: `t-toom63.exe' is up to date.
+make.exe[4]: `t-toom6h.exe' is up to date.
+make.exe[4]: `t-toom8h.exe' is up to date.
+make.exe[4]: `t-toom2-sqr.exe' is up to date.
+make.exe[4]: `t-toom3-sqr.exe' is up to date.
+make.exe[4]: `t-toom4-sqr.exe' is up to date.
+make.exe[4]: `t-toom6-sqr.exe' is up to date.
+make.exe[4]: `t-toom8-sqr.exe' is up to date.
+make.exe[4]: `t-mul.exe' is up to date.
+make.exe[4]: `t-mullo.exe' is up to date.
+make.exe[4]: `t-mulmod_bnm1.exe' is up to date.
+make.exe[4]: `t-sqrmod_bnm1.exe' is up to date.
+make.exe[4]: `t-mulmid.exe' is up to date.
+make.exe[4]: `t-hgcd.exe' is up to date.
+make.exe[4]: `t-hgcd_appr.exe' is up to date.
+make.exe[4]: `t-matrix22.exe' is up to date.
+make.exe[4]: `t-invert.exe' is up to date.
+make.exe[4]: `t-div.exe' is up to date.
+make.exe[4]: `t-bdiv.exe' is up to date.
+make.exe[4]: `t-broot.exe' is up to date.
+make.exe[4]: `t-brootinv.exe' is up to date.
+make.exe[4]: `t-minvert.exe' is up to date.
+make.exe[4]: `t-sizeinbase.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpn'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpn'
+PASS: t-asmtype.exe
+PASS: t-aors_1.exe
+PASS: t-divrem_1.exe
+PASS: t-mod_1.exe
+PASS: t-fat.exe
+PASS: t-get_d.exe
+PASS: t-instrument.exe
+PASS: t-iord_u.exe
+PASS: t-mp_bases.exe
+PASS: t-perfsqr.exe
+PASS: t-scan.exe
+PASS: logic.exe
+PASS: t-toom22.exe
+PASS: t-toom32.exe
+PASS: t-toom33.exe
+PASS: t-toom42.exe
+PASS: t-toom43.exe
+PASS: t-toom44.exe
+PASS: t-toom52.exe
+PASS: t-toom53.exe
+PASS: t-toom54.exe
+PASS: t-toom62.exe
+PASS: t-toom63.exe
+PASS: t-toom6h.exe
+PASS: t-toom8h.exe
+PASS: t-toom2-sqr.exe
+PASS: t-toom3-sqr.exe
+PASS: t-toom4-sqr.exe
+PASS: t-toom6-sqr.exe
+PASS: t-toom8-sqr.exe
+PASS: t-mul.exe
+PASS: t-mullo.exe
+PASS: t-mulmod_bnm1.exe
+PASS: t-sqrmod_bnm1.exe
+PASS: t-mulmid.exe
+PASS: t-hgcd.exe
+PASS: t-hgcd_appr.exe
+PASS: t-matrix22.exe
+PASS: t-invert.exe
+PASS: t-div.exe
+PASS: t-bdiv.exe
+PASS: t-broot.exe
+PASS: t-brootinv.exe
+PASS: t-minvert.exe
+PASS: t-sizeinbase.exe
+===================
+All 45 tests passed
+===================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpn'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpn'
+Making check in mpz
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpz'
+c:/comp/djgpp/bin/make.exe  t-addsub.exe t-cmp.exe t-mul.exe t-mul_i.exe t-tdiv.exe t-tdiv_ui.exe t-fdiv.exe t-fdiv_ui.exe t-cdiv_ui.exe t-gcd.exe t-gcd_ui.exe t-lcm.exe t-invert.exe dive.exe dive_ui.exe t-sqrtrem.exe convert.exe io.exe t-inp_str.exe logic.exe bit.exe t-powm.exe t-powm_ui.exe t-pow.exe t-div_2exp.exe reuse.exe t-root.exe t-perfsqr.exe t-perfpow.exe t-jac.exe t-bin.exe t-get_d.exe t-get_d_2exp.exe t-get_si.exe t-set_d.exe t-set_si.exe t-fac_ui.exe t-mfac_uiui.exe t-primorial_ui.exe t-fib_ui.exe t-lucnum_ui.exe t-scan.exe t-fits.exe t-divis.exe t-divis_2exp.exe t-cong.exe t-cong_2exp.exe t-sizeinbase.exe t-set_str.exe t-aorsmul.exe t-cmp_d.exe t-cmp_si.exe t-hamdist.exe t-oddeven.exe t-popcount.exe t-set_f.exe t-io_raw.exe t-import.exe t-export.exe t-pprime_p.exe t-nextprime.exe t-remove.exe t-limbs.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpz'
+make.exe[4]: `t-addsub.exe' is up to date.
+make.exe[4]: `t-cmp.exe' is up to date.
+make.exe[4]: `t-mul.exe' is up to date.
+make.exe[4]: `t-mul_i.exe' is up to date.
+make.exe[4]: `t-tdiv.exe' is up to date.
+make.exe[4]: `t-tdiv_ui.exe' is up to date.
+make.exe[4]: `t-fdiv.exe' is up to date.
+make.exe[4]: `t-fdiv_ui.exe' is up to date.
+make.exe[4]: `t-cdiv_ui.exe' is up to date.
+make.exe[4]: `t-gcd.exe' is up to date.
+make.exe[4]: `t-gcd_ui.exe' is up to date.
+make.exe[4]: `t-lcm.exe' is up to date.
+make.exe[4]: `t-invert.exe' is up to date.
+make.exe[4]: `dive.exe' is up to date.
+make.exe[4]: `dive_ui.exe' is up to date.
+make.exe[4]: `t-sqrtrem.exe' is up to date.
+make.exe[4]: `convert.exe' is up to date.
+make.exe[4]: `io.exe' is up to date.
+make.exe[4]: `t-inp_str.exe' is up to date.
+make.exe[4]: `logic.exe' is up to date.
+make.exe[4]: `bit.exe' is up to date.
+make.exe[4]: `t-powm.exe' is up to date.
+make.exe[4]: `t-powm_ui.exe' is up to date.
+make.exe[4]: `t-pow.exe' is up to date.
+make.exe[4]: `t-div_2exp.exe' is up to date.
+make.exe[4]: `reuse.exe' is up to date.
+make.exe[4]: `t-root.exe' is up to date.
+make.exe[4]: `t-perfsqr.exe' is up to date.
+make.exe[4]: `t-perfpow.exe' is up to date.
+make.exe[4]: `t-jac.exe' is up to date.
+make.exe[4]: `t-bin.exe' is up to date.
+make.exe[4]: `t-get_d.exe' is up to date.
+make.exe[4]: `t-get_d_2exp.exe' is up to date.
+make.exe[4]: `t-get_si.exe' is up to date.
+make.exe[4]: `t-set_d.exe' is up to date.
+make.exe[4]: `t-set_si.exe' is up to date.
+make.exe[4]: `t-fac_ui.exe' is up to date.
+make.exe[4]: `t-mfac_uiui.exe' is up to date.
+make.exe[4]: `t-primorial_ui.exe' is up to date.
+make.exe[4]: `t-fib_ui.exe' is up to date.
+make.exe[4]: `t-lucnum_ui.exe' is up to date.
+make.exe[4]: `t-scan.exe' is up to date.
+make.exe[4]: `t-fits.exe' is up to date.
+make.exe[4]: `t-divis.exe' is up to date.
+make.exe[4]: `t-divis_2exp.exe' is up to date.
+make.exe[4]: `t-cong.exe' is up to date.
+make.exe[4]: `t-cong_2exp.exe' is up to date.
+make.exe[4]: `t-sizeinbase.exe' is up to date.
+make.exe[4]: `t-set_str.exe' is up to date.
+make.exe[4]: `t-aorsmul.exe' is up to date.
+make.exe[4]: `t-cmp_d.exe' is up to date.
+make.exe[4]: `t-cmp_si.exe' is up to date.
+make.exe[4]: `t-hamdist.exe' is up to date.
+make.exe[4]: `t-oddeven.exe' is up to date.
+make.exe[4]: `t-popcount.exe' is up to date.
+make.exe[4]: `t-set_f.exe' is up to date.
+make.exe[4]: `t-io_raw.exe' is up to date.
+make.exe[4]: `t-import.exe' is up to date.
+make.exe[4]: `t-export.exe' is up to date.
+make.exe[4]: `t-pprime_p.exe' is up to date.
+make.exe[4]: `t-nextprime.exe' is up to date.
+make.exe[4]: `t-remove.exe' is up to date.
+make.exe[4]: `t-limbs.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpz'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpz'
+PASS: t-addsub.exe
+PASS: t-cmp.exe
+PASS: t-mul.exe
+PASS: t-mul_i.exe
+PASS: t-tdiv.exe
+PASS: t-tdiv_ui.exe
+PASS: t-fdiv.exe
+PASS: t-fdiv_ui.exe
+PASS: t-cdiv_ui.exe
+PASS: t-gcd.exe
+PASS: t-gcd_ui.exe
+PASS: t-lcm.exe
+PASS: t-invert.exe
+PASS: dive.exe
+PASS: dive_ui.exe
+PASS: t-sqrtrem.exe
+PASS: convert.exe
+PASS: io.exe
+PASS: t-inp_str.exe
+PASS: logic.exe
+PASS: bit.exe
+PASS: t-powm.exe
+PASS: t-powm_ui.exe
+PASS: t-pow.exe
+PASS: t-div_2exp.exe
+PASS: reuse.exe
+PASS: t-root.exe
+PASS: t-perfsqr.exe
+PASS: t-perfpow.exe
+PASS: t-jac.exe
+PASS: t-bin.exe
+PASS: t-get_d.exe
+PASS: t-get_d_2exp.exe
+PASS: t-get_si.exe
+PASS: t-set_d.exe
+PASS: t-set_si.exe
+PASS: t-fac_ui.exe
+PASS: t-mfac_uiui.exe
+PASS: t-primorial_ui.exe
+PASS: t-fib_ui.exe
+PASS: t-lucnum_ui.exe
+PASS: t-scan.exe
+PASS: t-fits.exe
+PASS: t-divis.exe
+PASS: t-divis_2exp.exe
+PASS: t-cong.exe
+PASS: t-cong_2exp.exe
+PASS: t-sizeinbase.exe
+PASS: t-set_str.exe
+PASS: t-aorsmul.exe
+PASS: t-cmp_d.exe
+PASS: t-cmp_si.exe
+PASS: t-hamdist.exe
+PASS: t-oddeven.exe
+PASS: t-popcount.exe
+PASS: t-set_f.exe
+PASS: t-io_raw.exe
+PASS: t-import.exe
+PASS: t-export.exe
+PASS: t-pprime_p.exe
+PASS: t-nextprime.exe
+PASS: t-remove.exe
+PASS: t-limbs.exe
+===================
+All 63 tests passed
+===================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpz'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpz'
+Making check in mpq
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpq'
+c:/comp/djgpp/bin/make.exe  t-aors.exe t-cmp.exe t-cmp_ui.exe t-cmp_si.exe t-equal.exe t-get_d.exe t-get_str.exe t-inp_str.exe t-inv.exe t-md_2exp.exe t-set_f.exe t-set_str.exe io.exe reuse.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpq'
+make.exe[4]: `t-aors.exe' is up to date.
+make.exe[4]: `t-cmp.exe' is up to date.
+make.exe[4]: `t-cmp_ui.exe' is up to date.
+make.exe[4]: `t-cmp_si.exe' is up to date.
+make.exe[4]: `t-equal.exe' is up to date.
+make.exe[4]: `t-get_d.exe' is up to date.
+make.exe[4]: `t-get_str.exe' is up to date.
+make.exe[4]: `t-inp_str.exe' is up to date.
+make.exe[4]: `t-inv.exe' is up to date.
+make.exe[4]: `t-md_2exp.exe' is up to date.
+make.exe[4]: `t-set_f.exe' is up to date.
+make.exe[4]: `t-set_str.exe' is up to date.
+make.exe[4]: `io.exe' is up to date.
+make.exe[4]: `reuse.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpq'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpq'
+PASS: t-aors.exe
+PASS: t-cmp.exe
+PASS: t-cmp_ui.exe
+PASS: t-cmp_si.exe
+PASS: t-equal.exe
+PASS: t-get_d.exe
+PASS: t-get_str.exe
+PASS: t-inp_str.exe
+PASS: t-inv.exe
+PASS: t-md_2exp.exe
+PASS: t-set_f.exe
+PASS: t-set_str.exe
+PASS: io.exe
+PASS: reuse.exe
+===================
+All 14 tests passed
+===================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpq'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpq'
+Making check in mpf
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpf'
+c:/comp/djgpp/bin/make.exe  t-add.exe t-sub.exe t-conv.exe t-sqrt.exe t-sqrt_ui.exe t-muldiv.exe t-dm2exp.exe reuse.exe t-cmp_d.exe t-cmp_si.exe t-div.exe t-fits.exe t-get_d.exe t-get_d_2exp.exe t-get_si.exe t-get_ui.exe t-gsprec.exe t-inp_str.exe t-int_p.exe t-mul_ui.exe t-set.exe t-set_q.exe t-set_si.exe t-set_ui.exe t-trunc.exe t-ui_div.exe t-eq.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpf'
+make.exe[4]: `t-add.exe' is up to date.
+make.exe[4]: `t-sub.exe' is up to date.
+make.exe[4]: `t-conv.exe' is up to date.
+make.exe[4]: `t-sqrt.exe' is up to date.
+make.exe[4]: `t-sqrt_ui.exe' is up to date.
+make.exe[4]: `t-muldiv.exe' is up to date.
+make.exe[4]: `t-dm2exp.exe' is up to date.
+make.exe[4]: `reuse.exe' is up to date.
+make.exe[4]: `t-cmp_d.exe' is up to date.
+make.exe[4]: `t-cmp_si.exe' is up to date.
+make.exe[4]: `t-div.exe' is up to date.
+make.exe[4]: `t-fits.exe' is up to date.
+make.exe[4]: `t-get_d.exe' is up to date.
+make.exe[4]: `t-get_d_2exp.exe' is up to date.
+make.exe[4]: `t-get_si.exe' is up to date.
+make.exe[4]: `t-get_ui.exe' is up to date.
+make.exe[4]: `t-gsprec.exe' is up to date.
+make.exe[4]: `t-inp_str.exe' is up to date.
+make.exe[4]: `t-int_p.exe' is up to date.
+make.exe[4]: `t-mul_ui.exe' is up to date.
+make.exe[4]: `t-set.exe' is up to date.
+make.exe[4]: `t-set_q.exe' is up to date.
+make.exe[4]: `t-set_si.exe' is up to date.
+make.exe[4]: `t-set_ui.exe' is up to date.
+make.exe[4]: `t-trunc.exe' is up to date.
+make.exe[4]: `t-ui_div.exe' is up to date.
+make.exe[4]: `t-eq.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpf'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpf'
+PASS: t-add.exe
+PASS: t-sub.exe
+PASS: t-conv.exe
+PASS: t-sqrt.exe
+PASS: t-sqrt_ui.exe
+PASS: t-muldiv.exe
+PASS: t-dm2exp.exe
+PASS: reuse.exe
+PASS: t-cmp_d.exe
+PASS: t-cmp_si.exe
+PASS: t-div.exe
+PASS: t-fits.exe
+PASS: t-get_d.exe
+PASS: t-get_d_2exp.exe
+PASS: t-get_si.exe
+PASS: t-get_ui.exe
+PASS: t-gsprec.exe
+PASS: t-inp_str.exe
+PASS: t-int_p.exe
+PASS: t-mul_ui.exe
+PASS: t-set.exe
+PASS: t-set_q.exe
+PASS: t-set_si.exe
+PASS: t-set_ui.exe
+PASS: t-trunc.exe
+PASS: t-ui_div.exe
+PASS: t-eq.exe
+===================
+All 27 tests passed
+===================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpf'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/mpf'
+Making check in rand
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/rand'
+c:/comp/djgpp/bin/make.exe  t-iset.exe t-lc2exp.exe t-mt.exe t-rand.exe t-urbui.exe t-urmui.exe t-urndmm.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/rand'
+make.exe[4]: `t-iset.exe' is up to date.
+make.exe[4]: `t-lc2exp.exe' is up to date.
+make.exe[4]: `t-mt.exe' is up to date.
+make.exe[4]: `t-rand.exe' is up to date.
+make.exe[4]: `t-urbui.exe' is up to date.
+make.exe[4]: `t-urmui.exe' is up to date.
+make.exe[4]: `t-urndmm.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/rand'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/rand'
+PASS: t-iset.exe
+PASS: t-lc2exp.exe
+PASS: t-mt.exe
+PASS: t-rand.exe
+PASS: t-urbui.exe
+PASS: t-urmui.exe
+PASS: t-urndmm.exe
+==================
+All 7 tests passed
+==================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/rand'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/rand'
+Making check in misc
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/misc'
+c:/comp/djgpp/bin/make.exe  t-printf.exe t-scanf.exe t-locale.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/misc'
+make.exe[4]: `t-printf.exe' is up to date.
+make.exe[4]: `t-scanf.exe' is up to date.
+make.exe[4]: `t-locale.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/misc'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/misc'
+PASS: t-printf.exe
+PASS: t-scanf.exe
+PASS: t-locale.exe
+==================
+All 3 tests passed
+==================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/misc'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/misc'
+Making check in cxx
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/cxx'
+c:/comp/djgpp/bin/make.exe  t-binary.exe t-cast.exe t-cxx11.exe t-headers.exe t-iostream.exe t-istream.exe t-locale.exe t-misc.exe t-mix.exe t-ops.exe t-ops2.exe t-ops3.exe t-ostream.exe t-prec.exe t-ternary.exe t-unary.exe t-do-exceptions-work-at-all-with-this-compiler.exe t-assign.exe t-constr.exe t-rand.exe
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/cxx'
+make.exe[4]: `t-binary.exe' is up to date.
+make.exe[4]: `t-cast.exe' is up to date.
+make.exe[4]: `t-cxx11.exe' is up to date.
+make.exe[4]: `t-headers.exe' is up to date.
+make.exe[4]: `t-iostream.exe' is up to date.
+make.exe[4]: `t-istream.exe' is up to date.
+make.exe[4]: `t-locale.exe' is up to date.
+make.exe[4]: `t-misc.exe' is up to date.
+make.exe[4]: `t-mix.exe' is up to date.
+make.exe[4]: `t-ops.exe' is up to date.
+make.exe[4]: `t-ops2.exe' is up to date.
+make.exe[4]: `t-ops3.exe' is up to date.
+make.exe[4]: `t-ostream.exe' is up to date.
+make.exe[4]: `t-prec.exe' is up to date.
+make.exe[4]: `t-ternary.exe' is up to date.
+make.exe[4]: `t-unary.exe' is up to date.
+make.exe[4]: `t-do-exceptions-work-at-all-with-this-compiler.exe' is up to date.
+make.exe[4]: `t-assign.exe' is up to date.
+make.exe[4]: `t-constr.exe' is up to date.
+make.exe[4]: `t-rand.exe' is up to date.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/cxx'
+c:/comp/djgpp/bin/make.exe  check-TESTS
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tests/cxx'
+PASS: t-binary.exe
+PASS: t-cast.exe
+PASS: t-cxx11.exe
+PASS: t-headers.exe
+PASS: t-iostream.exe
+PASS: t-istream.exe
+PASS: t-locale.exe
+PASS: t-misc.exe
+PASS: t-mix.exe
+PASS: t-ops.exe
+PASS: t-ops2.exe
+PASS: t-ops3.exe
+PASS: t-ostream.exe
+PASS: t-prec.exe
+PASS: t-ternary.exe
+PASS: t-unary.exe
+PASS: t-do-exceptions-work-at-all-with-this-compiler.exe
+PASS: t-assign.exe
+PASS: t-constr.exe
+PASS: t-rand.exe
+===================
+All 20 tests passed
+===================
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/cxx'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests/cxx'
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tests'
+Making check in mpn
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/mpn'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/mpn'
+Making check in mpz
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/mpz'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/mpz'
+Making check in mpq
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/mpq'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/mpq'
+Making check in mpf
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/mpf'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/mpf'
+Making check in printf
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/printf'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/printf'
+Making check in scanf
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/scanf'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/scanf'
+Making check in rand
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/rand'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/rand'
+Making check in cxx
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/cxx'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/cxx'
+Making check in demos
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/demos'
+Making check in calc
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/demos/calc'
+c:/comp/djgpp/bin/make.exe  check-am
+make.exe[4]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/demos/calc'
+make.exe[4]: Nothing to be done for `check-am'.
+make.exe[4]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/demos/calc'
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/demos/calc'
+Making check in expr
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/demos/expr'
+make.exe[3]: Nothing to be done for `check'.
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/demos/expr'
+make.exe[3]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/demos'
+make.exe[3]: Nothing to be done for `check-am'.
+make.exe[3]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/demos'
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/demos'
+Making check in tune
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/tune'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/tune'
+Making check in doc
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00/doc'
+make.exe[2]: Nothing to be done for `check'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00/doc'
+make.exe[2]: Entering directory `g:/djdev/gmp/gnu/gmp-6.00'
+make.exe[2]: Nothing to be done for `check-am'.
+make.exe[2]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00'
+make.exe[1]: Leaving directory `g:/djdev/gmp/gnu/gmp-6.00'

@@ -36,7 +36,7 @@
 #define udp_h
 
 #include <Stream.h>
-#include <IPAddres.h>
+#include <IPAddress.h>
 
 class UDP : public Stream {
 

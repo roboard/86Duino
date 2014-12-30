@@ -1,10 +1,29 @@
+/*
+  spi_drv.h - Library for Arduino Wifi shield.
+  Copyright (c) 2011-2014 Arduino.  All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
 #ifndef SPI_Drv_h
 #define SPI_Drv_h
 
 #include <inttypes.h>
-#include "wifi_spi.h"
+#include "utility/wifi_spi.h"
 
-#define SPI_START_CMD_DELAY 	12
+#define SPI_START_CMD_DELAY 	10
 
 #define NO_LAST_PARAM   0
 #define LAST_PARAM      1

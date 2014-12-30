@@ -21,9 +21,9 @@
     Tlc5940 class functions. */
 
 #include "Tlc5940.h"
-#include "tlc_cfg.h"
+#include "tlc_config.h"
 #include "pinouts/pinfuc.h"
-#include "parduino.h"
+#include "pins_arduino.h"
 #include "io.h"
 #include "irq.h"
 #include "mcm.h"

@@ -162,12 +162,13 @@ DMPAPI(void *) CreateUART(int com)
 	port->xon          = 0;
 	port->xoff         = 0;
 																			 
-	port->old_lsb      = port->lsb      = 0;
-	port->old_msb      = port->msb      = 0;
-	port->old_ier      = port->ier      = 0;
-	port->old_lcr      = port->lcr      = 0;
-	port->old_mcr      = port->mcr      = 0;
-	port->old_TimeOut  = port->TimeOut  = UART_NO_TIMEOUT;
+	port->old_lsb        = port->lsb        = 0;
+	port->old_msb        = port->msb        = 0;
+	port->old_ier        = port->ier        = 0;
+	port->old_lcr        = port->lcr        = 0;
+	port->old_mcr        = port->mcr        = 0;
+	port->old_RxTimeOut  = port->RxTimeOut  = UART_NO_TIMEOUT;
+	port->old_TxTimeOut  = port->TxTimeOut  = UART_NO_TIMEOUT;
 	port->fcr = 0;
 	
 	port->RFIFO_Size   = 0;
@@ -247,17 +248,18 @@ DMPAPI(bool) uart_Init(void *vport)
     }
 
 	// save old UART config
-	port->old_lsb     = port->lsb     = _16550_DLAB_In(port, port->DLLSB);
-	port->old_msb     = port->msb     = _16550_DLAB_In(port, port->DLMSB);
-	port->old_ier     = port->ier     = io_inpb(port->IER); 
-	port->old_lcr     = port->lcr     = io_inpb(port->LCR); 
-	port->old_mcr     = port->mcr     = io_inpb(port->MCR); 
-	port->old_TimeOut = port->TimeOut = UART_NO_TIMEOUT;
+	port->old_lsb       = port->lsb       = _16550_DLAB_In(port, port->DLLSB);
+	port->old_msb       = port->msb       = _16550_DLAB_In(port, port->DLMSB);
+	port->old_ier       = port->ier       = io_inpb(port->IER); 
+	port->old_lcr       = port->lcr       = io_inpb(port->LCR); 
+	port->old_mcr       = port->mcr       = io_inpb(port->MCR); 
+	port->old_RxTimeOut = port->RxTimeOut = UART_NO_TIMEOUT;
+	port->old_TxTimeOut = port->TxTimeOut = UART_NO_TIMEOUT;
 	
 	// UART initial
-	uart_SetBaud(vport, 115200L);
+	uart_SetBaud(vport, UARTBAUD_115200BPS);
 	uart_SetFormat(vport, BYTESIZE8 + STOPBIT1 + NOPARITY);
-	uart_SetTimeOut(vport, UART_NO_TIMEOUT);
+	uart_SetTimeOut(vport, UART_NO_TIMEOUT, UART_NO_TIMEOUT);
 
 	// flush rx & tx queue
 	uart_FlushRxQueue(vport);
@@ -332,7 +334,7 @@ DMPAPI(void) uart_Close(void *vport)
 		
 		// restore old LCR & timeout
 		uart_SetFormat(vport, port->old_lcr);
-		uart_SetTimeOut(vport, port->old_TimeOut);
+		uart_SetTimeOut(vport, port->old_RxTimeOut, port->old_TxTimeOut);
 		
 		vx86_uart_Close(port->com);
 		if (io_Close() == false) err_print((char*)"Close IO lib error!!\n");
@@ -435,12 +437,13 @@ DMPAPI(void) uart_SetFlowControl(void *vport, int control)
 	};
 }
 
-DMPAPI(void) uart_SetTimeOut(void *vport, unsigned long timeout)
+DMPAPI(void) uart_SetTimeOut(void *vport, unsigned long rx_timeout, unsigned long tx_timeout)
 {
 	SerialPort *port = (SerialPort *)vport;
 	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
 	
-	port->TimeOut = timeout;
+	port->RxTimeOut = rx_timeout;
+	port->TxTimeOut = tx_timeout;
 }
 
 DMPAPI(unsigned char) uart_GetLSR(void *vport)
@@ -500,7 +503,7 @@ DMPAPI(void) uart_ClearRFIFO(void *vport)
 	SerialPort *port = (SerialPort *)vport;
 	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
 	
-	_16550_DLAB_Out(port, port->FCR, port->fcr |= 0x02);
+	_16550_DLAB_Out(port, port->FCR, port->fcr | 0x02);
 }
 
 DMPAPI(void) uart_ClearWFIFO(void *vport)
@@ -508,7 +511,7 @@ DMPAPI(void) uart_ClearWFIFO(void *vport)
 	SerialPort *port = (SerialPort *)vport;
 	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
 	
-	_16550_DLAB_Out(port, port->FCR, port->fcr |= 0x04);
+	_16550_DLAB_Out(port, port->FCR, port->fcr | 0x04);
 }
 
 DMPAPI(void) uart_SetRFIFOTrig(void *vport, int cap)
@@ -553,9 +556,9 @@ DMPAPI(unsigned int) uart_Read(void *vport)
 	
 	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return 0xffff; }
 	
-	if (port->TimeOut != UART_NO_TIMEOUT) {
+	if (port->RxTimeOut != UART_NO_TIMEOUT) {
 		pretime = timer_nowtime();
-		while (port->rcvd->count <= 0 && (timer_nowtime() - pretime) < port->TimeOut); 
+		while (port->rcvd->count <= 0 && (timer_nowtime() - pretime) < port->RxTimeOut); 
 		
 		if (port->rcvd->count <= 0) {
 			if (UART_TIMEOUT_DEBUG)
@@ -682,9 +685,9 @@ DMPAPI(int) uart_Send(void *vport, unsigned char* buf, int bsize)
 	
 	for (i = 0; i < bsize; i++)
 	{
-		if (port->TimeOut != UART_NO_TIMEOUT) {
+		if (port->TxTimeOut != UART_NO_TIMEOUT) {
 			pretime = timer_nowtime();
-			while (port->xmit->count >= port->xmit->size && (timer_nowtime() - pretime) < port->TimeOut); 
+			while (port->xmit->count >= port->xmit->size && (timer_nowtime() - pretime) < port->TxTimeOut); 
 			
 			if (port->xmit->count >= port->xmit->size) {
 				if (UART_TIMEOUT_DEBUG)
@@ -773,7 +776,7 @@ static int UART_ISR(int irq, void *data)
 	{
 		ISR_Status = ISR_HANDLED;
 		
-		switch (iir & 0x07)
+		switch (iir & 0x0e)
 		{
 			// timeout & receive data ready interrupt
 			case 0x0c: case 0x04:

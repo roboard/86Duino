@@ -14,7 +14,7 @@
 
 #define SOCK_NOT_AVAIL  255
 
-#include "wl_def.h"
+#include "wl_definitions.h"
 /**
  * The 8-bit signed data type.
  */

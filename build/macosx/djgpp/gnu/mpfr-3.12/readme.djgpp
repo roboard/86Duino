@@ -1,0 +1,28 @@
+This is DJGPP port of MPFR-3.1.2.
+
+The MPFR library is a C library for multiple-precision floating-point
+computations with correct rounding. MPFR requires GMP for use. It is also
+required to install MPFR after GMP, as it may replaces part of GMP files
+
+See README and http://www.mpfr.org for more information.
+
+Building from sources
+=====================
+
+LFN support is required for building MPFR for DJGPP. I built MPFR
+using GCC-4.8.0 under Windows Vista Business SP2. DJGPP port of GMP-5.1.1
+were used when building MPFR-3.1.2. One may need to to rebuild MPFR
+if different enough GMP version is being used. 
+
+Sources in mpfr312s.zip are preconfigured for target i386-pc-msdosdjgpp.
+Simply running configure script with needed parameters should be enough
+to reconfigure if needed.
+
+To build MPFR run 'make'.
+
+To run tests of the MPFR, run 'make check'
+
+To install MPFR run 'make install prefix=where_to_install' (replace
+'where_to_install' with real value).
+
+Andris Pavenis <andris.pavenis@iki.fi>

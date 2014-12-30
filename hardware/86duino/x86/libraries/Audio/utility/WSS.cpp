@@ -9,7 +9,7 @@
 #include <pc.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include "wss.h"
+#include "WSS.h"
 
 
 

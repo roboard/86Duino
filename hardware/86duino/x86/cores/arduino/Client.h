@@ -2,7 +2,7 @@
 #define client_h
 #include "Print.h"
 #include "Stream.h"
-#include "IPAddres.h"
+#include "IPAddress.h"
 
 class Client : public Stream {
 

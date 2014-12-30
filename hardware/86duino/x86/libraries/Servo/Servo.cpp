@@ -25,7 +25,7 @@
 #include "Servo.h"
 #include "io.h"
 #include "irq.h"
-#include "parduino.h"
+#include "pins_arduino.h"
 
 typedef struct {
   int pin;

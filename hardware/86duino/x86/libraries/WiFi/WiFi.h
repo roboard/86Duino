@@ -5,13 +5,13 @@
 #include <inttypes.h>
 
 extern "C" {
-	#include "utility/wl_def.h"
+	#include "utility/wl_definitions.h"
 	#include "utility/wl_types.h"
 }
 
-#include "IPAddres.h"
-#include "WFClient.h"
-#include "WFServer.h"
+#include "IPAddress.h"
+#include "WiFiClient.h"
+#include "WiFiServer.h"
 
 class WiFiClass
 {

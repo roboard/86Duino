@@ -1,0 +1,203 @@
+This is a port of FFTW 3.1.2 to MSDOS/DJGPP.
+
+1.:     DJGPP specific changes.
+        =======================
+
+      - This port will look for configuration files in /dev/env/DJDIR/etc/fftw
+        instead of /etc/fftw. This is the only djgpp specific change to the code.
+        Please note that this package **needs** long filename support to compile.
+        It also needs nemeric tails for 8+3 aliases of long file names enabled.
+        This is an issue on Windows 9X where this feature can be enabled and
+        disabled. If you are not familiar with this issue, please read the FAQ
+        chapter 22.19: "How to Set Up a Dual DOS/Windows Installation".
+        With other words, this package can not be compiled on plain DOS.
+      - Due to the 8.3 file name length restriction the libraries file names
+        have been changed from:
+          libfftw3X.a  to  libfftwX.a
+        where X stands for the character ``f'' or for nothing. This shoud be
+        remembered when reading the info docs or man pages and when linking.
+      - The package provides two versions of the library:
+          fftwf.a (float precision version)
+          fftw.a  (double precision version, default)
+        The two libraries use the same header: fftw3.h. In your application
+        you will have to replace function calls that starts with "fftw_" with
+        "fftwf_" in the case of float. You can use both libraries at the same
+        time in your appliction. This means that you can performe certain
+        computation with single precision in some function and perform another
+        computation with double precision in another or in the same function of
+        your application. Please read the info docs to become familiar with
+        this library. The package offers a third version of the library, this
+        is one with long double precision. This version can not be compiled
+        with djgpp because it needs versions of trigonometric functions with
+        long double precision.
+     -  To make the package good for all djgpp installations, I have configured
+        and compiled with --enable-portable-binary. In this case -mtune but not
+        -march is used to generate code, so the produced library will run on
+        any architecture even tough it is optimized for a particular one.
+        I have also configured and compiled with the fortran callable wrapper
+        routines included. This makes the library a little bit bigger, but this
+        amount of size should be negligable.
+     -  Also the package can be configured to take advantage of processor
+        specific instruction set. The options are:
+          --enable-3dnow (fallback for non AMD K7 compatible processor)
+          --enable-k7 (enables K7 *and* 3dnow instruction set)
+          --enable-sse
+          --enable-sse2
+        Enabling one of the above options produces SIMD code. 3dnow and sse
+        only work with --enable-float and k7 and sse2 only work with double
+        precision (the default). To make the package good for all djgpp
+        installations, I have enabled all processor specific instruction set
+        optimizations. This will make the library a little bit bigger than a
+        specialy optimized library. If you do not like this and you want to
+        take advantage of your processor features, you will have to reconfigure
+        and recompile the package.
+        Please read the docs carefully to check if the options you may have
+        choosen to recompile the package make sense. The relevant chapter is
+        8.1 in the pdf or info formated doc.
+        To compile your application you must add the following linker commands
+        to the gcc command line:
+         -lfftwX -lm
+        The letter X must be replaced by either f for the single precision
+        library, or omitted in the case of (default) double precision library.
+        If you have an application that needs both libraries the above line
+        will look like this:
+         -lfftwf -lfftw -lm
+        The order of the fftw libraries do not matter but the math library (-lm)
+        must always be the last or the link process will fail.
+        As usual, all djgpp specific files (config.bat, diffs, readme files, etc.)
+        are located in the /djgpp subdir.
+
+
+2.:     Installing the binary package.
+        ==============================
+
+2.1.:   Copy the binary distribution into the top DJGPP installation directory
+        and unzip it running *ONE* of the following commands:
+          unzip32 fftw31b.zip      or
+          djtarx fftw31b.zip       or
+          pkunzip -d fftw31b.zip
+
+2.2.:   If there is no entry for the sed info docs in your dir file, located
+        info directory, create one running the command:
+          install-info --info-dir=/dev/env/DJDIR/info /dev/env/DJDIR/info/fftw.info
+
+        For futher information about FFTW please read the info docs. The info docs,
+        html-, dvi-,  ps-formated docs and the man pages have been updated to reflect
+        minor djgpp specific issues. This is not the case for pdf formated docs because
+        a needed file to recreate it is missing.
+
+
+3.:     Building the binaries from sources.
+        ===================================
+
+3.1.:   To build the binaries you will need the following binary packages:
+          djdev203.zip (patch level 2, see the djdev203.dsm)
+          bsh204b.zip, gcc410b.zip, bnu2161b.zip, mak3791b.zip,
+          fil41b.zip, shl2011b.zip, txt20b.zip, txi48b.zip,
+          grep24b.zip, sed415b.zip, dif287b.zip and perl561b.zip.
+
+        All this packages can be found in the v2gnu directory of ftp.delorie.com
+        and any mirror. The above cited packages are those ones I have used to
+        build the binaries from this sources. Previuos versions of those packages
+        may do the job as well but I have not tested this.
+
+3.2.:   Create a temporary directory. Copy the source package: fftw312s.zip
+        into the directory and unzip it runnig ONE of the following commands:
+          unzip32 fftw312s.zip      or
+          djtarx fftw312s.zip       or
+          pkunzip -d fftw312s.zip
+
+3.3.:   If for some reason you want to reconfigure the package cd into the top
+        srcdir (fftw-3.1-2) and run the following commands:
+          del djgpp\config.cache
+          make distclean
+          djgpp\config
+
+        Please note that you *MUST* delete the config.cache file in the /djgpp
+        subdir or you will not really reconfigure the sources because the
+        configuration informations will be read from the cache file instead
+        of being newly computed.
+        You can configure and compile three different libraries. One for single
+        precision (float), one for double precision (default) and one for
+        long double precision. If you give no option at all you will configure
+        and compile the double precision library. With the command:
+          djgpp\config --enable-float
+        you will create a single/float precision library and running the
+        command:
+          djgpp\config
+        you will create the double library (no option at all produces the double
+        precision/default library).
+        If you have compiled a library with certain precision and you want to
+        compile another version with a different precision you *MUST* run the
+        the commands:
+          del djgpp\config.cache
+          make distclean
+        or the new build will fail.
+
+        If you want to take advantage of your specific processor type you will
+        have to reconfigure and recompile the sources using **one** of the
+        following options:
+          --enable-3dnow (fallback for non AMD K7 compatible processor)
+          --enable-k7 (enables K7 *and* 3dnow instruction set)
+          --enable-sse
+          --enable-sse2
+        Take care that some of the options may imply some other options. Please
+        read chapter 8.1 in the pdf or info formated docs.
+
+        To build the programs in a directory other than where the sources are,
+        you must add the parameter that specifies the source directory,
+        e.g:
+          x:\src\gnu\fftw-3.1-2\djgpp\config x:/src/gnu/fftw-3.1-2
+
+        Lets assume you want to build the binaries in a directory placed on a
+        different drive (z:\build in this case) from where the sources are,
+        then you will run the following commands:
+          z:
+          md \build
+          cd \build
+          x:\src\gnu\fftw-3.1-2\djgpp\config x:/src/gnu/fftw-3.1-2
+
+        The order of the options and the srcdir option does not matter. You
+        *MUST* use forward slashes to specify the source directory.
+
+        The batch file will set same environment variables, make MSDOS specific
+        modifications to the Makefile.ins and supply all other needed options
+        to the configure script.
+
+
+3.4.:   To compile the package run from the top srcdir the command:
+          make
+
+3.5.:   Now you can run the tests if you like. From the top srcdir run the
+        command:
+          make check
+
+        Non test should fail.
+        You may run more exhaustive tests by changing into the tests/ subdir und
+        running the command:
+          make bigcheck
+        or 
+          make paranoid-check
+        Both tests takes a lot of time (may be hours) to finish.
+
+3.6.:   To install the binary, info docs and man pages run the following command
+        from the top srcdir:
+          make install
+
+        This will install the products into your DJGPP installation tree given
+        by the default prefix "/dev/env/DJDIR". If you prefer to install them
+        into some other directory you will have to set prefix to the appropiate
+        value.
+        Example:
+          make install prefix=z:/some/other/dir
+
+
+
+
+        Send sed specific bug reports to <fftw@fftw.org>.
+        Send suggestions and bug reports concerning the DJGPP port
+        to comp.os.msdos.djgpp or <djgpp@delorie.com>.
+
+Enjoy.
+
+          Guerrero, Juan Manuel <juan.guerrero@gmx.de>
