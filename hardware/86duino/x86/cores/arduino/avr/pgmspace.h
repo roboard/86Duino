@@ -1,6 +1,7 @@
 #ifndef __PGMSPACE_H_
 #define __PGMSPACE_H_ 1
 
+#include <stdio.h>
 #include <string.h>
 #include "dmpcfg.h"
 

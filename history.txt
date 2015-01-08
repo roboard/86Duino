@@ -1,9 +1,15 @@
+### CODING 208 - 2015.01.07 ###
+[core]
+* Fixed a USB device bug in USBCore.cpp.
+
+
+
 ### CODING 207 - 2014.12.30 ###
 [ide]
-* Use the cross-compiler to compile DJGPP program without DOSBOX and also get a faster compiling speed.
+* Use the DJGPP cross-compiler to compile 86Duino program without DOSBOX and get a shorter compiling time.
 * Compatible with Arduino IDE 1.5.8
 * Compiler version: GCC is updated to 4.9.2 version and binutil to 2.24 version.
-* New compiling system have not the limit of 8 word filename.
+* New compiling system have not 8 word limit of filename.
 
 [core]
 * Added the "USE_USBCON" define to improve compatibility for the rosserail package.
@@ -14,11 +20,13 @@
 * Added RF24 library, support nRF24L01 wireless transceiver.
 * Added Mirf library. (another popular library for the nRF24L01 wireless transceiver)
 * Added RadioHead library, support RFM22/RF69/nRF24L01... wireless transceiver.
-* Updated the EEPROM library. Dont depend on COMS and work normally.
-* Fixed a ISR uninstall behavior in Encoder Library.
+* Updated the EEPROM library. Don't depend on COMS anymore.
+* Fixed the ISR uninstall behavior in Encoder Library.
 * Fixed a Ethernet bug: re-connect to server for 16 times will cause error.
 * Fixed a Serial timeout setting issue for compatibility of rosserail package.
 * All the name of .cpp/.h files are recovered to origin for compatibility.
+
+
 
 ### CODING 106 - 2014.11.11 ###
 

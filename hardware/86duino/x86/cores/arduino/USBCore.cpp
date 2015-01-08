@@ -687,7 +687,6 @@ DMP_INLINE(void) Set_Line_Coding(USB_Device *usb)
 	usb->setup_out_handled = true;
 	
 	SetEPnDLR(usb, EP0, OUT, ENABLE | EP0_MAX_PACKET_SIZE);
-	usb->state = USB_DEV_CDC_CONNECT;
 }
 #if defined DMP_DOS_DJGPP
 DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Line_Coding)
@@ -713,8 +712,10 @@ DMP_INLINE(void) Set_Control_Line_State(USB_Device *usb)
 	
 	usb->control_line_state = usb->Setup.wValue.Value;
 	
-	if (!(usb->control_line_state & 0x01))
+	if (usb->control_line_state == 0)
 		usb->state = USB_DEV_CONFIGURED;
+	else
+		usb->state = USB_DEV_CDC_CONNECT;
 		
 	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
 	
