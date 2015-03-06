@@ -20,6 +20,11 @@
 */
 
 #define __DMP_QUEUE_LIB
+////////////////////////////////////////////////////////////////////////////////
+//    note that most of functions in this lib assume no paging issue when 
+//    using them in ISR; so to use this lib in ISR in DJGPP, it is suggested 
+//    to employ PMODE/DJ or HDPMI instead of CWSDPMI.
+////////////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,226 +32,154 @@
 #include "queue.h"
 #include "io.h"
 
-#if defined DMP_DOS_DJGPP
-static volatile bool locked = false;
-DMP_INLINE(void) lock_queue_functions(void);
-#endif
-
-DMPAPI(Queue *) CreateBufQueue(unsigned int size, unsigned int dsize)
+DMPAPI(Queue *) CreateBufQueue(unsigned long size, unsigned long dsize)
 {
-	Queue *queue = (Queue *)ker_Malloc(sizeof(Queue));
-	
-	if ((queue->data = (void *)ker_Malloc(dsize * size)) == NULL)
-	{
-		ker_Mfree((void*)queue);
+	Queue *queue = (Queue *)malloc(sizeof(Queue));
+	if (queue == NULL)
+		return NULL;
+		
+	queue->data = (void *)malloc(dsize*(size + 1));
+	if (queue->data == NULL) {
+		free((void *)queue);
 		return NULL;
 	}
 	
-	io_DisableINT();
-	{
-		queue->head  = 0;
-		queue->tail  = 0;
-		queue->count = 0;
-		queue->size  = size;
-		queue->dsize = dsize;
-		queue->total = dsize*size;
-		queue->near_full_size = 3 * (size >> 2);
-		queue->empty = true;
-		queue->full  = false;
-		queue->near_full = false;
-	}
-	io_RestoreINT();
-	
-	#if defined DMP_DOS_DJGPP
-	if (locked == false) lock_queue_functions();
-	#endif
+	queue->head  = 0;
+	queue->tail  = 0;
+	queue->size  = size + 1;
+	queue->dsize = dsize;
 	
 	return queue;
 }
 
-DMPAPI(Queue *) CreateQueue(unsigned int size)
+DMPAPI(Queue *) CreateQueue(unsigned long size)
 {
 	return CreateBufQueue(size, 1);
 }
 
 DMPAPI(void) DestoryQueue(Queue *queue)
 {
-	if (queue == NULL) return;
-	if (queue->data != NULL) ker_Mfree(queue->data);
-	ker_Mfree((void*)queue);
+	if (queue == NULL)
+		return;
+	if (queue->data != NULL)
+		free((void *)queue->data);
+	free((void *)queue);
 }
 
 DMPAPI(void) ClearQueue(Queue *queue)
 {
-	if (queue == NULL) return;
+	if (queue == NULL)
+		return;
+	
 	io_DisableINT();
-	{
-		queue->head = queue->tail = queue->count = 0;
-	}
+	queue->head = 0;
+	queue->tail = 0;
 	io_RestoreINT();
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(ClearQueue)
-#endif
 
 DMPAPI(bool) PushQueue(Queue *queue, unsigned char ch)
 {
-	bool success;
-	
-	io_DisableINT();
-	{
-		queue->temp = ch;
-		success = PushBufQueue(queue, (void*)&queue->temp);
-	}
-	io_RestoreINT();
-	
-	return success;
+	return PushBufQueue(queue, (void *)&ch);
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(PushQueue)
-#endif
 
 DMPAPI(bool) PushBufQueue(Queue *queue, void *buf)
 {
-	if (queue->count >= queue->size) return false;
+	bool ret = false;
 	
 	io_DisableINT();
-	{
-		memcpy((unsigned char *)queue->data + queue->tail, buf, queue->dsize);
-		queue->tail += queue->dsize;
-		if (queue->tail > (queue->total - queue->dsize)) queue->tail = 0;
-		queue->count++;
-		
-		if (queue->count > 0) queue->empty = false;
-		if (queue->count >= queue->near_full_size) queue->near_full = true;
-		if (queue->count >= queue->size) queue->full = true;
+	if (QueueFull(queue) == false) {
+		memcpy((unsigned char *)queue->data + queue->tail*queue->dsize, buf, queue->dsize);
+		queue->tail = (queue->tail + 1) % queue->size;
+		ret = true;
 	}
 	io_RestoreINT();
 	
-	return true;
+	return ret;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(PushBufQueue)
-#endif
 
 DMPAPI(unsigned int) PopQueue(Queue *queue)
 {
 	unsigned char ch;
 	
-	io_DisableINT();
-	{
-		if (PopBufQueue(queue, (void *)(&queue->temp)) == false)
-		{
-			io_RestoreINT();
-			return -1;
-		}
-		ch = queue->temp;
-	}
-	io_RestoreINT();
+	if (PopBufQueue(queue, (void *)&ch) == false)
+		return 0xffff;
 	
 	return (unsigned int)ch;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(PopQueue)
-#endif
 
 DMPAPI(bool) PopBufQueue(Queue *queue, void *buf)
 {
-	if (queue->count <= 0) return false;
+	bool ret = false;
 	
 	io_DisableINT();
-	{
-		memcpy(buf, (unsigned char *)queue->data + queue->head, queue->dsize);
-		queue->head += queue->dsize;
-		if (queue->head > (queue->total - queue->dsize)) queue->head = 0;
-		queue->count--;
-		
-		if (queue->count < queue->size) queue->full = false;
-		if (queue->count < queue->near_full_size) queue->near_full = false;
-		if (queue->count <= 0) queue->empty = true;
+	if (PeekBufQueue(queue, buf) == true) {
+		queue->head = (queue->head + 1) % queue->size;
+		ret = true;
 	}
 	io_RestoreINT();
 	
-	return true;
+	return ret;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(PopBufQueue)
-#endif
 
 DMPAPI(unsigned int) PeekQueue(Queue *queue)
 {
 	unsigned char ch;
 	
-	io_DisableINT();
-	{
-		if (PeekBufQueue(queue, (void *)(&queue->temp)) == false)
-		{
-			io_RestoreINT();
-			return -1;
-		}
-		ch = queue->temp;
-	}
-	io_RestoreINT();
+	if (PeekBufQueue(queue, (void *)&ch) == false)
+		return 0xffff;
 	
 	return (unsigned int)ch;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(PeekQueue)
-#endif
 
 DMPAPI(bool) PeekBufQueue(Queue *queue, void *buf)
 {
-	if (queue->count <= 0) return false;
+	bool ret = false;
 	
 	io_DisableINT();
-	{
-		memcpy(buf, (unsigned char *)queue->data + queue->head, queue->dsize);
+	if (QueueEmpty(queue) == false) {
+		memcpy(buf, (unsigned char *)queue->data + queue->head*queue->dsize, queue->dsize);
+		ret = true;
 	}
 	io_RestoreINT();
 	
-	return true;
+	return ret;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(PeekBufQueue)
-#endif
 
 DMPAPI(bool) QueueEmpty(Queue *queue)
 {
-	return queue->empty;
+	unsigned long head, tail;
+	
+	io_DisableINT();
+	head = queue->head;
+	tail = queue->tail;
+	io_RestoreINT();
+	
+	return (head == tail) ? (true) : (false);
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(QueueEmpty)
-#endif
 
 DMPAPI(bool) QueueFull(Queue *queue)
 {
-	return queue->full;
-}
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(QueueFull)
-#endif
+	unsigned long head, tail;
+	
+	io_DisableINT();
+	head = queue->head;
+	tail = queue->tail;
+	io_RestoreINT();
+	
+	if (((tail + 1) % queue->size) != head)
+		return false;
 
-DMPAPI(bool) QueueNearlyFull(Queue *queue)
-{
-	return queue->near_full;
+	return true;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(QueueNearlyFull)
-#endif
 
-#if defined DMP_DOS_DJGPP
-DMP_INLINE(void) lock_queue_functions(void)
+DMPAPI(unsigned long) QueueSize(Queue *queue)
 {
-	DPMI_LOCK_FUNC(ClearQueue);
-	DPMI_LOCK_FUNC(PushQueue);
-	DPMI_LOCK_FUNC(PushBufQueue);
-	DPMI_LOCK_FUNC(PopQueue);
-	DPMI_LOCK_FUNC(PopBufQueue);
-	DPMI_LOCK_FUNC(PeekQueue);
-	DPMI_LOCK_FUNC(PeekBufQueue);
-	DPMI_LOCK_FUNC(QueueEmpty);
-	DPMI_LOCK_FUNC(QueueFull);
-	DPMI_LOCK_FUNC(QueueNearlyFull);
-	locked = true;
+	unsigned long head, tail;
+	
+	io_DisableINT();
+	head = queue->head;
+	tail = queue->tail;
+	io_RestoreINT();
+
+	return (head <= tail) ? (tail - head) : (tail + queue->size - head);
 }
-#endif

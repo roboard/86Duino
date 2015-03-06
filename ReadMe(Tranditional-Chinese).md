@@ -25,7 +25,7 @@ http://www.86duino.com/?page_id=85&lang=TW
 
 #### 感謝 ####
 
-86Duino 是基於 Arduino、RoBoard、FreeDOS、DJGPP、DOSBOX、coreboot、SeaBIOS
+86Duino 是基於 Arduino、RoBoard、FreeDOS、DJGPP、coreboot、SeaBIOS
 所建立起來的開源專案。沒有前人打好的基礎，我們是不可能完成 86Duino 的，
 因此我們要由衷感激所有對 86Duino 產生直接或間接貢獻的人們及開源專案。
 

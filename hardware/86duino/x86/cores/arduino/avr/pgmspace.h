@@ -35,8 +35,8 @@ typedef unsigned long      prog_uint32_t PROGMEM;
 typedef long long          prog_int64_t  PROGMEM;
 typedef unsigned long long prog_uint64_t PROGMEM;
 
-
-#define PSTR(s) (s)
+#define _SFR_BYTE(n) (n)
+#define PSTR(s)      (s)
 
 #define pgm_read_byte_near(address_short) (*(const unsigned char *)(address_short))
 #define pgm_read_word_near(address_short) (*(const unsigned short *)(address_short))
@@ -91,6 +91,7 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 #define strstr_P(a, b)           strstr((a), (b))
 
 #define printf_P                 printf
+#define sprintf_P                sprintf
 
 #ifdef __cplusplus
 }

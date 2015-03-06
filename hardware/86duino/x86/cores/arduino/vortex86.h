@@ -52,8 +52,12 @@ DMPAPI(void) vx86_uart_EnableFullDuplex(int com);
 DMPAPI(int) vx86_uart_GetSBCLK(void);
 DMPAPI(int) vx86_uart_GetCS(int com);
 DMPAPI(int) vx86_uart_GetHCS(int com);
-DMPAPI(void) vx86_uart_SetCS(int com, int); // The "cs" conflicts with TFTColorPicker.ino in 86Duino TFT library
+DMPAPI(void) vx86_uart_SetSBCLK(int sbclk);
+DMPAPI(void) vx86_uart_SetCS(int com, int cs);
 DMPAPI(void) vx86_uart_SetHCS(int com, int hcs);
+
+DMPAPI(void) vx86_EnableTurboMode(int com);
+DMPAPI(void) vx86_DisableTurboMode(int com);
 
 
 // ---------------------------------------------------

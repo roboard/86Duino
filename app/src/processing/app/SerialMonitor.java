@@ -32,7 +32,6 @@ public class SerialMonitor extends AbstractMonitor {
   private final String port;
   private Serial serial;
   private int serialRate;
-  private String packageName;
 
   public SerialMonitor(BoardPort port) {
     super(port.getLabel());
@@ -40,44 +39,13 @@ public class SerialMonitor extends AbstractMonitor {
     this.port = port.getAddress();
 
     serialRate = Preferences.getInteger("serial.debug_rate");
-    packageName = Preferences.get("target_package");
-    if(Base.isLinux() && packageName.compareTo("86duino") == 0)
-    {
-	    if(serialRate == 115200)
-	    {
-	        Preferences.set("serial.debug_rate", "9600");
-	        serialRate = 9600;
-	    }
-	    else
-	    {
-	        Preferences.set("serial.debug_rate", "115200");
-	        serialRate = 115200;
-	    }
-    }
     serialRates.setSelectedItem(serialRate + " " + _("baud"));
     onSerialRateChange(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
         String wholeString = (String) serialRates.getSelectedItem();
         String rateString = wholeString.substring(0, wholeString.indexOf(' '));
-        if(Base.isLinux() && packageName.compareTo("86duino") == 0)
-        {
-          if(serialRate == 115200)
-          {
-            Preferences.set("serial.debug_rate", "9600");
-            serialRate = 9600;
-          }
-		      else
-		      {
-  				  Preferences.set("serial.debug_rate", "115200");
-  		      serialRate = 115200;
-		      }
-        }
-        else
-        {
-          serialRate = Integer.parseInt(rateString);
-          Preferences.set("serial.debug_rate", rateString);
-        }
-
+        serialRate = Integer.parseInt(rateString);
+		Preferences.set("serial.debug_rate", rateString);
         try {
             close();
             Thread.sleep(100); // Wait for serial port to properly close

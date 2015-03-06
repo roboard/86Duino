@@ -26,7 +26,7 @@ http://arduino.cc/en/Guide/HomePage
 #### CREDITS ####
 
 86Duino is an open source project based on Arduino, RoBoard, FreeDOS, DJGPP, 
-DOSBOX, coreboot and SeaBIOS. Everyone contributing to those projects is 
+coreboot and SeaBIOS. Everyone contributing to those projects is 
 gratefully acknowledged.
 
 The 86Duino boards are designed by Hao Wei Chiu. And the software and firmware 
@@ -61,7 +61,7 @@ For more information, see the website at: http://www.86duino.com/
 Established in Taiwan since 1989, DMP Electronics Inc. has focused on kernel 
 technology of x86 embedded in hardware development and manufacture. Except the 
 standard x86 embedded Single-Board-Computer products, DMP expands services 
-covering the design and manufacture of OEM /ODM for many years, such as Power 
+covering the design and manufacture of OEM/ODM for many years, such as Power 
 Application, ATM, Medical, Equipment, Home Entertainment, Automation, Metering 
 Control Module, Gate System, etc. DMP also provides clients with the complete 
 technical support relating Linux and Windows Embedded OS. In response to 

@@ -108,7 +108,7 @@ static bool set_gpio_config_addr(unsigned short addr)
 	}
 	
 	if ((gpio_config_addr = sb_Read16(0x62) & 0xfffe) == 0x0000)
-	sb_Write16(0x62, sb_Read16(0x62) | (gpio_config_addr = GPIO_CONFIG_ADDR));
+		sb_Write16(0x62, sb_Read16(0x62) | (gpio_config_addr = GPIO_CONFIG_ADDR));
 	sb_Write16(0x62, sb_Read16(0x62) | 0x0001);
 	
 	// io_outpdw(GPIO_CONFIG_ADDR + 0x00, io_inpdw(GPIO_CONFIG_ADDR + 0x00) | 0x00000004L);
@@ -124,10 +124,10 @@ static void set_pin_in(char port, char pin)
 	
 	// set data address
 	if ((usb_detect_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (4 + 4*port), (usb_detect_data = (GPIO_BASE_ADDR + port)));
+		io_outpw(gpio_config_addr + (4 + 4*port), (usb_detect_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((usb_detect_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (6 + 4*port), (usb_detect_dir = (GPIO_BASE_ADDR + port + 10)));
+		io_outpw(gpio_config_addr + (6 + 4*port), (usb_detect_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set USB-Detect pin -> IN
 	io_outpb(usb_detect_dir, io_inpb(usb_detect_dir) & ~(1 << pin));
@@ -140,10 +140,10 @@ static void set_pin_out(char port, char pin)
 	
 	// set data address
 	if ((usb_on_off_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (4 + 4*port), (usb_on_off_data = (GPIO_BASE_ADDR + port)));
+		io_outpw(gpio_config_addr + (4 + 4*port), (usb_on_off_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((usb_on_off_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (6 + 4*port), (usb_on_off_dir = (GPIO_BASE_ADDR + port + 10)));
+		io_outpw(gpio_config_addr + (6 + 4*port), (usb_on_off_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set USB-ONOFF pin -> OUT
 	io_outpb(usb_on_off_dir, io_inpb(usb_on_off_dir) | (1 << pin));
@@ -158,10 +158,10 @@ static void set_tx_led(char port, char pin)
 	
 	// set data address
 	if ((tx_led_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (4 + 4*port), (tx_led_data = (GPIO_BASE_ADDR + port)));
+		io_outpw(gpio_config_addr + (4 + 4*port), (tx_led_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((tx_led_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (6 + 4*port), (tx_led_dir = (GPIO_BASE_ADDR + port + 10)));
+		io_outpw(gpio_config_addr + (6 + 4*port), (tx_led_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set TX LED pin -> OUT
 	io_outpb(tx_led_dir, io_inpb(tx_led_dir) | (1 << pin));
@@ -174,10 +174,10 @@ static void set_rx_led(char port, char pin)
 	
 	// set data address
 	if ((rx_led_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (4 + 4*port), (rx_led_data = (GPIO_BASE_ADDR + port)));
+		io_outpw(gpio_config_addr + (4 + 4*port), (rx_led_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((rx_led_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (6 + 4*port), (rx_led_dir = (GPIO_BASE_ADDR + port + 10)));
+		io_outpw(gpio_config_addr + (6 + 4*port), (rx_led_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set RX LED pin -> OUT
 	io_outpb(rx_led_dir, io_inpb(rx_led_dir) | (1 << pin));
@@ -1388,7 +1388,6 @@ DMPAPI(bool) usb_Init(void *vusb)
 	if (usb->InUse == 1) return true;
 	
 	// if (USB_IsAttached() == false) return false;
-	USB_Connect();
 	
 	if (irq_Init() == false) {
         err_print((char*)"%s: IRQ init fail.\n", __FUNCTION__);
@@ -1540,6 +1539,7 @@ DMPAPI(bool) usb_Init(void *vusb)
 	
 	usb->state  = USB_DEV_POWERED;
 	usb->InUse = 1;
+	USB_Connect();
 	
 	return true;
 
@@ -1865,6 +1865,6 @@ DMPAPI(bool) usb_SetUSBPins(void *vusb, char port1, char pin1, char port2, char 
 	set_pin_in(port1, pin1);
 	set_pin_out(port2, pin2);
 	
-	USB_Connect();
+	//USB_Connect();
 	return true;
 }

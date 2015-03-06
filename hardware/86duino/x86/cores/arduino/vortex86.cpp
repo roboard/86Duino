@@ -80,7 +80,7 @@
 #include "io.h"
 #include "err.h"
 
-DMP_INLINE(void) vx86_EnableTurboMode(int com)
+DMPAPI(void) vx86_EnableTurboMode(int com)
 {
 	switch (com)
 	{
@@ -99,7 +99,7 @@ DMP_INLINE(void) vx86_EnableTurboMode(int com)
 	}
 }
 
-DMP_INLINE(void) vx86_DisableTurboMode(int com)
+DMPAPI(void) vx86_DisableTurboMode(int com)
 {
 	switch (com)
 	{
@@ -461,7 +461,7 @@ DMPAPI(int) vx86_uart_GetSBCLK(void)
     return sbclk;
 }
 
-DMP_INLINE(void) vx86_uart_SetSBCLK(int sbclk)
+DMPAPI(void) vx86_uart_SetSBCLK(int sbclk)
 {
 	int cpuid = vx86_CpuID();
 	
@@ -943,7 +943,7 @@ DMPAPI(void) vx86_uart_EnableFullDuplex(int com)
 
 DMPAPI(unsigned short) vx86_GetUSBDevAddr(void)
 {
-	unsigned short addr = NULL;
+	unsigned short addr = 0x00;
 	void *pciDev = NULL;
 
 	if (vx86_CpuID() != CPU_VORTEX86EX)
@@ -979,7 +979,7 @@ DMPAPI(int) vx86_GetUSBDevIRQ()
 
 DMPAPI(unsigned short) vx86_GetCANBusIOAddr(void)
 {
-	unsigned short addr = NULL;
+	unsigned short addr = 0x00;
 	void *pciDev = NULL;
 
 	if (vx86_CpuID() != CPU_VORTEX86EX)
@@ -1000,7 +1000,7 @@ DMPAPI(unsigned short) vx86_GetCANBusIOAddr(void)
 
 DMPAPI(unsigned long) vx86_GetCANBusMMIOAddr(void)
 {
-	unsigned long addr = NULL;
+	unsigned long addr = 0x00;
 	void *pciDev = NULL;
 	
 	if (vx86_CpuID() != CPU_VORTEX86EX)

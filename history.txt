@@ -1,7 +1,9 @@
 ### CODING 208 - 2015.01.07 ###
 [core]
 * Fixed a USB device bug in USBCore.cpp.
+* Modified USB_connected position.
 
+* remove Adafruit_Motor_shield example: xxx and xxx.
 
 
 ### CODING 207 - 2014.12.30 ###
