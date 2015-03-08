@@ -21,12 +21,15 @@
 */
 
 #define __DMP_COM_LIB
+////////////////////////////////////////////////////////////////////////////////
+//    note that most of functions in this lib assume no paging issue when 
+//    using them in ISR; so to use this lib in ISR in DJGPP, it is suggested 
+//    to employ PMODE/DJ or HDPMI instead of CWSDPMI.
+////////////////////////////////////////////////////////////////////////////////
 
-#define _VORTEX86EXC_UART_WORKAROUND
+// #define _VORTEX86EXC_UART_WORKAROUND
 
 #include "uart.h"
-#define  USE_COMMON
-#include "common.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,6 +109,151 @@ DMP_INLINE(void) _16550_DLAB_Out(SerialPort *port, unsigned short addr, unsigned
 		io_outpb(port->LCR, lcr);  
 	}
 	io_RestoreINT();
+}
+
+static int _recv_poll(SerialPort *port, unsigned char* buf, int bsize)
+{
+	int cur = 0;
+	
+	while (cur < bsize) {
+		if (io_inpb(port->LSR) & 0x01) {
+			buf[cur] = io_inpb(port->RXDB);
+		} else {
+			break;
+		}
+	}
+	
+	return cur;
+}
+
+static int _send_poll(SerialPort *port, unsigned char* buf, int bsize)
+{
+	int cur = 0;
+	
+	while (cur < bsize) {
+		if ((io_inpb(port->LSR) & 0x60) == 0x60) {
+			io_outpb(port->TXDB, buf[cur]);
+			cur++;
+		}
+	}
+	
+	return cur;
+}
+
+static int _recv_int(SerialPort *port, unsigned char* buf, int bsize)
+{
+	int i;
+	unsigned long pretime;
+	
+	for (i = 0; i < bsize; i++)
+	{
+		if (port->RxTimeOut < 0) {
+			while (QueueEmpty(port->rcvd));
+		} else {
+			pretime = timer_NowTime();
+			while (QueueEmpty(port->rcvd) && (timer_NowTime() - pretime) < port->RxTimeOut); 
+			
+			if (QueueEmpty(port->rcvd)) {
+				if (UART_TIMEOUT_DEBUG)
+					err_print((char*)"%s: COM%d receive timeout.\n", __FUNCTION__, port->com + 1);
+				break;
+			}
+		}
+		
+		io_DisableINT();
+		{
+			buf[i] = PopQueue(port->rcvd);
+		
+			switch (port->control)
+			{
+				case NO_CONTROL: break;
+				
+				case RTS_CTS:
+				{
+					if (QueueSize(port->rcvd) < (RX_QUEUE_SIZE - NEAR_FULL_SIZE) && port->rts == 0) {
+						io_outpb(port->MCR, io_inpb(port->MCR) | 0x02);
+						port->rts = 1;
+					}
+				}
+				break;
+				
+				case XON_XOFF:
+				{
+					if (QueueSize(port->rcvd) < (RX_QUEUE_SIZE - NEAR_FULL_SIZE) && port->xonxoff_xmit != XON_XMIT) {
+						port->xon = 1;
+						io_outpb(port->IER, port->ier |= 0x02);
+					}
+				}
+				break;
+				
+				default: break;
+			};
+		}
+		io_RestoreINT();
+	}
+	
+	return i;
+}
+
+static int _send_int(SerialPort *port, unsigned char* buf, int bsize)
+{
+	int i;
+	unsigned long pretime;
+	
+	for (i = 0; i < bsize; i++)
+	{
+		if (port->TxTimeOut < 0) {
+			while (QueueFull(port->xmit));
+		} else {
+			pretime = timer_NowTime();
+			while (QueueFull(port->xmit) && (timer_NowTime() - pretime) < port->TxTimeOut); 
+			
+			if (QueueFull(port->xmit)) {
+				if (UART_TIMEOUT_DEBUG)
+					err_print((char*)"%s: COM%d transmit timeout.\n", __FUNCTION__, port->com + 1);
+				if (!(port->ier & THREI)) io_outpb(port->IER, port->ier |= THREI);
+				return i;
+			}
+		}
+		
+		io_DisableINT();
+		{
+			PushQueue(port->xmit, buf[i]);
+			
+			if (!(port->ier & THREI) && (i == (bsize - 1) || QueueFull(port->xmit)))
+			{
+				switch (port->control)
+				{
+					case NO_CONTROL:
+					{
+						io_outpb(port->IER, port->ier |= THREI);
+					}
+					break;
+					
+					case RTS_CTS:
+					{
+						if (port->cts == CTS_ON) {
+							io_outpb(port->IER, port->ier |= THREI);
+						}
+					}
+					break;
+					
+					case XON_XOFF:
+					{
+						if (port->xonxoff_rcvd != XOFF_RCVD) {
+							io_outpb(port->IER, port->ier |= THREI);
+						}
+					}
+					break;
+					
+					default: break;
+				};
+			}
+		}
+		io_RestoreINT();
+	}
+	
+	return i;
 }
 
 //
@@ -252,9 +400,12 @@ DMPAPI(bool) uart_Init(void *vport)
 	port->old_msb       = port->msb       = _16550_DLAB_In(port, port->DLMSB);
 	port->old_ier       = port->ier       = io_inpb(port->IER); 
 	port->old_lcr       = port->lcr       = io_inpb(port->LCR); 
-	port->old_mcr       = port->mcr       = io_inpb(port->MCR); 
+	port->old_mcr       = port->mcr       = io_inpb(port->MCR);
 	port->old_RxTimeOut = port->RxTimeOut = UART_NO_TIMEOUT;
 	port->old_TxTimeOut = port->TxTimeOut = UART_NO_TIMEOUT;
+
+	port->recv = _recv_int;
+	port->send = _send_int;
 	
 	// UART initial
 	uart_SetBaud(vport, UARTBAUD_115200BPS);
@@ -271,12 +422,12 @@ DMPAPI(bool) uart_Init(void *vport)
 
 	// enable FIFO mode
 	uart_SetHWFIFO(vport, ENABLE_HW_FIFO_16); 
-
-	// enable receive data interrupt
-	uart_IntEnable(vport, IERALL);
 	
 	// set flow control
 	uart_SetFlowControl(vport, NO_CONTROL);
+	
+	// enable receive data interrupt
+	uart_IntEnable(vport, IERALL);
 
 	port->InUse = 1;
 	
@@ -535,85 +686,33 @@ DMPAPI(bool) uart_SetWFIFOSize(void *vport, int size) // setup after enable/disa
 DMPAPI(int) uart_QueryRxQueue(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
-	return port->rcvd->count;
+	return QueueSize(port->rcvd);
 }
 DMPAPI(bool) uart_RxQueueFull(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
-	return (port->rcvd->count >= port->rcvd->size) ? (true) : (false);
+	return QueueFull(port->rcvd);
 }
 DMPAPI(bool) uart_RxQueueEmpty(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
-	return (port->rcvd->count <= 0) ? (true) : (false);
+	return QueueEmpty(port->rcvd);
+}
+
+DMPAPI(int) uart_Receive(void *vport, unsigned char* buf, int bsize)
+{
+	SerialPort *port = (SerialPort *)vport;
+	return (port == NULL) ? (0) : (port->recv(port, buf, bsize));
 }
 
 DMPAPI(unsigned int) uart_Read(void *vport)
 {
 	unsigned char val;
-	unsigned long pretime;
-	SerialPort *port = (SerialPort *)vport;
 	
-	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return 0xffff; }
+	if (uart_Receive(vport, &val, 1) <= 0)
+		return 0xffff;
 	
-	if (port->RxTimeOut != UART_NO_TIMEOUT) {
-		pretime = timer_nowtime();
-		while (port->rcvd->count <= 0 && (timer_nowtime() - pretime) < port->RxTimeOut); 
-		
-		if (port->rcvd->count <= 0) {
-			if (UART_TIMEOUT_DEBUG)
-				err_print((char*)"%s: COM%d receive timeout.\n", __FUNCTION__, port->com + 1);
-			return (unsigned int)0xffff;
-		}
-	}
-	else while (port->rcvd->count <= 0);
-	
-	io_DisableINT();
-	{
-		val = PopQueue(port->rcvd);
-		
-		switch (port->control)
-		{
-			case NO_CONTROL: break;
-			
-			case RTS_CTS:
-			{
-				if (port->rcvd->count < (port->rcvd->size - NEAR_FULL_SIZE) && port->rts == 0) {
-					io_outpb(port->MCR, io_inpb(port->MCR) | 0x02);
-					port->rts = 1;
-				}
-			}
-			break;
-			
-			case XON_XOFF:
-			{
-				if (port->rcvd->count < (port->rcvd->size - NEAR_FULL_SIZE) && port->xonxoff_xmit != XON_XMIT) {
-					port->xon = 1;
-					io_outpb(port->IER, port->ier |= 0x02);
-				}
-			}
-			break;
-			
-			default: break;
-		};
-	}
-	io_RestoreINT();
-
-    return (unsigned int)val;
-}
-
-DMPAPI(int) uart_Receive(void *vport, unsigned char* buf, int bsize)
-{
-	int i;
-	unsigned int val;
-	
-	for (i = 0; i < bsize; ) {
-		val = uart_Read(vport);
-		if (val != 0xffff) buf[i++] = (unsigned char)val;
-		else break;
-	}
-	
-	return i;
+	return (unsigned int)val;
 }
 
 DMPAPI(void) uart_FlushRxQueue(void *vport)
@@ -654,94 +753,37 @@ DMPAPI(void) uart_FlushRxQueue(void *vport)
 DMPAPI(int) uart_QueryTxQueue(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
-	return port->xmit->count;
+	return QueueSize(port->xmit);
 }
 
 DMPAPI(bool) uart_TxQueueFull(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
-	return (port->xmit->count >= port->xmit->size) ? (true) : (false);
+	return QueueFull(port->xmit);
 }
 
 DMPAPI(bool) uart_TxQueueEmpty(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
-	return (port->xmit->count <= 0) ? (true) : (false);
+	return QueueEmpty(port->xmit);
 }
 
 DMPAPI(bool) uart_TxReady(void *vport)
 {
-	SerialPort *port = (SerialPort *)vport;
-	return (port->xmit->count < port->xmit->size) ? (true) : (false);
+	return (uart_TxQueueFull(vport) == false) ? (true) : (false);
 }
 
 DMPAPI(int) uart_Send(void *vport, unsigned char* buf, int bsize)
 {
-	int i;
-	unsigned long pretime;
 	SerialPort *port = (SerialPort *)vport;
-	
-	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return 0; }
-	
-	for (i = 0; i < bsize; i++)
-	{
-		if (port->TxTimeOut != UART_NO_TIMEOUT) {
-			pretime = timer_nowtime();
-			while (port->xmit->count >= port->xmit->size && (timer_nowtime() - pretime) < port->TxTimeOut); 
-			
-			if (port->xmit->count >= port->xmit->size) {
-				if (UART_TIMEOUT_DEBUG)
-					err_print((char*)"%s: COM%d transmit timeout.\n", __FUNCTION__, port->com + 1);
-				if (!(port->ier & THREI)) io_outpb(port->IER, port->ier |= THREI);
-				return i;
-			}
-		}
-		else while (port->xmit->count >= port->xmit->size);
-		
-		io_DisableINT();
-		{
-			PushQueue(port->xmit, buf[i]);
-			
-			if (!(port->ier & THREI)
-			&& (i == (bsize - 1) || port->xmit->count >= port->xmit->size))
-			{	
-				switch (port->control)
-				{
-					case NO_CONTROL:
-					{
-						io_outpb(port->IER, port->ier |= THREI);
-					}
-					break;
-					
-					case RTS_CTS:
-					{
-						if (port->cts == CTS_ON) {
-							io_outpb(port->IER, port->ier |= THREI);
-						}
-					}
-					break;
-					
-					case XON_XOFF:
-					{
-						if (port->xonxoff_rcvd != XOFF_RCVD) {
-							io_outpb(port->IER, port->ier |= THREI);
-						}
-					}
-					break;
-					
-					default: break;
-				};
-			}
-		}
-		io_RestoreINT();
-	}
-	
-	return i;
+	return (port == NULL) ? (0) : (port->send(port, buf, bsize));
 }
 
 DMPAPI(bool) uart_Write(void *vport, unsigned char val)
 {
-	if (uart_Send(vport, &val, 1) != 1) return false;
+	if (uart_Send(vport, &val, 1) <= 0)
+		return false;
+	
 	return true;
 }
 
@@ -758,7 +800,7 @@ DMPAPI(void) uart_FlushTxQueue(void *vport)
 DMPAPI(void) uart_FlushWFIFO(void *vport)
 {
 	SerialPort *port = (SerialPort *)vport;
-	while (port->xmit->count > 0);
+	while (QueueEmpty(port->xmit) == false);
 	while ((io_inpb(port->LSR) & 0x60) != 0x60);
 }
 
@@ -795,7 +837,7 @@ static int UART_ISR(int irq, void *data)
 						case RTS_CTS:
 						{
 							PushQueue(port->rcvd, c);
-							if (port->rcvd->count >= (port->rcvd->size - NEAR_FULL_SIZE))
+							if (QueueSize(port->rcvd) >= (RX_QUEUE_SIZE - NEAR_FULL_SIZE))
 							{
 								io_outpb(port->MCR, io_inpb(port->MCR) & 0xfd);
 								port->rts = 0;
@@ -816,7 +858,7 @@ static int UART_ISR(int irq, void *data)
 								break;
 							}
 							PushQueue(port->rcvd, c);
-							if (port->rcvd->count >= (port->rcvd->size - NEAR_FULL_SIZE) && port->xonxoff_xmit != XOFF_XMIT)
+							if (QueueSize(port->rcvd) >= (RX_QUEUE_SIZE - NEAR_FULL_SIZE) && port->xonxoff_xmit != XOFF_XMIT)
 							{
 								port->xoff = 1;
 								io_outpb(port->IER, port->ier |= 0x02);
@@ -838,11 +880,11 @@ static int UART_ISR(int irq, void *data)
 				{
 					case NO_CONTROL:
 					{
-						if (port->xmit->count <= 0)
+						if (QueueEmpty(port->xmit))
 							io_outpb(port->IER, port->ier &= 0xfd);
 						else
 						{
-							for (i = 0; i < port->WFIFO_Size && port->xmit->count > 0; i++)
+							for (i = 0; i < port->WFIFO_Size && QueueEmpty(port->xmit) == false; i++)
 								io_outpb(port->TXDB, (unsigned char)PopQueue(port->xmit));
 						}
 					}
@@ -850,11 +892,11 @@ static int UART_ISR(int irq, void *data)
 					
 					case RTS_CTS:
 					{
-						if (port->xmit->count <= 0)
+						if (QueueEmpty(port->xmit))
 							io_outpb(port->IER, port->ier &= 0xfd);
 						else
 						{
-							for (i = 0; i < port->WFIFO_Size && port->xmit->count > 0; i++)
+							for (i = 0; i < port->WFIFO_Size && QueueEmpty(port->xmit) == false; i++)
 							{
 								if (port->cts == CTS_OFF)
 								{
@@ -879,11 +921,11 @@ static int UART_ISR(int irq, void *data)
 							port->xon = 0;
 							port->xonxoff_xmit = XON_XMIT;
 						}
-						if (port->xmit->count <= 0 || port->xonxoff_rcvd == XOFF_RCVD)
+						if (QueueEmpty(port->xmit) || port->xonxoff_rcvd == XOFF_RCVD)
 							io_outpb(port->IER, port->ier &= 0xfd);
 						else
 						{
-							for (i = 0; i < port->WFIFO_Size && port->xmit->count > 0; i++)
+							for (i = 0; i < port->WFIFO_Size && QueueEmpty(port->xmit) == false; i++)
 							{
 								if (port->xonxoff_rcvd == XOFF_RCVD)
 								{
@@ -916,7 +958,7 @@ static int UART_ISR(int irq, void *data)
 				if (port->control == RTS_CTS) {
 					if (port->cts == CTS_OFF && (port->msr & 0x10)) {
 						port->cts = CTS_ON;
-						if (port->xmit->count > 0) io_outpb(port->IER, port->ier |= 0x02);
+						if (QueueEmpty(port->xmit) == false) io_outpb(port->IER, port->ier |= 0x02);
 					}
 					else if (port->cts == CTS_ON && !(port->msr & 0x10)){
 						port->cts = CTS_OFF;
@@ -931,14 +973,12 @@ static int UART_ISR(int irq, void *data)
 			
 		};
 		
-		if (port->rcvd->count >= (port->rcvd->count - NEAR_FULL_SIZE)) break;
+		if (QueueSize(port->rcvd) >= (RX_QUEUE_SIZE - NEAR_FULL_SIZE))
+			break;
 	}
 
 	return ISR_Status;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(UART_ISR)
-#endif
 
 DMPAPI(void) uart_IntEnable(void *vport, int cap)
 {
@@ -952,17 +992,13 @@ DMPAPI(void) uart_IntEnable(void *vport, int cap)
 		return;
 	}
 	
-	#if defined DMP_DOS_DJGPP
-	DPMI_LOCK_FUNC(UART_ISR);
-	#endif
-	
 	io_DisableINT();
 	{
 		irq_Setting(port->nIRQ, IRQ_LEVEL_TRIGGER);
 		irq_InstallISR(port->nIRQ, UART_ISR, (void *)port);
 		
 		io_outpb(port->IER, port->ier |= ((unsigned char)cap)); 
-		io_outpb(port->MCR, io_inpb(port->MCR) | 0x08);         
+		io_outpb(port->MCR, io_inpb(port->MCR) | 0x08);
 	}
 	io_RestoreINT();
 	
@@ -1018,4 +1054,24 @@ DMPAPI(void) uart_EnableFullDuplex(void *vport)
 	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
 	
 	vx86_uart_EnableFullDuplex(port->com);
+}
+
+DMPAPI(void) uart_EnableDebugMode(void *vport)
+{
+	SerialPort *port = (SerialPort *)vport;
+	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
+	
+	io_outpb(port->MCR, io_inpb(port->MCR) & ~(0x08));
+	port->recv = _recv_poll;
+	port->send = _send_poll;
+}
+
+DMPAPI(void) uart_DisableDebugMode(void *vport)
+{
+	SerialPort *port = (SerialPort *)vport;
+	if (port == NULL) { err_print((char*)"%s: port is null.\n", __FUNCTION__); return; }
+	
+	port->recv = _recv_int;
+	port->send = _send_int;
+	io_outpb(port->MCR, io_inpb(port->MCR) | 0x08);
 }

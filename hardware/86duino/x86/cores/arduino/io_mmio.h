@@ -1,5 +1,6 @@
-/*
-  io_mmio.h - Part of DM&P Vortex86 Base I/O library
+/*******************************************************************************
+
+  io_mmio.h - Part of DM&P Vortex86 Base I/O Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,7 +19,9 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 /***************************  Primitive MMIO Access  **************************/
 __dmp_inline(void) mmio_outpdw(IO_BASE_t* base, unsigned long offset, unsigned long val) {
@@ -26,8 +29,9 @@ __dmp_inline(void) mmio_outpdw(IO_BASE_t* base, unsigned long offset, unsigned l
         _farpokel((unsigned short)base->mmio_selector, offset, val);
     #elif defined   USE_PCIDEBUG
         _MemWriteLong(base->addr + offset, val);
-    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM)
+    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM) || defined(DMP_LINUX)
         *(volatile unsigned long*)(base->addr + offset) = val;
+        ATOMIC_MEM_BARRIER();        
     #endif
 }
     
@@ -36,8 +40,10 @@ __dmp_inline(unsigned long) mmio_inpdw(IO_BASE_t* base, unsigned long offset) {
         return _farpeekl((unsigned short)base->mmio_selector, offset);
     #elif defined   USE_PCIDEBUG
         return _MemReadLong(base->addr + offset);
-    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM)
-        return *(volatile unsigned long*)(base->addr + offset);
+    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM) || defined(DMP_LINUX)
+        unsigned long result = *(volatile unsigned long*)(base->addr + offset); 
+        ATOMIC_MEM_BARRIER();
+        return result;
     #else
         return 0L;
     #endif
@@ -48,8 +54,9 @@ __dmp_inline(void) mmio_outpw(IO_BASE_t* base, unsigned long offset, unsigned sh
         _farpokew((unsigned short)base->mmio_selector, offset, val);
     #elif defined   USE_PCIDEBUG
         _MemWriteShort(base->addr + offset, val);
-    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM)
+    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM) || defined(DMP_LINUX)
         *(volatile unsigned short*)(base->addr + offset) = val;
+        ATOMIC_MEM_BARRIER();        
     #endif
 }
 
@@ -58,8 +65,10 @@ __dmp_inline(unsigned short) mmio_inpw(IO_BASE_t* base, unsigned long offset) {
         return _farpeekw((unsigned short)base->mmio_selector, offset);
     #elif defined   USE_PCIDEBUG
         return _MemReadShort(base->addr + offset);
-    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM)
-        return *(volatile unsigned short*)(base->addr + offset);
+    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM) || defined(DMP_LINUX)
+        unsigned short result = *(volatile unsigned short*)(base->addr + offset);
+        ATOMIC_MEM_BARRIER();
+        return result;
     #else
         return 0;
     #endif
@@ -70,8 +79,9 @@ __dmp_inline(void) mmio_outpb(IO_BASE_t* base, unsigned long offset, unsigned ch
         _farpokeb((unsigned short)base->mmio_selector, offset, val);
     #elif defined   USE_PCIDEBUG
         _MemWriteChar(base->addr + offset, val);
-    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM)
+    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM) || defined(DMP_LINUX)
         *(volatile unsigned char*)(base->addr + offset) = val;
+        ATOMIC_MEM_BARRIER();        
     #endif
 }
 
@@ -80,8 +90,10 @@ __dmp_inline(unsigned char) mmio_inpb(IO_BASE_t* base, unsigned long offset) {
         return _farpeekb((unsigned short)base->mmio_selector, offset);
     #elif defined   USE_PCIDEBUG
         return _MemReadChar(base->addr + offset);
-    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM)
-        return *(volatile unsigned char*)(base->addr + offset);
+    #elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM) || defined(DMP_LINUX)
+        unsigned char result = *(volatile unsigned char*)(base->addr + offset);
+        ATOMIC_MEM_BARRIER();
+        return result;
     #else
         return 0;
     #endif

@@ -72,6 +72,8 @@ typedef struct
 	DMPAPI(unsigned char) (*GetMSR)(void *);
 	DMPAPI(void) (*EnableHalfDuplex)(void *);
 	DMPAPI(void) (*EnableFullDuplex)(void *);
+	DMPAPI(void) (*EnableDebugMode)(void *);
+	DMPAPI(void) (*DisableDebugMode)(void *);
 	
 	/* only for USB device */
 	DMPAPI(bool) (*Ready)(void *);
@@ -227,6 +229,8 @@ DMPAPI(unsigned char) com_GetMSR(COMPort *port);
 #define MSR_DCTS           (0x01)
 DMPAPI(void) com_EnableHalfDuplex(COMPort *port);
 DMPAPI(void) com_EnableFullDuplex(COMPort *port);
+DMPAPI(void) com_EnableDebugMode(COMPort *port);
+DMPAPI(void) com_DisableDebugMode(COMPort *port);
 
 /* only for USB device */
 DMPAPI(bool) com_Ready(COMPort *port);

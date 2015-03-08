@@ -1,5 +1,6 @@
-/*
-  io_wat.h - Part of DM&P Vortex86 Base I/O library
+/*******************************************************************************
+
+  io_wat.h - Part of DM&P Vortex86 Base I/O Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,7 +19,9 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 /***************************  Watcom DPMI Interface  **************************/
 #ifdef DMP_DOS_WATCOM

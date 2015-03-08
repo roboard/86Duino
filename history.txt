@@ -1,9 +1,13 @@
-### CODING 208 - 2015.01.07 ###
+### CODING 208 - 2015.03.08 ###
 [core]
 * Fixed a USB device bug in USBCore.cpp.
-* Modified USB_connected position.
+* Move USB_connected() to correct position.
+* Fixed a bug in Serial.peek().
+* Update io library.
+* Update pgmspace.h to be compatible with Arduino 1.5.8.
+* remove Adafruit_Motor_shield example: AFMotor_ConstantSpeed and AFMotor_MultiStepper.
+* In init(), now can get CPU clock automatically.
 
-* remove Adafruit_Motor_shield example: xxx and xxx.
 
 
 ### CODING 207 - 2014.12.30 ###

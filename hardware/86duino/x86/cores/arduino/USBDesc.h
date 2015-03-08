@@ -25,7 +25,6 @@
 #define __DMP_USB_DESC_H
 
 #include "dmpcfg.h"
-#include "v86clock.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -34,8 +34,6 @@
 #include "wiring.h"
 #else
 #include "Arduino.h"
-#define USE_COMMON
-#include "common.h"
 #endif
 
 #include "include/arduino_io.h"    // these macros map arduino pins
@@ -203,8 +201,8 @@
 do \
 {  \
   unsigned long long nowclocks; \
-  nowclocks = getclocks64(); \
-  while (((getclocks64() - nowclocks)*10ULL/3ULL) < (__ns)); \
+  nowclocks = timer_GetClocks64(); \
+  while (((timer_GetClocks64() - nowclocks)*10ULL/3ULL) < (__ns)); \
 } while(0) // Hans Heinrichs delay cycle routine
 
 #define lcdDelayMilliseconds(__ms) delay(__ms)	// Arduino delay function

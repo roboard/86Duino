@@ -1,5 +1,6 @@
-/*
-  io_dpmi.h - Part of DM&P Vortex86 Base I/O library
+/*******************************************************************************
+
+  io_dpmi.h - Part of DM&P Vortex86 Base I/O Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,7 +19,9 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 /******************************  DPMI Functions  ******************************/
 #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM)
@@ -100,6 +103,38 @@ DMPAPI(bool) dpmi_UnlockData(void* data_addr, unsigned long data_size) {
     
     if (__dpmi_unlock_linear_region(&data_info) != 0) return false;
     return true;
+}
+
+DMPAPI(int) dpmi_Cli(void) {
+    #if defined(DMP_DOS_DJGPP)
+        //int result = disable();
+        int result = __dpmi_get_and_disable_virtual_interrupt_state();
+        if (result == 0) return 0; else return 1;  // return the previous interrupt flag
+    #else
+        union  REGS  regs;
+
+        memset(&regs,  0, sizeof(regs));
+        regs.w.ax  = 0x0900;
+        int386(0x31, &regs, &regs);
+
+        if (regs.h.al == 0) return 0; else return 1;
+    #endif
+}
+
+DMPAPI(int) dpmi_Sti(void) {
+    #if defined(DMP_DOS_DJGPP)
+        //int result = enable();
+        int result = __dpmi_get_and_enable_virtual_interrupt_state();
+        if (result == 0) return 0; else return 1;  // return the previous interrupt flag
+    #else
+        union  REGS  regs;
+
+        memset(&regs,  0, sizeof(regs));
+        regs.w.ax  = 0x0901;
+        int386(0x31, &regs, &regs);
+
+        if (regs.h.al == 0) return 0; else return 1;
+    #endif
 }
 #endif
 /*--------------------------  end. DPMI Functions  ---------------------------*/

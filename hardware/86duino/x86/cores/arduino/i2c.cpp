@@ -22,9 +22,8 @@
 
 #define __I2C_LIB
 
-#define  USE_COMMON
-#include "common.h"
 #include "io.h"
+#include "err.h"
 #include "i2c.h"
 
 #define I2C_TIMEOUT     (500L)  //500 ms
@@ -88,7 +87,7 @@ DMPAPI(bool) i2c_Init2(unsigned baseaddr, unsigned devs, int i2c0irq, int i2c1ir
     
     if (I2C_ioSection != -1)
 	{
-        err_SetMsg(ERROR_I2C_INUSE, "I2C lib was already opened");
+        err_print("I2C lib was already opened");
 		return false;
 	}
 	if ((I2C_ioSection = io_Init()) == -1) return false;
@@ -153,7 +152,7 @@ DMPAPI(bool) i2c_Init2(unsigned baseaddr, unsigned devs, int i2c0irq, int i2c1ir
         if (i2c_Reset(i) == false)  // assume the status of GPIO/I2C pins are GPIO "IN" or "OUT 1"
         {
             i2c_Close();
-            err_SetMsg(ERROR_I2C_INITFAIL, "can't reset the I2C modules");
+            err_print("can't reset the I2C modules");
 		    return false;
         }
 
@@ -214,7 +213,7 @@ DMPAPI(unsigned long) i2c_SetSpeed(int dev, int mode, unsigned long bps) {
 	/*
     if (I2C_action[dev] != I2CACT_IDLE)
 	{
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "can only set I2C's speed when it is idle");
+        err_print(ERROR_I2CWRONGUSAGE, "can only set I2C's speed when it is idle");
 		return 0xffffffffL;
 	}
 	*/
@@ -283,7 +282,7 @@ DMPAPI(bool) i2c_InitSW2(unsigned devs, int i2c0mode, unsigned long i2c0clkdelay
     
     if (I2C_ioSection != -1)
 	{
-        err_SetMsg(ERROR_I2C_INUSE, "I2C lib was already opened");
+        err_print("I2C lib was already opened");
 		return false;
 	}
 	if ((I2C_ioSection = io_Init()) == -1) return false;
@@ -341,29 +340,29 @@ static bool i2csw_Start(int dev, unsigned char addr, unsigned char rwbit, bool r
     
     if (restart == false)
     {   // send START signal
-        set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
-        set_pins(dev, 1, 0); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
+        set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
+        set_pins(dev, 1, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
         set_pins(dev, 0, 0);                              // SCL = 0, SDA = 0
     }
     else
     if (I2C_swMode[dev] == I2CSW_LEGO)
     {   // send LEGO NXT's I2C RESTART signal
-        set_pins(dev, 0, 0); delay_us(I2CSW_delay[dev]);  // SCL = 0, SDA = 0
-        set_pins(dev, 1, 0); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
-        set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
+        set_pins(dev, 0, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 0, SDA = 0
+        set_pins(dev, 1, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
+        set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
 
-        set_pins(dev, 0, 1); delay_us(I2CSW_delay[dev]);  // LEGO NXT special: SCL = 0, SDA = 1
+        set_pins(dev, 0, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // LEGO NXT special: SCL = 0, SDA = 1
         
-        set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
-        set_pins(dev, 1, 0); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
+        set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
+        set_pins(dev, 1, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
         set_pins(dev, 0, 0);                              // SCL = 0, SDA = 0
     }
     else
     {   // send normal I2C RESTART signal
-        set_pins(dev, 0, 0); delay_us(I2CSW_delay[dev]);  // SCL = 0, SDA = 0
-        set_pins(dev, 0, 1); delay_us(I2CSW_delay[dev]);  // SCL = 0, SDA = 1
-        set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
-        set_pins(dev, 1, 0); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
+        set_pins(dev, 0, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 0, SDA = 0
+        set_pins(dev, 0, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 0, SDA = 1
+        set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 1
+        set_pins(dev, 1, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
         set_pins(dev, 0, 0);                              // SCL = 0, SDA = 0
     }
 
@@ -372,18 +371,18 @@ static bool i2csw_Start(int dev, unsigned char addr, unsigned char rwbit, bool r
     for(i=0; i<8; i++)
     {
         databit = ((addr & 0x80) == 0)? 0 : 1;
-        set_pins(dev, 0, databit); delay_us(I2CSW_delay[dev]);  // set data bit
-        set_pins(dev, 1, databit); delay_us(I2CSW_delay[dev]);  // send a clock
+        set_pins(dev, 0, databit); timer_DelayMicroseconds(I2CSW_delay[dev]);  // set data bit
+        set_pins(dev, 1, databit); timer_DelayMicroseconds(I2CSW_delay[dev]);  // send a clock
         set_pins(dev, 0, databit);
         addr = addr << 1;
     }
     
     // read ACK
-    set_pins(dev, 0, 1); delay_us(I2CSW_delay[dev]);  // set SDA as input
-    set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // send a clock
+    set_pins(dev, 0, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // set SDA as input
+    set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // send a clock
     if (read_sda(dev) == 1)
     {
-		err_SetMsg(ERROR_I2CACKERR, "receive no ACK after transmitting");
+		err_print("receive no ACK after transmitting");
         return false;
     }
     set_pins(dev, 0, 1);
@@ -392,8 +391,8 @@ static bool i2csw_Start(int dev, unsigned char addr, unsigned char rwbit, bool r
 }
 
 static void i2csw_Stop(int dev) {
-    set_pins(dev, 0, 0); delay_us(I2CSW_delay[dev]);  // SCL = 0, SDA = 0
-    set_pins(dev, 1, 0); delay_us(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
+    set_pins(dev, 0, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 0, SDA = 0
+    set_pins(dev, 1, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // SCL = 1, SDA = 0
     set_pins(dev, 1, 1);                              // SCL = 1, SDA = 1
 }
 
@@ -406,18 +405,18 @@ static bool i2csw_Write(int dev, unsigned char val) {
     for(i=0; i<8; i++)
     {
         databit = ((val & 0x80) == 0)? 0 : 1;
-        set_pins(dev, 0, databit); delay_us(I2CSW_delay[dev]);  // set data bit
-        set_pins(dev, 1, databit); delay_us(I2CSW_delay[dev]);  // send a clock
+        set_pins(dev, 0, databit); timer_DelayMicroseconds(I2CSW_delay[dev]);  // set data bit
+        set_pins(dev, 1, databit); timer_DelayMicroseconds(I2CSW_delay[dev]);  // send a clock
         set_pins(dev, 0, databit);
         val = val << 1;
     }
     
     // read ACK
-    set_pins(dev, 0, 1); delay_us(I2CSW_delay[dev]);  // set SDA as input
-    set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // send a clock
+    set_pins(dev, 0, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // set SDA as input
+    set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // send a clock
     if (read_sda(dev) == 1)
     {
-		err_SetMsg(ERROR_I2CACKERR, "receive no ACK after transmitting");
+		err_print("receive no ACK after transmitting");
         return false;
     }
     set_pins(dev, 0, 1);
@@ -434,8 +433,8 @@ static unsigned i2csw_Read(int dev, bool last) {
     // read data byte
     for(i=0; i<8; i++)
     {
-        set_pins(dev, 0, 1); delay_us(I2CSW_delay[dev]);  // set SDA as input
-        set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // send a clock
+        set_pins(dev, 0, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // set SDA as input
+        set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // send a clock
         databit = read_sda(dev);
         val = (val << 1) | (unsigned char)databit;
     }
@@ -443,14 +442,14 @@ static unsigned i2csw_Read(int dev, bool last) {
 
     if (last == false)
     {  // send ACK
-        set_pins(dev, 0, 0); delay_us(I2CSW_delay[dev]);  // set SDA = 0
-        set_pins(dev, 1, 0); delay_us(I2CSW_delay[dev]);  // send a clock
+        set_pins(dev, 0, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // set SDA = 0
+        set_pins(dev, 1, 0); timer_DelayMicroseconds(I2CSW_delay[dev]);  // send a clock
         set_pins(dev, 0, 0);
     }
     else
     {  // send NACK
-        set_pins(dev, 0, 1); delay_us(I2CSW_delay[dev]);  // set SDA = 1
-        set_pins(dev, 1, 1); delay_us(I2CSW_delay[dev]);  // send a clock
+        set_pins(dev, 0, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // set SDA = 1
+        set_pins(dev, 1, 1); timer_DelayMicroseconds(I2CSW_delay[dev]);  // send a clock
         set_pins(dev, 0, 1);
     }
     
@@ -477,11 +476,11 @@ DMP_INLINE(bool) check_TX_done(int dev) {
     unsigned long nowtime;
     unsigned char statreg;
 
-    for (nowtime=0; nowtime<100000L; nowtime++) //trick for speed; timer_nowtime() is time-consuming in some OS
+    for (nowtime=0; nowtime<100000L; nowtime++) //trick for speed; timer_NowTime() is time-consuming in some OS
         if (i2c_CheckTXDone(dev) == true) goto TX_SUCCESS;
 
-    nowtime = timer_nowtime();
-    while ((i2c_CheckTXDone(dev) == false) && ((timer_nowtime() - nowtime) < I2C_TIMEOUT));
+    nowtime = timer_NowTime();
+    while ((i2c_CheckTXDone(dev) == false) && ((timer_NowTime() - nowtime) < I2C_TIMEOUT));
 
 TX_SUCCESS:
     statreg = i2c_ReadStatREG(dev); //ugly code for speed:p
@@ -489,24 +488,24 @@ TX_SUCCESS:
 
     if ((statreg & 0x08) != 0) //if (i2cmaster_CheckARLoss(dev) == true)
     {
-        err_SetMsg(ERROR_I2CARLOSS, "arbitration loss for I2C bus");
+        err_print("arbitration loss for I2C bus");
         i2cmaster_ClearARLoss(dev);
     }
     if ((statreg & 0x10) != 0) //if (i2cmaster_CheckAckErr(dev) == true)
     {
-        err_SetMsg(ERROR_I2CACKERR, "receive no ACK after transmitting");
+        err_print("receive no ACK after transmitting");
         i2cmaster_ClearAckErr(dev);
     }
     if ((statreg & (0x10 + 0x08)) != 0) return false;
 
     if ((statreg & 0x01) == 0) //if (i2c_IsMaster(dev) == false)
     {
-        err_SetMsg(ERROR_I2CFAIL, "I2C%d module isn't in Master Mode", dev);
+        err_print("I2C%d module isn't in Master Mode", dev);
         return false;
     }
     if ((statreg & 0x20) == 0) //if (i2c_CheckTXDone(dev) == false)
     {
-        err_SetMsg(ERROR_I2CFAIL, "I2C%d module doesn't respond", dev);
+        err_print("I2C%d module doesn't respond", dev);
         return false;
     }
     
@@ -517,11 +516,11 @@ DMP_INLINE(bool) check_RX_done(int dev) {
     unsigned long nowtime;
     unsigned char statreg;
 
-    for (nowtime=0; nowtime<100000L; nowtime++) //trick for speed; timer_nowtime() is time-consuming in some OS
+    for (nowtime=0; nowtime<100000L; nowtime++) //trick for speed; timer_NowTime() is time-consuming in some OS
         if (i2c_CheckRXRdy(dev) == true) goto RX_SUCCESS;
 
-    nowtime = timer_nowtime();
-    while ((i2c_CheckRXRdy(dev) == false) && ((timer_nowtime() - nowtime) < I2C_TIMEOUT));
+    nowtime = timer_NowTime();
+    while ((i2c_CheckRXRdy(dev) == false) && ((timer_NowTime() - nowtime) < I2C_TIMEOUT));
 
 RX_SUCCESS:
     statreg = i2c_ReadStatREG(dev); //ugly code for speed:p
@@ -529,18 +528,18 @@ RX_SUCCESS:
 
     if ((statreg & 0x08) != 0) //if (i2cmaster_CheckARLoss(dev) == true)
     {
-        err_SetMsg(ERROR_I2CARLOSS, "arbitration loss for I2C bus");
+        err_print("arbitration loss for I2C bus");
         i2cmaster_ClearARLoss(dev);
         return false;
     }
     if ((statreg & 0x01) == 0) //if (i2c_IsMaster(dev) == false)
     {
-        err_SetMsg(ERROR_I2CFAIL, "I2C%d module isn't in Master Mode", dev);
+        err_print("I2C%d module isn't in Master Mode", dev);
         return false;
     }
     if ((statreg & 0x40) == 0) //if (i2c_CheckRXRdy(dev) == false)
     {
-        err_SetMsg(ERROR_I2CFAIL, "I2C%d module doesn't respond", dev);
+        err_print("I2C%d module doesn't respond", dev);
         return false;
     }
 
@@ -550,15 +549,15 @@ RX_SUCCESS:
 DMP_INLINE(bool) check_STOP_done(int dev) {
     unsigned long nowtime;
 
-    for (nowtime=0; nowtime<100000L; nowtime++) //trick for speed; timer_nowtime() is time-consuming in some OS
+    for (nowtime=0; nowtime<100000L; nowtime++) //trick for speed; timer_NowTime() is time-consuming in some OS
         if (i2cmaster_CheckStopBit(dev) == false) goto STOP_SUCCESS;
 
-    nowtime = timer_nowtime();
-    while ((i2cmaster_CheckStopBit(dev) == true) && ((timer_nowtime() - nowtime) < I2C_TIMEOUT));
+    nowtime = timer_NowTime();
+    while ((i2cmaster_CheckStopBit(dev) == true) && ((timer_NowTime() - nowtime) < I2C_TIMEOUT));
 
     if (i2cmaster_CheckStopBit(dev) == true)
     {
-        err_SetMsg(ERROR_I2CFAIL, "fail to stop the transaction");
+        err_print("fail to stop the transaction");
         return false;
     }
 
@@ -571,7 +570,7 @@ STOP_SUCCESS:
 DMP_INLINE(bool) i2cmaster_Start1(int dev, unsigned char addr, unsigned char rwbit) {
     if (i2c_IsMaster(dev) == false)
     {
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "can't start a transaction in Slave state");
+        err_print("can't start a transaction in Slave state");
         return false;
     }
 
@@ -586,7 +585,7 @@ DMPAPI(bool) i2cmaster_Start(int dev, unsigned char addr, unsigned char rwbit) {
     
     if (I2C_action[dev] != I2CACT_IDLE)
     {
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "can't start a transaction because I2C%d isn't idle", dev);
+        err_print("can't start a transaction because I2C%d isn't idle", dev);
         return false;
     }
 
@@ -618,7 +617,7 @@ DMPAPI(bool) i2cmaster_Write(int dev, unsigned char val) {
 
     if (I2C_action[dev] != I2CACT_MASTERWRITE)
     {
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "must start a correct transaction before writing data");
+        err_print("must start a correct transaction before writing data");
         return false;
     }
 
@@ -681,10 +680,10 @@ DMPAPI(unsigned) i2cmaster_Read1(int dev, bool secondlast) {
         case I2CACT_MASTERHASREAD:
             break;
         case I2CACT_MASTERLASTREAD:
-            err_SetMsg(ERROR_I2CWRONGUSAGE, "call i2cmaster_ReadLast() to read the last byte");
+            err_print("call i2cmaster_ReadLast() to read the last byte");
             return 0xffff;
         default:
-            err_SetMsg(ERROR_I2CWRONGUSAGE, "must start a correct transaction before reading data");
+            err_print("must start a correct transaction before reading data");
             return 0xffff;
     }
     
@@ -701,7 +700,7 @@ DMPAPI(unsigned) i2cmaster_Read1(int dev, bool secondlast) {
             if (I2C_rsInfo[dev].restart == true)
             {
                 i2cmaster_WriteAddrREG(dev, I2C_rsInfo[dev].addr, I2C_rsInfo[dev].rwbit);
-                delay_us(150L); //Remarks: must delay here due to DX's I2C H/W bug
+                timer_DelayMicroseconds(150L); //Remarks: must delay here due to DX's I2C H/W bug
             }
             else
                 i2cmaster_SetStopBit(dev);
@@ -727,14 +726,14 @@ DMPAPI(unsigned) i2cmaster_ReadLast(int dev) {
                 if (I2C_rsInfo[dev].restart == true)
                 {
                     i2cmaster_WriteAddrREG(dev, I2C_rsInfo[dev].addr, I2C_rsInfo[dev].rwbit);
-                    delay_us(150L); //Remarks: must delay here due to DX's I2C H/W bug
+                    timer_DelayMicroseconds(150L); //Remarks: must delay here due to DX's I2C H/W bug
                 }
                 else
                     i2cmaster_SetStopBit(dev);
             }
             break;
         case I2CACT_MASTERHASREAD:
-            err_SetMsg(ERROR_I2CWRONGUSAGE, "set Second-Last-Read before calling %s()", __FUNCTION__);
+            err_print("set Second-Last-Read before calling %s()", __FUNCTION__);
             return 0xffff;
         case I2CACT_MASTERLASTREAD:
             I2C_action[dev] = I2CACT_MASTERHASREAD;  // for calling i2cmaster_Read1() again to get the last byte
@@ -779,7 +778,7 @@ DMPAPI(unsigned) i2cmaster_ReadLast(int dev) {
 DMPAPI(bool) i2cmaster_SetRestart(int dev, unsigned char addr, unsigned char rwbit) {
     if ((I2C_action[dev] != I2CACT_MASTERWRITE) && (I2C_action[dev] != I2CACT_MASTERREAD))
     {
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "wrong time to call %s()", __FUNCTION__);
+        err_print("wrong time to call %s()", __FUNCTION__);
         return false;
     }
 
@@ -796,7 +795,7 @@ DMPAPI(bool) i2cmaster_SetRestart(int dev, unsigned char addr, unsigned char rwb
 DMPAPI(bool) i2cmaster_StartN(int dev, unsigned char addr, unsigned char rwbit, int count) {
     if (count <= 0)
     {
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "the number of bytes to read/write must > 0");
+        err_print("the number of bytes to read/write must > 0");
         return false;
     }
 
@@ -880,13 +879,13 @@ DMPAPI(unsigned) i2cslave_Listen(int dev) {
             return I2CSLAVE_WAITING;
         case I2CACT_SLAVEWRITEREQ:
         case I2CACT_SLAVEREADREQ:
-            err_SetMsg(ERROR_I2CWRONGUSAGE, "must deal with the salve read/write request");
+            err_print("must deal with the salve read/write request");
             break;
         case I2CACT_DISABLE:
-            err_SetMsg(ERROR_I2CWRONGUSAGE, "must enable the I2C module first");
+            err_print("must enable the I2C module first");
             break;
         default:
-            err_SetMsg(ERROR_I2CWRONGUSAGE, "can't use %s() when I2C master is working", __FUNCTION__);
+            err_print("can't use %s() when I2C master is working", __FUNCTION__);
             break;
     }
 
@@ -899,22 +898,22 @@ DMPAPI(bool) i2cslave_Write(int dev, unsigned char val) {
 
     if (I2C_action[dev] != I2CACT_SLAVEWRITEREQ)
     {
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "slave must write data only when being requested");
+        err_print("slave must write data only when being requested");
         return false;
     }
     
     i2cslave_ClearSlaveWREQ(dev);
     i2c_WriteDataREG(dev, val);
 
-    for (nowtime=0; nowtime<100000L; nowtime++) //trick for performance; timer_nowtime() is time-consuming in some OS
+    for (nowtime=0; nowtime<100000L; nowtime++) //trick for performance; timer_NowTime() is time-consuming in some OS
         if (i2c_CheckTXDone(dev) == true) goto TX_SUCCESS;
 
-    nowtime = timer_nowtime();
-    while ((i2c_CheckTXDone(dev) == false) && ((timer_nowtime() - nowtime) < I2C_TIMEOUT));
+    nowtime = timer_NowTime();
+    while ((i2c_CheckTXDone(dev) == false) && ((timer_NowTime() - nowtime) < I2C_TIMEOUT));
 
     if (i2c_CheckTXDone(dev) == false)
     {
-        err_SetMsg(ERROR_I2CFAIL, "the I2C module doesn't respond");
+        err_print("the I2C module doesn't respond");
         I2C_action[dev] = I2CACT_IDLE;
         return false;
     }
@@ -929,7 +928,7 @@ TX_SUCCESS:
 DMPAPI(unsigned) i2cslave_Read(int dev) {
     if (I2C_action[dev] != I2CACT_SLAVEREADREQ)
     {
-        err_SetMsg(ERROR_I2CWRONGUSAGE, "slave must read data only when data is ready");
+        err_print("slave must read data only when data is ready");
         return 0xffff;
     }
 

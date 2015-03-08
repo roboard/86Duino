@@ -28,8 +28,6 @@
 #include "mcm.h"
 #include "irq.h"
 #include "Encoder.h"
-#define USE_COMMON
-#include "common.h"
 
 static uint8_t used_irq = 0xff;
 static char* name = "attachInt";
@@ -743,12 +741,12 @@ unsigned long long int Encoder::_pulseIn(uint8_t pin, uint8_t state, unsigned lo
 	
 	if(_pcapAttchINT == true || mode != MODE_CAPTURE || pin > 2) return 0L;
 	           
-	_timeout = timer_nowtime() + timeout;
+	_timeout = timer_NowTime() + timeout;
 	if(state == HIGH)
 	{
 		while(1)
 		{
-			if(timeout != 0L && timer_nowtime() > _timeout) return 0L;
+			if(timeout != 0L && timer_NowTime() > _timeout) return 0L;
 			if(readCapStat[pin](mcn, MCSIF_MODULEB) != MCENC_CAPFIFO_EMPTY &&
 			   readCapFIFO[pin](mcn, MCSIF_MODULEB, &data) == MCPFAU_CAP_0TO1EDGE)
 				break;
@@ -756,7 +754,7 @@ unsigned long long int Encoder::_pulseIn(uint8_t pin, uint8_t state, unsigned lo
 		
 		while(1)
 		{
-			if(timeout != 0L && timer_nowtime() > _timeout) return 0L;
+			if(timeout != 0L && timer_NowTime() > _timeout) return 0L;
 			if(readCapStat[pin](mcn, MCSIF_MODULEB) != MCENC_CAPFIFO_EMPTY)
 			{
 				stat = readCapFIFO[pin](mcn, MCSIF_MODULEB, &data);
@@ -774,7 +772,7 @@ unsigned long long int Encoder::_pulseIn(uint8_t pin, uint8_t state, unsigned lo
 	{
 		while(1)
 		{
-			if(timeout != 0L && timer_nowtime() > _timeout) return 0L;
+			if(timeout != 0L && timer_NowTime() > _timeout) return 0L;
 			if(readCapStat[pin](mcn, MCSIF_MODULEB) != MCENC_CAPFIFO_EMPTY &&
 			   readCapFIFO[pin](mcn, MCSIF_MODULEB, &data) == MCPFAU_CAP_1TO0EDGE)
 				break;
@@ -782,7 +780,7 @@ unsigned long long int Encoder::_pulseIn(uint8_t pin, uint8_t state, unsigned lo
 		
 		while(1)
 		{
-			if(timeout != 0L && timer_nowtime() > _timeout) return 0L;
+			if(timeout != 0L && timer_NowTime() > _timeout) return 0L;
 			if(readCapStat[pin](mcn, MCSIF_MODULEB) != MCENC_CAPFIFO_EMPTY)
 			{
 				stat = readCapFIFO[pin](mcn, MCSIF_MODULEB, &data);

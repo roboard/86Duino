@@ -31,8 +31,6 @@
 
 #include "USBCore.h"
 #include "vortex86.h"
-#define USE_COMMON
-#include "common.h"
 
 #if defined DMP_DOS_DJGPP
     #include <go32.h>
@@ -108,7 +106,7 @@ static bool set_gpio_config_addr(unsigned short addr)
 	}
 	
 	if ((gpio_config_addr = sb_Read16(0x62) & 0xfffe) == 0x0000)
-		sb_Write16(0x62, sb_Read16(0x62) | (gpio_config_addr = GPIO_CONFIG_ADDR));
+	sb_Write16(0x62, sb_Read16(0x62) | (gpio_config_addr = GPIO_CONFIG_ADDR));
 	sb_Write16(0x62, sb_Read16(0x62) | 0x0001);
 	
 	// io_outpdw(GPIO_CONFIG_ADDR + 0x00, io_inpdw(GPIO_CONFIG_ADDR + 0x00) | 0x00000004L);
@@ -124,10 +122,10 @@ static void set_pin_in(char port, char pin)
 	
 	// set data address
 	if ((usb_detect_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (4 + 4*port), (usb_detect_data = (GPIO_BASE_ADDR + port)));
+	io_outpw(gpio_config_addr + (4 + 4*port), (usb_detect_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((usb_detect_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (6 + 4*port), (usb_detect_dir = (GPIO_BASE_ADDR + port + 10)));
+	io_outpw(gpio_config_addr + (6 + 4*port), (usb_detect_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set USB-Detect pin -> IN
 	io_outpb(usb_detect_dir, io_inpb(usb_detect_dir) & ~(1 << pin));
@@ -140,10 +138,10 @@ static void set_pin_out(char port, char pin)
 	
 	// set data address
 	if ((usb_on_off_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (4 + 4*port), (usb_on_off_data = (GPIO_BASE_ADDR + port)));
+	io_outpw(gpio_config_addr + (4 + 4*port), (usb_on_off_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((usb_on_off_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (6 + 4*port), (usb_on_off_dir = (GPIO_BASE_ADDR + port + 10)));
+	io_outpw(gpio_config_addr + (6 + 4*port), (usb_on_off_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set USB-ONOFF pin -> OUT
 	io_outpb(usb_on_off_dir, io_inpb(usb_on_off_dir) | (1 << pin));
@@ -158,10 +156,10 @@ static void set_tx_led(char port, char pin)
 	
 	// set data address
 	if ((tx_led_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (4 + 4*port), (tx_led_data = (GPIO_BASE_ADDR + port)));
+	io_outpw(gpio_config_addr + (4 + 4*port), (tx_led_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((tx_led_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (6 + 4*port), (tx_led_dir = (GPIO_BASE_ADDR + port + 10)));
+	io_outpw(gpio_config_addr + (6 + 4*port), (tx_led_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set TX LED pin -> OUT
 	io_outpb(tx_led_dir, io_inpb(tx_led_dir) | (1 << pin));
@@ -174,10 +172,10 @@ static void set_rx_led(char port, char pin)
 	
 	// set data address
 	if ((rx_led_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (4 + 4*port), (rx_led_data = (GPIO_BASE_ADDR + port)));
+	io_outpw(gpio_config_addr + (4 + 4*port), (rx_led_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((rx_led_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-		io_outpw(gpio_config_addr + (6 + 4*port), (rx_led_dir = (GPIO_BASE_ADDR + port + 10)));
+	io_outpw(gpio_config_addr + (6 + 4*port), (rx_led_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set RX LED pin -> OUT
 	io_outpb(rx_led_dir, io_inpb(rx_led_dir) | (1 << pin));
@@ -687,6 +685,7 @@ DMP_INLINE(void) Set_Line_Coding(USB_Device *usb)
 	usb->setup_out_handled = true;
 	
 	SetEPnDLR(usb, EP0, OUT, ENABLE | EP0_MAX_PACKET_SIZE);
+	//usb->state = USB_DEV_CDC_CONNECT;
 }
 #if defined DMP_DOS_DJGPP
 DPMI_END_OF_LOCKED_STATIC_FUNC(Set_Line_Coding)
@@ -716,7 +715,7 @@ DMP_INLINE(void) Set_Control_Line_State(USB_Device *usb)
 		usb->state = USB_DEV_CONFIGURED;
 	else
 		usb->state = USB_DEV_CDC_CONNECT;
-		
+	//printf("%d %d\n", usb->control_line_state, usb->state);	
 	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
 	
 #ifdef DMP_86DUINO_MODE	
@@ -747,6 +746,7 @@ DPMI_END_OF_LOCKED_STATIC_FUNC(Send_Break)
 
 DMP_INLINE(void) USB_CDC_Request(USB_Device *usb)
 {
+	//printf("CDC: %d\n", usb->Setup.bRequest);
 	switch (usb->Setup.bRequest)
 	{
 		// For USB CDC ACM
@@ -999,7 +999,7 @@ DMP_INLINE(void) EP2_InHandler(USB_Device *usb)
 	static int ep2_in_len = 0;
 	
 	if (usb->bulk_in_transmitting == true) return;
-	if (usb->xmit->count <= 0) {
+	if (QueueEmpty(usb->xmit)) {
 		if (ep2_in_len == EP2_MAX_PACKET_SIZE_IN) {
 			SetEPnDLR(usb, EP2, IN, ENABLE);
 			ep2_in_len = 0;
@@ -1014,7 +1014,7 @@ DMP_INLINE(void) EP2_InHandler(USB_Device *usb)
 	ep2_in_len = 0;
 	do {
 		usb->EP[2].InBuf[ep2_in_len++] =(BYTE)PopQueue(usb->xmit);
-	} while(usb->xmit->count > 0 && ep2_in_len < EP2_MAX_PACKET_SIZE_IN);
+	} while(QueueEmpty(usb->xmit) == false && ep2_in_len < EP2_MAX_PACKET_SIZE_IN);
 	
 	#if defined DMP_DOS_DJGPP
 	dosmemput(usb->EP[2].InBuf, EP2_MAX_PACKET_SIZE_IN, usb->EP[2].InPhysical);
@@ -1041,7 +1041,7 @@ DMP_INLINE(void) EP2_OutHandler(USB_Device *usb)
 	#endif
 	for (i = 0; i < size; i++) PushQueue(usb->rcvd, usb->EP[2].OutBuf[i]);
 	
-	if (usb->rcvd->count < (usb->rcvd->size - NEAR_FULL_SIZE))
+	if (QueueSize(usb->rcvd) < (RX_QUEUE_SIZE - NEAR_FULL_SIZE))
 	SetEPnDLR(usb, EP2, OUT, ENABLE | EP2_MAX_PACKET_SIZE_OUT);
 }
 #if defined DMP_DOS_DJGPP
@@ -1054,7 +1054,7 @@ DMP_INLINE(void) EP3_InHandler(USB_Device *usb)
 	static int ep3_in_len = 0;
 	
 	if (usb->interrupt_in_transmitting == true) return;
-	if (usb->hidxmit->count <= 0) {
+	if (QueueEmpty(usb->hidxmit)) {
 		if (ep3_in_len == EP3_MAX_PACKET_SIZE_IN) {
 			SetEPnDLR(usb, EP3, IN, ENABLE);
 			ep3_in_len = 0;
@@ -1069,7 +1069,7 @@ DMP_INLINE(void) EP3_InHandler(USB_Device *usb)
 	ep3_in_len = 0;
 	do {
 		usb->EP[3].InBuf[ep3_in_len++] =(BYTE)PopQueue(usb->hidxmit);
-	} while(usb->hidxmit->count > 0 && ep3_in_len < EP3_MAX_PACKET_SIZE_IN);
+	} while(QueueEmpty(usb->hidxmit) == false && ep3_in_len < EP3_MAX_PACKET_SIZE_IN);
 	
 	#if defined DMP_DOS_DJGPP
 	dosmemput(usb->EP[3].InBuf, EP3_MAX_PACKET_SIZE_IN, usb->EP[3].InPhysical);
@@ -1540,13 +1540,12 @@ DMPAPI(bool) usb_Init(void *vusb)
 	usb->state  = USB_DEV_POWERED;
 	usb->InUse = 1;
 	USB_Connect();
-	
 	return true;
 
 EP3_IN_FAIL:
-	ker_Mfree(usb->EP[3].InBuf);  	
+	ker_Mfree(usb->EP[2].OutBuf);  	
 EP2_OUT_FAIL:
-	ker_Mfree(usb->EP[2].OutBuf);
+	ker_Mfree(usb->EP[2].InBuf);
 EP2_IN_FAIL:
 	ker_Mfree(usb->EP[1].InBuf);
 EP1_IN_FAIL:	
@@ -1606,9 +1605,13 @@ DMPAPI(void) usb_Close(void *vusb)
 
 DMPAPI(int) usb_State(void *vusb)
 {
+	int state;
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return 0; }
-	return usb->state;
+	io_DisableINT();
+	state = usb->state;
+	io_RestoreINT();
+	return state;
 }
 
 DMPAPI(bool) usb_Ready(void *vusb)
@@ -1620,8 +1623,10 @@ DMPAPI(bool) usb_Ready(void *vusb)
 DMPAPI(void) usb_SetSerialState(void *vusb, WORD serial)
 {
 	USB_Device *usb = (USB_Device *)vusb;
+	io_DisableINT();
 	usb->serial_state = serial;
 	EP1_InHandler(usb);
+	io_RestoreINT();
 }
 
 DMPAPI(void) usb_SetTimeOut(void *vusb, DWORD rx_timeout, DWORD tx_timeout)
@@ -1644,106 +1649,99 @@ DMPAPI(int) usb_QueryRxQueue(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return 0; }
-	return usb->rcvd->count;
+	return QueueSize(usb->rcvd);
 }
 
 DMPAPI(bool) usb_RxQueueFull(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return false; }
-	return (usb->rcvd->count >= usb->rcvd->size) ? (true) : (false);
+	return QueueFull(usb->rcvd);
 }
 
 DMPAPI(bool) usb_RxQueueEmpty(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return false; }
-	return (usb->rcvd->count <= 0) ? (true) : (false);
+	return QueueEmpty(usb->rcvd);
 }
-
+                     
 DMPAPI(unsigned int) usb_Read(void *vusb)
 {
-	BYTE val;
-	DWORD pretime;
-	USB_Device *usb = (USB_Device *)vusb;
-	
-	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return 0xffff; }
-	
-	if (usb->RxTimeOut != USB_NO_TIMEOUT) {
-		pretime = timer_nowtime();
-		while (usb->rcvd->count <= 0 && (timer_nowtime() - pretime) < usb->RxTimeOut); 
+	unsigned char val;
+
+	if (usb_Receive(vusb, &val, 1) <= 0)
+		return 0xffff;
 		
-		if (usb->rcvd->count <= 0) {
-			if (USB_TIMEOUT_DEBUG)
-				err_print((char*)"%s: USB device receive timeout.\n", __FUNCTION__);
-			return (unsigned int)0xffff;
-		}
-	}
-	else while (usb->rcvd->count <= 0);
-
-	io_DisableINT();
-	{
-		val = (BYTE)PopQueue(usb->rcvd);
-	}
-	io_RestoreINT();
-	
-	if (!(io_inpdw(usb->EP[2].OutDLR) & 0x80000000L) && usb->rcvd->count < (usb->rcvd->size - NEAR_FULL_SIZE)) 
-	SetEPnDLR(usb, EP2, OUT, ENABLE | EP2_MAX_PACKET_SIZE_OUT);
-
-    return (unsigned int)val;
+	return val;
 }
 
 DMPAPI(int) usb_Receive(void *vusb, BYTE* buf, int bsize)
 {
 	int i;
-	unsigned int val;
+	unsigned long pretime;
+	USB_Device *usb = (USB_Device *)vusb;
 	
-	for (i = 0; i < bsize; ) {
-		val = usb_Read(vusb);
-		if (val != 0xffff) buf[i++] = (BYTE)val;
-		else break;
+	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return 0; }
+	
+	for (i = 0; i < bsize; i++) {
+		if (usb->RxTimeOut != USB_NO_TIMEOUT) {
+			pretime = timer_NowTime();
+			while (QueueEmpty(usb->rcvd) && (timer_NowTime() - pretime) < usb->RxTimeOut); 
+			
+			if (QueueEmpty(usb->rcvd)) {
+				if (USB_TIMEOUT_DEBUG)
+					err_print((char*)"%s: USB device receive timeout.\n", __FUNCTION__);
+				break;
+			}
+		}
+		else while (QueueEmpty(usb->rcvd));
+
+		io_DisableINT();
+		{
+			buf[i] = (BYTE)PopQueue(usb->rcvd);
+			if (QueueSize(usb->rcvd) < (RX_QUEUE_SIZE - NEAR_FULL_SIZE) && !(io_inpdw(usb->EP[2].OutDLR) & 0x80000000L)) 
+			SetEPnDLR(usb, EP2, OUT, ENABLE | EP2_MAX_PACKET_SIZE_OUT);
+		}
+		io_RestoreINT();
 	}
-	
-	return i;
+
+    return i;	
 }
 
 DMPAPI(void) usb_FlushRxQueue(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return; }
-	io_DisableINT();
-	{
-		ClearQueue(usb->rcvd);
-	}
-	io_RestoreINT();
+	ClearQueue(usb->rcvd);
 }
 
 DMPAPI(int) usb_QueryTxQueue(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return 0; }
-	return usb->xmit->count;
+	return QueueSize(usb->xmit);
 }
 
 DMPAPI(bool) usb_TxQueueFull(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return false; }
-	return (usb->xmit->count >= usb->xmit->size) ? (true) : (false);
+	return QueueFull(usb->xmit);
 }
 
 DMPAPI(bool) usb_TxQueueEmpty(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return false; }
-	return (usb->xmit->count <= 0) ? (true) : (false);
+	return QueueEmpty(usb->xmit);
 }
 
 DMPAPI(bool) usb_TxReady(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return false; }
-	return (usb->xmit->count < usb->xmit->size) ? (true) : (false);
+	return (!QueueFull(usb->xmit)) ? (true) : (false);
 }
 
 DMPAPI(int) usb_Send(void *vusb, BYTE *buf, int bsize)
@@ -1760,23 +1758,25 @@ DMPAPI(int) usb_Send(void *vusb, BYTE *buf, int bsize)
 	for (i = 0; i < bsize; i++)
 	{
 		if (usb->TxTimeOut != USB_NO_TIMEOUT) {
-			pretime = timer_nowtime();
-			while (usb->xmit->count >= usb->xmit->size && (timer_nowtime() - pretime) < usb->TxTimeOut); 
+			pretime = timer_NowTime();
+			while (QueueFull(usb->xmit) && (timer_NowTime() - pretime) < usb->TxTimeOut); 
 			
-			if (usb->xmit->count >= usb->xmit->size) {
+			if (QueueFull(usb->xmit)) {
 				if (USB_TIMEOUT_DEBUG)
 					err_print((char*)"%s: USB device transmit timeout.\n", __FUNCTION__);
+				io_DisableINT();
 				EP2_InHandler(usb);
+				io_RestoreINT();
 				return i;
 			}
 		}
-		else while (usb->xmit->count >= usb->xmit->size);
+		else while (QueueFull(usb->xmit));
 		
 		io_DisableINT();
 		{
 			PushQueue(usb->xmit, buf[i]);
 			
-			if (i == (bsize - 1) || usb->xmit->count >= usb->xmit->size)
+			if (i == (bsize - 1) || QueueFull(usb->xmit))
 			{
 				EP2_InHandler(usb);
 			}
@@ -1800,8 +1800,8 @@ DMPAPI(int) hid_Send(void *vusb, BYTE *buf, int bsize)
 		return 0;
 
 	if (usb->TxTimeOut != USB_NO_TIMEOUT) {
-		pretime = timer_nowtime();
-		while (QueueEmpty(usb->hidxmit) == false && (timer_nowtime() - pretime) < usb->TxTimeOut); 
+		pretime = timer_NowTime();
+		while (QueueEmpty(usb->hidxmit) == false && (timer_NowTime() - pretime) < usb->TxTimeOut); 
 		
 		if (QueueEmpty(usb->hidxmit) == false) {
 			if (USB_TIMEOUT_DEBUG)
@@ -1830,18 +1830,15 @@ DMPAPI(void) usb_FlushTxQueue(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return; }
-	io_DisableINT();
-	{
-		ClearQueue(usb->xmit);
-	}
-	io_RestoreINT();
+	
+	ClearQueue(usb->xmit);
 }
 
 DMPAPI(void) usb_FlushWFIFO(void *vusb)
 {
 	USB_Device *usb = (USB_Device *)vusb;
 	if (usb == NULL) { err_print((char*)"%s: USB device is null.\n", __FUNCTION__); return; }
-	while (usb->xmit->count > 0);
+	while (!QueueEmpty(usb->xmit));
 	while (io_inpdw(usb->EP[2].InDLR) & 0x80000000L);
 }
 

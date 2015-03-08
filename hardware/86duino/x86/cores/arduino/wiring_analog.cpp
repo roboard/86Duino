@@ -25,8 +25,6 @@
 
 #include "Arduino.h"
 #include "io.h"
-#define USE_COMMON
-#include "common.h"
 #include "dmpcfg.h"
 #include "mcm.h"
 
@@ -97,9 +95,9 @@ int analogRead(uint8_t pin) {
 	io_outpb(BaseAddress + 0, (0x01<<pin));
 	io_outpb(BaseAddress + 1, 0x01); // enable ADC_ST
 	
-	for(time = timer_nowtime(); (io_inpb(BaseAddress + 2) & 0x01) == 0;)
+	for(time = timer_NowTime(); (io_inpb(BaseAddress + 2) & 0x01) == 0;)
 	{
-		if((timer_nowtime() - time) > TimeOut)
+		if((timer_NowTime() - time) > TimeOut)
 		{
 			io_RestoreINT();
 			return 0xffff;
@@ -198,9 +196,9 @@ double cpuTemperature(uint8_t unit) {
 	io_outpb(BaseAddress + 0, 0x80); // ex: any pin is temperature pin
 	io_outpb(BaseAddress + 1, 0x01); // enable ADC_ST
 
-	for(time = timer_nowtime(); (io_inpb(BaseAddress + 2) & 0x01) == 0; )
+	for(time = timer_NowTime(); (io_inpb(BaseAddress + 2) & 0x01) == 0; )
 	{
-		if(timer_nowtime() - time > TimeOut)
+		if(timer_NowTime() - time > TimeOut)
 			return 0xffff;
 	}
 

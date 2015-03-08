@@ -21,10 +21,13 @@
 */
 
 #define __DMP_CAN_LIB
+////////////////////////////////////////////////////////////////////////////////
+//    note that most of functions in this lib assume no paging issue when 
+//    using them in ISR; so to use this lib in ISR in DJGPP, it is suggested 
+//    to employ PMODE/DJ or HDPMI instead of CWSDPMI.
+////////////////////////////////////////////////////////////////////////////////
 
 #include "can.h"
-#define  USE_COMMON
-#include "common.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,9 +81,6 @@ DMP_INLINE(void) can_RoundRobin(CAN_Bus *can)
 	}
 	io_RestoreINT();
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(can_RoundRobin)
-#endif
 
 static int CAN_ISR(int irq, void *data)
 {
@@ -206,9 +206,6 @@ static int CAN_ISR(int irq, void *data)
 
 	return ISR_HANDLED;
 }
-#if defined DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_STATIC_FUNC(CAN_ISR)
-#endif
 
 DMPAPI(void *) CreateCANBus(int IO_Space)
 {
@@ -255,10 +252,6 @@ DMPAPI(void *) CreateCANBus(int IO_Space)
 	can->round         = 0;
 	
 	can->StoreError    = false;
-	
-#if defined DMP_DOS_DJGPP
-	can->locked        = false;
-#endif
 	
 	/* CAN-BUS registers offset */
 	can->GCR           = 0x00;
@@ -333,14 +326,6 @@ DMPAPI(bool) can_Init(void *vcan)
 	
 	if (can->InUse == true)
 		return true;
-
-#if defined DMP_DOS_DJGPP
-	if (can->locked == false) {
-		DPMI_LOCK_FUNC(CAN_ISR);
-		DPMI_LOCK_FUNC(can_RoundRobin);
-		can->locked = true;
-	}
-#endif
 
 	switch (can->IO_Space)
 	{
@@ -844,8 +829,8 @@ DMPAPI(bool) can_Read(void *vcan, CANFrame *pack)
 	
 	if (can->RxTimeOut != CAN_NO_TIMEOUT)
 	{
-		pretime = timer_nowtime();
-		while (QueueEmpty(can->rcvd) && (timer_nowtime() - pretime) < can->RxTimeOut); 
+		pretime = timer_NowTime();
+		while (QueueEmpty(can->rcvd) && (timer_NowTime() - pretime) < can->RxTimeOut); 
 		
 		if (QueueEmpty(can->rcvd)) {
 			if (CAN_TIMEOUT_DEBUG)
@@ -864,7 +849,7 @@ DMPAPI(int) can_QueryRxQueue(void *vcan)
 {
 	CAN_Bus *can = (CAN_Bus *)vcan;
 	if (can == NULL) { err_print((char*)"%s: CAN bus is null.\n", __FUNCTION__); return 0; }
-	return can->rcvd->count;
+	return QueueSize(can->rcvd);
 }
 
 DMPAPI(bool) can_RxQueueFull(void *vcan)
@@ -916,8 +901,8 @@ DMPAPI(bool) can_Write(void *vcan, CANFrame *pack)
 	
 	if (can->TxTimeOut != CAN_NO_TIMEOUT)
 	{
-		pretime = timer_nowtime();
-		while (QueueFull(can->xmit) && (timer_nowtime() - pretime) < can->TxTimeOut); 
+		pretime = timer_NowTime();
+		while (QueueFull(can->xmit) && (timer_NowTime() - pretime) < can->TxTimeOut); 
 		
 		if (QueueFull(can->xmit)) {
 			if (CAN_TIMEOUT_DEBUG)
@@ -942,7 +927,7 @@ DMPAPI(int) can_QueryTxQueue(void *vcan)
 		return 0;
 	}
 	
-	return can->xmit->count;
+	return QueueSize(can->xmit);
 }
 
 DMPAPI(bool) can_TxQueueFull(void *vcan)
@@ -1002,7 +987,10 @@ DMPAPI(void) can_FlushWFIFO(void *vcan)
 		return;
 	}
 	
-	while (!QueueEmpty(can->xmit));
+	while (!QueueEmpty(can->xmit)) {
+		if (can_GetNowState(vcan) == CAN_STAT_BUS_OFF)
+			break;
+	}
 	while (io_In32(can->ioHandle, can->REQ) & 0x15L);
 }
 

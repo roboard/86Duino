@@ -22,9 +22,8 @@
 
 #define __I2CDX_LIB
 
-#define  USE_COMMON
-#include "common.h"
 #include "io.h"
+#include "err.h"
 #include "i2cex.h"
 
 #define I2C_TIMEOUT     (500L)  //500 ms
@@ -120,17 +119,17 @@ DMPAPI(bool) i2c_Reset(int dev) {
     
     io_outpb(I2C_EXCTRL_REG(dev), io_inpb(I2C_EXCTRL_REG(dev)) | 0x80);
 
-    nowtime = timer_nowtime();
-    while (((io_inpb(I2C_EXCTRL_REG(dev)) & 0x80) != 0) && ((timer_nowtime() - nowtime) < I2C_TIMEOUT));
+    nowtime = timer_NowTime();
+    while (((io_inpb(I2C_EXCTRL_REG(dev)) & 0x80) != 0) && ((timer_NowTime() - nowtime) < I2C_TIMEOUT));
 
     if ((io_inpb(I2C_EXCTRL_REG(dev)) & 0x80) != 0)
     {
-        err_SetMsg(ERROR_I2CFAIL, "fail to reset I2C module %d", dev);
+        err_print("fail to reset I2C module %d", dev);
         return false;
     }
     
     //Remarks: due to Vortex86DX's poor I2C design, RESET bit may become 0 when dummy clocks are still being output
-    delay_ms(20L); //lazy trick to tackle the above issue
+    timer_Delay(20L); //lazy trick to tackle the above issue
     return true;
 }
 
@@ -169,7 +168,7 @@ DMPAPI(void) i2c_DisableINT(int dev, unsigned char i2cints) {
 DMPAPI(void) i2c_SetCLKREG(int dev, int mode, unsigned char prescale1, unsigned char prescale2) {
     if ((prescale1 < 10) || (prescale2 > 127))
     {
-        errmsg("WARNING: %s() receives wrong clk divisors!\n", __FUNCTION__);
+        err_print("WARNING: %s() receives wrong clk divisors!\n", __FUNCTION__);
         return;
     }
 

@@ -108,6 +108,8 @@ DMPAPI(COMPort *) CreateCOMPort(int com)
 	port->WriteCAN           = NULL;
 	port->EnableHalfDuplex   = NULL;
 	port->EnableFullDuplex   = NULL;
+	port->EnableDebugMode    = NULL;
+	port->DisableDebugMode   = NULL;
 	
 	return port;
 }
@@ -159,6 +161,8 @@ DMPAPI(COMPort *) com_Init(int com)
 			port->GetMSR             = uart_GetMSR;
 			port->EnableHalfDuplex   = uart_EnableHalfDuplex;
 			port->EnableFullDuplex   = uart_EnableFullDuplex;
+			port->EnableDebugMode    = uart_EnableDebugMode;
+			port->DisableDebugMode   = uart_DisableDebugMode;
 			
 			return port;
 		}
@@ -551,6 +555,26 @@ DMPAPI(void) com_EnableFullDuplex(COMPort *port)
 		return;
 	}
 	port->EnableFullDuplex(port->func);
+}
+
+DMPAPI(void) com_EnableDebugMode(COMPort *port)
+{
+	if (port->EnableDebugMode == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return;
+	}
+	port->EnableDebugMode(port->func);
+}
+
+DMPAPI(void) com_DisableDebugMode(COMPort *port)
+{
+	if (port->DisableDebugMode == NULL)
+	{
+		err_print((char*)"%s: function pointer is null.\n", __FUNCTION__);
+		return;
+	}
+	port->DisableDebugMode(port->func);
 }
 
 // for USB_COM

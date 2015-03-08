@@ -38,22 +38,23 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 #define _SFR_BYTE(n) (n)
 #define PSTR(s)      (s)
 
-#define pgm_read_byte_near(address_short) (*(const unsigned char *)(address_short))
-#define pgm_read_word_near(address_short) (*(const unsigned short *)(address_short))
+#define pgm_read_byte_near(address_short)  (*(const unsigned char *)(address_short))
+#define pgm_read_word_near(address_short)  (*(const unsigned short *)(address_short))
 #define pgm_read_dword_near(address_short) (*(const unsigned long *)(address_short))
 #define pgm_read_float_near(address_short) (*(const float *)(address_short))
-
+#define pgm_read_ptr_near(address_short)   (void*)(*(const unsigned short *)(address_short))
 
 #define pgm_read_byte_far(address_long)  (*(const unsigned char *)(address_long))
 #define pgm_read_word_far(address_long)  (*(const unsigned short *)(address_long))
 #define pgm_read_dword_far(address_long) (*(const unsigned long *)(address_long))
 #define pgm_read_float_far(address_long) (*(const float *)(address_long))
-
+#define pgm_read_ptr_far(address_long)   (void*)(*(const unsigned long *)(address_long)) 
 
 #define pgm_read_byte(address_short)    pgm_read_byte_near(address_short)
 #define pgm_read_word(address_short)    pgm_read_word_near(address_short)
 #define pgm_read_dword(address_short)   pgm_read_dword_near(address_short)
 #define pgm_read_float(address_short)   pgm_read_float_near(address_short)
+#define pgm_read_ptr(address_short)     pgm_read_ptr_near(address_short)
 
 #ifndef PGM_P
 #define PGM_P const prog_char *
@@ -65,6 +66,7 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 
 #define memcmp_P(a, b, c)        memcmp((a), (b), (c))
 #define memchr_P(a, b, c)        memchr((a), (b), (c))
+#define memccpy_P(a, b, c, d)    memccpy_P((a), (b), (c), (d)) // new for 1.5.8
 #define memcpy_P(a, b, c)        memcpy((a), (b), (c))
 //extern void *memmem_P(const void *, size_t, PGM_VOID_P, size_t) __ATTR_PURE__;
 #define memrchr_P(a, b, c)       memchr((a), (b), (c))
@@ -89,6 +91,8 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 #define strsep_P(a, b)           strsep((a), (b))
 #define strspn_P(a, b)           strspn((a), (b))
 #define strstr_P(a, b)           strstr((a), (b))
+#define strtok_P(a, b)           strtok((a), (b)) // new for 1.5.8
+#define strtok_rP(a, b, c)       strtok_r((a), (b), (c)) // new for 1.5.8
 
 #define printf_P                 printf
 #define sprintf_P                sprintf

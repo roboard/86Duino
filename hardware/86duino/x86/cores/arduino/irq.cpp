@@ -1,5 +1,6 @@
-/*
-  irq.cpp - DM&P Vortex86 IRQ library
+/*******************************************************************************
+
+  irq.cpp - DM&P Vortex86 IRQ Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,7 +19,9 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 #define __IRQ_LIB
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,18 +38,20 @@
 #if defined     DMP_DOS_DJGPP
     #include <stdio.h>
     #include <stdlib.h>
-    #include <stdarg.h>
     #include <go32.h>
     #include <dpmi.h>
 #elif defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
     #include <stdio.h>
     #include <stdlib.h>
-    #include <stdarg.h>
     #include <dos.h>
 #endif
 
 #include "io.h"
+#include "io_atom.h"
 #include "irq.h"
+
+extern ATOMIC_INT_t irq_cscnt;  // defined in io.cpp; well ... bad design for speed:(
+#include "io_irq.h"
 
 #ifndef DMP_DOS_DJGPP
     #define DPMI_END_OF_LOCKED_FUNC(fname)
@@ -65,6 +70,7 @@
  * =============================================
  */
 #include "err.h"
+
 
 
 /* =============================================
@@ -221,11 +227,11 @@ typedef struct _IRQ_DPC_t
                     tmp->state &= ~IRQ_DPCSTAT_WAITING;
 
                 tmp->state |= IRQ_DPCSTAT_RUNNING;
-                io_EnableINT();
+                _io_EnableINT();
                 {
                     tmp->func(tmp->data);
                 }
-                io_DisableINT();
+                _io_DisableINT();
                 tmp->state &= ~IRQ_DPCSTAT_RUNNING;
             }
         } // end while (IRQ_dpcHead...
@@ -235,11 +241,11 @@ typedef struct _IRQ_DPC_t
 
 
     static volatile int IRQ_sysenter = 0;
-    static int dos_shared_irq_wrapper(int irq) {
+    static _IRQ_HANDLER(int) dos_shared_irq_wrapper(int irq) {
         int i, numisr, chainisr, numscan = 0;
 
         IRQ_sysenter++;
-        io_SetCSCNT(1);  // allow io_EnableINT() & io_DisableINT() to work correctly
+        _io_SetCSCNT(1);  // allow _io_EnableINT() & _io_DisableINT() to work correctly
 
         //-- 1. disable the current IRQ and send EOI to allow other IRQ interrupts
         if (IS_LEVEL_TRIGGER(irq)) i8259_DisableIRQ(irq);
@@ -260,7 +266,7 @@ typedef struct _IRQ_DPC_t
         IRQ_lists[irq].state = IRQ_STATE_INUSE;
 
         //-- 3. issue STI if necessary
-        if (ALLOW_INTR(irq)) io_EnableINT();
+        if (ALLOW_INTR(irq)) _io_EnableINT();
 
         //-- 4. save FPU context if necessary
         if (ALLOW_FPU(irq)) dos_save_fpu(IRQ_lists[irq].old_fpu_env);
@@ -283,7 +289,7 @@ typedef struct _IRQ_DPC_t
                         break;
                 }
             
-            io_DisableINT();
+            _io_DisableINT();
             {
                 if ((numisr == 0) && (numscan == 0))
                     IRQ_lists[irq].errflags |= IRQERR_UNHANDLED_INTR;
@@ -293,24 +299,24 @@ typedef struct _IRQ_DPC_t
 
                 if (IRQ_lists[irq].state != IRQ_STATE_PENDING)
                 {
-                    io_RestoreINT();
+                    _io_RestoreINT();
                     break;
                 }
                 if (++numscan > 500)
                 {
                     IRQ_lists[irq].errflags |= IRQERR_NUMEROUS_INTR;
-                    io_RestoreINT();
+                    _io_RestoreINT();
                     break;
                 }
                 IRQ_lists[irq].state = IRQ_STATE_INUSE;  // change IRQ_STATE_PENDING to IRQ_STATE_INUSE (non-pending)
             }
-            io_RestoreINT();
+            _io_RestoreINT();
         }
 
         //-- 6. restore the old context and then exit the IRQ wrapper
         if (ALLOW_FPU(irq)) dos_restore_fpu(IRQ_lists[irq].old_fpu_env);
 
-        io_DisableINT();
+        _io_DisableINT();
         IRQ_lists[irq].state = IRQ_STATE_NONE;
 
         // for level-triggered IRQ, we will disable it if no ISR can handle it (to avoid continuous interrupt-triggering)
@@ -319,7 +325,7 @@ typedef struct _IRQ_DPC_t
         if (IRQ_sysenter == 1) dos_do_dpc();
 
     IRQ_WRAPPER_EXIT:
-        io_SetCSCNT(0);
+        _io_SetCSCNT(0);
         IRQ_sysenter--;
         return _IRQ_POSSESS;
     } DPMI_END_OF_LOCKED_STATIC_FUNC(dos_shared_irq_wrapper)
@@ -328,11 +334,11 @@ typedef struct _IRQ_DPC_t
     static volatile int IRQ_sysenter_chaining = 0;
     // NOTE: to chain the old ISR, it doesn't allow to access 8259 and to
     //       enable the interrupt flag. And DPC isn't supported in this case.
-    static int dos_shared_irq_wrapper_chaining(int irq) {
+    static _IRQ_HANDLER(int) dos_shared_irq_wrapper_chaining(int irq) {
         int i, numisr, chainisr;
     
         IRQ_sysenter_chaining++;
-        io_SetCSCNT(1);  // allow io_EnableINT() & io_DisableINT() to work correctly
+        _io_SetCSCNT(1);  // allow _io_EnableINT() & _io_DisableINT() to work correctly
 
         if (ALLOW_FPU(irq)) dos_save_fpu(IRQ_lists[irq].old_fpu_env);
 
@@ -350,12 +356,17 @@ typedef struct _IRQ_DPC_t
                     numisr++;
                     chainisr++;
                     break;
+                case ISR_CHAIN_POSSESS:
+                    numisr++;
+                    chainisr++;
+                    if (IS_LEVEL_TRIGGER(irq)) i = IRQ_lists[irq].isrs_num;  // exit the scanning loop
+                    break;
             }
 
         if (ALLOW_FPU(irq)) dos_restore_fpu(IRQ_lists[irq].old_fpu_env);
 
-        io_DisableINT();  // need this if the user unexpectedly enables the interrupt flag in their ISR
-        io_SetCSCNT(0);
+        _io_DisableINT();  // need this if the user unexpectedly enables the interrupt flag in their ISR
+        _io_SetCSCNT(0);
         IRQ_sysenter_chaining--;
 
         if ((chainisr != 0) || (numisr == 0))
@@ -423,11 +434,11 @@ DMPAPI(bool) irq_FreeDPC(void* dpc_handle) {
     {
         int state;
 
-        io_DisableINT();
+        _io_DisableINT();
         {
             state = ((IRQ_DPC_t*)dpc_handle)->state;
         }
-        io_RestoreINT();
+        _io_RestoreINT();
         if (state != IRQ_DPCSTAT_NONE) return false;
     }
     #endif
@@ -440,11 +451,11 @@ DMPAPI(unsigned long) irq_GetDPCErrFlags(void) {
     unsigned long errflags;
 
     #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
-        io_DisableINT();
+        _io_DisableINT();
         {
             errflags = IRQ_dpcErrFlags;
         }
-        io_RestoreINT();
+        _io_RestoreINT();
 
         return errflags;
     #else
@@ -459,11 +470,11 @@ DMPAPI(int) irq_TriggerDPC(void* dpc_handle) {
     if (handle == NULL) return IRQ_DPC_FAIL;
 
     #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
-        io_DisableINT();
+        _io_DisableINT();
         {
             if ((handle->state & IRQ_DPCSTAT_WAITING) != 0)
             {
-                io_RestoreINT();
+                _io_RestoreINT();
                 return IRQ_DPC_RETRIG;
             }
 
@@ -472,7 +483,7 @@ DMPAPI(int) irq_TriggerDPC(void* dpc_handle) {
             IRQ_dpcHead = handle;
             if ((handle->flags & IRQ_DPC_USEFPU) != 0L) IRQ_dpcUseFPU++;
         }
-        io_RestoreINT();
+        _io_RestoreINT();
     #endif
 
     return IRQ_DPC_SUCCESS;
@@ -520,23 +531,23 @@ DMPAPI(bool) irq_InstallISR(int irq, int (*isr)(int, void*), void* isr_data) {
 
             for (i=0; i<IRQ_lists[irq].isrs_num; i++) tmplist[i] = curlist[i];
             
-            io_DisableINT();
+            _io_DisableINT();
             {
                 IRQ_lists[irq].isrs = tmplist;
                 IRQ_lists[irq].isrs_size = IRQ_lists[irq].isrs_size * 2;
             }
-            io_RestoreINT();
+            _io_RestoreINT();
             
             ker_Mfree(curlist);
         }
         
         IRQ_lists[irq].isrs[IRQ_lists[irq].isrs_num].func = isr;
         IRQ_lists[irq].isrs[IRQ_lists[irq].isrs_num].data = isr_data;
-        io_DisableINT();
+        _io_DisableINT();
         {
             IRQ_lists[irq].isrs_num++;
         }
-        io_RestoreINT();
+        _io_RestoreINT();
         
         if (curlist == NULL)
         {
@@ -589,7 +600,7 @@ DMPAPI(bool) irq_UninstallISR(int irq, void* isr_data) {
             return false;
         }
 
-        io_DisableINT();
+        _io_DisableINT();
         {
             if (IRQ_lists[irq].isrs_num > 1)
             {
@@ -600,7 +611,7 @@ DMPAPI(bool) irq_UninstallISR(int irq, void* isr_data) {
             {
                 if (_irq_UninstallISR(irq) == false)
                 {
-                    io_RestoreINT();
+                    _io_RestoreINT();
                     err_print("%s: fail to uninstall IRQ wrapper!\n", __FUNCTION__);
                     return false;
                 }
@@ -610,7 +621,7 @@ DMPAPI(bool) irq_UninstallISR(int irq, void* isr_data) {
                 IRQ_lists[irq].isrs = NULL;
             } // end if (IRQ_lists[irq].isrs_num
         }
-        io_RestoreINT();
+        _io_RestoreINT();
     }
     #endif
 
@@ -625,11 +636,11 @@ DMPAPI(bool) irq_Setting(int irq, unsigned long flags) {
     }
 
     #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
-        io_DisableINT();
+        _io_DisableINT();
         {
             IRQ_lists[irq].flags = flags;
         }
-        io_RestoreINT();
+        _io_RestoreINT();
     #endif
 
     return true;
@@ -655,11 +666,11 @@ DMPAPI(unsigned long) irq_GetErrFlags(int irq) {
     }
 
     #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
-        io_DisableINT();
+        _io_DisableINT();
         {
             errflags = IRQ_lists[irq].errflags;
         }
-        io_RestoreINT();
+        _io_RestoreINT();
 
         return errflags;
     #else

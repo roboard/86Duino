@@ -28,9 +28,6 @@
 
 #include "io.h"
 
-#define USE_COMMON
-#include "common.h"
-
 #include "mcm.h"
 
 #if defined(DJGPP)

@@ -1,5 +1,6 @@
-/*
-  irq.h - DM&P Vortex86 IRQ library
+/*******************************************************************************
+
+  irq.h - DM&P Vortex86 IRQ Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,7 +19,9 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 #ifndef __IRQ_H
 #define __IRQ_H
@@ -35,6 +38,13 @@ extern "C" {
  * =============================================
  */
 #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
+    #ifdef DMP_DOS_DJGPP
+        // for avoiding gcc to optimize user-defined irq handlers with -fcaller-saves
+        #define _IRQ_HANDLER(rtype) rtype __attribute__((optimize("O1")))
+    #else
+        #define _IRQ_HANDLER(rtype) rtype
+    #endif
+
     DMPAPI(bool) _irq_Init(void);
     DMPAPI(bool) _irq_Close(void);
     DMPAPI(bool) _irq_InstallISR(int irq, int (*irq_handler)(int));
@@ -73,10 +83,11 @@ DMPAPI(bool) irq_UninstallISR(int irq, void* isr_data);
 
 // supported return values for user-registered isr(...)
 #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
-    #define ISR_NONE       (0)
-    #define ISR_HANDLED    (1)
-    #define ISR_POSSESS    (2)  // only for DOS and level-triggered IRQ
-    #define ISR_CHAIN      (3)  // only for DOS and IRQ with the IRQ_CHAIN_OLDISR option
+    #define ISR_NONE            (0)
+    #define ISR_HANDLED         (1)
+    #define ISR_POSSESS         (2)  // only for DOS and level-triggered IRQ
+    #define ISR_CHAIN           (3)  // only for DOS and IRQ with the IRQ_CHAIN_OLDISR option
+    #define ISR_CHAIN_POSSESS   (4)  // only for DOS and IRQ with the IRQ_CHAIN_OLDISR option
 #endif
 
 #define IRQ_EDGE_TRIGGER            (0x00L)

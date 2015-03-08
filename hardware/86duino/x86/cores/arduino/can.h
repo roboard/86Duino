@@ -93,10 +93,6 @@ typedef volatile struct can_bus
 	
 	int            round;
 
-#if defined DMP_DOS_DJGPP
-	bool           locked;
-#endif
-
 	void (*busoff_handler)(volatile struct can_bus *can);
 	
 	/* -------------------------------- */

@@ -45,6 +45,8 @@ int Stream::timedPeek()
   _startMillis = millis();
   do {
     c = peek();
+    //if(c == -1) printf("-1\n");
+    //printf("%d\n", c);
     if (c >= 0) return c;
   } while(millis() - _startMillis < _timeout);
   return -1;     // -1 indicates timeout

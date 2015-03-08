@@ -18,36 +18,40 @@
 
 #include "Arduino.h"
 #include "io.h"
-#define USE_COMMON
-#include "common.h"
 #include "USBCore.h"
 #include "mcm.h"
 #include "irq.h"
+#include "stdio.h"
 
 void *USBDEV = NULL;
+unsigned long long int CLOCKS_PER_MICROSEC;
+unsigned long long int VORTEX86EX_CLOCKS_PER_MS;
 bool Global_irq_Init = false;
 
 unsigned long millis() {
-	return timer_nowtime();
+	return timer_NowTime();
 }
 
 void delay(unsigned long ms) {
-	delay_ms(ms);
+	timer_Delay(ms);
 }
 
+// For 86Duino IDE, only use micros() after calling init()
 unsigned long micros() {
-	return (getclocks64()/CLOCKS_PER_MICROSEC);
+	return (unsigned long) (timer_GetClocks64()/CLOCKS_PER_MICROSEC);
 }
 
 void delayMicroseconds(unsigned long us) {
-    delay_us(us);
+    timer_DelayMicroseconds(us);
 }
 
 bool init() {
 	int i, crossbarBase, gpioBase;
-	timer_nowtime(); // initialize timer
 	if(io_Init() == false) return false;
-
+    timer_NowTime(); // initialize timer
+    CLOCKS_PER_MICROSEC = vx86_CpuCLK();
+    VORTEX86EX_CLOCKS_PER_MS = CLOCKS_PER_MICROSEC*1000ULL;
+    
 	//set corssbar Base Address
 	crossbarBase = sb_Read16(SB_CROSSBASE) & 0xfffe;
 	if(crossbarBase == 0 || crossbarBase == 0xfffe)

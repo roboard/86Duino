@@ -20,8 +20,6 @@
 #include "Arduino.h"
 #include "USBCore.h"
 #include "USBAPI.h"
-#define USE_COMMON
-#include "common.h"
 
 
 void Serial_::begin(uint16_t baud_count)
@@ -52,11 +50,11 @@ int Serial_::peek(void)
 {
 	if(USBDEV == NULL) return -1;
 	if(peek_stored == true)
-  		return peek_val;
+		  return peek_val;
   	else
   	{
-  		if((peek_val = usb_Read(USBDEV)) == 0xFFFF)
-  			peek_val = -1;
+		if((peek_val = read()) == -1)
+  			return -1;//peek_val = -1;
   		peek_stored = true;
 		return peek_val;
 	}
@@ -102,7 +100,7 @@ Serial_::operator bool() {
 	bool result = false;
 	if (usb_Ready(USBDEV) != false) 
 		result = true;
-	delay_ms(10);
+	timer_Delay(10);
 	return result;
 }
 

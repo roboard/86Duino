@@ -1,5 +1,6 @@
-/*
-  io.h - DM&P Vortex86 Base I/O library
+/*******************************************************************************
+
+  io.h - DM&P Vortex86 Base I/O Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,12 +19,15 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 #ifndef __IO_H
 #define __IO_H
 
-#include "dmpcfg.h"
+#include <stdio.h>
+#include <dmpcfg.h>
 
 
 #ifdef __cplusplus
@@ -37,8 +41,6 @@ extern "C" {
 DMPAPI(void) io_DisableINT(void);
 DMPAPI(void) io_RestoreINT(void);
 DMPAPI(void) io_EnableINT(void);
-
-DMPAPI(void) io_SetCSCNT(int val);
 
 DMPAPI(void) i8259_DisableIRQ(int irq);
 DMPAPI(void) i8259_EnableIRQ(int irq);
@@ -60,17 +62,26 @@ DMPAPI(int)  i8259_GetINTVEC(int irq);
     DMPAPI(bool) dpmi_LockData(void* data_addr, unsigned long data_size);
     DMPAPI(bool) dpmi_UnlockCode(void* code_addr, unsigned long code_size);
     DMPAPI(bool) dpmi_UnlockData(void* data_addr, unsigned long data_size);
+    DMPAPI(int)  dpmi_Cli(void);
+    DMPAPI(int)  dpmi_Sti(void);
 #endif
 
 #if defined(DMP_DOS_DJGPP)
-    #define DPMI_END_OF_LOCKED_FUNC(fname)         void fname##_end(void) { }
-    #define DPMI_END_OF_LOCKED_STATIC_FUNC(fname)  static void fname##_end(void) { }
+    #ifndef DMP_DOS_DJGPP_NO_VIRMEM
+        #define DPMI_END_OF_LOCKED_FUNC(fname)         void fname##_end(void) { }
+        #define DPMI_END_OF_LOCKED_STATIC_FUNC(fname)  static void fname##_end(void) { }
 
-    // note that to use the DPMI_LOCK_FUNC() marco, you should avoid compiling 
-    // the program, where the locked function is, with gcc optimization options 
-    // such as -O2 or -O3.
-    #define DPMI_LOCK_FUNC(fname)   dpmi_LockCode((void*)fname, (unsigned long)fname##_end - (unsigned long)fname)
-    #define DPMI_LOCK_VAR(varname)  dpmi_LockData((void*)&varname, sizeof(varname))
+        // note that to use the DPMI_LOCK_FUNC() marco, you should avoid compiling 
+        // the program, where the locked function is, with gcc optimization options 
+        // such as -O2 or -O3.
+        #define DPMI_LOCK_FUNC(fname)   dpmi_LockCode((void*)fname, (unsigned long)fname##_end - (unsigned long)fname)
+        #define DPMI_LOCK_VAR(varname)  dpmi_LockData((void*)&varname, sizeof(varname))
+    #else
+        #define DPMI_END_OF_LOCKED_FUNC(fname)
+        #define DPMI_END_OF_LOCKED_STATIC_FUNC(fname)
+        #define DPMI_LOCK_FUNC(fname)
+        #define DPMI_LOCK_VAR(varname)
+    #endif
 
     // note that DPMI_MEMORY_ALL_LOCK() macro should be put in the .C/.CPP file  
     // where the main function locates, and DPMI_MEMORY_HEAP_UNLOCK(flag) 
@@ -112,6 +123,22 @@ DMPAPI(unsigned short) io_In16(void* handle, unsigned long offset);
 DMPAPI(void) io_Out8(void* handle, unsigned long offset, unsigned char val);
 DMPAPI(unsigned char) io_In8(void* handle, unsigned long offset);
 
+// just slight faster MMIO function calls for slower CPUs
+DMPAPI(void) io_Out32M(void* handle, unsigned long offset, unsigned long val);
+DMPAPI(void) io_Out16M(void* handle, unsigned long offset, unsigned short val);
+DMPAPI(void) io_Out8M(void* handle, unsigned long offset, unsigned char val);
+DMPAPI(unsigned long)  io_In32M(void* handle, unsigned long offset);
+DMPAPI(unsigned short) io_In16M(void* handle, unsigned long offset);
+DMPAPI(unsigned char)  io_In8M(void* handle, unsigned long offset);
+
+// just slight faster port-I/O function calls for slower CPUs
+DMPAPI(void) io_Out32P(void* handle, unsigned long offset, unsigned long val);
+DMPAPI(void) io_Out16P(void* handle, unsigned long offset, unsigned short val);
+DMPAPI(void) io_Out8P(void* handle, unsigned long offset, unsigned char val);
+DMPAPI(unsigned long)  io_In32P(void* handle, unsigned long offset);
+DMPAPI(unsigned short) io_In16P(void* handle, unsigned long offset);
+DMPAPI(unsigned char)  io_In8P(void* handle, unsigned long offset);
+
 
 /* =============================================
  *   PCI-CFG Access Functions
@@ -149,6 +176,9 @@ DMPAPI(int) vx86_CpuID(void);
      #define CPU_VORTEX86DX3            (42)
      #define CPU_VORTEX86EX             (51)
 
+DMPAPI(unsigned long) vx86_CpuCLK(void);
+DMPAPI(unsigned long) vx86_DramCLK(void);
+
 DMPAPI(void) vx86_NBSB_Write(int fun, unsigned char offset, unsigned long val);
 DMPAPI(unsigned long) vx86_NBSB_Read(int fun, unsigned char offset);
 
@@ -157,6 +187,21 @@ DMPAPI(unsigned short) vx86_NBSB_Read16(int fun, unsigned char offset);
 
 DMPAPI(void) vx86_NBSB_Write8(int fun, unsigned char offset, unsigned char val);
 DMPAPI(unsigned char) vx86_NBSB_Read8(int fun, unsigned char offset);
+
+
+/* =============================================
+ *   CPU-Time Util Functions
+ * =============================================
+ */
+#ifdef DMP_DOS_BC
+    DMPAPI(void) timer_GetClocks64(unsigned long* nowclocks_lsb, unsigned long* nowclocks_msb);
+#else
+    DMPAPI(unsigned long long) timer_GetClocks64(void);
+#endif
+DMPAPI(unsigned long) timer_GetClocks(void);
+DMPAPI(void) timer_Delay(unsigned long ms);
+DMPAPI(void) timer_DelayMicroseconds(unsigned long us);
+DMPAPI(unsigned long) timer_NowTime(void);  // unit: ms
 
 
 /* ========================================
@@ -216,8 +261,6 @@ extern "C" {
 #endif
 
 #if !defined(DMP_LIB_DLL) || defined(__IO_LIB)
-    // TODO: the following io_xxxx(...) functions don't work in WinXP & LINUX Kernel Modes
-    // #if !defined(DMP_OS_KERNEL)
     DMP_INLINE(void) io_outpdw(unsigned short addr, unsigned long val) {
         io_Out32(NULL, (unsigned long)addr, val);
     }

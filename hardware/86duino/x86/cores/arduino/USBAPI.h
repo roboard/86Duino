@@ -27,7 +27,7 @@ class Serial_ : public Stream
 {
 private:
 	bool peek_stored;
-    uint8_t peek_val;
+    int8_t peek_val;
 public:
 	void begin(uint16_t baud_count);
 	void end(void);

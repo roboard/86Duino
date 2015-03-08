@@ -8,8 +8,6 @@ extern "C" {
 }
 #include "wSPI.h"
 
-#define USE_COMMON
-#include "common.h"
 
 #define DATAOUT 	11 // MOSI
 #define DATAIN  	12 // MISO
@@ -109,7 +107,7 @@ int SpiDrv::waitSpiChar(unsigned char waitChar)
 	unsigned long begin;
     unsigned char _readChar = 0;
 	
-	begin = timer_nowtime();
+	begin = timer_NowTime();
     do{
         _readChar = readChar(); //get data byte
         if (_readChar == ERR_CMD)
@@ -117,7 +115,7 @@ int SpiDrv::waitSpiChar(unsigned char waitChar)
         	WARN("Err cmd received\n");
         	return -1;
         }
-    } while((timer_nowtime() - begin) <= TIMEOUT_CHAR && (_readChar != waitChar));
+    } while((timer_NowTime() - begin) <= TIMEOUT_CHAR && (_readChar != waitChar));
     //}while((timeout-- > 0) && (_readChar != waitChar));
     return  (_readChar == waitChar);
 }

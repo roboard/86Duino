@@ -1,5 +1,6 @@
-/*
-  irq_dos.h - Part of DM&P Vortex86 IRQ library
+/*******************************************************************************
+
+  irq_dos.h - Part of DM&P Vortex86 IRQ Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,7 +19,9 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 /************************  Primitive IRQ System for DOS  **********************/
 #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
@@ -27,7 +30,7 @@
 // well ... then many intentional & ugly #if ... #endif :p
 #if defined     DMP_DOS_DJGPP
 
-    static void (*_IRQ_wrappers[16])(void);
+    static void (* volatile _IRQ_wrappers[16])(void);
 
     #ifdef __cplusplus
     extern "C" {
@@ -36,7 +39,7 @@
     volatile unsigned long _IRQ_oldHandlers[16];   // offset of old IRQ handler
     volatile unsigned long _IRQ_oldHandlers2[16];  // selector of old IRQ handler
 
-    #define _IRQ_STACK_SIZE (64 * 1024)
+    #define _IRQ_STACK_SIZE (256 * 1024)  // (64 * 1024)
     unsigned char* volatile _IRQ_commonStack;
     volatile int _IRQ_stackInUse;
 
@@ -60,7 +63,7 @@
     }
     #endif
 
-static void __attribute__((noinline, noclone)) get_irq_wrappers(void (*wrappers[])(void)) {
+static void __attribute__((noinline, noclone)) get_irq_wrappers(void (* volatile wrappers[])(void)) {
     volatile int x = 0;
 
     if (x != 0)  // avoid DJGPP to optimize the inline assembly

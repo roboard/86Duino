@@ -1,3 +1,6 @@
+#ifndef __V86_CLOCK_H
+#define __V86_CLOCK_H
+
 #define __86DUINO_EDUCAKE
-#define CLOCKS_PER_MICROSEC (300ULL)
-#define VORTEX86EX_CLOCKS_PER_MS (300000ULL)
+
+#endif

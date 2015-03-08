@@ -30,6 +30,9 @@
 
 #if defined (DJGPP)
     #define DMP_DOS_DJGPP
+    
+    #define DMP_DOS_DJGPP_NO_VIRMEM  // set this if using a DPMI server that doesn't enable virtual memory
+    #define DMP_DOS_DJGPP_NO_EMM386  // set this if using a DOS environment without EMM386 (needed by the DMA buffer allocation codes)
 #endif
 
 #if (defined (__WATCOMC__) || defined(__WATCOM_CPLUSPLUS__)) && defined(__386__) //&& defined(__i386__)
@@ -45,7 +48,14 @@
         #define DMP_WINCE_MSVC
     #elif defined (WIN32)
         #define DMP_WIN32_MSVC
+
+        #define USE_WINIO3       // use Yariv Kaplan's WinIO library 3.0 (allowing MMIO, http://www.internals.com/)
+        //#define USE_WINIO2     // use Yariv Kaplan's WinIO library 2.0 (has bug on MMIO, http://www.internals.com/)
+        //#define USE_PCIDEBUG   // use Kasiwano's PciDebug library      (http://www.otto.to/~kasiwano/)
+        //#define USE_PHYMEM     // use cyb70289's PhyMem library        (http://www.codeproject.com/KB/system/phymem.aspx)
     #endif
+
+    #define DMP_WINDOWS
 #endif
 
 

@@ -52,8 +52,8 @@ DMPAPI(bool) i2c_Init2(unsigned baseaddr, unsigned devs, int i2c0irq, int i2c1ir
 //   #define ERROR_IOINITFAIL       (ERR_NOERROR + 100) //need include <io.h>
 //   #define ERROR_IOSECTIONFULL    (ERR_NOERROR + 101) //need include <io.h>
 //   #define ERROR_CPUUNSUPPORTED	(ERR_NOERROR + 102) //need include <io.h>
-     #define ERROR_I2C_INUSE		(ERR_NOERROR + 600)
-     #define ERROR_I2C_INITFAIL		(ERR_NOERROR + 602)
+//   #define ERROR_I2C_INUSE		(ERR_NOERROR + 600)
+//   #define ERROR_I2C_INITFAIL		(ERR_NOERROR + 602)
 
 DMPAPI(void) i2c_Close(void);
 
@@ -80,7 +80,7 @@ DMPAPI(unsigned long) i2c_SetSpeed(int dev, int mode, unsigned long bps);
      #define I2CMODE_HIGHSPEED      (2)
      #define I2CMODE_AUTO           (3)
 //-- if the above functions return 0xffffffffL, roboio_GetErrCode() may return:
-     #define ERROR_I2CWRONGUSAGE    (ERR_NOERROR + 630)
+//   #define ERROR_I2CWRONGUSAGE    (ERR_NOERROR + 630)
 
 
 
@@ -92,8 +92,8 @@ DMPAPI(bool) i2cmaster_Start(int dev, unsigned char addr, unsigned char rwbit);
 //-- if the above functions return false, roboio_GetErrCode() may return:
 //   #define ERROR_I2CFAIL		    (ERR_NOERROR + 610)
 //   #define ERROR_I2CWRONGUSAGE    (ERR_NOERROR + 630)
-     #define ERROR_I2CARLOSS        (ERR_NOERROR + 621)
-     #define ERROR_I2CACKERR        (ERR_NOERROR + 622)
+//   #define ERROR_I2CARLOSS        (ERR_NOERROR + 621)
+//   #define ERROR_I2CACKERR        (ERR_NOERROR + 622)
 
 DMPAPI(bool) i2cmaster_Write(int dev, unsigned char val);
 DMPAPI(bool) i2cmaster_WriteLast(int dev, unsigned char val);

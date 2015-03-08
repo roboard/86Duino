@@ -56,7 +56,7 @@ DMPAPI(void) i2c_SetIRQ(int i2c0irq, int i2c1irq);
 /******************  General Functions for Individual Module *****************/
 DMPAPI(bool) i2c_Reset(int dev);
 //-- if the above function return false, roboio_GetErrCode() may return:
-     #define ERROR_I2CFAIL		    (ERR_NOERROR + 620)
+//   #define ERROR_I2CFAIL		    (ERR_NOERROR + 620)
 
 DMPAPI(void) i2c_EnableNoiseFilter(int dev);
 DMPAPI(void) i2c_DisableNoiseFilter(int dev);

@@ -104,6 +104,12 @@ typedef volatile struct serial_port
 	unsigned short LSR;					// Line Status Register
 	unsigned short MSR;					// Modem Status Register
 	unsigned short SCR;					// Scratchpad Register
+	
+	// -------------------------------- //
+	//         Debug Serial Mode        //
+	// -------------------------------- //
+	int (*recv)(volatile struct serial_port *port, unsigned char* buf, int bsize);
+	int (*send)(volatile struct serial_port *port, unsigned char* buf, int bsize);
 	 
 } SerialPort;
 
@@ -220,6 +226,9 @@ DMPAPI(void) uart_SetMSRHandler(void *vport, void (*func)(SerialPort *));
 
 DMPAPI(void) uart_EnableHalfDuplex(void *vport);
 DMPAPI(void) uart_EnableFullDuplex(void *vport);
+
+DMPAPI(void) uart_EnableDebugMode(void *vport);
+DMPAPI(void) uart_DisableDebugMode(void *vport);
 
 #ifdef __cplusplus
 }

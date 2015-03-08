@@ -1,5 +1,6 @@
-/*
-  io.cpp - DM&P Vortex86 Base I/O library
+/*******************************************************************************
+
+  io.cpp - DM&P Vortex86 Base I/O Library
   Copyright (c) 2013 AAA <aaa@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,33 +19,35 @@
 
   (If you need a commercial license, please contact soc@dmp.com.tw 
    to get more information.)
-*/
+
+*******************************************************************************/
+
 
 #define __IO_LIB
 ////////////////////////////////////////////////////////////////////////////////
 //
 //    I/O library for DM&P Vortex86 CPUs
 //    ----------------------------------
-//    note that all functions in this lib assume no paging issue when using 
-//    them in ISR; so to use this lib in ISR in DJGPP, it is suggested to 
-//    employ PMODE instead of CWSDPMI.
+//    note that most of functions in this lib assume no paging issue when 
+//    using them in ISR; so to use this lib in ISR in DJGPP, it is suggested 
+//    to employ PMODE/DJ or CWSDPR0 or HDPMI instead of CWSDPMI.
 ////////////////////////////////////////////////////////////////////////////////
 
 
 
-#include "dmpcfg.h"
+#include <dmpcfg.h>
 
-#if defined(DMP_WIN32_MSVC)  // currently used in io.cpp & rcservo.cpp
+/*
+#if defined(DMP_WIN32_MSVC)
     #define USE_WINIO3       // use Yariv Kaplan's WinIO library 3.0 (allowing MMIO, http://www.internals.com/)
     //#define USE_WINIO2     // use Yariv Kaplan's WinIO library 2.0 (has bug on MMIO, http://www.internals.com/)
     //#define USE_PCIDEBUG   // use Kasiwano's PciDebug library      (http://www.otto.to/~kasiwano/)
     //#define USE_PHYMEM     // use cyb70289's PhyMem library        (http://www.codeproject.com/KB/system/phymem.aspx)
 #endif
+*/
 
 #if defined     DMP_DOS_DJGPP
-    #include <stdio.h>
     #include <stdlib.h>
-    #include <stdarg.h>
 
     #include <go32.h>
     #include <dpmi.h>
@@ -53,37 +56,48 @@
     #include <pc.h>
     #include <dos.h>
 #elif defined   DMP_DOS_WATCOM
-    #include <stdio.h>
     #include <stdlib.h>
-    #include <stdarg.h>
     #include <string.h>
 
     #include <conio.h>
     #include <i86.h>
 #elif defined   DMP_DOS_BC
-    #include <stdio.h>
     #include <stdlib.h>
-    #include <stdarg.h>
 
     #include <conio.h>
     #include <dos.h>
 #elif defined(USE_WINIO2) || defined(USE_WINIO3)
-    #include <stdio.h>
     #include <windows.h>
     #include <winio.h>
 #elif defined   USE_PCIDEBUG
-    #include <stdio.h>
 	#include <windows.h>
     #include <pcifunc.h>
 #elif defined   USE_PHYMEM
-    #include <stdio.h>
 	#include <windows.h>
     #include <pmdll.h>
 #elif defined   DMP_LINUX
+    #include <stdlib.h>
+    #include <unistd.h>
+    #include <pthread.h>
+
     #include <sys/io.h>
+    #include <sys/mman.h>     // for mmap()
+    #include <sys/types.h>
+    #include <sys/stat.h>
+    #include <fcntl.h>
+    #include <errno.h>
+
+    //#include <sys/times.h>  // for times()
+    #include <time.h>         // for clock_gettime()
 #endif
 
 #include "io.h"
+#include "io_atom.h"
+
+#ifndef DMP_DOS_DJGPP
+    #define DPMI_END_OF_LOCKED_FUNC(fname)
+    #define DPMI_END_OF_LOCKED_STATIC_FUNC(fname)
+#endif
 
 
 
@@ -104,6 +118,17 @@
  * =============================================
  */
 #include "io_wat.h"
+
+
+/* =============================================
+ *   Recursive IRQ Disable/Enable Functions
+ *   --------------------------------------
+ *   these functions can work in both user-context and interrupt-context without 
+ *   taking care the shared counter: irq_cscnt.
+ * =============================================
+ */
+ATOMIC_INT_t irq_cscnt = ATOMIC_INT_INIT(0);
+#include "io_irq.h"
 
 
 /* =============================================
@@ -128,6 +153,44 @@
 #include "io_dpmi.h"
 
 
+
+/**********************  IRQ & i8259-PIC Util Functions  **********************/
+
+DMPAPI(void) io_SetCSCNT(int val) {
+    _io_SetCSCNT(val);
+} DPMI_END_OF_LOCKED_FUNC(io_SetCSCNT)
+
+DMPAPI(int) io_GetCSCNT(void) {
+    return _io_GetCSCNT();
+} DPMI_END_OF_LOCKED_FUNC(io_GetCSCNT)
+
+#if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
+
+    DMPAPI(void) io_DisableINT(void) {
+        _io_DisableINT();
+    } DPMI_END_OF_LOCKED_FUNC(io_DisableINT)
+
+    DMPAPI(void) io_RestoreINT(void) {
+        _io_RestoreINT();
+    } DPMI_END_OF_LOCKED_FUNC(io_RestoreINT)
+
+    DMPAPI(void) io_EnableINT(void) {
+        _io_EnableINT();
+    } DPMI_END_OF_LOCKED_FUNC(io_EnableINT)
+
+#else
+    DMPAPI(void) io_DisableINT(void) {
+        return;
+    }
+    DMPAPI(void) io_RestoreINT(void) {
+        return;
+    }
+    DMPAPI(void) io_EnableINT(void) {
+        return;
+    }
+#endif
+
+
 /* =============================================
  *   i8259-PIC Util Functions
  * =============================================
@@ -135,84 +198,12 @@
 #include "io_pic.h"
 
 
-/* =============================================
- *   Recursive IRQ Disable/Enable Functions
- *   --------------------------------------
- *   these functions can work in both user-context and interrupt-context without 
- *   taking care the shared counter: irq_cscnt.
- * =============================================
- */
-#if defined(DMP_DOS_DJGPP)
-    //#define DISABLE_INT()    disable()
-    //#define ENABLE_INT()     enable()
-    #define DISABLE_INT()    __asm__ __volatile__("cli" : : : "memory")
-    #define ENABLE_INT()     __asm__ __volatile__("sti" : : : "memory")
-#elif defined(DMP_DOS_BC)
-    #define DISABLE_INT()    disable()
-    #define ENABLE_INT()     enable()
-#elif defined(DMP_DOS_WATCOM)
-    #define DISABLE_INT()    _disable()
-    #define ENABLE_INT()     _enable()
-#elif defined(DMP_LINUX)
-    #define DISABLE_INT()    __asm__ __volatile__("cli" : : : "memory")  // only for Vortex86SX/DX/MX+/DX2/EX
-    #define ENABLE_INT()     __asm__ __volatile__("sti" : : : "memory")  // only for Vortex86SX/DX/MX+/DX2/EX
-#else
-    // platforms not supporting interrupt-enable/disable
-    #define DISABLE_INT()
-    #define ENABLE_INT()
-#endif
-
-// TODO: we just assume "int" operations are atomic on Vortex86SX/DX/MX+/DX2/EX, 
-//       but this bad design should be modified in the future.
-static int irq_cscnt = 0;
-
-DMPAPI(void) io_SetCSCNT(int val) {  // well ... bad design too:(
-    irq_cscnt = val;
-}
-#ifdef DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_FUNC(io_SetCSCNT)
-#endif
-
-DMPAPI(void) io_DisableINT(void) {
-    if (irq_cscnt == 0)
-    {
-        DISABLE_INT();
-    }
-    // getting interrupts disabled, it is now safe to update irq_cscnt
-    irq_cscnt++;
-}
-#ifdef DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_FUNC(io_DisableINT)
-#endif
-
-DMPAPI(void) io_RestoreINT(void) {
-    if (irq_cscnt == 0) return;
-    // having interrupts disabled, it is safe to update irq_cscnt
-    if (--irq_cscnt == 0)
-    {
-        ENABLE_INT();
-    }
-}
-#ifdef DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_FUNC(io_RestoreINT)
-#endif
-
-DMPAPI(void) io_EnableINT(void) {
-    if (irq_cscnt == 0) return;
-    // having interrupts disabled, it is safe to update irq_cscnt
-    irq_cscnt = 0;
-    ENABLE_INT();
-}
-#ifdef DMP_DOS_DJGPP
-DPMI_END_OF_LOCKED_FUNC(io_EnableINT)
-#endif
-
-
 static bool init_irqsystem(void) {
     #if defined(DMP_DOS_DJGPP)
         DPMI_LOCK_VAR(irq_cscnt);
         
         DPMI_LOCK_FUNC(io_SetCSCNT);
+        DPMI_LOCK_FUNC(io_GetCSCNT);
         DPMI_LOCK_FUNC(io_DisableINT);
         DPMI_LOCK_FUNC(io_RestoreINT);
         DPMI_LOCK_FUNC(io_EnableINT);
@@ -232,6 +223,7 @@ static bool init_irqsystem(void) {
 static bool close_irqsystem(void) {
     return true;
 }
+/*-------------------  end. IRQ & i8259-PIC Util Functions  ------------------*/
 
 
 
@@ -246,6 +238,8 @@ typedef struct
 
     #if defined     DMP_DOS_DJGPP
         int mmio_selector;  // segment selector for MMIO space
+    #elif defined   DMP_LINUX
+        unsigned long mmio_realaddr;
     #elif defined   USE_WINIO3
         tagPhysStruct mmio_info;
     #endif
@@ -258,60 +252,117 @@ typedef struct
 static IO_BASE_t IO_basePool[IO_NUM_BASEPOOL];
 static IO_BASE_t IO_defaultBase;
 
+// lock functions for IO_basePool[...]
+#if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
+
+    #define IO_POOL_LOCK()      _io_DisableINT()
+    #define IO_POOL_UNLOCK()    _io_RestoreINT()
+    #define IO_POOL_INITLOCK()  (true)
+    #define IO_POOL_FREELOCK()  do {} while(0)
+
+#elif defined(DMP_LINUX)
+
+    static pthread_mutex_t IO_basePoolMutex;
+    #define IO_POOL_LOCK()      pthread_mutex_lock(&IO_basePoolMutex)
+    #define IO_POOL_UNLOCK()    pthread_mutex_unlock(&IO_basePoolMutex)
+    #define IO_POOL_FREELOCK()  pthread_mutex_destroy(&IO_basePoolMutex)
+
+    __dmp_inline(bool) IO_POOL_INITLOCK() {
+        if (pthread_mutex_init(&IO_basePoolMutex, NULL) != 0) return false; else return true;
+    }
+
+#elif defined(DMP_WINDOWS)
+
+    static CRITICAL_SECTION IO_basePoolMutex;
+    #define IO_POOL_LOCK()      EnterCriticalSection(&IO_basePoolMutex)
+    #define IO_POOL_UNLOCK()    LeaveCriticalSection(&IO_basePoolMutex)
+    #define IO_POOL_FREELOCK()  DeleteCriticalSection(&IO_basePoolMutex)
+
+    __dmp_inline(bool) IO_POOL_INITLOCK() {
+        InitializeCriticalSection(&IO_basePoolMutex);
+        return true;
+    }
+
+    /*
+    static HANDLE IO_basePoolMutex;
+    #define IO_POOL_LOCK()      do { if (WaitForSingleObject(IO_basePoolMutex, INFINITE) != WAIT_OBJECT_0) err_print("%s: fail to lock IO_basePool!\n", __FUNCTION__); } while(0)
+    #define IO_POOL_UNLOCK()    do { if (!ReleaseMutex(IO_basePoolMutex)) err_print("%s: fail to unlock IO_basePool!\n", __FUNCTION__); } while(0)
+    #define IO_POOL_FREELOCK()  CloseHandle(IO_basePoolMutex)
+
+    __dmp_inline(bool) IO_POOL_INITLOCK() {
+        if ((IO_basePoolMutex = CreateMutex(NULL, FALSE,  NULL)) == NULL) return false; else return true;
+    }
+    */
+#endif
+
+#ifdef DMP_LINUX
+    static int IO_mmioFD = -1;
+#endif
+
 static bool init_iosystem(void) {
     int i;
 
     for (i=0; i<IO_NUM_BASEPOOL; i++)
         IO_basePool[i].iotype = IO_USE_NULLIO;
 
-    // TODO: IO_defaultBase shouldn't be used in WinXP or Linux Kernel Modes
-    // #if defined(DMP_OS_KERNEL)
-    //    IO_defaultBase.iotype = IO_USE_NULLIO;
-    // #else
     IO_defaultBase.iotype = IO_USE_PORTIO;
     IO_defaultBase.addr   = 0L;
     IO_defaultBase.size   = 0x10000L;
+
+    if (IO_POOL_INITLOCK() == false)
+    {
+         err_print("%s: fail to initialize the lock of IO_basePool!\n", __FUNCTION__);
+         return false;
+    }
 
     #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
         return true;
     #elif defined(USE_WINIO2) || defined(USE_WINIO3)
         if (!InitializeWinIo())
         {
-            err_print((char*)"%s: fail to initialize WinIO!\n", __FUNCTION__);
+            err_print("%s: fail to initialize WinIO!\n", __FUNCTION__);
             return false;
         }
         return true;
     #elif defined(USE_PCIDEBUG)
         if (getdllstatus() != DLLSTATUS_NOERROR)
         {
-            err_print((char*)"%s: fail to initialize PCIDEBUG!\n", __FUNCTION__);
+            err_print("%s: fail to initialize PCIDEBUG!\n", __FUNCTION__);
             return false;
         }
         return true;
     #elif defined(USE_PHYMEM)
         if (LoadPhyMemDriver() == FALSE)
         {
-            err_print((char*)"%s: fail to initialize PHYMEM!\n", __FUNCTION__);
+            err_print("%s: fail to initialize PHYMEM!\n", __FUNCTION__);
             return false;
         }
         return true;
     #elif defined(DMP_LINUX)
         if (iopl(3) != 0)
 		{
-            err_print((char*)"%s: fail to set iopl(3)!\n", __FUNCTION__);
+            err_print("%s: fail to set iopl(level=3) (%d)!\n", __FUNCTION__, errno);
             return false;
         }
+        
+        if ((IO_mmioFD = open("/dev/mem", O_RDWR | O_SYNC)) == -1)
+            err_print("%s: fail to open /dev/mem (%d)!\n", __FUNCTION__, errno);
+
         return true;
     #endif
 }
 
 static bool close_iosystem(void) {
+    IO_POOL_FREELOCK();
+
     #if defined(USE_WINIO2) || defined(USE_WINIO3)
         ShutdownWinIo();
         return true;
     #elif defined(USE_PHYMEM)
         UnloadPhyMemDriver();
         return true;
+    #elif defined(DMP_LINUX)
+        if (IO_mmioFD != -1) close(IO_mmioFD);
     #else
         return true;
     #endif
@@ -322,23 +373,27 @@ static IO_BASE_t* get_io_base(void) {
     IO_BASE_t* base = NULL;
     int i;
 
-    io_DisableINT();
-    for (i=0; i<IO_NUM_BASEPOOL; i++)
-        if (basePool[i].iotype == IO_USE_NULLIO)
-        {
-            base = &basePool[i];
-            base->iotype = IO_USE_PORTIO;
-            break;
-        }
-    io_RestoreINT();
+    IO_POOL_LOCK();  // need to lock in multi-tasking cases
+    {
+        for (i=0; i<IO_NUM_BASEPOOL; i++)
+            if (basePool[i].iotype == IO_USE_NULLIO)
+            {
+                base = &basePool[i];
+                base->iotype = IO_USE_PORTIO;
+                break;
+            }
+    }
+    IO_POOL_UNLOCK();
 
     return base;
 }
 
 static void free_io_base(IO_BASE_t* base) {
-    io_DisableINT();
-    if (base != NULL) base->iotype = IO_USE_NULLIO;
-    io_RestoreINT();
+    IO_POOL_LOCK();  // need to lock in multi-tasking cases
+    {
+        if (base != NULL) base->iotype = IO_USE_NULLIO;
+    }
+    IO_POOL_UNLOCK();
 }
 
 
@@ -354,7 +409,7 @@ DMPAPI(void*) io_Alloc(int io_type, unsigned long io_phyaddr, unsigned long io_s
     
     if ((base = get_io_base()) == NULL)
     {
-        err_print((char*)"%s: no free I/O handle!\n", __FUNCTION__);
+        err_print("%s: no free I/O handle!\n", __FUNCTION__);
         return NULL;
     }
 	base->iotype = io_type;
@@ -366,16 +421,14 @@ DMPAPI(void*) io_Alloc(int io_type, unsigned long io_phyaddr, unsigned long io_s
         case IO_USE_PORTIO:
             if ((base->addr > 0xffffL) || ((0xffffL - base->addr) < (base->size - 1L)))
             {
-                err_print((char*)"%s: infeasible port-I/O region!\n", __FUNCTION__);
+                err_print("%s: infeasible port-I/O region!\n", __FUNCTION__);
                 goto FAIL_IO_ALLOC;
             }
-            
-            // TODO: for WinXP or Linux Kernel Mode, alloc Port-I/O region here
             break;
         case IO_USE_MMIO:
             if ((0xffffffffL - base->addr) < (base->size - 1L))
             {
-                err_print((char*)"%s: infeasible MMIO region!\n", __FUNCTION__);
+                err_print("%s: infeasible MMIO region!\n", __FUNCTION__);
                 goto FAIL_IO_ALLOC;
             }
 
@@ -386,7 +439,22 @@ DMPAPI(void*) io_Alloc(int io_type, unsigned long io_phyaddr, unsigned long io_s
 
                 if ((base->addr == 0L) || (base->mmio_selector < 0))
                 {
-                    err_print((char*)"%s: fail to map MMIO region!\n", __FUNCTION__);
+                    err_print("%s: fail to map MMIO region!\n", __FUNCTION__);
+                    goto FAIL_IO_ALLOC;
+                }
+            #elif defined   DMP_LINUX
+                if (IO_mmioFD != -1)
+                {
+                    unsigned long offset_in_page = base->addr % sysconf(_SC_PAGE_SIZE);
+                    base->addr = base->addr - offset_in_page;  // ensure the base address is page-aligned
+                    base->size = base->size + offset_in_page;
+                    base->mmio_realaddr = (unsigned long)mmap(NULL, base->size, PROT_READ | PROT_WRITE, MAP_SHARED, IO_mmioFD, base->addr);
+                    base->addr = ((void*)(base->mmio_realaddr) == (void *)-1)? base->mmio_realaddr : base->mmio_realaddr + offset_in_page;
+                }
+
+                if ((IO_mmioFD == -1) || ((void*)(base->addr) == (void *)-1))
+                {
+                    err_print("%s: fail to map MMIO region (%d)!\n", __FUNCTION__, errno);
                     goto FAIL_IO_ALLOC;
                 }
             #elif defined   USE_WINIO3
@@ -396,27 +464,26 @@ DMPAPI(void*) io_Alloc(int io_type, unsigned long io_phyaddr, unsigned long io_s
                 base->addr = (unsigned long)MapPhysToLin(base->mmio_info);
                 if ((unsigned char*)(base->addr) == NULL)
                 {
-                    err_print((char*)"%s: fail to map MMIO region!\n", __FUNCTION__);
+                    err_print("%s: fail to map MMIO region!\n", __FUNCTION__);
                     goto FAIL_IO_ALLOC;
                 }
             #elif defined   USE_PHYMEM
                 base->addr = (unsigned long)MapPhyMem(base->addr, base->size);
                 if ((unsigned char*)(base->addr) == NULL)
                 {
-                    err_print((char*)"%s: fail to map MMIO region!\n", __FUNCTION__);
+                    err_print("%s: fail to map MMIO region!\n", __FUNCTION__);
                     goto FAIL_IO_ALLOC;
                 }
             #elif defined(DMP_DOS_WATCOM) || defined(USE_PCIDEBUG)
                 // do nothing ...
             #else
-                err_print((char*)"%s: MMIO is not supported!\n", __FUNCTION__);
+                err_print("%s: MMIO is not supported!\n", __FUNCTION__);
                 goto FAIL_IO_ALLOC;
             #endif
 
-            // TODO: for WinXP or Linux Kernel Mode, alloc MMIO region here
             break;
         default:
-            err_print((char*)"%s: unknown io_type!\n", __FUNCTION__);
+            err_print("%s: unknown io_type!\n", __FUNCTION__);
             goto FAIL_IO_ALLOC;
     }
     return (void*)base;
@@ -436,22 +503,27 @@ DMPAPI(bool) io_Free(void* handle) {
     switch (base->iotype)
     {
         case IO_USE_PORTIO:
-            // TODO: for WinXP or Linux Kernel Mode, free Port-I/O region here
+            // do nothing ...
             break;
         case IO_USE_MMIO:
             #if defined     DMP_DOS_DJGPP
                 dpmi_LinMapFree(base->addr);
                 dpmi_SelFree(base->mmio_selector);
+            #elif defined   DMP_LINUX
+                if ((IO_mmioFD != -1) && ((void*)base->addr != (void *)-1)) //&&
+                if (munmap((void*)(base->mmio_realaddr), base->size) == -1)
+                {
+                    err_print("%s: fail to free MMIO region (%d)!\n", __FUNCTION__, errno);
+                    result = false;
+                }
             #elif defined   USE_WINIO3
                 UnmapPhysicalMemory(base->mmio_info);
             #elif defined   USE_PHYMEM
                 UnmapPhyMem((void*)base->addr, base->size);
-            #else
-                // TODO: for WinXP or Linux Kernel Mode, free MMIO region here
             #endif
             break;
         default:
-            err_print((char*)"%s: unknown io-type!\n", __FUNCTION__);
+            err_print("%s: unknown io-type!\n", __FUNCTION__);
             result = false;
             break;
     }
@@ -541,6 +613,46 @@ DMPAPI(unsigned char) io_In8(void* handle, unsigned long offset) {
     }
     return 0;
 }
+
+
+// we need the following functions for slow CPUs such as Vortex86EX :p
+DMPAPI(void) io_Out32M(void* handle, unsigned long offset, unsigned long val) {
+    mmio_outpdw((IO_BASE_t*)handle, offset, val);
+}
+DMPAPI(unsigned long) io_In32M(void* handle, unsigned long offset) {
+    return mmio_inpdw((IO_BASE_t*)handle, offset);
+}
+DMPAPI(void) io_Out16M(void* handle, unsigned long offset, unsigned short val) {
+    mmio_outpw((IO_BASE_t*)handle, offset, val);
+}
+DMPAPI(unsigned short) io_In16M(void* handle, unsigned long offset) {
+    return mmio_inpw((IO_BASE_t*)handle, offset);
+}
+DMPAPI(void) io_Out8M(void* handle, unsigned long offset, unsigned char val) {
+    mmio_outpb((IO_BASE_t*)handle, offset, val);
+}
+DMPAPI(unsigned char) io_In8M(void* handle, unsigned long offset) {
+    return mmio_inpb((IO_BASE_t*)handle, offset);
+}
+
+DMPAPI(void) io_Out32P(void* handle, unsigned long offset, unsigned long val) {
+    portio_outpdw((unsigned short)(((IO_BASE_t*)handle)->addr + offset), val);
+}
+DMPAPI(unsigned long) io_In32P(void* handle, unsigned long offset) {
+    return portio_inpdw((unsigned short)(((IO_BASE_t*)handle)->addr + offset));
+}
+DMPAPI(void) io_Out16P(void* handle, unsigned long offset, unsigned short val) {
+    portio_outpw((unsigned short)(((IO_BASE_t*)handle)->addr + offset), val);
+}
+DMPAPI(unsigned short) io_In16P(void* handle, unsigned long offset) {
+    return portio_inpw((unsigned short)(((IO_BASE_t*)handle)->addr + offset));
+}
+DMPAPI(void) io_Out8P(void* handle, unsigned long offset, unsigned char val) {
+    portio_outpb((unsigned short)(((IO_BASE_t*)handle)->addr + offset), val);
+}
+DMPAPI(unsigned char) io_In8P(void* handle, unsigned long offset) {
+    return portio_inpb((unsigned short)(((IO_BASE_t*)handle)->addr + offset));
+}
 /*------------------------  end. I/O Access Functions  -----------------------*/
 
 
@@ -562,27 +674,57 @@ typedef struct
 
 static PCI_BASE_t PCI_basePool[PCI_NUM_BASEPOOL];
 
+// lock functions for PCI_basePool[...]
+#if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
+
+    #define PCI_POOL_LOCK()      _io_DisableINT()
+    #define PCI_POOL_UNLOCK()    _io_RestoreINT()
+    #define PCI_POOL_INITLOCK()  (true)
+    #define PCI_POOL_FREELOCK()  do {} while(0)
+
+#elif defined(DMP_LINUX)
+
+    static pthread_mutex_t PCI_basePoolMutex;
+    #define PCI_POOL_LOCK()      pthread_mutex_lock(&PCI_basePoolMutex)
+    #define PCI_POOL_UNLOCK()    pthread_mutex_unlock(&PCI_basePoolMutex)
+    #define PCI_POOL_FREELOCK()  pthread_mutex_destroy(&PCI_basePoolMutex)
+
+    __dmp_inline(bool) PCI_POOL_INITLOCK() {
+        if (pthread_mutex_init(&PCI_basePoolMutex, NULL) != 0) return false; else return true;
+    }
+
+#elif defined(DMP_WINDOWS)
+
+    static CRITICAL_SECTION PCI_basePoolMutex;
+    #define PCI_POOL_LOCK()      EnterCriticalSection(&PCI_basePoolMutex)
+    #define PCI_POOL_UNLOCK()    LeaveCriticalSection(&PCI_basePoolMutex)
+    #define PCI_POOL_FREELOCK()  DeleteCriticalSection(&PCI_basePoolMutex)
+
+    __dmp_inline(bool) PCI_POOL_INITLOCK() {
+        InitializeCriticalSection(&PCI_basePoolMutex);
+        return true;
+    }
+
+#endif
+
 static bool init_pcisystem(void) {
     int i;
 
     for (i=0; i<PCI_NUM_BASEPOOL; i++)
         PCI_basePool[i].addr = 0xffffffffL;
 
-    #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC) || defined(DMP_WINCE_MSVC)
-        return true;
-    #elif defined(USE_WINIO2) || defined(USE_WINIO3) || defined(USE_PCIDEBUG) || defined(USE_PHYMEM) || defined(DMP_LINUX)
-        // having been initialized in init_iosystem(), so do noting here
-        return true;
-    #endif
+    if (PCI_POOL_INITLOCK() == false)
+    {
+         err_print("%s: fail to initialize the lock of PCI_basePool!\n", __FUNCTION__);
+         return false;
+    }
+
+    return true;
 }
 
 static bool close_pcisystem(void) {
-    #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC) || defined(DMP_WINCE_MSVC)
-        return true;
-    #elif defined(USE_WINIO2) || defined(USE_WINIO3) || defined(USE_PCIDEBUG) || defined(USE_PHYMEM) || defined(DMP_LINUX)
-        // will be closed in close_iosystem(), so do noting here
-        return true;
-    #endif
+    PCI_POOL_FREELOCK();
+    return true;
 }
 
 static PCI_BASE_t* get_pci_base(void) {
@@ -590,30 +732,34 @@ static PCI_BASE_t* get_pci_base(void) {
     PCI_BASE_t* base = NULL;
     int i;
 
-    io_DisableINT();
-    for (i=0; i<PCI_NUM_BASEPOOL; i++)
-        if (basePool[i].addr == 0xffffffffL)
-        {
-            base = &basePool[i];
-            base->addr = 0L;
-            break;
-        }
-    io_RestoreINT();
+    PCI_POOL_LOCK();  // need to lock in multi-tasking cases
+    {
+        for (i=0; i<PCI_NUM_BASEPOOL; i++)
+            if (basePool[i].addr == 0xffffffffL)
+            {
+                base = &basePool[i];
+                base->addr = 0L;
+                break;
+            }
+    }
+    PCI_POOL_UNLOCK();
 
     return base;
 }
 
 static void free_pci_base(PCI_BASE_t* base) {
-    io_DisableINT();
-    if (base != NULL) base->addr = 0xffffffffL;
-    io_RestoreINT();
+    PCI_POOL_LOCK();  // need to lock in multi-tasking cases
+    {
+        if (base != NULL) base->addr = 0xffffffffL;
+    }
+    PCI_POOL_UNLOCK();
 }
 
 static void* alloc_pci(unsigned char bus, unsigned char dev, unsigned char fun) {
     PCI_BASE_t* base;
 
     if ((base = get_pci_base()) == NULL)
-        err_print((char*)"%s: no free pci handle!\n", __FUNCTION__);
+        err_print("%s: no free pci handle!\n", __FUNCTION__);
     else
     {
         base->bus  = bus;
@@ -627,31 +773,24 @@ static void* alloc_pci(unsigned char bus, unsigned char dev, unsigned char fun) 
 
 
 DMPAPI(void*) pci_Alloc(unsigned char bus, unsigned char dev, unsigned char fun) {
-    unsigned long tmpid;
-
     // just ignore wrong dev & fun :p
     dev = dev & 0x1f; 
     fun = fun & 0x07;
 
-    // get VID & DID
-    io_DisableINT();
-    tmpid = pci_indw(PCI_GET_CF8(bus, dev, fun));
-    io_RestoreINT();
-
-    if (tmpid == 0xffffffffUL)
-	if (fun == 0)
+    // check VID & DID
+    if (pci_indw(PCI_GET_CF8(bus, dev, fun)) == 0xffffffffUL) //&&
+    if (fun == 0)
     {
-        err_print((char*)"%s: invalid PCI device!\n", __FUNCTION__);
+        err_print("%s: invalid PCI device!\n", __FUNCTION__);
         return NULL;
     }
 
     return alloc_pci(bus, dev, fun);
 }
 
-DMPAPI(void*) pci_Find(unsigned short vid, unsigned short did) {
+DMPAPI(void*) pci_Find(unsigned short vid, unsigned short did) {  // don't use this function in the init of io system
     unsigned long pciid = ((unsigned long)did << 16) + (unsigned long)vid;
     unsigned long tmpid, pciaddr;
-    unsigned char tmpht;
     int bus, dev, fun;
 
     if (pciid == 0xffffffffUL) return NULL;
@@ -662,19 +801,16 @@ DMPAPI(void*) pci_Find(unsigned short vid, unsigned short did) {
     {
         pciaddr = PCI_GET_CF8(bus, dev, fun);
 
-        io_DisableINT();
         tmpid = pci_indw(pciaddr);
-        io_RestoreINT();
-        
         if (tmpid == pciid) return pci_Alloc((unsigned char)bus, (unsigned char)dev, (unsigned char)fun);
         if (fun == 0)
         {
-            if (tmpid == 0xffffffffUL) break;  // invalid PCI device (note: shouldn't do this optimization for Vortex86DX2's internal PCI devices)
-
-            io_DisableINT();
-            tmpht = pci_inb(pciaddr + 0x0eL);
-            io_RestoreINT();
-            if ((tmpht & 0x80) == 0) break;  // single-function PCI device
+            if (tmpid == 0xffffffffUL)  // invalid PCI device
+            {
+                // NOTE: shouldn't do this optimization for Vortex86DX2/DX3/EX's internal PCI devices (where fun0 may be shutdown but fun1 is still enabled)
+                if ((vx86_CpuID() == CPU_VORTEX86DX2) || (vx86_CpuID() == CPU_VORTEX86DX3) || (vx86_CpuID() == CPU_VORTEX86EX)) { /* do nothing ... */ } else break;
+            }
+            if ((pci_inb(pciaddr + 0x0eL) & 0x80) == 0) break;  // single-function PCI device
         }
     } // end for (fun=...
 
@@ -691,63 +827,36 @@ DMPAPI(bool) pci_Free(void* handle) {
 
 DMPAPI(void) pci_Out32(void* handle, unsigned char offset, unsigned long val) {
     PCI_BASE_t* base = (PCI_BASE_t*)handle;
-
-    io_DisableINT();
     //pci_outdw(base->addr + (unsigned long)(offset & 0xfc), val);
     pci_outdw(base->addr + (unsigned long)offset, val);  // assume offset % 4 == 0
-    io_RestoreINT();
 }
 
 DMPAPI(unsigned long) pci_In32(void* handle, unsigned char offset) {
     PCI_BASE_t* base = (PCI_BASE_t*)handle;
-    unsigned long tmp;
-
-    io_DisableINT();
-    //tmp = pci_indw(base->addr + (unsigned long)(offset & 0xfc));
-    tmp = pci_indw(base->addr + (unsigned long)offset);  // assume offset % 4 == 0
-    io_RestoreINT();
-
-    return tmp;
+    //return pci_indw(base->addr + (unsigned long)(offset & 0xfc));
+    return pci_indw(base->addr + (unsigned long)offset);  // assume offset % 4 == 0
 }
 
 DMPAPI(void) pci_Out16(void* handle, unsigned char offset, unsigned short val) {
     PCI_BASE_t* base = (PCI_BASE_t*)handle;
-
-    io_DisableINT();
     //pci_outw(base->addr + (unsigned long)(offset & 0xfe), val);
     pci_outw(base->addr + (unsigned long)offset, val);  // assume offset % 4 < 3
-    io_RestoreINT();
 }
 
 DMPAPI(unsigned short) pci_In16(void* handle, unsigned char offset) {
     PCI_BASE_t* base = (PCI_BASE_t*)handle;
-    unsigned short tmp;
-
-    io_DisableINT();
-    //tmp = pci_inw(base->addr + (unsigned long)(offset & 0xfe));
-    tmp = pci_inw(base->addr + (unsigned long)offset);  // assume offset % 4 < 3
-    io_RestoreINT();
-
-    return tmp;
+    //return pci_inw(base->addr + (unsigned long)(offset & 0xfe));
+    return pci_inw(base->addr + (unsigned long)offset);  // assume offset % 4 < 3
 }
 
 DMPAPI(void) pci_Out8(void* handle, unsigned char offset, unsigned char val) {
     PCI_BASE_t* base = (PCI_BASE_t*)handle;
-
-    io_DisableINT();
     pci_outb(base->addr + (unsigned long)offset, val);
-    io_RestoreINT();
 }
 
 DMPAPI(unsigned char) pci_In8(void* handle, unsigned char offset) {
     PCI_BASE_t* base = (PCI_BASE_t*)handle;
-    unsigned char tmp;
-
-    io_DisableINT();
-    tmp = pci_inb(base->addr + (unsigned long)offset);
-    io_RestoreINT();
-
-    return tmp;
+    return pci_inb(base->addr + (unsigned long)offset);
 }
 /*----------------------  end. PCI-CFG Access Functions  ---------------------*/
 
@@ -762,6 +871,22 @@ DMPAPI(unsigned char) pci_In8(void* handle, unsigned char offset) {
 static void* VX86_pciDev[VX86_IDE + 1] = {NULL};
 
 static int VX86_cpuID = CPU_UNSUPPORTED;
+static unsigned long VX86_cpuCLK  = 0L;
+static unsigned long VX86_dramCLK = 0L;
+
+static unsigned long VX86_cpuCLK_SX[] =   { 0L, 200L, 233L, 266L, 300L, 333L, 366L, 400L };         // for Vortex86SX
+static unsigned long VX86_cpuCLK_DX_A[] = { 0L,    0L,    500L,  600L,  700L,  800L,  900L,  933L,  // for Vortex86DX ver. A/B/C
+                                            966L,  1000L, 1033L, 1066L, 1066L, 1066L, 1100L, 1133L,
+                                            1166L, 1200L, 1233L, 1266L, 1300L, 1333L, 1366L, 1400L,
+                                            1433L, 1466L, 1500L };
+static unsigned long VX86_cpuCLK_DX_D[] = { 0L,    0L,    500L,  600L,  700L,  800L,  833L,  866L,  // for Vortex86DX ver. D and Vortex86MX
+                                            900L,  933L,  966L,  1000L, 1033L, 1066L, 1100L, 1133L,
+                                            1166L, 1200L, 1233L, 1266L, 1300L, 1333L, 1366L, 1400L,
+                                            1433L, 1466L, 1500L };
+static unsigned long VX86_cpuCLK_MX[] =   { 500L,  600L,  700L,  833L,  866L,  900L,  933L,  966L,  // for Vortex86MX+/DX2
+                                            1000L, 1033L, 1066L, 1100L, 1133L, 1166L, 1200L, 800L };
+static unsigned long VX86_dramCLK_DX[] =  { 166L, 200L, 233L, 266L, 300L, 333L, 366L, 400L,         // for Vortex86DX/MX/MX+/DX2
+                                            416L, 433L, 450L, 466L, 483L, 500L, 516L, 533L };
 
 static int get_cpuid(void) {
     unsigned long id = nb_Read(0x90);
@@ -775,6 +900,7 @@ static int get_cpuid(void) {
             unsigned char nbrv = nb_Read8(0x08);
             unsigned char sbrv = sb_Read8(0x08);
             unsigned long ide  = pci_In32(VX86_pciDev[VX86_IDE], 0x00);
+
 		    if ((nbrv == 1) && (sbrv == 1) && (ide == 0x101017f3L)) return CPU_VORTEX86DX_A;  // Vortex86DX ver. A
 		    if ((nbrv == 1) && (sbrv == 2) && (ide != 0x101017f3L)) return CPU_VORTEX86DX_C;  // Vortex86DX ver. C (PBA/PBB)
 		    if ((nbrv == 2) && (sbrv == 2) && (ide != 0x101017f3L)) return CPU_VORTEX86DX_D;  // Vortex86DX ver. D
@@ -787,13 +913,105 @@ static int get_cpuid(void) {
 			return CPU_VORTEX86MX_PLUS;
 		case 0x34504D44L: //"DMP4"
 			return CPU_VORTEX86DX2;
-		case 0x36504D44L:
+		case 0x36504D44L: //"DMP6"
 			return CPU_VORTEX86DX3;
-		case 0x37504D44L:
+		case 0x37504D44L: //"DMP7"
 			return CPU_VORTEX86EX;
 	}
 
 	return CPU_UNSUPPORTED;
+}
+
+static unsigned long get_cpufreq(void) {
+    if (vx86_CpuID() == CPU_VORTEX86SX)
+    {
+        unsigned long strapreg = nb_Read(0x60);
+        return VX86_cpuCLK_SX[(int)(strapreg & 0x7L)];
+    }
+    else
+    if ((vx86_CpuID() == CPU_VORTEX86DX_A) || (vx86_CpuID() == CPU_VORTEX86DX_C) || (vx86_CpuID() == CPU_VORTEX86DX_UNKNOWN))
+    {
+        unsigned long strapreg = nb_Read(0x60);
+        if ((strapreg & 0x1fL) == 1L) return VX86_dramCLK_DX[(int)((strapreg >> 8) & 0x07L)];
+        return VX86_cpuCLK_DX_A[(int)(strapreg & 0x1fL)];
+    }
+    else
+    if ((vx86_CpuID() == CPU_VORTEX86DX_D) || (vx86_CpuID() == CPU_VORTEX86MX))
+    {
+        unsigned long strapreg = nb_Read(0x60);
+        if ((strapreg & 0x1fL) == 1L) return VX86_dramCLK_DX[(int)((strapreg >> 8) & 0x07L)];
+        return VX86_cpuCLK_DX_D[(int)(strapreg & 0x1fL)];
+    }
+    else
+    if ((vx86_CpuID() == CPU_VORTEX86MX_PLUS) || (vx86_CpuID() == CPU_VORTEX86DX2))
+    {
+        unsigned long strapreg = nb_Read(0x60);
+        return VX86_cpuCLK_MX[(int)(strapreg & 0x0fL)];
+    }
+    else
+    if (vx86_CpuID() == CPU_VORTEX86DX3)
+    {
+        unsigned long strapreg2 = nb_Read(0x64);
+        unsigned long cms  = (strapreg2 >> 12) & 0x07L;
+        unsigned long cns  = strapreg2 & 0xffL;
+        int           crs  = (int)((strapreg2 >> 8) & 0x03L);
+
+        //if ((cns == 0x90) && (cms == 0x03) && (crs == 0x00)) return 800L;  // special case for "Hardware Default"
+        return (25L*cns) / (cms * (1L<<crs));
+    }
+    else
+    if (vx86_CpuID() == CPU_VORTEX86EX)
+    {
+        unsigned long strapreg2 = nb_Read(0x64);
+        unsigned long cdiv = (strapreg2 >> 12) & 0x03L;
+        unsigned long cms  = (strapreg2 >> 8) & 0x03L;
+        unsigned long cns  = strapreg2 & 0xffL;
+        int           crs  = (int)((strapreg2 >> 10) & 0x03L);
+        return (25L*cns) / (cms * (1L<<crs) * (cdiv+2L));
+    }
+
+    return 0L;
+}
+
+static unsigned long get_dramfreq(void) {
+    if (vx86_CpuID() == CPU_VORTEX86SX)
+    {
+        unsigned long strapreg = nb_Read(0x60);
+        if ((strapreg & 0x00000100L) == 0L) return 100L; else return 133L;
+    }
+    else
+    if ((vx86_CpuID() == CPU_VORTEX86DX_A) || (vx86_CpuID() == CPU_VORTEX86DX_C) || (vx86_CpuID() == CPU_VORTEX86DX_UNKNOWN) || (vx86_CpuID() == CPU_VORTEX86DX_D) || (vx86_CpuID() == CPU_VORTEX86MX))
+    {
+        unsigned long strapreg = nb_Read(0x60);
+        return VX86_dramCLK_DX[(int)((strapreg >> 8) & 0x07L)];
+    }
+    else
+    if ((vx86_CpuID() == CPU_VORTEX86MX_PLUS) || (vx86_CpuID() == CPU_VORTEX86DX2))
+    {
+        unsigned long strapreg = nb_Read(0x60);
+        return VX86_dramCLK_DX[(int)((strapreg >> 8) & 0x0fL)];
+    }
+    else
+    if (vx86_CpuID() == CPU_VORTEX86DX3)
+    {
+        unsigned long strapreg2 = nb_Read(0x64);
+        unsigned long dms  = (strapreg2 >> 28) & 0x07L;
+        unsigned long dns  = (strapreg2 >> 16) & 0xffL;
+        int           drs  = (int)((strapreg2 >> 24) & 0x03L);
+        return (25L*dns) / (dms * (1L<<drs));
+    }
+    else
+    if (vx86_CpuID() == CPU_VORTEX86EX)
+    {
+        unsigned long strapreg2 = nb_Read(0x64);
+        unsigned long ddiv = (strapreg2 >> 14) & 0x01L;
+        unsigned long cms  = (strapreg2 >> 8) & 0x03L;
+        unsigned long cns  = strapreg2 & 0xffL;
+        int           crs  = (int)((strapreg2 >> 10) & 0x03L);
+        return (25L*cns) / (cms * (1L<<crs) * ((ddiv+1L)*2L));
+    }
+
+    return 0L;
 }
 
 static bool init_vx86(void) {
@@ -814,11 +1032,15 @@ static bool init_vx86(void) {
         // North Bridge fun1 exists (note NB fun1 isn't a normal PCI device -- its vid & did are 0xffff)
         if ((VX86_pciDev[VX86_NB1]  = pci_Alloc(0x00, 0x00, 0x01)) == NULL) goto FAIL_INITVX86;
     }
-    if (vx86_CpuID() == CPU_VORTEX86EX || vx86_CpuID() == CPU_VORTEX86DX2 || vx86_CpuID() == CPU_VORTEX86DX3)
+    if ((vx86_CpuID() == CPU_VORTEX86DX2) || (vx86_CpuID() == CPU_VORTEX86DX3) || (vx86_CpuID() == CPU_VORTEX86EX))
     {
         // South Bridge fun1 exists (note SB fun1 isn't a normal PCI device -- its vid & did are 0xffff)
         if ((VX86_pciDev[VX86_SB1]  = pci_Alloc(0x00, 0x07, 0x01)) == NULL) goto FAIL_INITVX86;
     }
+
+    // now we are allowed to call get_cpufreq() & get_dramfreq()
+    VX86_cpuCLK  = get_cpufreq();
+    VX86_dramCLK = get_dramfreq();
     return true;
 
 FAIL_INITVX86:
@@ -827,7 +1049,7 @@ FAIL_INITVX86:
         pci_Free(VX86_pciDev[i]);
         VX86_pciDev[i] = NULL;
     }
-    err_print((char*)"%s: fail to setup system PCI devices!\n", __FUNCTION__);
+    err_print("%s: fail to setup system PCI devices!\n", __FUNCTION__);
     return false;
 }
 
@@ -847,6 +1069,14 @@ static bool close_vx86(void) {
 
 DMPAPI(int) vx86_CpuID(void) {
     return VX86_cpuID;
+}
+
+
+DMPAPI(unsigned long) vx86_CpuCLK(void) {
+    return VX86_cpuCLK;
+}
+DMPAPI(unsigned long) vx86_DramCLK(void) {
+    return VX86_dramCLK;
 }
 
 
@@ -880,6 +1110,14 @@ DMPAPI(unsigned char) vx86_NBSB_Read8(int fun, unsigned char offset) {
 
 
 /* ========================================
+ *   CPU-Time Util Functions
+ * ========================================
+ */
+#include "io_timer.h"
+
+
+
+/* ========================================
  *   I/O LIB Setup Functions
  * ========================================
  */
@@ -892,24 +1130,27 @@ DMPAPI(bool) io_Init(void) {  // NOTE: this function isn't reentrant
 
         if (init_iosystem() == false)
         {
-            err_print((char*)"%s: fail to init I/O access system!\n", __FUNCTION__);
+            err_print("%s: fail to init I/O access system!\n", __FUNCTION__);
             goto FAIL_IOINIT_IO;
         }
         if (init_pcisystem() == false)
         {
-            err_print((char*)"%s: fail to init PCI-CFG access system!\n", __FUNCTION__);
+            err_print("%s: fail to init PCI-CFG access system!\n", __FUNCTION__);
             goto FAIL_IOINIT_PCI;
         }
         if (init_vx86() == false)
         {
-            err_print((char*)"%s: fail to init Vortex86 util system!\n", __FUNCTION__);
+            err_print("%s: fail to init Vortex86 util system!\n", __FUNCTION__);
             goto FAIL_IOINIT_VX86;
         }
         if (init_irqsystem() == false)
         {
-            err_print((char*)"%s: fail to init IRQ util system!\n", __FUNCTION__);
+            err_print("%s: fail to init IRQ util system!\n", __FUNCTION__);
             goto FAIL_IOINIT_IRQ;
         }
+
+        TIMER_initTime = 0L;  // needed to allow the correct reset of TIMER_initTime
+        TIMER_initTime = timer_NowTime();
     } // end if (IO_inUse ...
 
     IO_inUse++;
@@ -932,22 +1173,22 @@ DMPAPI(bool) io_Close(void) {  // NOTE: this function isn't reentrant
     {
         if (close_irqsystem() == false)
         {
-            err_print((char*)"%s: fail to close IRQ util system!\n", __FUNCTION__);
+            err_print("%s: fail to close IRQ util system!\n", __FUNCTION__);
             result = false;
         }
         if (close_vx86() == false)
         {
-            err_print((char*)"%s: fail to close Vortex86 util system!\n", __FUNCTION__);
+            err_print("%s: fail to close Vortex86 util system!\n", __FUNCTION__);
             result = false;
         }
         if (close_pcisystem() == false)
         {
-            err_print((char*)"%s: fail to close PCI-CFG access system!\n", __FUNCTION__);
+            err_print("%s: fail to close PCI-CFG access system!\n", __FUNCTION__);
             result = false;
         }
         if (close_iosystem()  == false)
         {
-            err_print((char*)"%s: fail to close I/O access system!\n", __FUNCTION__);
+            err_print("%s: fail to close I/O access system!\n", __FUNCTION__);
             result = false;
         }
     } // end if (IO_inUse ...
@@ -963,12 +1204,10 @@ DMPAPI(bool) io_Close(void) {  // NOTE: this function isn't reentrant
  * ========================================
  */
 DMPAPI(void*) ker_Malloc(size_t size) {
-    // TODO: for WinXP or Linux Kernel Mode, allocate kernel memory
-
-    #if defined(DMP_DOS_DJGPP)
+    #if defined(DMP_DOS_DJGPP) && !defined(DMP_DOS_DJGPP_NO_VIRMEM)
         size_t* p = (size_t*)malloc(size + sizeof(size_t));
 
-        if (p != NULL) //&&
+        if (p == NULL) return NULL;
         if (dpmi_LockData((void*)p, (unsigned long)size) == true)
         {
             p[0] = size;
@@ -987,9 +1226,7 @@ DMPAPI(void*) ker_Malloc(size_t size) {
 }
 
 DMPAPI(void) ker_Mfree(void* p) {
-    // TODO: for WinXP or Linux Kernel Mode, free kernel memory
-
-    #if defined(DMP_DOS_DJGPP)
+    #if defined(DMP_DOS_DJGPP) && !defined(DMP_DOS_DJGPP_NO_VIRMEM)
         if (p != NULL)
         {
             size_t* p1 = (size_t*)p - 1;
