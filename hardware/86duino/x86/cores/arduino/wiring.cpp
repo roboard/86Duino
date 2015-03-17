@@ -24,8 +24,8 @@
 #include "stdio.h"
 
 void *USBDEV = NULL;
-unsigned long long int CLOCKS_PER_MICROSEC;
-unsigned long long int VORTEX86EX_CLOCKS_PER_MS;
+unsigned long CLOCKS_PER_MICROSEC = 300L; // The default value is 300Mhz for 86Duino, you should call init() to set it automatically.
+unsigned long VORTEX86EX_CLOCKS_PER_MS = 300000L; // The default value is 300000 for 86Duino, you should call init() to set it automatically.
 bool Global_irq_Init = false;
 
 unsigned long millis() {
@@ -50,7 +50,10 @@ bool init() {
 	if(io_Init() == false) return false;
     timer_NowTime(); // initialize timer
     CLOCKS_PER_MICROSEC = vx86_CpuCLK();
-    VORTEX86EX_CLOCKS_PER_MS = CLOCKS_PER_MICROSEC*1000ULL;
+    VORTEX86EX_CLOCKS_PER_MS = CLOCKS_PER_MICROSEC*1000UL;
+    
+    // Set IRQ4 as level-trigger
+    io_outpb(0x4D0, io_inpb(0x4D0) | 0x10);
     
 	//set corssbar Base Address
 	crossbarBase = sb_Read16(SB_CROSSBASE) & 0xfffe;

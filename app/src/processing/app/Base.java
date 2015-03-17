@@ -62,9 +62,9 @@ import static processing.app.I18n._;
  */
 public class Base {
   public static final int REVISION = 158;
-  public static final int REVISION86 = 207;
+  public static final int REVISION86 = 208;
   /** This might be replaced by main() if there's a lib/version.txt file. */
-  static String VERSION_NAME = "207";
+  static String VERSION_NAME = "208";
   /** Set true if this a proper release rather than a numbered revision. */
   static public boolean RELEASE = false;
 
@@ -544,9 +544,11 @@ public class Base {
         }
 
         // Check for updates
-        if (Preferences.getBoolean("update.check")) {
+        /*
+		if (Preferences.getBoolean("update.check")) {
           new UpdateCheck(this);
         }
+        */
         break;
       case NOOP:
         // Do nothing (intended for only changing preferences)

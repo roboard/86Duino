@@ -156,7 +156,7 @@ int HardwareSerial::peek(void) {
   	else
   	{
   		if((peek_val = com_Read(handle)) == 0xFFFF)
-  			peek_val = -1;
+  			return -1;//peek_val = -1;
   		peek_stored = true;
 		return peek_val;
 	}

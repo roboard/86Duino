@@ -309,6 +309,7 @@ public class Compiler implements MessageConsumer {
           line = line.substring(0, line.length() - 1);
         }
         line = line.trim();
+        line = line.replace("\\ ", " ");
         // Strip backslash escape sequences. This replaces \\ with \ and
         // removes all other backslashes
         //line = line.replaceAll("\\\\(.)", "$1");

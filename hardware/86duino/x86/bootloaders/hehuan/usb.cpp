@@ -1215,7 +1215,6 @@ DMPAPI(bool) usb_Init(void *vusb)
 	if (usb->InUse == 1) return true;
 	
 	// if (USB_IsAttached() == false) return false;
-	USB_Connect();
 	
 	if (irq_Init() == false) {
         err_print((char*)"%s: IRQ init fail.\n", __FUNCTION__);
@@ -1350,6 +1349,7 @@ DMPAPI(bool) usb_Init(void *vusb)
 	
 	usb->state  = USB_DEV_POWERED;
 	usb->InUse = 1;
+	USB_Connect();
 	
 	return true;
 	
@@ -1637,6 +1637,6 @@ DMPAPI(bool) usb_SetUSBPins(void *vusb, char port1, char pin1, char port2, char 
 	set_pin_in(port1, pin1);
 	set_pin_out(port2, pin2);
 	
-	USB_Connect();
+	//USB_Connect();
 	return true;
 }

@@ -50,10 +50,10 @@ int Serial_::peek(void)
 {
 	if(USBDEV == NULL) return -1;
 	if(peek_stored == true)
-		  return peek_val;
+		return peek_val;
   	else
   	{
-		if((peek_val = read()) == -1)
+		if((peek_val = usb_Read(USBDEV)) == 0xFFFF)
   			return -1;//peek_val = -1;
   		peek_stored = true;
 		return peek_val;

@@ -1,16 +1,25 @@
-### CODING 208 - 2015.03.08 ###
+### CODING 208 - 2015.03.17 ###
+
+[ide]
+* Fixed: 86Duino IDE always compile the files that not be modified and already compiled once if the absolute path of 86Duino directory including the blank.
+
 [core]
 * Fixed a USB device bug in USBCore.cpp.
 * Move USB_connected() to correct position.
-* Fixed a bug in Serial.peek().
+* Fixed a compatible issue for Serial.peek().
 * Update io library.
 * Update pgmspace.h to be compatible with Arduino 1.5.8.
 * remove Adafruit_Motor_shield example: AFMotor_ConstantSpeed and AFMotor_MultiStepper.
-* In init(), now can get CPU clock automatically.
+* In init(), now get CPU clock automatically.
+
+[libraries]
+* Added ROSserial86 library for the robot application.
+* Speed up writing buffer in SD library.
 
 
 
 ### CODING 207 - 2014.12.30 ###
+
 [ide]
 * Use the DJGPP cross-compiler to compile 86Duino program without DOSBOX and get a shorter compiling time.
 * Compatible with Arduino IDE 1.5.8

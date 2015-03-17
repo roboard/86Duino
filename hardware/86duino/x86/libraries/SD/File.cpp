@@ -100,7 +100,7 @@ size_t File::write(const uint8_t *buf, size_t size)
   for(i = 0; i < size; ++i)
   {
 	t += fwrite((buf + i), 1, 1, _file);
-	flush();
+	// flush();
   }
   return t;
 }

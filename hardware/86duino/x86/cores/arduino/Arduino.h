@@ -138,8 +138,8 @@ double cpuTemperature(uint8_t);
 extern void* USBDEV;
 extern bool Global_irq_Init;
 extern bool timer1_pin32_isUsed; // defined in tone.cpp
-extern unsigned long long int CLOCKS_PER_MICROSEC;
-extern unsigned long long int VORTEX86EX_CLOCKS_PER_MS;
+extern unsigned long CLOCKS_PER_MICROSEC;
+extern unsigned long VORTEX86EX_CLOCKS_PER_MS;
 #define Serial4    Serial485
 #define Serial6    Serial232
 #include "HardwareSerial.h"

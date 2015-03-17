@@ -36,7 +36,7 @@ class HardwareSerial : public Stream
     unsigned long rxtimeout;
     unsigned long txtimeout;
     bool peek_stored;
-    uint8_t peek_val;
+    int peek_val;
   public:
     COMPort *handle;
     HardwareSerial(int com_port, unsigned long com_buadrate, unsigned char com_format, unsigned long com_rxtimeout, unsigned long com_txtimeout);
