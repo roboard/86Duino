@@ -36,15 +36,25 @@ size_t Print::write(const uint8_t *buffer, size_t size)
     n += write(*buffer++);
   }
   return n;
-} 
+}
+
+/*
+size_t Print::print(const __FlashStringHelper *ifsh)
+{
+  PGM_P p = reinterpret_cast<PGM_P>(ifsh);
+  size_t n = 0;
+  while (1) {
+    unsigned char c = pgm_read_byte(p++);
+    if (c == 0) break;
+    n += write(c);
+  }
+  return n;
+}
+*/
 
 size_t Print::print(const String &s)
 {
-  size_t n = 0;
-  for (uint16_t i = 0; i < s.length(); i++) {
-    n += write(s[i]);
-  }
-  return n;
+  return write(s.c_str(), s.length());
 }
 
 size_t Print::print(const char str[])
