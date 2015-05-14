@@ -1822,7 +1822,7 @@ msgid "ignoring invalid font size {0}"
 msgstr "忽略無效的字型大小{0}"
 
 #: Base.java:129
-msgid "{0} | 86Duino Coding 208"
+msgid "Coding"
 msgstr "口丁"
 
 #: Base.java:2080

@@ -62,9 +62,9 @@ import static processing.app.I18n._;
  */
 public class Base {
   public static final int REVISION = 158;
-  public static final int REVISION86 = 208;
+  public static final int REVISION86 = 209;
   /** This might be replaced by main() if there's a lib/version.txt file. */
-  static String VERSION_NAME = "208";
+  static String VERSION_NAME = "209";
   /** Set true if this a proper release rather than a numbered revision. */
   static public boolean RELEASE = false;
 

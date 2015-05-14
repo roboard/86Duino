@@ -42,14 +42,14 @@ Contributors
 
   Porting of the Arduino EEPROM, SD, and Audio libraries.
 
+* Sayter Wu (sayter@dmp.com.tw)
+
+  Porting of the rosserial library. 86Duino Motion Editor.
+
 * Terry Wang (teniiwang@gmail.com)
 
   Porting of the OneWire and Capacitive Sensing libraries. Test of Arduino 
   peripherals on 86Duino.
-
-* Sayter (ing5698yi@hotmail.com)
-
-  Porting of the rosserial library.
 
 
 ---------------

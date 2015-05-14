@@ -6,7 +6,9 @@
 
 [libraries]
 * Modified the buffer size from 32 to 128 in the Firmata library.
-* Fixed a bug on EthernetClient library: a initial value issue.
+* Fixed a bug in EthernetClient library: a initial value issue.
+* Added the Servo86 Library for controlling RC Servo robot. You can also edit/record/play the motions of robot via 86ME (86Duino Motion Editor).
+  (86ME tutorial: http://www.86duino.com/index.php?p=11544)
 
 
 
