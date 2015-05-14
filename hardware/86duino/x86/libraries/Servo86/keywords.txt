@@ -1,0 +1,46 @@
+#######################################
+# Syntax Coloring Map Servo
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Servo	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+attach	KEYWORD2
+detach	KEYWORD2
+write	KEYWORD2
+read	KEYWORD2
+attached	KEYWORD2
+writeMicroseconds	KEYWORD2
+readMicroseconds	KEYWORD2
+angleMap	KEYWORD2
+setVelocity	KEYWORD2
+setPosition	KEYWORD2
+setOffset	KEYWORD2
+setRealTimeMixing	KEYWORD2
+getPosition	KEYWORD2
+run	KEYWORD2
+pause	KEYWORD2
+resume	KEYWORD2
+stop	KEYWORD2
+release	KEYWORD2
+isMoving	KEYWORD2
+setPositions	KEYWORD2
+load	KEYWORD2
+save	KEYWORD2
+playPositions	KEYWORD2
+setOffsets	KEYWORD2
+servoMultiRun	KEYWORD2
+servoMultiPause	KEYWORD2
+servoMultiResume	KEYWORD2
+servoMultiStop	KEYWORD2
+isServoMultiMoving	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################

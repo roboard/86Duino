@@ -42,7 +42,7 @@ void loop()
   myservo4.setPosition(900, 2000);
   myservo5.setPosition(1200, 2000);
   
-  servoMultiRun();                     // servo runs to first target position during 2s
+  servoMultiRun();                     // servos run to first target position during 2s
   while(isServoMultiMoving() == true); // wait for all servos that move to target position
 
   // set the second target position and moving time: 1s
@@ -52,6 +52,6 @@ void loop()
   myservo4.setPosition(2200, 1000);
   myservo5.setPosition(1800, 1000);
   
-  servoMultiRun();                     // servo runs to first target position during 1s
+  servoMultiRun();                     // servos run to first target position during 1s
   while(isServoMultiMoving() == true); // wait for all servos that move to target position
 } 
