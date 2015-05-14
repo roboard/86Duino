@@ -1001,6 +1001,7 @@ DMP_INLINE(void) EP2_InHandler(USB_Device *usb)
 	if (usb->bulk_in_transmitting == true) return;
 	if (QueueEmpty(usb->xmit)) {
 		if (ep2_in_len == EP2_MAX_PACKET_SIZE_IN) {
+			usb->bulk_in_transmitting = true;
 			SetEPnDLR(usb, EP2, IN, ENABLE);
 			ep2_in_len = 0;
 		}
@@ -1020,8 +1021,8 @@ DMP_INLINE(void) EP2_InHandler(USB_Device *usb)
 	dosmemput(usb->EP[2].InBuf, EP2_MAX_PACKET_SIZE_IN, usb->EP[2].InPhysical);
 	#endif
 	
-	SetEPnDLR(usb, EP2, IN, ENABLE | ep2_in_len);
 	usb->bulk_in_transmitting = true;
+	SetEPnDLR(usb, EP2, IN, ENABLE | ep2_in_len);
 }
 #if defined DMP_DOS_DJGPP
 DPMI_END_OF_LOCKED_STATIC_FUNC(EP2_InHandler)

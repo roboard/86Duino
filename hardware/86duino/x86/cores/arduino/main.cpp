@@ -5,10 +5,19 @@
 #include <process.h>
 
 unsigned _stklen = 4096 * 1024;
+
+// Weak empty variant initialization function.
+// May be redefined by variant files.
+void initVariant() __attribute__((weak));
+void initVariant() { }
+
 DPMI_MEMORY_ALL_LOCK(0)
 int main(void)
 {
-	init();	      
+	init();
+	
+	initVariant();
+		      
 	setup();
     
 	for (;;)

@@ -12,12 +12,11 @@
 #include "binary.h"
 #include "stdint.h"
 
-#include "WCharacter.h"
-#include "WString.h"
-
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+// void yield(void);
 
 #define LOW          (0x00)
 #define HIGH         (0x01)
@@ -31,9 +30,6 @@ extern "C"{
 #define INPUT_PULLDOWN (0x03)
 
 #define PCSPEAKER    (250)
-
-#define true 0x1
-#define false 0x0
 
 //#define PI 3.1415926535897932384626433832795
 #define HALF_PI 1.5707963267948966192313216916398
@@ -90,16 +86,17 @@ extern "C"{
 #define GPIODATABASE  (0xF200)
 #define GPIODIRBASE   (0xF202)
 
-typedef unsigned int word;
+typedef unsigned short word;
 
 #define bit(b)    (1UL << (b))
 #define DEGREE_C    (0)
 #define DEGREE_F    (1)
 
-typedef uint8_t boolean;
+typedef bool boolean;
 typedef uint8_t byte;
 
 bool init(void);
+void initVariant(void);
 
 void pinMode(uint8_t, uint8_t);
 void digitalWrite(uint8_t, uint8_t);
@@ -142,6 +139,8 @@ extern unsigned long CLOCKS_PER_MICROSEC;
 extern unsigned long VORTEX86EX_CLOCKS_PER_MS;
 #define Serial4    Serial485
 #define Serial6    Serial232
+#include "WCharacter.h"
+#include "WString.h"
 #include "HardwareSerial.h"
 
 uint16_t makeWord(uint16_t w);

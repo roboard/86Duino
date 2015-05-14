@@ -1,20 +1,32 @@
+### CODING 209 - 2015.05.14 ###
+
+[core]
+* Updated the files in cores/arduino directory to be compatiable with Arudino IDE 1.6.1.
+* Fixed a USB device bug.
+
+[libraries]
+* Modified the buffer size from 32 to 128 in the Firmata library.
+* Fixed a bug on EthernetClient library: a initial value issue.
+
+
+
 ### CODING 208 - 2015.03.17 ###
 
 [ide]
 * Fixed: 86Duino IDE always compile the files that not be modified and already compiled once if the absolute path of 86Duino directory including the blank.
 
 [core]
-* Fixed a USB device bug in USBCore.cpp.
-* Move USB_connected() to correct position.
+* Fixed a USB device bug which cause to show nothing when opening serial monitor once again under linux.
+* Updated usb_Init(), move USB_connected() to the end of IRQ installation.
 * Fixed a compatible issue for Serial.peek().
-* Update io library.
 * Update pgmspace.h to be compatible with Arduino 1.5.8.
-* remove Adafruit_Motor_shield example: AFMotor_ConstantSpeed and AFMotor_MultiStepper.
-* In init(), now get CPU clock automatically.
+* Update the low-level I/O library to speed up the process for io and interrupt.
+* Update the implement of delay(), delayMicrosenconds() and millis() to adapt CPU clock automatically.
 
 [libraries]
-* Added ROSserial86 library for the robot application.
-* Speed up writing buffer in SD library.
+* Added a rosserial86 library only for 86Duino, which porting on 86Duino according to rosserial library for ROS (Robot Operating System), and support Ethernet and Serial mode, 86Duino now can be integrated to any ROS system.
+* Modified SD library to speed up writing buffer into SD card.
+* Remove Adafruit_Motor_shield example: AFMotor_ConstantSpeed and AFMotor_MultiStepper.
 
 
 

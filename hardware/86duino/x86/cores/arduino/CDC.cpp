@@ -22,10 +22,15 @@
 #include "USBAPI.h"
 
 
-void Serial_::begin(uint16_t baud_count)
+void Serial_::begin(unsigned long baud_count)
 {
+	peek_stored = false; peek_val = -1;
 }
 
+void Serial_::begin(unsigned long baud_count, byte config)
+{
+	peek_stored = false; peek_val = -1;
+}
  
 void Serial_::end(void)
 {
@@ -95,6 +100,15 @@ size_t Serial_::write(uint8_t c)
 	return 0;
 }
 
+size_t Serial_::write(const uint8_t *buffer, size_t size)
+{
+	if (USBDEV != NULL && usb_Ready(USBDEV) != false)
+	{
+		int r = usb_Send(USBDEV, (uint8_t *)buffer, size);
+		return (r > 0) ? r : 0;
+	}
+	return 0;
+}
 
 Serial_::operator bool() {
 	bool result = false;

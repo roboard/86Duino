@@ -61,6 +61,7 @@ EthernetClient::EthernetClient()
 		memset(sws, 0, sizeof(struct SwsSockInfo));
 		sws->_sock = SWS_INVALID_SOCKET;
 	}
+	_RegLen = 0;
 }
 
 EthernetClient::EthernetClient(struct SwsSockInfo *info)
@@ -68,6 +69,7 @@ EthernetClient::EthernetClient(struct SwsSockInfo *info)
 	_id = -1;
 	pServer = NULL;
 	sws = info;
+	_RegLen = 0;
 }
 
 int EthernetClient::connect(const char* host, uint16_t port)

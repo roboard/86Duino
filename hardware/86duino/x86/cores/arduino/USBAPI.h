@@ -29,7 +29,9 @@ private:
 	bool peek_stored;
     int peek_val;
 public:
-	void begin(uint16_t baud_count);
+	Serial_() { peek_stored = false; peek_val = -1; };
+	void begin(unsigned long);
+	void begin(unsigned long, uint8_t);
 	void end(void);
 
 	virtual int available(void);
@@ -38,6 +40,7 @@ public:
 	virtual int read(void);
 	virtual void flush(void);
 	virtual size_t write(uint8_t);
+	virtual size_t write(const uint8_t*, size_t);
 	using Print::write; // pull in write(str) and write(buf, size) from Print
 	operator bool();
 };

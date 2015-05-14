@@ -47,6 +47,10 @@ Contributors
   Porting of the OneWire and Capacitive Sensing libraries. Test of Arduino 
   peripherals on 86Duino.
 
+* Sayter (ing5698yi@hotmail.com)
+
+  Porting of the rosserial library.
+
 
 ---------------
 Miscellaneous
