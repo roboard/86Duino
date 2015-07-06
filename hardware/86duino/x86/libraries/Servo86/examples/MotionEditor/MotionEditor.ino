@@ -1,8 +1,8 @@
 /*
  * This sketch can receive the commands from 86ME (86Duino Motion Editor),and
  * then control max 45 servos.
- * You can download 86ME here: http://www.roboard.com/Files/86Duino/86ME.zip
- * See the 86ME tutorial: www.86duino.com/index.php?p=11544
+ * You can download 86ME here: http://www.86duino.com/?page_id=8923
+ * See the 86ME tutorial: http://www.86duino.com/index.php?p=11544
  * 
  */
       
