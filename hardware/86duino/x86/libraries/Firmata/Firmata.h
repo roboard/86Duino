@@ -25,7 +25,7 @@
 #define FIRMATA_MINOR_VERSION   3 // for backwards compatible changes
 #define FIRMATA_BUGFIX_VERSION  1 // for bugfix releases
 
-#define MAX_DATA_BYTES 128 // max number of data bytes in non-Sysex messages
+#define MAX_DATA_BYTES 255 // max number of data bytes in non-Sysex messages
 
 // message command bytes (128-255/0x80-0xFF)
 #define DIGITAL_MESSAGE         0x90 // send data for a digital pin

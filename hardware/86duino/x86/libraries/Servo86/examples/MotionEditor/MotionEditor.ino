@@ -18,17 +18,32 @@ void currentSysexCallback(byte command, byte argc, byte*argv)
 {
   word value = 0;
   word _time = 0;
+  word _type = 0;
+  word _speed = 0;
   unsigned int i, j, pin;
+
   if(command == EXTENDED_ANALOG)
   {
-    for(i=0, j=0; i<(argc-2); i+=2, j++)
+    if(argc > 45) // for 86ME v1.0 and v1.1
     {
-      value = (argv[i+1] << 7) + argv[i];
-      myframe.positions[j] = value;
+      for(i=0, j=0; i<(argc-2); i+=2, j++)
+      {
+        value = (argv[i+1] << 7) + argv[i];
+        myframe.positions[j] = value;
+      }
+      _time = (argv[i+1] << 7) + argv[i];
+      myframe.playPositions(_time);
+      if(_time != 0) while(isServoMultiMoving() == true);
     }
-    _time = (argv[i+1] << 7) + argv[i];
-    myframe.playPositions(_time);
-    while(isServoMultiMoving() == true);
+    else // for 86ME v1.2
+    {
+      _type = (argv[1] << 7) + argv[0];
+      if(_type == 1) // set speed
+      {
+        _speed = (argv[3] << 7) + argv[2];
+	for(i=0; i<45; i++) servos[i].setVelocity(_speed);
+      }
+    }
   }
   else if(command == ANALOG_MAPPING_QUERY)
   {
@@ -39,7 +54,8 @@ void currentSysexCallback(byte command, byte argc, byte*argv)
 		
     r[0] = 0xF0;
     r[1] = ANALOG_MAPPING_RESPONSE;
-    if(mykondo.capture(servos[pin]) == false)
+    mykondo.positions[pin] = mykondo.capture(servos[pin]);
+	if(mykondo.positions[pin] == 0L)
     {
       r[2] = 0;
       r[3] = 0;
@@ -78,4 +94,3 @@ void loop()
     while(Firmata.available())
       Firmata.processInput();
 }
-

@@ -1191,7 +1191,7 @@ bool ServoFrame::load(const char* dir) {
 
 		if(_line[i] == ';' || _line[i] == '\0' || _line[i] == '\n') continue;
 		
-		if(analysis(_line, &channel, &value) == true)
+		if(analysis(_line, &channel, &value) == true && channel < 45)
 			tmp[channel] = value;
 		else
 		{
@@ -1395,7 +1395,7 @@ bool ServoOffset::load(const char* dir) {
 
 		if(_line[i] == ';' || _line[i] == '\0' || _line[i] == '\n') continue;
 		
-		if(analysis(_line, &channel, &value) == true)
+		if(analysis(_line, &channel, &value) == true && channel < 45)
 			tmp[channel] = value;
 		else
 		{
@@ -1696,7 +1696,17 @@ bool ServoFrameInno::load(const char* dir) {
 		is_frmfile = 1;
     	if((fp = fopen(path, "rb")) == NULL) return false;
     }
+    else if((exten = strstr(path, ".FRM")) != NULL && exten[4] == '\0')
+    {
+		is_frmfile = 1;
+    	if((fp = fopen(path, "rb")) == NULL) return false;
+    }
 	else if((exten = strstr(path, ".ftxt")) != NULL && exten[5] == '\0')
+	{
+		is_ftxtfile = 1;
+		if((fp = fopen(path, "r")) == NULL) return false;
+	}
+	else if((exten = strstr(path, ".FTXT")) != NULL && exten[5] == '\0')
 	{
 		is_ftxtfile = 1;
 		if((fp = fopen(path, "r")) == NULL) return false;
@@ -1788,199 +1798,6 @@ bool ServoFrameInno::load(const char* dir) {
 }
 
 
-void frame_combine_value(char* target, char* src, int value, bool linkprev, bool next_line) {
-	int i = 0, j, k;
-	char tmp[256] = {'\0'};
-	char num[16]  = {'\0'};
-	char space;
-	
-	if(linkprev == true) for(i=0; i < 256 && target[i] != '\0'; i++);
-	if(i >= 256) return;
-	
-	if(src[0] == 'c' || src[1] == 'h')
-	{
-		for(j=0; src[j] != '\0'; j++) target[i++] = src[j];
-		itoa(value, num, 10);
-		if(value < 10) target[i++] = '0';
-		for(k=0; num[k] != '\0'; k++) target[i++] = num[k];
-		target[i++] = '\0';
-	}
-	else
-	{
-		for(j=0; src[j] != '\0'; j++) target[i++] = src[j];
-		target[i++] = ' ';
-		itoa(value, num, 10);
-		for(k=0; num[k] != '\0'; k++);
-		if(strcmp(src, ",pos:") == 0)
-		{
-			for(space = (4 - k); space>0; space--) target[i++] = ' ';
-		}
-		else if(strcmp(src, ",speed:") == 0 || strcmp(src, ",time:") == 0)
-		{
-			for(space = (5 - k); space>0; space--) target[i++] = ' ';
-		}
-		for(k=0; num[k] != '\0'; k++) target[i++] = num[k];
-		if(next_line == true) target[i++] = '\n'; else target[i++] = ' ';
-		target[i++] = '\0';
-	}
-
-	//printf("%s\n", result);
-}
-
-void combine_string(char* target, char* s1, char* s2, bool linkprev, bool next_line) {
-    int i = 0, j;
-    
-    if(linkprev == true) for(i=0; target[i] != '\0'; i++);
-    
-	for(j=0; s1[j] != '\0'; j++) target[i++] = s1[j];
-
-	if(strcmp(s2, "speed") == 0)
-		target[i++] = ' ';
-	else
-	{
-		target[i++] = ' ';
-		target[i++] = ' ';
-	}
-	
-	for(j=0; s2[j] != '\0'; j++) target[i++] = s2[j];
-	target[i++] = ' ';
-	target[i++] = '\0';
-}
-
-bool ServoFrameInno::save(const char* dir) {
-	char* line1 = "[ID]\n";
-    char* line2 = "Signature=FRAME\n";
-    char* line3 = "all0=en: 0 ,posen: 0 ,pos: 1500 ,mode:  full ,speed:     0 ,time:     0\n";
-    char* line4 = "all1=en: 0 ,posen: 0 ,pos: 1500 ,mode:  full ,speed:     0 ,time:     0\n";
-	char* exten = NULL;
-	char _line[256] = {'\0'}, is_frmfile = 0, is_ftxtfile = 0;
-    char num[16]  = {'\0'};
-	int i, j;
-	FILE *fp;
-
-	char path[256] = {'\0'};
-	
-	if(dir == NULL) return false;
-
-	get_real_path(dir, path);
-	
-	if((exten = strstr(path, ".frm")) != NULL && exten[4] == '\0')
-    {
-		is_frmfile = 1;
-    	if((fp = fopen(path, "wb")) == NULL) return false;
-    }
-	else if((exten = strstr(path, ".ftxt")) != NULL && exten[5] == '\0')
-	{
-		is_ftxtfile = 1;
-		if((fp = fopen(path, "w")) == NULL) return false;
-	}
-	else // the file is not supported
-		return false;
-	
-	if(is_frmfile == 1)
-	{
-		unsigned int index;
-		for(i=3, j=0; i<173; i+=5)
-		{
-			frmfile[i] = en[j];
-			frmfile[i+1] = positions[j];
-			if(strcmp(mode[i], "time") == 0) frmfile[i+2] = 0;
-			else if(strcmp(mode[i], "speed") == 0) frmfile[i+2] = 1;
-			else if(strcmp(mode[i], "full") == 0) frmfile[i+2] = 2;
-			frmfile[i+3] = speed[j];
-			frmfile[i+4] = time[j];
-			j++;
-			
-			if(j == 16 || j == 32)
-			{
-				i += 5;
-				if(j == 16) index = 0; else index = 5;
-				frmfile[i] = all_string2[index];
-				frmfile[i+1] = all_string2[index+1];
-				frmfile[i+2] = all_string2[index+2];
-				frmfile[i+3] = all_string2[index+3];
-				frmfile[i+4] = all_string2[index+4];
-			}
-		}
-		
-		fwrite(frmfile, 4, 173, fp);
-		fclose(fp);
-		return true;
-	}
-	
-	fputs(line1, fp);
-	fputs(line2, fp);
-	
-	frame_combine_value(_line, "Frame=", frameno, false, true);
-	fputs(_line, fp);
-	
-	if(M1ID != -1)
-	{
-		frame_combine_value(_line, "M1=", M1ID, false, true);
-		fputs(_line, fp);
-	}
-	else
-	{
-		fclose(fp);
-		return false;
-	}
-	
-	if(M2ID != -1)
-	{
-		frame_combine_value(_line, "M2=", M2ID, false, true);
-		fputs(_line, fp);
-	}
-	else
-	{
-		fclose(fp);
-		return false;
-	}
-	
-	fputs("[M1]\n", fp);
-	// write module 0 channel
-
-	for(i=0; i<16; i++)
-	{
-		frame_combine_value(_line, "ch", i, false, false);
-		frame_combine_value(_line, "=en:", en[i], true, false);
-		if(positions[i] == 0L)
-			frame_combine_value(_line, ",pos:", 1500, true, false);
-		else
-			frame_combine_value(_line, ",pos:", positions[i], true, false);
-		combine_string(_line, ",mode:", mode[i], true, false);
-		frame_combine_value(_line, ",speed:", speed[i], true, false);
-		frame_combine_value(_line, ",time:", time[i], true, true);
-		fputs(_line, fp);
-		if(((i+1) % 4) == 0) fputs("\n", fp);
-	}
-	if(all_string[0][0] != '\0' && all_string[0][1] != '\0') fputs(all_string[0], fp);
-	else fputs(line3, fp);
-	
-	fputs("[M2]\n", fp);
-	// write module 1 channel
-	for(i=16, j=0; i<32; i++, j++)
-	{
-		frame_combine_value(_line, "ch", j, false, false);
-		frame_combine_value(_line, "=en:", en[i], true, false);
-		if(positions[i] == 0L)
-			frame_combine_value(_line, ",pos:", 1500, true, false);
-		else
-			frame_combine_value(_line, ",pos:", positions[i], true, false);
-		combine_string(_line, ",mode:", mode[i], true, false);
-		frame_combine_value(_line, ",speed:", speed[i], true, false);
-		frame_combine_value(_line, ",time:", time[i], true, true);
-		fputs(_line, fp);
-		if(((j+1) % 4) == 0) fputs("\n", fp);
-	}
-	if(all_string[1][0] != '\0' && all_string[1][1] != '\0') fputs(all_string[1], fp);
-	else fputs(line4, fp);
-	
-	fclose(fp);
-	return true;
-}
-
-
-
 ServoOffsetInno::ServoOffsetInno() : ServoOffset() {
 	int i;
 	for(i=0; i<32; i++) ofsfile[i] = 0L;
@@ -2061,7 +1878,17 @@ bool ServoOffsetInno::load(const char* dir) {
 		is_ofsfile = 1;
     	if((fp = fopen(path, "rb")) == NULL) return false;
     }
+    else if((exten = strstr(path, ".OFS")) != NULL && exten[4] == '\0')
+    {
+		is_ofsfile = 1;
+    	if((fp = fopen(path, "rb")) == NULL) return false;
+    }
 	else if((exten = strstr(path, ".otxt")) != NULL && exten[5] == '\0')
+	{
+		is_otxtfile = 1;
+		if((fp = fopen(path, "r")) == NULL) return false;
+	}
+	else if((exten = strstr(path, ".OTXT")) != NULL && exten[5] == '\0')
 	{
 		is_otxtfile = 1;
 		if((fp = fopen(path, "r")) == NULL) return false;
@@ -2113,6 +1940,7 @@ bool ServoOffsetInno::load(const char* dir) {
 	return true;
 }
 
+/*
 void offset_combine_value(char* target, char* src, int value, bool linkprev, bool next_line) {
 	int i = 0, j;
 	char tmp[256] = {'\0'};
@@ -2202,11 +2030,16 @@ bool ServoOffsetInno::save(const char* dir) {
 	fclose(fp);
 	return true;
 }
+*/
 
 
-
+/************************* KONDO Servo Control Board **************************/
 
 ServoFrameKondo::ServoFrameKondo() : ServoFrame() {}
+
+ServoFrameKondo::ServoFrameKondo(const char* dir, const char* fname) : ServoFrame() {
+	load(dir, fname);
+}
 
 long _capture(int pin) {
 	unsigned long _nowtime;
@@ -2241,59 +2074,512 @@ long _capture(int pin) {
 }
 
 #define CAP_WOFFSET    (12L)
-bool ServoFrameKondo::capture(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
-                              Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
-                              Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
-                              Servo &s16, Servo &s17, Servo &s18, Servo &s19, Servo &s20,
-                              Servo &s21, Servo &s22, Servo &s23, Servo &s24, Servo &s25,
-                              Servo &s26, Servo &s27, Servo &s28, Servo &s29, Servo &s30,
-                              Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
-                              Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
-                              Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
+long ServoFrameKondo::capture(Servo &s) {
 	
 	int i;
 	// check whether all pins are released status, if not, return false.
 	for(i=0; i<45; i++)
 		if(Servoptr[i] != NULL && sv86[Servoptr[i]->servoIndex].state != SERVO_NONE)
-			return false;
+			return 0L;
 	
-	
-	// Start to capture servo angles	
-	if(&s1 == &nullServo) // no input servo class
-	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) positions[Servoptr[i]->servoIndex] = _capture(servos[Servoptr[i]->servoIndex].Pin.nbr) + CAP_WOFFSET;}
-		return true;
-	}
+	if(&s == &nullServo) return 0L;
+		
+	return _capture(servos[s.servoIndex].Pin.nbr) + CAP_WOFFSET;;
+}
 
-	positions[s1.servoIndex] = _capture(servos[s1.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s2 != &nullServo) positions[s2.servoIndex] = _capture(servos[s2.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s3 != &nullServo) positions[s3.servoIndex] = _capture(servos[s3.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s4 != &nullServo) positions[s4.servoIndex] = _capture(servos[s4.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s5 != &nullServo) positions[s5.servoIndex] = _capture(servos[s5.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s6 != &nullServo) positions[s6.servoIndex] = _capture(servos[s6.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s7 != &nullServo) positions[s7.servoIndex] = _capture(servos[s7.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s8 != &nullServo) positions[s8.servoIndex] = _capture(servos[s8.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s9 != &nullServo) positions[s9.servoIndex] = _capture(servos[s9.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s10 != &nullServo) positions[s10.servoIndex] = _capture(servos[s10.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s11 != &nullServo) positions[s11.servoIndex] = _capture(servos[s11.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s12 != &nullServo) positions[s12.servoIndex] = _capture(servos[s12.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s13 != &nullServo) positions[s13.servoIndex] = _capture(servos[s13.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s14 != &nullServo) positions[s14.servoIndex] = _capture(servos[s14.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s15 != &nullServo) positions[s15.servoIndex] = _capture(servos[s15.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s16 != &nullServo) positions[s16.servoIndex] = _capture(servos[s16.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s17 != &nullServo) positions[s17.servoIndex] = _capture(servos[s17.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s18 != &nullServo) positions[s18.servoIndex] = _capture(servos[s18.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s19 != &nullServo) positions[s19.servoIndex] = _capture(servos[s19.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s20 != &nullServo) positions[s20.servoIndex] = _capture(servos[s20.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s21 != &nullServo) positions[s21.servoIndex] = _capture(servos[s21.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s22 != &nullServo) positions[s22.servoIndex] = _capture(servos[s22.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s23 != &nullServo) positions[s23.servoIndex] = _capture(servos[s23.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s24 != &nullServo) positions[s24.servoIndex] = _capture(servos[s24.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s25 != &nullServo) positions[s25.servoIndex] = _capture(servos[s25.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s26 != &nullServo) positions[s26.servoIndex] = _capture(servos[s26.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s27 != &nullServo) positions[s27.servoIndex] = _capture(servos[s27.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s28 != &nullServo) positions[s28.servoIndex] = _capture(servos[s28.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s29 != &nullServo) positions[s29.servoIndex] = _capture(servos[s29.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s30 != &nullServo) positions[s30.servoIndex] = _capture(servos[s30.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s31 != &nullServo) positions[s31.servoIndex] = _capture(servos[s31.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s32 != &nullServo) positions[s32.servoIndex] = _capture(servos[s32.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s33 != &nullServo) positions[s33.servoIndex] = _capture(servos[s33.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s34 != &nullServo) positions[s34.servoIndex] = _capture(servos[s34.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s35 != &nullServo) positions[s35.servoIndex] = _capture(servos[s35.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s36 != &nullServo) positions[s36.servoIndex] = _capture(servos[s36.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s37 != &nullServo) positions[s37.servoIndex] = _capture(servos[s37.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s38 != &nullServo) positions[s38.servoIndex] = _capture(servos[s38.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s39 != &nullServo) positions[s39.servoIndex] = _capture(servos[s39.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s40 != &nullServo) positions[s40.servoIndex] = _capture(servos[s40.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s41 != &nullServo) positions[s41.servoIndex] = _capture(servos[s41.servoIndex].Pin.nbr) + CAP_WOFFSET;
-    if(&s42 != &nullServo) positions[s42.servoIndex] = _capture(servos[s42.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s43 != &nullServo) positions[s43.servoIndex] = _capture(servos[s43.servoIndex].Pin.nbr) + CAP_WOFFSET;
-	if(&s44 != &nullServo) positions[s44.servoIndex] = _capture(servos[s44.servoIndex].Pin.nbr) + CAP_WOFFSET; if(&s45 != &nullServo) positions[s45.servoIndex] = _capture(servos[s45.servoIndex].Pin.nbr) + CAP_WOFFSET;
+bool is_kondoFrameFile(char* _line, FILE* fp) {
+    int i, tmp = 0;
+    char result[256] = {'\0'};
+    
+	if(fgets(_line, 256, fp))
+	{
+		clear_string_space(_line, result);
+		if(strncmp("[GraphicalEdit]", result, 15) != 0) {printf("[GraphicalEdit] false\n"); return false;}
+	}
+	else
+		return false;
+	
+	return true;
+}
+
+bool kondo_frame_analysis(char* ch, long* target) {
+	int i, j = 0, k = 0;
+	char start = 0, tmp_ch[10] = {'\0'};
+
+	for(i=0; ch[i] != '\0'; i++)
+	{
+		if(isdigit(ch[i])) {tmp_ch[j++] = ch[i]; continue;}	
+		if(start == 1)
+		{
+			tmp_ch[j] = '\0';
+			target[k++] = atoi(tmp_ch);
+			j = 0;
+			continue;
+		}
+		start = 1;
+		j = 0;
+	}
+	
+	if(j != 0)
+	{
+		tmp_ch[j] = '\0';
+		target[k++] = atoi(tmp_ch);
+	}
+	
+	if(k != 24) return false;
+	return true;
+}
+
+bool get_kondo_frame_name(char* ch, const char* fname) {
+    int i;
+    
+    for(i=0; fname[i] != '\0'; i++)
+    	if(fname[i] != ch[i]) return false;
+    if(ch[i] == '\n' || ch[i] == '\0' || ch[i] == '\r') return true;
+	return false;
+}
+
+bool ServoFrameKondo::load(const char* dir, const char* fname) {
+    int i, channel = 0;
+	FILE *fp;
+	char *exten = NULL;
+	char path[256] = {'\0'};
+	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
+	long tmp_frame[24] = {0L};
+	bool _handled = false;
+	
+	if(dir == NULL) return false;    
+
+	get_real_path(dir, path);
+	
+	if((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
+    {
+    	if((fp = fopen(path, "r")) == NULL) return false;
+    }
+	else if((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
+	{
+		if((fp = fopen(path, "r")) == NULL) return false;
+	}
+	else // the file is not supported
+		return false;
+	
+	if(is_kondoFrameFile(_line, fp) == false) {fclose(fp); return false;}
+	
+	while(fgets(_line, 256, fp))
+	{
+		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if(_line[i] == ' ') continue; else break;
+
+		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		
+		if((exten = strstr(_line, "[Item")) != NULL)
+		{
+			fgets(_line, 256, fp); // get next line
+			clear_string_space(_line, tmp_ch);
+			if((exten = strstr(tmp_ch, "Name=")) == NULL) continue;
+			if(fname != NULL && get_kondo_frame_name(exten + 5, fname) == false) continue;
+
+			for(i=0; i<7; i++) fgets(_line, 256, fp);
+			clear_string_space(_line, tmp_ch);
+			if((exten = strstr(tmp_ch, "Prm=")) != NULL)
+			{
+				if(kondo_frame_analysis(exten + 4, tmp_frame) == true)
+				{
+					for(i=0; i<24; i++)
+					{
+						if(tmp_frame[i] < 16039 || tmp_frame[i] > 16729) continue; // not servo position
+						positions[i] = 1500L + (tmp_frame[i] - 16384L)*3L; // resolution is 3us
+					}
+					_handled = true;
+				}
+				break;
+			}
+			break;
+		}
+	}
+	
+	fclose(fp);
+				
+	return (_handled == true) ? true : false;
+} 
+
+
+ServoOffsetKondo::ServoOffsetKondo() : ServoOffset() {}
+
+ServoOffsetKondo::ServoOffsetKondo(const char* dir) : ServoOffset() {
+	load(dir);
+}
+
+bool is_kondoOffsetFile(char* _line, FILE* fp) {
+    int i, tmp = 0;
+    char result[256] = {'\0'};
+    
+	if(fgets(_line, 256, fp))
+	{
+		clear_string_space(_line, result);
+		if(strncmp("[TrimData]", result, 10) != 0) {printf("[TrimData] false\n"); return false;}
+	}
+	else
+		return false;
+	
+	return true;
+}
+
+bool kondo_offset_analysis(char* line, long* offset) {
+	int i, j = 0;
+	char tmp[256] = {'\0'};
+	bool negative = false;
+
+	for(i=0; line[i] != '\0' && line[i] != '\n'; i++)
+	{
+		if(line[i] != ' ') tmp[j++] = line[i];
+	}
+	
+	if(strncmp("CH", tmp, 2) != 0) return false;
+
+	if(isdigit(tmp[2]) && isdigit(tmp[3]) && tmp[4] == '=') i = 5;
+	else if(isdigit(tmp[2]) && tmp[3] == '=') i = 4;
+	else return false;
+	
+	for(; tmp[i] == ' '; i++);
+	
+	*offset = 0;
+	if(tmp[i] == '-') {negative = true; i++;}	
+	for(;isdigit(tmp[i]); i++) *offset = *offset*10 + (tmp[i] - '0');
+
+	if(tmp[i] != '\0' && tmp[i] != '\n' && tmp[i] != ' ') return false;
+	if(negative == true) *offset = (-1) * (*offset);
+	
+	return true;
+}
+
+bool ServoOffsetKondo::load(const char* dir) {
+    int i, channel = 0;
+	FILE *fp;
+	char *exten = NULL;
+	char path[256] = {'\0'};
+	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
+	long tmp_offset[45] = {0L}, offset;
+	
+	if(dir == NULL) return false;    
+
+	get_real_path(dir, path);
+	
+	if((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
+    {
+    	if((fp = fopen(path, "r")) == NULL) return false;
+    }
+	else if((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
+	{
+		if((fp = fopen(path, "r")) == NULL) return false;
+	}
+	else // the file is not supported
+		return false;
+
+	if(is_kondoOffsetFile(_line, fp) == false) {fclose(fp); return false;}
+
+	while(fgets(_line, 256, fp))
+	{
+		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if(_line[i] == ' ') continue; else break;
+
+		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		
+		if(_line[0] == 'C' && _line[1] == 'H')
+		{
+			clear_string_space(_line, tmp_ch);
+			if(kondo_offset_analysis(tmp_ch, &offset) == true)
+			{
+				tmp_offset[channel] = offset;
+				channel++;
+			}
+			else
+			{
+				fclose(fp);
+				return false;
+			}
+		}
+	}
+	fclose(fp);
+
+	for(i=0; i<24; i++)
+	{
+		if(tmp_offset[i] < 16039 || tmp_offset[i] > 16729) continue; // not servo position
+		offsets[i] = (tmp_offset[i] - 16384L)*3L;
+		// printf("CH%d: offset %ld \n", i, offsets[i]);
+	}
+	
+	return true;
+}
+
+
+
+/************************ Pololu Servo Control Board **************************/
+
+ServoFramePololu::ServoFramePololu() : ServoFrame() {}
+
+ServoFramePololu::ServoFramePololu(const char* dir, const char* sname, const char* fname) : ServoFrame() {
+	load(dir, sname, fname);
+}
+
+bool is_pololuFrameFile(char* _line, FILE* fp) {
+    int i, tmp = 0;
+    char result[256] = {'\0'};
+    
+	if(fgets(_line, 256, fp))
+	{
+		clear_string_space(_line, result);
+		if(strncmp("<!--Pololu", result, 10) != 0) {printf("<!--Pololu false\n"); return false;}
+	}
+	else
+		return false;
+	
+	return true;
+}
+
+bool pololu_frame_analysis(char* ch, long* target) {
+	int i, j = 0, k = 0;
+	char tmp_ch[10] = {'\0'};
+
+	for(i=0; ch[i] != '<'; i++)
+	{
+		if(isdigit(ch[i])) {tmp_ch[j++] = ch[i]; continue;}
+		tmp_ch[j] = '\0';
+		target[k++] = atoi(tmp_ch);
+		j = 0;
+	}
+	
+	if(j != 0)
+	{
+		tmp_ch[j] = '\0';
+		target[k++] = atoi(tmp_ch);
+	}
+	
+	if(k != 24) return false;
+	return true;
+}
+
+bool get_pololu_sequence_name(char* ch, const char* sname) {
+    int i;
+
+    for(i=1; ch[i] != '"'; i++)
+    	if(sname[i-1] != ch[i]) return false;
+    if(sname[i-1] == '\n' || sname[i-1] == '\r' || sname[i-1] == '\0')  return true;
+	return false;
+}
+
+bool get_pololu_frame_name(char* ch, const char* fname) {
+    int i;
+    
+    for(i=1; ch[i] != '"'; i++)
+    	if(fname[i-1] != ch[i]) return false;
+    if(fname[i-1] == '\n' || fname[i-1] == '\r' || fname[i-1] == '\0')  return true;
+	return false;
+}
+
+bool ServoFramePololu::load(const char* dir, const char* sname, const char* fname) {
+    int i, channel = 0;
+	FILE *fp;
+	char *exten = NULL;
+	char path[256] = {'\0'};
+	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
+	long tmp_frame[24] = {0L};
+	
+	char* sequence_start = "<Sequences>";
+	char* sequence_end = "</Sequences>";
+	
+	bool _handled = false, find_sequences = false, find_sequence = false;
+	
+	if(dir == NULL) return false;    
+
+	get_real_path(dir, path);
+	
+	if((exten = strstr(path, ".txt")) != NULL && exten[4] == '\0')
+    {
+    	if((fp = fopen(path, "r")) == NULL) return false;
+    }
+	else if((exten = strstr(path, ".TXT")) != NULL && exten[4] == '\0')
+	{
+		if((fp = fopen(path, "r")) == NULL) return false;
+	}
+	else // the file is not supported
+		return false;
+	
+	if(is_pololuFrameFile(_line, fp) == false) {fclose(fp); return false;}
+	
+	// find the head of sequences 
+	while(fgets(_line, 256, fp))
+	{
+		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if(_line[i] == ' ') continue; else break;
+
+		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		
+		clear_string_space(_line, tmp_ch);
+		if(strcmp(tmp_ch, sequence_start) == 0) {find_sequences = true; break;}
+	}
+	
+	if(find_sequences == false) return false;
+	
+	// find the sequence name
+	while(fgets(_line, 256, fp))
+	{
+		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if(_line[i] == ' ') continue; else break;
+
+		if(_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if((exten = strstr(_line, "<Sequence name=")) == NULL) continue;
+		if(sname != NULL && get_pololu_sequence_name(exten + 15, sname) == false) continue;
+		find_sequence = true;
+		break;
+	}
+	
+	if(find_sequence == false) return false;
+		
+	// find the frame name
+	while(fgets(_line, 256, fp))
+	{
+		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if(_line[i] == ' ') continue; else break;
+
+		if(_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if(strstr(_line, "</Sequence>") != NULL) break; // fine the final line of this sequence
+		if((exten = strstr(_line, "Frame name=")) == NULL) continue;
+		if(fname != NULL && get_pololu_frame_name(exten + 11, fname) == false) continue;
+		
+		if((exten = strstr(_line, ">")) != NULL)
+		{
+			if(pololu_frame_analysis(exten + 1, tmp_frame) == true)
+			{
+				for(i=0; i<24; i++)
+				{
+					positions[i] = tmp_frame[i]/4L;
+				}
+				_handled = true;
+			}
+			break;
+		}
+	}
+	
+	fclose(fp);
+				
+	return (_handled == true) ? true : false;
+}
+
+/*
+ServoOffsetPololu::ServoOffsetPololu() : ServoOffset() {}
+
+ServoOffsetPololu::ServoOffsetPololu(const char* dir) : ServoOffset() {
+	load(dir);
+}
+
+bool is_pololuOffsetFile(char* _line, FILE* fp) {
+    int i, tmp = 0;
+    char result[256] = {'\0'};
+    
+	if(fgets(_line, 256, fp))
+	{
+		clear_string_space(_line, result);
+		if(strncmp("<!--Pololu", result, 10) != 0) {printf("<!--Pololu false\n"); return false;}
+	}
+	else
+		return false;
+	
+	return true;
+}
+
+bool pololu_offset_analysis(char* ch, long* offset) {
+	int i, j = 0;
+	char tmp_ch[10] = {'\0'};
+
+	if(ch[0] != '"') return false;
+	
+	for(i=1; ch[i] != '"'; i++)
+		if(isdigit(ch[i])) tmp_ch[j++] = ch[i];
+
+	tmp_ch[j] = '\0';
+	*offset = atoi(tmp_ch);
 
 	return true;
 }
 
-// TODO: load and save the motion files. 
+bool ServoOffsetPololu::load(const char* dir) {
+    int i, channel = 0;
+	FILE *fp;
+	char *exten = NULL;
+	char path[256] = {'\0'};
+	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
+	long tmp_offset[24] = {0L}, offset;
+	
+	bool _handled = false, find_channels = false;
+	
+	if(dir == NULL) return false;    
 
+	get_real_path(dir, path);
+	
+	if((exten = strstr(path, ".txt")) != NULL && exten[4] == '\0')
+    {
+    	if((fp = fopen(path, "r")) == NULL) return false;
+    }
+	else if((exten = strstr(path, ".TXT")) != NULL && exten[4] == '\0')
+	{
+		if((fp = fopen(path, "r")) == NULL) return false;
+	}
+	else // the file is not supported
+		return false;
+	
+	if(is_pololuFrameFile(_line, fp) == false) {fclose(fp); return false;}
+	
+	// find the sequence name
+	while(fgets(_line, 256, fp))
+	{
+		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if(_line[i] == ' ') continue; else break;
+
+		if(_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if((exten = strstr(_line, "<Channels MiniMaestroServoPeriod=")) == NULL) continue;
+		find_channels = true;
+		break;
+	}
+	
+	if(find_channels == false) return false;
+		
+	// find the frame name
+	while(fgets(_line, 256, fp))
+	{
+		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if(_line[i] == ' ') continue; else break;
+
+		if(_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if(strstr(_line, "</Channels>") != NULL) break; // fine the final line of this sequence
+		if((exten = strstr(_line, "neutral=")) == NULL) continue;
+
+		if(pololu_offset_analysis(exten + 8, &offset) == true)
+		{
+			tmp_offset[channel] = offset;
+			channel++;
+		}
+		else
+		{
+			fclose(fp);
+			return false;
+		}
+	}
+	fclose(fp);
+	if(channel < 24) return false;
+
+	for(i=0; i<24; i++)
+	{
+		offsets[i] = tmp_offset[i]/4L - 1500L;
+	}
+	
+	return true;
+}
+*/
 
 /************************************ RTC *************************************/
 

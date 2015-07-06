@@ -1,3 +1,11 @@
+### CODING 210 - 2015.07.06 ###
+
+* Added the error process for user's program (ex: divide zero error in user's program).
+* Increase the buffer size from 128 to 256 for Firmate library.
+* The Servo86 library can read the Frame and Offset files that created by Pololu, KONDO, Innovati Motion Editor.
+* Fixed the bug for Time86 Library: the now() will return a unexpected value.
+ 
+
 ### CODING 209 - 2015.05.14 ###
 
 [core]

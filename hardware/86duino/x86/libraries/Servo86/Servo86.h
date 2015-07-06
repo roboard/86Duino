@@ -1,6 +1,7 @@
 #ifndef Servo_h
 #define Servo_h
 
+#include <stdio.h>
 #include <inttypes.h>
 
 #define Servo_VERSION           2      // software version of this library
@@ -201,7 +202,6 @@ public:
 	char all_string[2][256];
 	
 	bool load(const char* dir);
-	bool save(const char* dir);
 	
 	ServoFrameInno & operator = (const ServoFrame &s) {
 		int i;
@@ -229,10 +229,7 @@ public:
 	ServoOffsetInno();
 	ServoOffsetInno(const char* dir);
 	
-	// long offsets[32];
-	
 	bool load(const char* dir);
-	bool save(const char* dir);
 	
 	ServoOffsetInno & operator = (const ServoOffset &s) {
 		int i;
@@ -250,26 +247,64 @@ class ServoFrameKondo : public ServoFrame
 {
 public:
 	ServoFrameKondo();
+    ServoFrameKondo(const char* dir, const char* fname);
 
-	// long positions[45];
-
-    bool capture(Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
-                 Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
-                 Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
-                 Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
-                 Servo &s17=nullServo, Servo &s18=nullServo, Servo &s19=nullServo, Servo &s20=nullServo,
-                 Servo &s21=nullServo, Servo &s22=nullServo, Servo &s23=nullServo, Servo &s24=nullServo,
-                 Servo &s25=nullServo, Servo &s26=nullServo, Servo &s27=nullServo, Servo &s28=nullServo,
-                 Servo &s29=nullServo, Servo &s30=nullServo, Servo &s31=nullServo, Servo &s32=nullServo,
-                 Servo &s33=nullServo, Servo &s34=nullServo, Servo &s35=nullServo, Servo &s36=nullServo,
-                 Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
-                 Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
-                 Servo &s45=nullServo);
+    bool load(const char* dir, const char* fname = NULL);
+	
+    long capture(Servo &s);
+    
+    ServoFrameKondo & operator = (const ServoFrame &s) {
+		int i;
+		for(i=0; i<24; i++) positions[i] = s.positions[i];
+	}
+	
+	ServoFrameKondo & operator = (const ServoFrameKondo &s) {
+		int i;
+		for(i=0; i<24; i++) positions[i] = s.positions[i];
+	}
 };
+
+class ServoOffsetKondo : public ServoOffset
+{	
+public:
+	ServoOffsetKondo();
+	ServoOffsetKondo(const char* dir);
+	bool load(const char* dir);
+	
+	ServoOffsetKondo & operator = (const ServoOffset &s) {
+		int i;
+		for(i=0; i<24; i++) offsets[i] = s.offsets[i];
+	}
+	
+	ServoOffsetKondo & operator = (const ServoOffsetKondo &s) {
+		int i;
+		for(i=0; i<24; i++) offsets[i] = s.offsets[i];
+	}
+};
+
+
+class ServoFramePololu : public ServoFrame
+{
+public:
+	ServoFramePololu();
+    ServoFramePololu(const char* dir, const char* sname, const char* fname);
+    
+    bool load(const char* dir, const char* sname=NULL, const char* fname=NULL);
+
+	ServoFramePololu & operator = (const ServoFrame &s) {
+		int i;
+		for(i=0; i<24; i++) positions[i] = s.positions[i];
+	}
+	
+	ServoFramePololu & operator = (const ServoFramePololu &s) {
+		int i;
+		for(i=0; i<24; i++) positions[i] = s.positions[i];
+	}
+};
+
 
 /* TODO:
  * Hitec Servo Controler
- * Pololu Servo Controler
  * Lynxmotion Servo Controler
  * vstone Servo Controler  
 */

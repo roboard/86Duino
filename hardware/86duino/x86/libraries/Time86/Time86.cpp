@@ -28,6 +28,7 @@
 */
 
 #include "Time86.h"
+#include <stdio.h>
 #include <dos.h>
 
 static time_t cacheTime;   // the time the cache was updated
@@ -66,105 +67,113 @@ struct dosdate_t {
 }; */
 struct dosdate_t _dos_date;
 
-// static uint32_t syncInterval = 300;  // time sync will be attempted after this many seconds
-void refreshCache(time_t t) {
-  if (t != cacheTime) {
-    breakTime(t, tptr); 
-    cacheTime = t; 
-  }
-}
 
 int hour() { // the hour now 
-  return hour(now()); 
+  now();
+  return _dos_time.hour; 
 }
 
 int hour(time_t t) { // the hour for the given time
-  refreshCache(t);
-  return tptr->tm_hour;  
+  now();
+  return _dos_time.hour;  
 }
 
 int hourFormat12() { // the hour now in 12 hour format
-  return hourFormat12(now()); 
+  now();
+  if(_dos_time.hour == 0)
+    return 12; // 12 midnight
+  else if(_dos_time.hour > 12)
+    return _dos_time.hour - 12;
+  else
+    return _dos_time.hour; 
 }
 
 int hourFormat12(time_t t) { // the hour for the given time in 12 hour format
-  refreshCache(t);
-  if(tptr->tm_hour == 0)
+  now();
+  if(_dos_time.hour == 0)
     return 12; // 12 midnight
-  else if(tptr->tm_hour > 12)
-    return tptr->tm_hour - 12;
+  else if(_dos_time.hour > 12)
+    return _dos_time.hour - 12;
   else
-    return tptr->tm_hour ;
+    return _dos_time.hour;
 }
 
 uint8_t isAM() { // returns true if time now is AM
-  return !isPM(now()); 
+  return !isPM(); 
 }
 
 uint8_t isAM(time_t t) { // returns true if given time is AM
-  return !isPM(t);  
+  return !isPM();  
 }
 
 uint8_t isPM() { // returns true if PM
-  return isPM(now()); 
+  now();
+  return (_dos_time.hour >= 12); 
 }
 
 uint8_t isPM(time_t t) { // returns true if PM
-  return (hour(t) >= 12); 
+  now();
+  return (_dos_time.hour >= 12); 
 }
 
 int minute() {
-  return minute(now()); 
+  now();
+  return _dos_time.minute; 
 }
 
 int minute(time_t t) { // the minute for the given time
-  refreshCache(t);
-  return tptr->tm_min;  
+  now();
+  return _dos_time.minute;  
 }
 
 int second() {
-  return second(now()); 
+  now();
+  return _dos_time.second; 
 }
 
 int second(time_t t) {  // the second for the given time
-  refreshCache(t);
-  return tptr->tm_sec;
+  now();
+  return _dos_time.second;
 }
 
 int day(){
-  return(day(now())); 
+  now();
+  return _dos_date.day; 
 }
 
 int day(time_t t) {
-  refreshCache(t);
-  return tptr->tm_mday;
+  now();
+  return _dos_date.day;
 }
 
 int weekday() {   // Sunday is day 1
-  return  weekday(now()); 
+  now();
+  return  _dos_date.dayofweek + 1; // for Arduino compatibility
 }
 
 int weekday(time_t t) {
-  refreshCache(t);
-  return tptr->tm_wday + 1; // for Arduino compatibility
+  now();
+  return _dos_date.dayofweek + 1; // for Arduino compatibility
 }
    
 int month(){
-  return month(now()); 
+  now();
+  return _dos_date.month; 
 }
 
 int month(time_t t) {  // the month for the given time
-  refreshCache(t);
-  return tptr->tm_mon + 1; // jan is month 1 for Arduino compatibility
+  now();
+  return _dos_date.month; // jan is month 1 for Arduino compatibility
 }
 
 int year() {  // as in Processing, the full four digit year: (2009, 2010 etc) 
-  return year(now()); 
+  now();
+  return _dos_date.year; 
 }
 
 int year(time_t t) { // the year for the given time
-  refreshCache(t);
-  return (tptr->tm_year + 1900);
+  now();
+  return _dos_date.year;
 }
 
 /*
@@ -192,8 +201,15 @@ time_t makeTime(struct tm *tptrs) {
     return mktime(tptrs);
 }
 
-time_t now() {
-	return time(NULL);
+unsigned long now() {
+	struct timeval tp;
+	struct timezone tz;
+	
+	_dos_gettime(&_dos_time);
+	_dos_getdate(&_dos_date);
+
+	gettimeofday(&tp, &tz);
+	return tp.tv_sec;
 }
 
 void setTime(time_t t) { 
@@ -209,7 +225,7 @@ void setTime(time_t t) {
 	_dos_setdate(&_dos_date); // if input any unavailable data, _dos_setdate() will return non-zero. Here, we ignore this condition.
 } 
 
-void setTime(int hr,int min,int sec,int dy, int mnth, int yr){
+void setTime(int hr,int min,int sec,int dy, int mnth, int yr) {
 // year can be given as full four digit year or two digts (2010 or 10 for 2010);  
 //it is converted to years since 1970
 	if(yr <= 99)
@@ -218,6 +234,7 @@ void setTime(int hr,int min,int sec,int dy, int mnth, int yr){
 	_dos_date.year   = yr;
 	_dos_date.month  = mnth;
 	_dos_date.day    = dy;
+	
 	_dos_time.hour   = hr;
 	_dos_time.minute = min;
 	_dos_time.second = sec;
