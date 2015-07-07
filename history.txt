@@ -1,8 +1,12 @@
 ### CODING 210 - 2015.07.06 ###
 
-* Added the error process for user's program (ex: divide zero error in user's program).
+[core]
+* Added the exception handlers for user's program (ex: divide zero in user's program).
+* Support the S4A (http://s4a.cat/), and the firmware sketch works normally after uploading directly.
+
+[libraries]
 * Increase the buffer size from 128 to 256 for Firmate library.
-* The Servo86 library can read the Frame and Offset files that created by Pololu, KONDO, Innovati Motion Editor.
+* The Servo86 library can read the Frame and Offset files that created by Pololu, KONDO, Innovati Motion Editors.
 * Fixed the bug for Time86 Library: the now() returned a unexpected value in Coding 209/208/207.
  
 
