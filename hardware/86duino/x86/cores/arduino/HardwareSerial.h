@@ -93,6 +93,11 @@ extern HardwareSerial Serial3;
 extern HardwareSerial Serial485;
 extern HardwareSerial Serial232;
 extern HardwareSerial* HWSerial[4];
-extern void serialEventRun(void) __attribute__((weak));
+
+#ifndef __HARDWARE_SERIAL_LIB
+	extern void serialEventRun();
+#else
+	extern void serialEventRun() __attribute__((weak));
+#endif
 
 #endif

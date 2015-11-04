@@ -11,6 +11,7 @@
 
 #include "binary.h"
 #include "stdint.h"
+#include "itoa.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -119,6 +120,12 @@ uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder);
 
 void attachInterrupt(uint8_t, void (*userFunc)(void), int mode);
 void detachInterrupt(uint8_t);
+
+void wdt_enable(unsigned long nTime);
+void wdt_disable(void);
+void wdt_reset(void);
+void wdt_init(void);
+bool get_wdt_timeout(void);
 
 void setup(void);
 void loop(void);

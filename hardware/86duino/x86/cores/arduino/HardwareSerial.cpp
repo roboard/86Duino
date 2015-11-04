@@ -22,6 +22,8 @@
   Modified 01 November 2013 by Android Lin
 */
 
+#define __HARDWARE_SERIAL_LIB
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

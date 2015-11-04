@@ -126,6 +126,7 @@ void TimerOne::setPeriod(long microseconds)	{ // AR modified for atomic access
 		{
 			mcn = arduino_to_mc_md[0][i];
 	    	mdn = arduino_to_mc_md[1][i];
+            if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[i]-1.0);
 		    mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_PEREND);
 		}
@@ -133,6 +134,7 @@ void TimerOne::setPeriod(long microseconds)	{ // AR modified for atomic access
 }
 
 static void safeClosePwmModule(int mcn, int mdn, double _period) {
+    if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 	mcpwm_SetWidth(mcn, mdn, _period-1.0, 0L);
 	mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_PEREND);
 	while(mcpwm_ReadReloadPWM(mcn, mdn) != 0L);
@@ -178,6 +180,7 @@ void TimerOne::setPwmDuty(char pin, int duty) {
     
     _duty[pin] = _period*duty/1024.0;
     
+    if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 	mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[pin]-1.0);
 	mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_PEREND);
     io_RestoreINT();
@@ -287,6 +290,7 @@ void TimerOne::start() { // AR addition, renamed by Lex to reflect it's actual r
 		{
 			mcn = arduino_to_mc_md[0][i];
 			mdn = arduino_to_mc_md[1][i];
+            if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[i]-1.0);
 			mcpwm_Enable(mcn, mdn);
 			mc_md_inuse[i] = YES;

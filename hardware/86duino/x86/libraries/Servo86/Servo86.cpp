@@ -763,6 +763,11 @@ void Servo::run(void) {
 	
 	if(sv86[servoIndex].curposition == sv86[servoIndex].targetposition) // if target is equal to current, do nothing.
 	{
+		if(sv86[servoIndex].state == SERVO_MOVING) // if servo is moving and get the same target position, we need to update the endtime value
+		{
+            sv86[servoIndex].starttime = millis();
+			sv86[servoIndex].endtime = sv86[servoIndex].starttime + total_time;
+		}
 		io_RestoreINT();
 		return;
 	}

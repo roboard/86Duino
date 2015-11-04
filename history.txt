@@ -1,3 +1,25 @@
+### CODING 211 - 2015.11.04 ###
+
+[core]
+* Updated the pgmspace.h : ptr short -> long.
+* Modify the HardwareSerial.cpp and .h to defined __HARDWARE_SERIAL_LIB.
+* Add dtostrf.c and dtostrf.h in core/arduino/avr directory.
+* Add itoa.c and itoa.h in cores/arduino directory.
+* Add "include "iota.h"" in Arduino.h.
+* Add reconnect function in USBcore.cpp.
+* Fixed reset event in USBCore.cpp to re-handshake with PC.
+* Add "USBDEV = NULL" for Serial.end() in CDC.cpp.
+* Add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" in analogWrite() to aviod not effect for uploading.
+* Add wdt.cpp in core\arduino directory and add wdt functions in Arduino.h.
+* Add wdt.h file in core\arduino\avr directory for Arduino compatibility.
+* Add wdt_init() in wiring.cpp.
+
+[libraries]
+* SPI lib updated
+* TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" to aviod not effect for uploading.
+* Fixed a bug in Servo86 library.
+
+
 ### CODING 210 - 2015.07.06 ###
 
 [core]

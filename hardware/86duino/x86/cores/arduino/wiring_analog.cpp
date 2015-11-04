@@ -166,6 +166,7 @@ void analogWrite(uint8_t pin, unsigned long val) {
 	    unit = ((float)MAX_RESOLUTION)/((float)(0x00000001L<<PWM_RESOLUTION));
 	    
 	    io_DisableINT();
+        if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
 		mcpwm_SetWidth(mc, md, 1000L*SYSCLK, ((float)val)*unit);
 	    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	    if(mc_md_inuse[pin] == 0)

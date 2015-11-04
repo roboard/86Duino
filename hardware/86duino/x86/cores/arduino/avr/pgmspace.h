@@ -42,7 +42,7 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 #define pgm_read_word_near(address_short)  (*(const unsigned short *)(address_short))
 #define pgm_read_dword_near(address_short) (*(const unsigned long *)(address_short))
 #define pgm_read_float_near(address_short) (*(const float *)(address_short))
-#define pgm_read_ptr_near(address_short)   (void*)(*(const unsigned short *)(address_short))
+#define pgm_read_ptr_near(address_short)   (void*)(*(const unsigned long *)(address_short))
 
 #define pgm_read_byte_far(address_long)  (*(const unsigned char *)(address_long))
 #define pgm_read_word_far(address_long)  (*(const unsigned short *)(address_long))

@@ -88,7 +88,10 @@ bool init() {
 	mc_setbaseaddr();
 	for(i=0; i<4; i++)
 		mc_SetMode(i, MCMODE_PWM_SIFB);
-	
+
+	// init wdt1
+    wdt_init();
+
 	if(Global_irq_Init == false)
 	{
 		// set MCM IRQ

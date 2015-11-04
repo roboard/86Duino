@@ -1,0 +1,64 @@
+language: python
+
+python:
+    - "2.7"
+
+sudo: false
+
+env:
+    - PLATFORMIO_CI_SRC=examples/acm/acm_terminal
+    - PLATFORMIO_CI_SRC=examples/adk/adk_barcode
+    - PLATFORMIO_CI_SRC=examples/adk/ArduinoBlinkLED
+    - PLATFORMIO_CI_SRC=examples/adk/demokit_20
+    - PLATFORMIO_CI_SRC=examples/adk/term_test
+    - PLATFORMIO_CI_SRC=examples/adk/term_time
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/BTHID
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/PS3BT
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/PS3Multi
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/PS3SPP
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/PS4BT
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/SPP
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/SPPMulti
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/Wii
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/WiiBalanceBoard
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/WiiIRCamera PLATFORMIO_BUILD_FLAGS="-DWIICAMERA"
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/WiiMulti
+    - PLATFORMIO_CI_SRC=examples/Bluetooth/WiiUProController
+    - PLATFORMIO_CI_SRC=examples/board_qc
+    - PLATFORMIO_CI_SRC=examples/cdc_XR21B1411/XR_terminal
+    - PLATFORMIO_CI_SRC=examples/ftdi/USBFTDILoopback
+    - PLATFORMIO_CI_SRC=examples/HID/le3dp
+    - PLATFORMIO_CI_SRC=examples/HID/scale
+    - PLATFORMIO_CI_SRC=examples/HID/USBHID_desc
+    - PLATFORMIO_CI_SRC=examples/HID/USBHIDBootKbd
+    - PLATFORMIO_CI_SRC=examples/HID/USBHIDBootKbdAndMouse
+    - PLATFORMIO_CI_SRC=examples/HID/USBHIDBootMouse
+    - PLATFORMIO_CI_SRC=examples/HID/USBHIDJoystick
+    - PLATFORMIO_CI_SRC=examples/hub_demo
+    - PLATFORMIO_CI_SRC=examples/max_LCD
+    - PLATFORMIO_CI_SRC=examples/pl2303/pl2303_gprs_terminal
+    - PLATFORMIO_CI_SRC=examples/pl2303/pl2303_gps
+    - PLATFORMIO_CI_SRC=examples/pl2303/pl2303_tinygps
+    - PLATFORMIO_CI_SRC=examples/pl2303/pl2303_xbee_terminal
+    - PLATFORMIO_CI_SRC=examples/PS3USB
+    - PLATFORMIO_CI_SRC=examples/PS4USB
+    - PLATFORMIO_CI_SRC=examples/PSBuzz
+#    - PLATFORMIO_CI_SRC=examples/testusbhostFAT/testusbhostFAT.ino
+    - PLATFORMIO_CI_SRC=examples/USB_desc
+    - PLATFORMIO_CI_SRC=examples/Xbox/XBOXOLD
+    - PLATFORMIO_CI_SRC=examples/Xbox/XBOXONE
+    - PLATFORMIO_CI_SRC=examples/Xbox/XBOXRECV
+    - PLATFORMIO_CI_SRC=examples/Xbox/XBOXUSB
+
+install:
+    - python -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
+
+    #
+    # Libraries from PlatformIO Library Registry:
+    #
+    # http://platformio.org/#!/lib/show/416/TinyGPS
+    # http://platformio.org/#!/lib/show/417/SPI4Teensy3
+    - platformio lib install 416 417
+
+script:
+    - platformio ci --board=uno --board=teensy31 --board=due --lib="."

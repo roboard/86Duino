@@ -36,6 +36,7 @@ void Serial_::end(void)
 {
     if(USBDEV == NULL) return;
     usb_Close(USBDEV);
+    USBDEV = NULL;
 }
 
 

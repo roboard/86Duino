@@ -51,6 +51,9 @@
 #include "err.h"
 #include "irq.h"
 
+#define USB_RECONNECT_DELAY_MS (300UL)
+static USB_Device *usbdev = NULL;
+
 #if defined DMP_DOS_DJGPP
 
 typedef int DMA_HANDLE_t;
@@ -194,6 +197,12 @@ static void USB_Connect(void)
 static void USB_Disconnect(void)
 {
 	io_outpb(usb_on_off_data, io_inpb(usb_on_off_data) | (1 << usb_on_off_pin));
+}
+static void USB_Reconnect(void)
+{
+    USB_Disconnect();
+    timer_Delay(USB_RECONNECT_DELAY_MS);
+    USB_Connect();
 }
 
 #ifdef DMP_86DUINO_MODE
@@ -1085,13 +1094,14 @@ DPMI_END_OF_LOCKED_STATIC_FUNC(EP3_InHandler)
 
 DMP_INLINE(bool) usb_Reset(USB_Device *usb)
 {
-	if (usb->InUse == 0) return false;
+	//if (usb->InUse == 0) return false;
 	
-	// io_outpb (usb->CFR, 0x02); // Soft reset
-	// while (io_inpb( usb->CFR) & 0x02);
+    io_outpb(usb->CFR, io_inpb(usb->CFR) & 0xFE);
+	io_outpb(usb->CFR, 0x02); // Soft reset
+	while (io_inpb(usb->CFR) & 0x02);
 	usb->DevAddr = 0x00;
 	usb->ReadySetAddr = false;
-	io_outpb(usb->DAR, 0x80); // enable USB device
+	//io_outpb(usb->DAR, 0x80); // enable USB device
 	
 	// io_outpdw(usb->EP[0].SetupDSR, usb->EP[0].SetupPhysical);
 	// io_outpdw(usb->EP[0].InDSR   , usb->EP[0].InPhysical);
@@ -1105,13 +1115,13 @@ DMP_INLINE(bool) usb_Reset(USB_Device *usb)
 	// io_outpw(usb->EP[2].InTR     , 0x3000 | EP2_MAX_PACKET_SIZE_IN);
 	// io_outpw(usb->EP[2].OutTR    , 0x3000 | EP2_MAX_PACKET_SIZE_OUT);
 	
-	SetEPnDLR(usb, EP0, SETUP, ENABLE);
-	SetEPnDLR(usb, EP0, IN, 0L);
-	SetEPnDLR(usb, EP0, OUT, 0L);
-	SetEPnDLR(usb, EP1, IN, 0L);
-	SetEPnDLR(usb, EP2, OUT, 0L);
-	SetEPnDLR(usb, EP2, IN, 0L);
-	SetEPnDLR(usb, EP3, IN, 0L); 
+	//SetEPnDLR(usb, EP0, SETUP, ENABLE);
+	//SetEPnDLR(usb, EP0, IN, 0L);
+	//SetEPnDLR(usb, EP0, OUT, 0L);
+	//SetEPnDLR(usb, EP1, IN, 0L);
+	//SetEPnDLR(usb, EP2, OUT, 0L);
+	//SetEPnDLR(usb, EP2, IN, 0L);
+	//SetEPnDLR(usb, EP3, IN, 0L);
 	
 	// io_outpb(usb->DAR, 0x80); // enable USB device
 	// while (!(io_inpb(usb->DAR) & 0x80));
@@ -1120,6 +1130,37 @@ DMP_INLINE(bool) usb_Reset(USB_Device *usb)
 	ClearQueue(usb->xmit);
 	ClearQueue(usb->hidxmit); 
 	
+    io_outpdw(usb->EP[0].SetupDSR, usb->EP[0].SetupPhysical);
+	io_outpdw(usb->EP[0].InDSR   , usb->EP[0].InPhysical);
+	io_outpdw(usb->EP[0].OutDSR  , usb->EP[0].OutPhysical);
+	io_outpdw(usb->EP[1].InDSR   , usb->EP[1].InPhysical);
+	io_outpdw(usb->EP[2].InDSR   , usb->EP[2].InPhysical);
+	io_outpdw(usb->EP[2].OutDSR  , usb->EP[2].OutPhysical);
+	io_outpdw(usb->EP[3].InDSR   , usb->EP[3].InPhysical);
+
+	io_outpw(usb->EP[0].CtrlTR   , 0x2000 | EP0_MAX_PACKET_SIZE);
+	io_outpw(usb->EP[1].InTR     , 0x3800 | EP1_MAX_PACKET_SIZE_IN);
+	io_outpw(usb->EP[2].InTR     , 0x3000 | EP2_MAX_PACKET_SIZE_IN);
+	io_outpw(usb->EP[2].OutTR    , 0x3000 | EP2_MAX_PACKET_SIZE_OUT);
+	io_outpw(usb->EP[3].InTR     , 0x3800 | EP3_MAX_PACKET_SIZE_IN);
+
+	SetEPnDLR(usb, EP0, SETUP, ENABLE);
+
+	io_outpb(usb->DAR, 0x80); // enable USB device
+	while (!(io_inpb(usb->DAR) & 0x80));
+
+	io_outpdw(usb->ISR, 0xFFFFFFFFL);
+
+	io_DisableINT();
+	{
+		io_outpdw(usb->IER, ISOF + IBRST + ISUSP + IRESM + SYSERR +
+		                    IEP0SETUP + IEP0RX + IEP0TX + IEP1TX +
+							IEP2RX + IEP2TX + IEP3RX + IEP3TX);
+		io_outpb(usb->CFR, io_inpb(usb->CFR) | 0x01);
+	}
+	io_RestoreINT();
+    usb->state = USB_DEV_POWERED;
+
 	// io_DisableINT();
 	// {
 		// io_outpb(usb->CFR, io_inpb(usb->CFR) & 0xFE);
@@ -1128,9 +1169,7 @@ DMP_INLINE(bool) usb_Reset(USB_Device *usb)
 		// io_outpb(usb->CFR, io_inpb(usb->CFR) | 0x01);
 	// }
 	// io_RestoreINT();
-	
-	usb->state = USB_DEV_DEFAULT;
-	
+
 	return true;
 }
 #if defined DMP_DOS_DJGPP
@@ -1386,6 +1425,8 @@ DMPAPI(bool) usb_Init(void *vusb)
 	#endif
 	USB_Device *usb = (USB_Device *)vusb;
 	
+    if (usb == NULL) return false;
+    if (usbdev && usb != usbdev) return false;
 	if (usb->InUse == 1) return true;
 	
 	// if (USB_IsAttached() == false) return false;
@@ -1487,7 +1528,8 @@ DMPAPI(bool) usb_Init(void *vusb)
 	// usb->DevAddr = 0x00;
 	// usb->ReadySetAddr = false;
 	// io_outpb(usb->DAR, 0x00); // enable USB device
-	
+
+	/*
 	io_outpdw(usb->EP[0].SetupDSR, usb->EP[0].SetupPhysical);
 	io_outpdw(usb->EP[0].InDSR   , usb->EP[0].InPhysical);
 	io_outpdw(usb->EP[0].OutDSR  , usb->EP[0].OutPhysical);
@@ -1501,9 +1543,10 @@ DMPAPI(bool) usb_Init(void *vusb)
 	io_outpw(usb->EP[2].InTR     , 0x3000 | EP2_MAX_PACKET_SIZE_IN);
 	io_outpw(usb->EP[2].OutTR    , 0x3000 | EP2_MAX_PACKET_SIZE_OUT);
 	io_outpw(usb->EP[3].InTR     , 0x3800 | EP3_MAX_PACKET_SIZE_IN); 
-	
+
 	SetEPnDLR(usb, EP0, SETUP, ENABLE);
-	
+	*/
+
 	// io_outpb(usb->DAR, 0x80); // enable USB device
 	// while (!(io_inpb(usb->DAR) & 0x80));
 	
@@ -1520,7 +1563,8 @@ DMPAPI(bool) usb_Init(void *vusb)
 	// io_RestoreINT();
 	
 	// usb->state = USB_DEV_DEFAULT;
-	
+
+	/*
 	io_outpb(usb->DAR, 0x80); // enable USB device
 	while (!(io_inpb(usb->DAR) & 0x80));
 	
@@ -1529,18 +1573,22 @@ DMPAPI(bool) usb_Init(void *vusb)
 	io_DisableINT();
 	{
 		io_outpb(usb->CFR, io_inpb(usb->CFR) & 0xFE);
-		irq_Setting(usb->nIRQ, IRQ_LEVEL_TRIGGER);
-		irq_InstallISR(usb->nIRQ, USB_ISR, (void *)usb);
+
 		io_outpdw(usb->IER, ISOF + IBRST + ISUSP + IRESM + SYSERR + 
 		                    IEP0SETUP + IEP0RX + IEP0TX + IEP1TX + 
 							IEP2RX + IEP2TX + IEP3RX + IEP3TX);
 		io_outpb(usb->CFR, io_inpb(usb->CFR) | 0x01);
 	}
 	io_RestoreINT();
-	
-	usb->state  = USB_DEV_POWERED;
+	*/
+
+    irq_Setting(usb->nIRQ, IRQ_LEVEL_TRIGGER);
+	irq_InstallISR(usb->nIRQ, USB_ISR, (void *)usb);
+    usb_Reset(usb);
+    USB_Reconnect();
 	usb->InUse = 1;
-	USB_Connect();
+    usbdev = usb;
+
 	return true;
 
 EP3_IN_FAIL:
