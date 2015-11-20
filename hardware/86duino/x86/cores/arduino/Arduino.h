@@ -4,14 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "avr/pgmspace.h"
-#include "v86clock.h"
-#include "pins_arduino.h"
-#include "io.h"
-
+#include <stdbool.h>
 #include "binary.h"
 #include "stdint.h"
 #include "itoa.h"
+
+#include "avr/pgmspace.h"
+#include "v86clock.h"
+#include "io.h"
+#include "pins_arduino.h"
 
 #ifdef __cplusplus
 extern "C"{

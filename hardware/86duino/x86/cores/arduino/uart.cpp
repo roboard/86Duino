@@ -27,7 +27,7 @@
 //    to employ PMODE/DJ or HDPMI instead of CWSDPMI.
 ////////////////////////////////////////////////////////////////////////////////
 
-// #define _VORTEX86EXC_UART_WORKAROUND
+#define _VORTEX86EXC_UART_WORKAROUND
 
 #include "uart.h"
 

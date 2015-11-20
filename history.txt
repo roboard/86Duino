@@ -1,4 +1,4 @@
-### CODING 211 - 2015.11.04 ###
+### CODING 211 - 2015.11.19 ###
 
 [core]
 * Updated the pgmspace.h : ptr short -> long.
@@ -13,11 +13,14 @@
 * Add wdt.cpp in core\arduino directory and add wdt functions in Arduino.h.
 * Add wdt.h file in core\arduino\avr directory for Arduino compatibility.
 * Add wdt_init() in wiring.cpp.
+* Modify the HardwareSerial.h for all serial config value.
 
 [libraries]
 * SPI lib updated
 * TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" to aviod not effect for uploading.
 * Fixed a bug in Servo86 library.
+* Add TimerWDT library. (not added)
+* Modify Wire library to add WireLEGO class. (not added)
 
 
 ### CODING 210 - 2015.07.06 ###

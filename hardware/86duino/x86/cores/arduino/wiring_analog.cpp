@@ -114,7 +114,7 @@ int analogRead(uint8_t pin) {
 
 #define MAX_RESOLUTION    (100000L)
 static unsigned short crossbar_ioaddr = 0;
-void analogWrite(uint8_t pin, unsigned long val) {
+void analogWrite(uint8_t pin, uint32_t val) {
 	float unit;
 	int mc, md;
 		

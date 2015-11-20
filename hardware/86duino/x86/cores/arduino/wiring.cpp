@@ -90,7 +90,7 @@ bool init() {
 		mc_SetMode(i, MCMODE_PWM_SIFB);
 
 	// init wdt1
-    wdt_init();
+	wdt_init();
 
 	if(Global_irq_Init == false)
 	{
