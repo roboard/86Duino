@@ -1,6 +1,7 @@
 /*
   86DuinoHardWare.h - Part of DM&P Vortex86 Rosserial86 library
   Copyright (c) 2015 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
+  Modify by Sayter <sayter@dmp.com.tw>. 01 January 2015
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,10 @@
 
 #ifndef ROS_86DUINO_HARDWARE_H
 #define ROS_86DUINO_HARDWARE_H
+
+#if defined(_86DUINO)
+	#include <ESP8266.h>
+#endif
 
 class Vortex86Hardware;
 
@@ -51,7 +56,14 @@ public:
 	bool setEthernet(char *ip, char *dns);
 	bool setEthernet(char *ip, char *dns, char *gateway);
 	bool setEthernet(char *ip, char *dns, char *gateway, char *subnet);
-	
+
+	// only for 86Duino
+#if defined(_86DUINO)
+	bool setESP8266(HardwareSerial &uart, uint32_t baud);
+	bool setESP8266(HardwareSerial &uart, uint32_t baud, int pin);
+	bool setWiFi(char *ssid, char *key);
+#endif
+
 private:
 	char portName[128];
 	long baud_;

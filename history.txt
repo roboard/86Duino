@@ -23,9 +23,12 @@
 * TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" to aviod not effect for uploading.
 * Fixed a bug in Servo86 library.
 * Add TimerWDT library.
-* Modify Wire library to add WireLEGO class. (not added)
+* Modify Wire library to add WireLEGO class.
 * For EEPROM lib, use the I/O functions for more platforms.
-* For RF12 lib, use eeprom functions (CMOS mode) to access RF12 config data. 
+* For RF12 lib, use eeprom functions (CMOS mode) to access RF12 config data.
+* For Rosserial86 lib, now support ESP8266 WiFi module.
+* Update the FreeIMU1 library to version 2.0.1.
+ 
 
 
 ### CODING 210 - 2015.07.06 ###

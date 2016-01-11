@@ -22,7 +22,7 @@
 
 #define __LSM330DLC_LIB
 
-#include "LSM330.h"
+#include "lsm330dlc.h"
 
 LSM330DLC::LSM330DLC() {
   accAddr = -1;

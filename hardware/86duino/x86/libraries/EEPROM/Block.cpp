@@ -22,9 +22,10 @@
 
 #include "Block.h"
 #include "Arduino.h"
+#include "avr/eeprom.h"
 
 #include <string.h>
-#include <pc.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,66 +37,39 @@
 #define EEPROM_OFFSET_CMOS 145
 #define CMOSSIZE (ADDRESS/BYTESIZE)
 
-//PCI device
-typedef struct
-{
-  //PCI device address.
-  int bus;
-  int dev;
-  int func;
-} pci_dev;
-
-static unsigned long pci_dev_read_dw(pci_dev *pdev, unsigned int index)
-{
-  unsigned long tmp;
-  unsigned long pci_config_addr32 = 0x80000000L |
-                       (((unsigned long)pdev->bus) << 16) |
-					   (((unsigned long)pdev->dev) << 11) |
-					   (((unsigned long)pdev->func)<<  8) |
-					   index;
-  outportl(0x0cf8, pci_config_addr32);
-  tmp = inportl(0x0cfc);
-  
-  return tmp;
-}
-
-static void pci_dev_write_dw(pci_dev *pdev, unsigned int index, unsigned long int value)
-{
-  unsigned long pci_config_addr32 = 0x80000000L |
-                       (((unsigned long)pdev->bus) << 16) |
-					   (((unsigned long)pdev->dev) << 11) |
-					   (((unsigned long)pdev->func)<<  8) |
-					   index;
-  outportl(0xcf8, pci_config_addr32);
-  outportl(0xcfc, value);
-}
-
-
+/**** remove read_cmos() and read_cmos() and put them into eeprom.cpp in cores/avr directory **/
+/*
 static unsigned char read_cmos(unsigned char address)
 {
   //every 1K EEPROM space needs 1bit CMOS to control.
   if(address < EEPROM_OFFSET_CMOS || address >= (EEPROM_OFFSET_CMOS + CMOSSIZE))
     return 0;
-  pci_dev pcidev;
+  void *pciDev = NULL;
   
   unsigned long int reg;
   unsigned char result;
  
   io_DisableINT();
+
+  pciDev = pci_Alloc(0x00, 0x07, 0x00); 
+  if(pciDev == NULL)
+  {
+#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
+    Serial.print("CMOS device doesn't exist\n");
+#elif (defined(DMP_LINUX))
+    printf("CMOS device doesn't exist\n");
+#endif
+  }
+  reg = pci_In32(pciDev, 0xc0);
+  pci_Out32(pciDev, 0xc0, reg | 0x00000008);
   
-  pcidev.bus = 0;
-  pcidev.dev = 7;
-  pcidev.func = 0;
   
-  reg = pci_dev_read_dw(&pcidev, 0xc0);
-  pci_dev_write_dw(&pcidev, 0xc0, reg | 0x00000008);
+  io_outpb(0x70, address - 128);
+  result = io_inpb(0x71);
+ 
+  pci_Out32(pciDev, 0xc0, reg); 
   
-  
-  outp(0x70, address - 128);
-  result = inp(0x71);
-  
-  pci_dev_write_dw(&pcidev, 0xc0, reg);
-  
+  pci_Free(pciDev);
   io_RestoreINT();
   return result;
   
@@ -105,24 +79,33 @@ static void write_cmos(unsigned char address, unsigned char buf)
 {
   if(address < EEPROM_OFFSET_CMOS || address >= (EEPROM_OFFSET_CMOS + CMOSSIZE))
     return;
-  pci_dev pcidev;
+  void *pciDev = NULL;
   unsigned char reg;
   io_DisableINT();
   
-  pcidev.bus = 0;
-  pcidev.dev = 7;
-  pcidev.func = 0;
+  pciDev = pci_Alloc(0x00, 0x07, 0x00);
+  if(pciDev == NULL)
+  {
+#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
+    Serial.print("CMOS device doesn't exist");
+#elif (defined(DMP_LINUX))
+    printf("CMOS device doesn't exist");
+#endif
+    return;
+  }
   
-  reg = pci_dev_read_dw(&pcidev, 0xc0);
-  pci_dev_write_dw(&pcidev, 0xc0, reg | 0x00000008);
+  reg = pci_In32(pciDev, 0xc0);
+  pci_Out32(pciDev, 0xc0, reg | 0x00000008);
+ 
+  io_outpb(0x70, address -128);
+  io_outpb(0x71, buf); 
   
-  outp(0x70, address - 128);
-  outp(0x71, buf);
-  
-  pci_dev_write_dw(&pcidev, 0xc0, reg);
+  pci_Out32(pciDev, 0xc0, reg);
+  pci_Free(pciDev);
+
   io_RestoreINT();
 }
-
+*/
 
 EEPROMBlock::EEPROMBlock(unsigned short in_addr)
 :_data(NULL), _data_redundancy(NULL), _counter(NULL),_data_buffer(NULL),_data_position(0xffff), _counter_position(0xffff),_counter_flag_position(0xffff),_redundancy(false), _addr(0x0000)
@@ -172,10 +155,14 @@ void EEPROMBlock::write(unsigned short int in_addr, unsigned char in_data)
 { 
   if(in_addr >= DATASIZE)
   {
-    Serial.print("EEPROMBlock write failed: in_addr = ");
+#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
+    	Serial.print("EEPROMBlock write failed: in_addr = ");
 	Serial.print(in_addr);
-    Serial.print(" >= ");
+    	Serial.print(" >= ");
 	Serial.println(DATASIZE);
+#elif (defined(DMP_LINUX))
+	printf("EEPROMBlock write failed: in_addr = %x >= %x\n", in_addr, DATASIZE);
+#endif
 	return;
   }
   SPIFlash *temp;
@@ -220,10 +207,14 @@ unsigned char EEPROMBlock::read(unsigned short int in_addr)
   
   if(in_addr >= DATASIZE)
   {
-    Serial.print("EEPROMBlock read failed: in_addr = ");
+#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
+    	Serial.print("EEPROMBlock read failed: in_addr = ");
 	Serial.print(in_addr);
-    Serial.print(" >= ");
+    	Serial.print(" >= ");
 	Serial.println(DATASIZE);
+#elif (defined(DMP_LINUX))
+	printf("EEPROMBlock read failed: in_addr = %x >= %x\n", in_addr, DATASIZE);
+#endif
 	return 0;
   }
   return _data_buffer[in_addr];

@@ -22,68 +22,37 @@
 
 #include "SPIFlash.h"
 
+#include <io.h>
 #include <unistd.h>
 
 #define SECTORSIZE 4096
 
-#include <dos.h>
-#include <pc.h>
 #include <string.h>
 
-static unsigned char read_sb_regb(unsigned char idx) {
-    unsigned char tmp;
-
-	outportl(0x0cf8, (0x80003800L + (unsigned long) idx) & 0xfffffffcL);
-    tmp = 0xff & (unsigned char)(inportl(0x0cfc) >> ((idx & 0x03) * 8));
-	
-	return tmp;
-}
-
-static void write_sb_regb(unsigned char idx, unsigned char val) {
-	int i = (idx & 0x03) * 8;
-	
-	outportl(0x0cf8, (0x80003800L+(unsigned long)idx) & 0xfffffffcL);
-	outportl(0x0cfc, (inportl(0x0cfc) & (~(0x000000ffL << i))) | ((unsigned long)val << i));
-}
-
-static unsigned long read_nb_reg(unsigned char idx) {
-    unsigned long tmp;
-
-	outportl(0x0cf8, (0x80000000L+(unsigned long)idx) & 0xfffffffcL);
-    tmp = inportl(0xcfc);
-
-    return tmp;
-}
-
-static void write_nb_reg(unsigned char idx, unsigned long val) {
-
-	outportl(0x0cf8, (0x80000000L+(unsigned long)idx) & 0xfffffffcL);
-	outportl(0x0cfc, val);
-}
 
 static void write_spi_byte(unsigned short iobase, unsigned char n)
 {
-  outportb(iobase, n);
+  io_outpb(iobase, n);
   //waiting for ODC bit set
-  while((inportb(iobase + 3) & 0x10) == 0);
+  while((io_inpb(iobase + 3) & 0x10) == 0);
 }
 
 static unsigned char read_spi_byte(unsigned short iobase)
 {
-  outportb(iobase + 1, 0); //triggle SPI read
+  io_outpb(iobase + 1, 0);
   //waiting for IDR bit set
-  while((inportb(iobase + 3) & 0x20) == 0);
-  return inportb(iobase + 1); // read SPI data
+  while((io_inpb(iobase + 3) & 0x20) == 0);
+  return io_inpb(iobase + 1);
 }
 
 static void enable_cs(unsigned short iobase)
 {
-  outportb(iobase + 4, 0);
+  io_outpb(iobase + 4, 0);
 }
 
 static void disable_cs(unsigned short iobase)
 {
-  outportb(iobase + 4, 1);
+  io_outpb(iobase + 4, 1);
 }
 
 void write_spi_24bit_addr(unsigned short iobase, unsigned long addr)
@@ -148,29 +117,29 @@ static void read_flash_device_id(unsigned char *p)
 
 static void set_flash_writable()
 {
-  disable();
-  
-  reg_sb_c4 = read_sb_regb(0xc4);
-  reg_nb_40 = read_nb_reg(0x40);
-  spi_base = reg_nb_40 & 0x00fff0;
-  spi_ctrl_reg = inportb(spi_base + 2);
+  io_DisableINT();
+
+  reg_sb_c4 = sb_Read8(0xc4);  
+  reg_nb_40 = nb_Read(0x40);
+  spi_base = reg_nb_40 & 0x0000fff0;
+  spi_ctrl_reg = io_inpb(spi_base + 2);
   
   //set sb register 0xC4
-  write_sb_regb(0xc4, reg_sb_c4 | 1);
+  sb_Write8(0xc4, reg_sb_c4 | 1);
   
   //set nb register 0x40
-  write_nb_reg(0x40, reg_nb_40 | 1);
+  nb_Write(0x40, reg_nb_40 | 1);
   
   //set_spi_ckdiv and spi_afdis_bit 0x0c for EX
-  outportl(spi_base + 2, ((spi_ctrl_reg | 0x20) & 0xf0) | 0x0c);
+  io_outpdw(spi_base + 2, ((spi_ctrl_reg | 0x20) & 0xf0) | 0x0c);
 }
 
 static void set_flash_unwritable()
 {
-  outportl(spi_base + 2, spi_ctrl_reg);
-  write_nb_reg(0x40, reg_nb_40);
-  write_sb_regb(0xc4, reg_sb_c4);
-  enable();
+  io_outpdw(spi_base + 2, spi_ctrl_reg);
+  nb_Write(0x40, reg_nb_40);
+  sb_Write8(0xc4, reg_sb_c4);
+  io_RestoreINT();
 }
 
 
