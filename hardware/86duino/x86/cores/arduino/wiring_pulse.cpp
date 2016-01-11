@@ -25,10 +25,10 @@
 unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout) {
 	uint8_t _state;
 	unsigned long long int _timeout, now_time, width = 0L;
-	
+
 	if(pin >= PINS) return 0x00;
-	
-	_timeout = ((unsigned long long int)timeout)*333L + timer_GetClocks64(); // CPUCLK = 300MHz
+
+	_timeout = ((unsigned long long int)timeout)*vx86_CpuCLK() + timer_GetClocks64();
 	while(digitalRead(pin) == state)
 		if(timer_GetClocks64() >= _timeout)
 			return 0;
@@ -40,7 +40,7 @@ unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout) {
 		if(timer_GetClocks64() >= _timeout)
 			return 0;
 	width = timer_GetClocks64() - now_time;
-	width = (unsigned long long int)(width * 0.00333); // CPUCLK = 300MHz
-  
-	return ((unsigned long)width); // unit is micro second 
+	width = (unsigned long long int)(width * (1.0/vx86_CpuCLK()));
+
+	return ((unsigned long)width); // unit is micro second
 }

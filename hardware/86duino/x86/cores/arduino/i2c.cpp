@@ -84,7 +84,7 @@ DMP_INLINE(void) set_pins(int dev, int SCL, int SDA) {
 
 DMPAPI(bool) i2c_Init2(unsigned baseaddr, unsigned devs, int i2c0irq, int i2c1irq) {
     int  i;
-    
+
     if (I2C_ioSection != -1)
 	{
         err_print("I2C lib was already opened");
@@ -100,27 +100,6 @@ DMPAPI(bool) i2c_Init2(unsigned baseaddr, unsigned devs, int i2c0irq, int i2c1ir
         if (i2c_SetDefaultBaseAddress() == 0x0000) i2c_SetBaseAddress(0xfb00);
     }
 
-    #ifdef ROBOIO
-        switch (roboio_GetRBVer())
-        {
-            case RB_100b1:
-            case RB_100b2:
-            case RB_100b3:
-            case RB_100:
-            case RB_100RD:
-            case RB_110:
-            case RB_050:
-                devs = devs & I2C_USEMODULE0;
-                i2c1irq = I2CIRQ_DISABLE;
-                break;
-            default:
-                devs = 0;
-                i2c0irq = i2c1irq = I2CIRQ_DISABLE;
-                break;
-        }
-    #endif
-    i2c_SetIRQ(i2c0irq, i2c1irq);
-
     I2C_swMode[0] = I2C_swMode[1] = I2CSW_DISABLE;
     I2C_action[0] = I2C_action[1] = I2CACT_DISABLE;
     for (i=0; i<2; i++)
@@ -130,12 +109,12 @@ DMPAPI(bool) i2c_Init2(unsigned baseaddr, unsigned devs, int i2c0irq, int i2c1ir
         I2C_action[i] = I2CACT_IDLE;
 
         //switch GPIO/I2C pins into GPIO pins
-        OLD_I2CGPIO3FLAG[i] = sb_Read(SB_IPFCTRL3_REG) & OLD_I2CGPIO3MASK[i]; //backup GPIO/I2C switch flag
-        sb_Write(SB_IPFCTRL3_REG, sb_Read(SB_IPFCTRL3_REG) & (~OLD_I2CGPIO3MASK[i]));
+        //OLD_I2CGPIO3FLAG[i] = sb_Read(SB_IPFCTRL3_REG) & OLD_I2CGPIO3MASK[i]; //backup GPIO/I2C switch flag
+        //sb_Write(SB_IPFCTRL3_REG, sb_Read(SB_IPFCTRL3_REG) & (~OLD_I2CGPIO3MASK[i]));
 
         //send START & STOP signal to reset I2C devices
-        OLD_I2CGPIO3DIR[i] = io_inpb(GPIO3_DIR)  & (0x03 << (i*2+4)); //backup GPIO3 DIR
-        OLD_I2CGPIO3VAL[i] = io_inpb(GPIO3_DATA) & (0x03 << (i*2+4)); //backup GPIO3 VAL
+        //OLD_I2CGPIO3DIR[i] = io_inpb(GPIO3_DIR)  & (0x03 << (i*2+4)); //backup GPIO3 DIR
+        //OLD_I2CGPIO3VAL[i] = io_inpb(GPIO3_DATA) & (0x03 << (i*2+4)); //backup GPIO3 VAL
 
         //set_pins(i, 1, 1); delay_ms(1); //SCL = 1, SDA = 1; START
         //set_pins(i, 1, 0); delay_ms(1); //SCL = 1, SDA = 0
@@ -173,7 +152,7 @@ DMPAPI(bool) i2c_Init2(unsigned baseaddr, unsigned devs, int i2c0irq, int i2c1ir
         //switch GPIO pins into I2C SCL,SDA pins
         //Remarks: Vortex86DX's H/W I2C has an issue here; if you call i2c_Reset() in case GPIO/SCL pin = GPIO out 0,
         //         then, whenever you switch GPIO/SCL pin to SCL pin, the SCL pin always first send the 10 reset dummy clocks
-        sb_Write(SB_IPFCTRL3_REG, sb_Read(SB_IPFCTRL3_REG) | OLD_I2CGPIO3MASK[i]);
+        //sb_Write(SB_IPFCTRL3_REG, sb_Read(SB_IPFCTRL3_REG) | OLD_I2CGPIO3MASK[i]);
     }
 
     return true;
@@ -773,6 +752,11 @@ DMPAPI(unsigned) i2cmaster_ReadLast(int dev) {
     return val;
 }
 
+#if defined (DMP_LINUX)
+DMPAPI(void) i2cmaster_SetRestartCount(int dev, int count) {
+	I2C_count[dev] = count;
+}
+#endif
 
 
 DMPAPI(bool) i2cmaster_SetRestart(int dev, unsigned char addr, unsigned char rwbit) {

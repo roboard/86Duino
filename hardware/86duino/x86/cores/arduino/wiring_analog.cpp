@@ -18,10 +18,12 @@
 */
 
 #include <stdio.h>
-#include <conio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
+	#include <conio.h>
+#endif
 
 #include "Arduino.h"
 #include "io.h"
@@ -38,7 +40,7 @@ static int mc_md_inuse[PINS];
 #define PWM_RESOLUTION    (13) // for 86duino
 
 void analogReference(uint8_t mode) {
-	return;	
+	return;
 }
 
 static int _readResolution = 10; // Arduino compatibility
@@ -64,63 +66,78 @@ static unsigned long mapResolution(unsigned long value, unsigned long from, unsi
 void Close_Pwm(uint8_t pin) {
 	int mc, md;
 	if(pin >= PINS) return;
-	
+
 	mc = arduino_to_mc_md[MCM_MC][pin];
 	md = arduino_to_mc_md[MCM_MD][pin];
-	
-	io_DisableINT();
+
+	#if defined (DMP_LINUX)
+        lockMCM(mc, md);
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_DisableINT();
+    #endif
+
 	if(mc_md_inuse[pin] == 1)
-	{	
-		mcpwm_Disable(mc, md); 
+	{
+		mcpwm_Disable(mc, md);
 		mc_md_inuse[pin] = 0;
 	}
-	io_RestoreINT();   
+
+    #if defined (DMP_LINUX)
+        unLockMCM(mc, md);
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_RestoreINT();
+    #endif
 }
 
 int analogRead(uint8_t pin) {
 	unsigned long d;
-	unsigned long time;
-	
+
 	if((pin > 6 && pin < 45) || pin > 51) return 0xffff;
-	
+
 	#if defined(__86DUINO_EDUCAKE) || defined(__86DUINO_ONE) || defined(__86DUINO_ZERO)
 		if(pin >= 45) pin -= 45;
 	#endif
-	
-	while((io_inpb(BaseAddress + 2) & 0x01) != 0)
-		io_inpb(BaseAddress + 4);
-	
-	io_DisableINT();	
+
+    #if defined (DMP_LINUX)
+        lockADC();
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_DisableINT();
+    #endif
+
 	io_outpb(BaseAddress + 1, 0x08); // disable ADC
 	io_outpb(BaseAddress + 0, (0x01<<pin));
 	io_outpb(BaseAddress + 1, 0x01); // enable ADC_ST
-	
-	for(time = timer_NowTime(); (io_inpb(BaseAddress + 2) & 0x01) == 0;)
-	{
-		if((timer_NowTime() - time) > TimeOut)
-		{
-			io_RestoreINT();
-			return 0xffff;
-		}
-	}
-	
+    for(int i=0; i<20; i++) io_inpb(BaseAddress + 2);
+	if((io_inpb(BaseAddress + 2) & 0x01) == 0)
+    {
+    #if defined (DMP_LINUX)
+        unLockADC();
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_RestoreINT();
+    #endif
+        return 0xffff;
+    }
     d = io_inpw(BaseAddress + 4);
-	io_RestoreINT();
-	
+
+    #if defined (DMP_LINUX)
+        unLockADC();
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_RestoreINT();
+    #endif
+
 	d = mapResolution((d&0x7ffL), ADC_RESOLUTION, _readResolution);
-	
+
 	return d;
 }
 
 #define MAX_RESOLUTION    (100000L)
-static unsigned short crossbar_ioaddr = 0;
 void analogWrite(uint8_t pin, uint32_t val) {
 	float unit;
 	int mc, md;
-		
+
 	if(pin >= PINS) return;
 	pinMode(pin, OUTPUT);
-	
+
 	if (val == 0L)
 		digitalWrite(pin, LOW);
 	else if (val >= ((0x00000001L<<_writeResolution)-1))
@@ -129,18 +146,22 @@ void analogWrite(uint8_t pin, uint32_t val) {
 	{
 	    mc = arduino_to_mc_md[MCM_MC][pin];
 	    md = arduino_to_mc_md[MCM_MD][pin];
-	    
+
 	    if(mc == NOPWM || md == NOPWM)
 		{
 			if (val < (0x00000001L<<(_writeResolution-1)))
 				digitalWrite(pin, LOW);
 			else
 				digitalWrite(pin, HIGH);
-			return;				
+			return;
 	    }
-		  
+
 	    // Init H/W PWM
-	    io_DisableINT();
+        #if defined (DMP_LINUX)
+            lockMCM(mc, md);
+        #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+            io_DisableINT();
+        #endif
 	    if(mc_md_inuse[pin] == 0)
 		{
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
@@ -148,34 +169,35 @@ void analogWrite(uint8_t pin, uint32_t val) {
 			mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
 			mcpwm_SetDeadband(mc, md, 0L);
 			mcpwm_ReloadOUT_Unsafe(mc, md, MCPWM_RELOAD_NOW);
-			
+
 			mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 			mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-			
-			crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
+
 			if (pin <= 9)
-				io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
+				io_outpb(CROSSBARBASE + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
 			else if (pin > 28)
-		    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
+		    	io_outpb(CROSSBARBASE, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
 			else
-				io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
+				io_outpb(CROSSBARBASE + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 	    }
-	    io_RestoreINT();
-	    
+
 	    val = mapResolution(val, _writeResolution, PWM_RESOLUTION);
 	    unit = ((float)MAX_RESOLUTION)/((float)(0x00000001L<<PWM_RESOLUTION));
-	    
-	    io_DisableINT();
+
         if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
-		mcpwm_SetWidth(mc, md, 1000L*SYSCLK, ((float)val)*unit);
+        mcpwm_SetWidth(mc, md, 1000L*SYSCLK, ((float)val)*unit);
 	    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	    if(mc_md_inuse[pin] == 0)
 		{
 			mcpwm_Enable(mc, md);
-			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+			io_outpb(CROSSBARBASE + 0x90 + pinMap[pin], 0x08);
 			mc_md_inuse[pin] = 1;
 	    }
-		io_RestoreINT();  
+        #if defined (DMP_LINUX)
+            unLockMCM(mc, md);
+        #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+            io_RestoreINT();
+        #endif
 	}
 }
 
@@ -187,28 +209,38 @@ double cpuTemperature(uint8_t unit) {
 	unsigned long d;
 	unsigned long time;
 	double temperature;
-	
-	while((io_inpb(BaseAddress + 2) & 0x01) != 0)
-		io_inpb(BaseAddress + 4);
 
-	io_DisableINT();
+    #if defined (DMP_LINUX)
+        lockADC();
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_DisableINT();
+    #endif
+
 	sb1_Write(0xe0, sb1_Read(0xe0) | (0x01L<<21));
 	io_outpb(BaseAddress + 1, 0x08); // disable ADC
 	io_outpb(BaseAddress + 0, 0x80); // ex: any pin is temperature pin
 	io_outpb(BaseAddress + 1, 0x01); // enable ADC_ST
-
-	for(time = timer_NowTime(); (io_inpb(BaseAddress + 2) & 0x01) == 0; )
-	{
-		if(timer_NowTime() - time > TimeOut)
-			return 0xffff;
-	}
-
+	for(int i=0; i<20; i++) io_inpb(BaseAddress + 2);
+	if((io_inpb(BaseAddress + 2) & 0x01) == 0)
+    {
+    #if defined (DMP_LINUX)
+        unLockADC();
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_RestoreINT();
+    #endif
+        return 0xffff;
+    }
     d = io_inpw(BaseAddress + 4);
 	sb1_Write(0xe0, sb1_Read(0xe0) & ~(0x01L<<21));
-	io_RestoreINT();
+
+    #if defined (DMP_LINUX)
+        unLockADC();
+    #elif defined (DMP_DOS_BC30) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
+        io_RestoreINT();
+    #endif
 
 	temperature = 0.2173913*(d&0x7ffL)-66.0;
-	
+
 	if(unit == DEGREE_F) temperature = (temperature * 1.8) + 32.0;
 
 	return temperature;

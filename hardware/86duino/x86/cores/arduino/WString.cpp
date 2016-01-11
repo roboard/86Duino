@@ -21,6 +21,7 @@
   Modified 01 November 2013 by Android Lin
 */
 
+#include "dmpcfg.h"
 #include "WString.h"
 
 char *dtostrf (double val, signed char width, unsigned char prec, char *sout) {
@@ -185,7 +186,11 @@ String::String(int value, unsigned char base)
 {
 	init();
 	char buf[2 + 8 * sizeof(int)];
+#if defined (DMP_LINUX)
+	snprintf(buf, sizeof(buf), "%d", value);
+#else
 	itoa(value, buf, base);
+#endif
 	*this = buf;
 }
 
@@ -399,14 +404,22 @@ unsigned char String::concat(char c)
 unsigned char String::concat(unsigned char num)
 {
 	char buf[1 + 3 * sizeof(unsigned char)];
+#if defined (DMP_LINUX)
+	snprintf(buf, sizeof(buf), "%d", num);
+#else
 	itoa(num, buf, 10);
+#endif
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(int num)
 {
 	char buf[2 + 3 * sizeof(int)];
+#if defined (DMP_LINUX)
+	snprintf(buf, sizeof(buf), "%d", num);
+#else
 	itoa(num, buf, 10);
+#endif
 	return concat(buf, strlen(buf));
 }
 

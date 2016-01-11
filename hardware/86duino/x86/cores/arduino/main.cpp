@@ -1,43 +1,46 @@
 #include "Arduino.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <conio.h>
-#include <process.h>
-#include <signal.h>
-#include "irq.h"
-#include <sys/exceptn.h>
 
+#if defined (DMP_DOS_DJGPP)
+	#include <conio.h>
+	#include <process.h>
+	#include <signal.h>
+	#include "irq.h"
+	#include <sys/exceptn.h>
+#elif defined (DMP_LINUX)
+	#include <signal.h>
+	#include "irq.h"
+#endif
+
+#if defined (DMP_DOS_DJGPP)
 unsigned _stklen = 4096 * 1024;
 
-// Weak empty variant initialization function.
-// May be redefined by variant files.
-void initVariant() __attribute__((weak));
-void initVariant() { }
-
 // Error process
-int led = 13;
-#define LONG_TIME    (1000L)
-#define SHORT_TIME   (50L)
-#define ATIMESIZE    (39)
-int led_stat = 0;
-static int ledtime[ATIMESIZE+1] = {SHORT_TIME, LONG_TIME, SHORT_TIME, LONG_TIME, SHORT_TIME, LONG_TIME,
-                                   SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
-							       SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
-								   SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
-								   SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
-								   SHORT_TIME, LONG_TIME
-								  };
-static bool first = true;
-unsigned long nowledtime = 0L;
-void error_led_blink(void) {
+#define LONG_TIME		(1000L)
+#define SHORT_TIME		(50L)
+#define ATIMESIZE 		(39)
+
+static int _ledtime[ATIMESIZE+1] = {SHORT_TIME, LONG_TIME, SHORT_TIME, LONG_TIME, SHORT_TIME, LONG_TIME,
+                             SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
+                             SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
+                             SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
+                             SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME, SHORT_TIME,
+                             SHORT_TIME, LONG_TIME
+                             };
+
+void error_led_blink(int ledpin) {
+	static int led_stat = 0;
+	static bool first = true;
+	static unsigned long nowledtime = 0L;
 	if(first == true)
 	{
 		nowledtime = millis();
-		if((led_stat%2) == 0) digitalWrite(led, HIGH); else digitalWrite(led, LOW);
+		if((led_stat%2) == 0) digitalWrite(ledpin, HIGH); else digitalWrite(ledpin, LOW);
 		first = false;
 	}
 	
-	if((millis() - nowledtime) > ledtime[led_stat])
+	if((millis() - nowledtime) > _ledtime[led_stat])
 	{
 		if(led_stat == ATIMESIZE) led_stat = 0; else led_stat++;
 		first = true;
@@ -45,6 +48,7 @@ void error_led_blink(void) {
 }
 
 void _86Duino_error_process(int num) {
+	int ledpin = 13;
 	// disable all irq except usb irq (5)
 	i8259_DisableIRQ(0);
 	i8259_DisableIRQ(1);
@@ -65,34 +69,49 @@ void _86Duino_error_process(int num) {
 	printf("You may write a bug in your sketch, check and upload it again.\n");
 	
 	// led blink pattern	
-	pinMode(led, OUTPUT);
+	pinMode(ledpin, OUTPUT);
 	while(1)
 	{
-		error_led_blink();
+		error_led_blink(ledpin);
 	}
 }
+#endif
+
+// Weak empty variant initialization function.
+// May be redefined by variant files.
+void initVariant() __attribute__((weak));
+void initVariant() { }
 
 static __attribute__((constructor(101))) void _f_init()
 {
 	init();
-	
+#if defined (DMP_DOS_DJGPP)
 	signal(SIGSEGV, _86Duino_error_process);
 	signal(SIGFPE, _86Duino_error_process);
+#endif
 }
 
+#if defined (DMP_DOS_DJGPP)
 DPMI_MEMORY_ALL_LOCK(0)
+#endif
+
 int main(void)
 {
+#if defined (DMP_LINUX)
+	interrupt_init();
+#elif defined (DMP_DOS_DJGPP)
 	__djgpp_set_ctrl_c(0);
-	
+#endif
 	initVariant();
-		      
+	
 	setup();
-    
+
 	for (;;)
 	{
 		loop();
+		#if defined (DMP_DOS_DJGPP)
 		if (serialEventRun) serialEventRun();
+		#endif
 	}	
 	return 0;
 }

@@ -1,7 +1,7 @@
 #ifndef Pins_Arduino_h
 #define Pins_Arduino_h
 
-#include "stdint.h"
+#include <stdint.h>
 #include "mcm.h"
 
 static const uint8_t SS   = 10;
@@ -52,6 +52,9 @@ static void (*(_userfunc[EXTERNAL_NUM_INTERRUPTS]))(void) = {NULL, NULL, NULL, N
 
 #if defined __86DUINO_ONE || defined __86DUINO_ZERO || defined __86DUINO_EDUCAKE
 	static int pin_offset[EXTERNAL_NUM_INTERRUPTS] = {16, 18, 21, 24, 26, 29, 0, 2, 5, 22, 30, 6};
+    #if defined(DMP_LINUX)
+    static int pin_interrupt[EXTERNAL_NUM_INTERRUPTS + 1] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38, 128};
+	#endif
 #endif
 
 #endif

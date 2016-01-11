@@ -4,7 +4,7 @@
 // Modified by Android Lin <acen@dmp.com.tw> to support 86Duino boards
 
 #include "RF12.h"
-#include "REEPROM.h"
+#include "avr/eeprom.h"
 #include "mcm.h"
 
 #if ARDUINO >= 100
@@ -757,19 +757,19 @@ void rf12_onOff (uint8_t value) {
 uint8_t rf12_configSilent () {
     uint16_t crc = ~0;
     for (uint8_t i = 0; i < RF12_EEPROM_SIZE; ++i) {
-        byte e = EEPROM.read(RF12_EEPROM_ADDR + i);
+        byte e = eeprom_read_byte(RF12_EEPROM_ADDR + i);
         crc = _crc16_update(crc, e);
     }
-    if (crc || EEPROM.read(RF12_EEPROM_ADDR + 2) != RF12_EEPROM_VERSION)
+    if (crc || eeprom_read_byte(RF12_EEPROM_ADDR + 2) != RF12_EEPROM_VERSION)
         return 0;
         
     uint8_t nodeId = 0, group = 0;   
     uint16_t frequency = 0;  
      
-    nodeId = EEPROM.read(RF12_EEPROM_ADDR + 0);
-    group  = EEPROM.read(RF12_EEPROM_ADDR + 1);
-    frequency = EEPROM.read(RF12_EEPROM_ADDR + 4);
-    frequency = (EEPROM.read(RF12_EEPROM_ADDR + 5) << 8) + frequency;
+    nodeId = eeprom_read_byte(RF12_EEPROM_ADDR + 0);
+    group  = eeprom_read_byte(RF12_EEPROM_ADDR + 1);
+    frequency = eeprom_read_byte(RF12_EEPROM_ADDR + 4);
+    frequency = (eeprom_read_byte(RF12_EEPROM_ADDR + 5) << 8) + frequency;
     
     rf12_initialize(nodeId, nodeId >> 6, group, frequency);
     return nodeId & RF12_HDR_MASK;
@@ -779,10 +779,10 @@ uint8_t rf12_configSilent () {
 /// This replaces rf12_config(0), to be called after rf12_configSilent(). Can be
 /// used to avoid pulling in the Serial port code in cases where it's not used.
 void rf12_configDump () {
-    uint8_t nodeId = EEPROM.read(RF12_EEPROM_ADDR);
-    uint8_t flags = EEPROM.read(RF12_EEPROM_ADDR + 3);
-    uint16_t freq = EEPROM.read(RF12_EEPROM_ADDR + 4);
-             freq = (EEPROM.read(RF12_EEPROM_ADDR + 5) << 8) + freq; 
+    uint8_t nodeId = eeprom_read_byte(RF12_EEPROM_ADDR);
+    uint8_t flags = eeprom_read_byte(RF12_EEPROM_ADDR + 3);
+    uint16_t freq = eeprom_read_byte(RF12_EEPROM_ADDR + 4);
+             freq = (eeprom_read_byte(RF12_EEPROM_ADDR + 5) << 8) + freq; 
     
     // " A i1 g178 @ 868 MHz "
     Serial.print(' ');
@@ -792,7 +792,7 @@ void rf12_configDump () {
     if (flags & 0x04)
         Serial.print('*');
     Serial.print(" g");
-    Serial.print(EEPROM.read(RF12_EEPROM_ADDR + 1));
+    Serial.print(eeprom_read_byte(RF12_EEPROM_ADDR + 1));
     Serial.print(" @ ");
     uint8_t band = nodeId >> 6;
     Serial.print(band == RF12_433MHZ ? 433 :
@@ -1075,7 +1075,7 @@ void rf12_encrypt (const uint8_t* key) {
     // by using a pointer to cryptFun, we only link it in when actually used
     if (key != 0) {
         for (uint8_t i = 0; i < sizeof cryptKey; ++i)
-            cryptKey[i] = EEPROM.read(*(key + i));
+            cryptKey[i] = eeprom_read_byte(key + i);
         crypter = cryptFun;
     } else
         crypter = 0;

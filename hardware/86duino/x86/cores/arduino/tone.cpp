@@ -1,6 +1,7 @@
 /*
   tone.cpp - A Tone Generator Library for 86Duino
   Copyright (c) 2013 Android Lin <acen@dmp.com.tw>. All right reserved.
+  Modify by Sayter <sayter@dmp.com.tw> 1 January 2016.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -17,12 +18,120 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "Arduino.h"
 #include "dmpcfg.h"
+#include "Arduino.h"
+
+#if defined (DMP_LINUX)
+#include <sys/resource.h>
+#elif defined (DMP_DOS_DJGPP)
 #include "mcm.h"
 #include "irq.h"
 #include <pc.h>
+#endif
 
+#if defined (DMP_LINUX)
+struct tone_param
+{
+	int pin;
+	unsigned int frequency;
+	long duration;
+	int ID;
+};
+
+int current_pin = -1;
+int thread_control = 0;
+long delayAmount;
+long loopTime;
+unsigned long time1;
+unsigned long time2;
+unsigned long toneDuration = 0;
+OSSPIN t_lock;
+bool init_t_lock = false;
+
+void *toneHandler(void *prgs)
+{
+	setpriority(PRIO_PROCESS, 0, -20);
+
+	tone_param *param;
+	param = (tone_param*)prgs;
+
+	int pin = param->pin;
+	pinMode(pin, OUTPUT);
+	long delayAmount;
+	long loopTime;
+	unsigned long time1;
+	unsigned long time2;
+	int currentID = param->ID;
+
+	if((param->frequency) > 0)
+	{
+		delayAmount = (long)(1000000/(param->frequency))/2 - 1;
+		loopTime = (long)((param->duration*1000)/(delayAmount*2));
+
+		if((param->duration) > 0)
+		{
+			for(int i = 0; i < loopTime; i++)
+			{
+				if(currentID != thread_control)
+				{
+					break;
+				}
+				time1 = micros();
+				time2 = time1;
+				digitalWrite(pin, HIGH);
+				while(((long)(time2 - time1)) <= delayAmount)
+				{
+					time2 = micros();
+				}
+				time1 = micros();
+				digitalWrite(pin, LOW);
+				while(((long)(time2 - time1)) <= delayAmount)
+				{
+					time2 = micros();
+				}
+			}
+		}
+		else
+		{
+			while(true)
+			{
+				if(currentID != thread_control)
+				{
+					break;
+				}
+				time1 = micros();
+				time2 = time1;
+				digitalWrite(pin, HIGH);
+				while(((long)(time2 - time1)) <= delayAmount)
+                {
+                    time2 = micros();
+                }
+                time1 = micros();
+                digitalWrite(pin, LOW);
+                while(((long)(time2 - time1)) <= delayAmount)
+                {
+                    time2 = micros();
+                }
+			}
+		}
+	}
+	else
+	{
+		time1 = micros();
+		time2 = time1;
+		delayAmount = (param->duration)*1000;
+		while(((long)(time2 - time1)) <= delayAmount)
+		{
+			time2 = micros();
+			if(currentID != thread_control)
+			{
+				break;
+			}
+		}
+	}
+}
+
+#elif defined (DMP_DOS_DJGPP)
 #define TIMER_PIN    (32)  // It is a PWM pin (like analogWrite), but it is used as a timer here.
 static int mc = 3, md = 1;
 
@@ -32,69 +141,30 @@ static int8_t toneBegin(uint8_t _pin)
 {  
 }
 
-/*
-static bool findToneTimer(int* mc_tone, int* md_tone) {
-	unsigned long reg = mc_inp(MC_GENERAL, MCG_ENABLEREG1);
-    int i, j, timer; // That is Servo's timer. (mc*3 + 2)
-    for(i=0; i<4; i++)
-    {
-    	for(j=0; j<3; j++)
-    	{
-    		if(i == 3 && j == 2) return false;
-    		timer = i*3 + j;
-			if ((reg & (0x01L << timer)) == 0L)
-			{
-				*mc_tone = i;
-				*md_tone = j;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-*/
-
 /**********/
 /*  IRQ   */                                                                       
 /**********/
 static int mcint_offset[3] = {0, 8, 16};
-static void clear_INTSTATUS(void) {
+DMP_INLINE(void) clear_INTSTATUS(void) {
     mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(void) {
+DMP_INLINE(void) disable_MCINT(void) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
-static void enable_MCINT(unsigned long used_int) {
+DMP_INLINE(void) enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
 	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
 }
 
-
 static bool toneInitInt = false;
 static char* name = "Tone";
-void noTone(uint8_t _pin) {
-	if(_pin == PCSPEAKER) nosound();
-	
-	io_DisableINT();
-	use_pin_times = 0;
-	use_pin_tone  = 255;
-	io_RestoreINT();
-	//mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE);
-	//mcpwm_ReloadOUT_Unsafe(mc, md, MCPWM_RELOAD_NOW);
-	//disable_MCINT();
-	mcpwm_Disable(mc, md);
-	digitalWrite(_pin, LOW);
-	//if(toneInitInt == true)
-		//irq_UninstallISR(GetMCIRQ(), name);
-	//toneInitInt = false;
-}
-
 
 static int h_l = 0;
-static int isr_handler(int irq, void* data) {
+DMP_INLINE(int) isr_handler(int irq, void* data)
+{
     unsigned long toneintmask = PULSE_END_INT << mcint_offset[md];
     if((mc_inp(mc, 0x04) & toneintmask) == 0L) return ISR_NONE;
 	
@@ -122,21 +192,10 @@ static int isr_handler(int irq, void* data) {
 }
 
 bool timer1_pin32_isUsed = false;
-static bool init_mc_irq(void) {
+DMP_INLINE(bool) init_mc_irq(void)
+{
 	if(toneInitInt == false)
 	{
-		/* this part is moved to wiring.cpp
-		Set_MCIRQ(GetMCIRQ());
-		if(irq_Init() == false) 
-		{
-		    printf("irq_init fail\n"); return false;
-		}
-		
-		if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER) == false)
-		{
-		    printf("%s\n", __FUNCTION__); return false;
-		}
-		*/
 		if(irq_InstallISR(GetMCIRQ(), isr_handler, name) == false)
 		{
 		    printf("irq_install fail\n"); return false;
@@ -153,7 +212,7 @@ static bool init_mc_irq(void) {
 }
 
 
-void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
+DMPAPI(void) tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
     mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
     mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
     mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
@@ -180,7 +239,6 @@ void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
 		mcpwm_SetWidth(mc, md, (duration*1000) * SYSCLK, (duration*1000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms
     else
 		mcpwm_SetWidth(mc, md, ((1.0/frequency)*1000000)/2 * SYSCLK, ((1.0/frequency)*500000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms     
-    //mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
     
 	io_DisableINT();
     use_pin_tone = _pin;
@@ -190,9 +248,9 @@ void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
 	mcpwm_Enable(mc, md);
 }
 
-void tone_UPDATE(uint8_t _pin, unsigned int frequency, unsigned long duration) {
+DMPAPI(void) tone_UPDATE(uint8_t _pin, unsigned int frequency, unsigned long duration) {
 	if(frequency <= 0)
-		mcpwm_SetWidth(mc, md, (duration*1000) * SYSCLK,(duration*1000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms ³æ¦ìms 
+		mcpwm_SetWidth(mc, md, (duration*1000) * SYSCLK,(duration*1000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms å–®ä½ms 
     else
 		mcpwm_SetWidth(mc, md, ((1.0/frequency)*1000000)/2 * SYSCLK, ((1.0/frequency)*500000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms    
     
@@ -200,7 +258,38 @@ void tone_UPDATE(uint8_t _pin, unsigned int frequency, unsigned long duration) {
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);    
 }
 
-void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
+DMPAPI(void) disableTimer(uint8_t _timer)
+{
+}
+
+#endif
+
+DMPAPI(void) tone(uint8_t _pin, unsigned int frequency, unsigned long duration)
+{
+#if defined (DMP_LINUX)
+	if(current_pin != -1 && current_pin != _pin)
+		return;
+
+	if(init_t_lock == false)
+	{
+		OSSPININIT(t_lock);
+		init_t_lock = true;
+	}
+
+	OSSPINLOCK(t_lock);
+	int tmpControl = ++thread_control;
+	OSSPINUNLOCK(t_lock);
+
+	pthread_t toneThread;
+	struct tone_param *tparam;
+	tparam = (tone_param *)malloc(sizeof(tone_param));
+	tparam->pin = _pin;
+	tparam->frequency = frequency;
+	tparam->duration = duration;
+	tparam->ID = tmpControl;
+	int err = pthread_create(&toneThread, NULL, toneHandler, (void*)tparam);
+	pthread_detach(toneThread);
+#elif defined (DMP_DOS_DJGPP)
 	if(use_pin_tone != 255 && use_pin_tone !=_pin) return; // tone() has been used before.
 	
 	io_DisableINT();
@@ -227,17 +316,27 @@ void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
 		tone_UPDATE(_pin, frequency, duration);
 		return;
     }
+#endif
 }
 
-
-// XXX: this function only works properly for timer 2 (the only one we use
-// currently).  for the others, it should end the tone, but won't restore
-// proper PWM functionality for the timer.
-void disableTimer(uint8_t _timer)
+DMPAPI(void) noTone(uint8_t _pin)
 {
+#if defined (DMP_LINUX)
+	if(current_pin != _pin)
+		return;
 
+	OSSPINLOCK(t_lock);
+	++thread_control;
+	OSSPINUNLOCK(t_lock);
+
+	current_pin = -1;
+#elif defined (DMP_DOS_DJGPP)
+	if(_pin == PCSPEAKER) nosound();
+	io_DisableINT();
+	use_pin_times = 0;
+	use_pin_tone  = 255;
+	io_RestoreINT();
+	mcpwm_Disable(mc, md);
+	digitalWrite(_pin, LOW);
+#endif
 }
-
-
-
-

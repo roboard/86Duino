@@ -101,19 +101,16 @@ void wdt_reset(void) {
 	io_outpb(0xae, 0xff);  // WDT1 reload register
 }
 
-// static bool __wdt_timeout_event;
-
+bool rebootByWDT = false;
 void wdt_init(void) {
     unsigned char val;
 	val = io_inpb(0xa8);
 	io_outpb(0xa8, val & (~0x40));
 
-	/*
-	if(io_inpb(0xad) & 0x80) == 0)
-		__wdt_timeout_event = false;
+	if((io_inpb(0xad) & 0x80) == 0)
+		rebootByWDT = false;
 	else
-		__wdt_timeout_event = true;
-	*/
+		rebootByWDT = true;
 }
 
 bool get_wdt_timeout(void) {

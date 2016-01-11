@@ -363,6 +363,7 @@ static bool close_iosystem(void) {
         return true;
     #elif defined(DMP_LINUX)
         if (IO_mmioFD != -1) close(IO_mmioFD);
+        return true;
     #else
         return true;
     #endif

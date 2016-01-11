@@ -39,9 +39,9 @@
 #define RF12_915MHZ     3   ///< RFM12B 915 MHz frequency band.
 
 // EEPROM address range used by the rf12_config() code
-#define RF12_EEPROM_ADDR    (0x20)  ///< Starting offset.
+#define RF12_EEPROM_ADDR    ((uint8_t*)0x20)  ///< Starting offset.
 #define RF12_EEPROM_SIZE    16                 ///< Number of bytes.
-#define RF12_EEPROM_EKEY    (0x40)  ///< EE start, same as before.
+#define RF12_EEPROM_EKEY    ((uint8_t*)0x40)  ///< EE start, same as before.
 #define RF12_EEPROM_ELEN    16                 ///< EE number of bytes.
 #define RF12_EEPROM_VERSION 1                  ///< Only this version is valid.
 
