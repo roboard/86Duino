@@ -23,21 +23,19 @@
 #ifndef TIMERWDT_h
 #define TIMERWDT_h
 
-#define SYSTEM_RESET    (0)
-#define INTERRUPT       (1)
-
 class TimerWatchdogTimer {
 	public:
-		TimerWatchdogTimer();
+		TimerWatchdogTimer(void);
+        ~TimerWatchdogTimer(void);
 		void initialize(long microseconds=500000L,bool type=false);
 		void attachInterrupt(void (*isr)(), long microseconds=-1);
 		void detachInterrupt();
 		void setPeriod(long microseconds);
-        void (*isrCallback)();
+        void (*isrCallback)(); // isrCallback will be called in ISR (this behavior is same as TimerOne lib)
 		void reset();
 		bool isResetByWDT();
 		void stop();
-		//unsigned int readTestCount();
+		// unsigned int readTestCount();
 };
 
 extern TimerWatchdogTimer TimerWDT;

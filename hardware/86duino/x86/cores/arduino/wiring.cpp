@@ -94,10 +94,6 @@ bool init() {
 	// init wdt1
 	wdt_init();
 
-	// init spinlock
-	spinLockInit();
-
-#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
 	if(Global_irq_Init == false)
 	{
 		// set MCM IRQ
@@ -129,7 +125,7 @@ bool init() {
 		printf("init2 error\n");
 		return false;
 	}
-#endif
+
 	//io_Close();
 	return true;
 }

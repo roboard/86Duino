@@ -134,10 +134,6 @@ DMPAPI(unsigned) i2cmaster_ReadN(int dev);
 //   #define ERROR_I2CWRONGUSAGE    (ERR_NOERROR + 630)
 //   #define ERROR_I2CARLOSS        (ERR_NOERROR + 621)
 
-#if defined (DMP_LINUX)
-DMPAPI(void) i2cmaster_SetRestartCount(int dev, int count);
-#endif
-
 DMPAPI(bool) i2cmaster_SetRestart(int dev, unsigned char addr, unsigned char rwbit);
 DMPAPI(bool) i2cmaster_SetRestartN(int dev, unsigned char rwbit, int count);
 //-- if the above functions return false, roboio_GetErrCode() may return:

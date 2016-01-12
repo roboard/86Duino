@@ -8,11 +8,8 @@ static unsigned char read_cmos(unsigned char address)
   if(address >= EEPROMSIZE_BANK0) // 0~199
 	return 0;
 
-#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
   io_DisableINT();
-#elif defined (DMP_LINUX)
-  lockCMOS();
-#endif
+
   void *pciDev = NULL;
   // south bridge register C0H bit 3 controls CMOS page select
   unsigned long int reg;
@@ -21,11 +18,7 @@ static unsigned char read_cmos(unsigned char address)
   pciDev = pci_Alloc(0x00, 0x07, 0x00);
   if(pciDev == NULL)
   {
-#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
     Serial.print("CMOS device doesn't exist\n");
-#elif (defined(DMP_LINUX))
-    printf("CMOS device doesn't exist\n");
-#endif
     return 0;
   }
   
@@ -55,14 +48,9 @@ static unsigned char read_cmos(unsigned char address)
   
   // Restore old register value
   pci_Out32(pciDev, 0xc0, reg);
-  
   pci_Free(pciDev);
 
-#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
   io_RestoreINT();
-#elif defined (DMP_LINUX)
-  unLockCMOS();
-#endif
 
   return result;
 }
@@ -72,21 +60,13 @@ static void write_cmos(unsigned char address, unsigned char buf)
   if(address >= EEPROMSIZE_BANK0) // 0~199
 	return ;
 
-#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
   io_DisableINT();
-#elif defined (DMP_LINUX)
-  lockCMOS();
-#endif
 
   void *pciDev = NULL;
   pciDev = pci_Alloc(0x00, 0x07, 0x00);
   if(pciDev == NULL)
   {
-#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
     Serial.print("CMOS device doesn't exist\n");
-#elif (defined(DMP_LINUX))
-    printf("CMOS device doesn't exist\n");
-#endif
     return;
   }
 
@@ -116,13 +96,8 @@ static void write_cmos(unsigned char address, unsigned char buf)
   // Restore old register value
   pci_Out32(pciDev, 0xc0, reg);
   pci_Free(pciDev);
-  
-#if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
-  io_RestoreINT();
-#elif defined (DMP_LINUX)
-  unLockCMOS();
-#endif
 
+  io_RestoreINT();
 }
 
 DMPAPI(uint8_t) eeprom_read_byte (const uint8_t *__p) {

@@ -29,9 +29,17 @@
 #include "irq.h"
 #include "TimerWDT.h"
 
+#define SYSTEM_RESET    (0)
+#define INTERRUPT       (1)
+
 TimerWatchdogTimer TimerWDT;
 
 static bool timerWDTEnable = false;
+static bool timerWDTInit = false;
+static int wdt_mode;
+static bool timerWDTIntEnable = false;
+static char* isrname_wdt = "TimerWDT";
+
 static struct wdt_status {
 	unsigned char ctrl_reg;   // 0xA8
     unsigned char sigsel_reg; // 0xA9
@@ -73,12 +81,30 @@ void _wdt_disable(void) {
 }
 
 #define WDTIRQ    (7)
-TimerWatchdogTimer::TimerWatchdogTimer() {
+TimerWatchdogTimer::TimerWatchdogTimer(void) {
 	isrCallback = NULL;
 	timerWDTEnable = false;
 }
 
-static char* isrname_wdt = "TimerWDT";
+TimerWatchdogTimer::~TimerWatchdogTimer(void) {
+	if(timerWDTInit == true && timerWDTIntEnable == true)
+	    irq_UninstallISR(WDTIRQ, (void*)isrname_wdt);
+
+	if(timerWDTInit == true)
+	{
+        _wdt_disable();
+
+		io_outpb(0xA8, WDT_t.ctrl_reg);
+		io_outpb(0xA9, WDT_t.sigsel_reg);
+		io_outpb(0xAA, WDT_t.count0_reg);
+		io_outpb(0xAB, WDT_t.count1_reg);
+		io_outpb(0xAC, WDT_t.count2_reg);
+		io_outpb(0xAD, WDT_t.stat_reg);
+		io_outpb(0xAE, WDT_t.reload_reg);
+	}
+}
+
+
 static int timerwdt_isr_handler(int irq, void* data) {
 	unsigned char val;
 	if((io_inpb(0xad) & 0x80) == 0) return ISR_NONE;
@@ -90,8 +116,7 @@ static int timerwdt_isr_handler(int irq, void* data) {
     return ISR_HANDLED;
 }
 
-static bool timerWDTInit = false;
-static int wdt_mode;
+
 void TimerWatchdogTimer::initialize(long microseconds, bool type) {
 	if(timerWDTInit == true) return;
 
@@ -126,7 +151,6 @@ void TimerWatchdogTimer::initialize(long microseconds, bool type) {
     timerWDTInit = true;
 }
 
-static bool timerWDTIntEnable = false;
 void TimerWatchdogTimer::attachInterrupt(void (*isr)(void), long microseconds) {
     unsigned char val;
     

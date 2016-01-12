@@ -17,17 +17,13 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  
   Modified 2012 by Todd Krein (todd@krein.org) to implement repeated starts
-  Modified 01 November 2013 by Android Lin
+  Modified 01 January 2016 by Android Lin
 */
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "Wire.h"
-
-OSSPIN rxBuffLock;
-OSSPIN txBuffLock;
-OSSPIN multiWireLock;
 
 // Initialize Class Variables //////////////////////////////////////////////////
 
@@ -48,26 +44,17 @@ void (*TwoWire::user_onReceive)(int) = NULL;
 
 TwoWire::TwoWire()
 {
-	OSSPININIT(rxBuffLock);
-	OSSPININIT(txBuffLock);
-	OSSPININIT(multiWireLock);
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
 
 void TwoWire::begin(void)
 {
-  OSSPINLOCK(txBuffLock);
-  OSSPINLOCK(rxBuffLock);
-
   rxBufferIndex = 0;
   rxBufferLength = 0;
 
   txBufferIndex = 0;
   txBufferLength = 0;
-
-  OSSPINUNLOCK(rxBuffLock);
-  OSSPINUNLOCK(txBuffLock);
 
   twi_init();
 }
@@ -82,17 +69,11 @@ void TwoWire::begin(uint8_t address)
 
 void TwoWire::begin(uint32_t speed, uint8_t address)
 {
-  OSSPINLOCK(txBuffLock);
-  OSSPINLOCK(rxBuffLock);
-
   rxBufferIndex = 0;
   rxBufferLength = 0;
 
   txBufferIndex = 0;
   txBufferLength = 0;
-
-  OSSPINUNLOCK(rxBuffLock);
-  OSSPINUNLOCK(txBuffLock);
 
   twi_init(speed);
   twi_setAddress(address);
@@ -116,11 +97,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop
   // perform blocking read into buffer
   uint8_t read = twi_readFrom(address, rxBuffer, quantity, sendStop);
 
-  OSSPINLOCK(rxBuffLock);
   // set rx buffer iterator vars
   rxBufferIndex = 0;
   rxBufferLength = read;
-  OSSPINUNLOCK(rxBuffLock);
 
   return read;
 }
@@ -142,8 +121,6 @@ uint8_t TwoWire::requestFrom(int address, int quantity, int sendStop)
 
 void TwoWire::beginTransmission(uint8_t address)
 {
-  OSSPINLOCK(txBuffLock);
-
   // indicate that we are transmitting
   transmitting = 1;
   // set address of targeted slave
@@ -151,8 +128,6 @@ void TwoWire::beginTransmission(uint8_t address)
   // reset tx buffer iterator vars
   txBufferIndex = 0;
   txBufferLength = 0;
-
-  OSSPINUNLOCK(txBuffLock);
 }
 
 void TwoWire::beginTransmission(int address)
@@ -179,15 +154,11 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
   // transmit buffer (blocking)
   int8_t ret = twi_writeTo(txAddress, txBuffer, txBufferLength, 1, sendStop);
 
-  OSSPINLOCK(txBuffLock);
-
   // reset tx buffer iterator vars
   txBufferIndex = 0;
   txBufferLength = 0;
   // indicate that we are done transmitting
   transmitting = 0;
-
-  OSSPINUNLOCK(txBuffLock);
 
   return ret;
 }
@@ -207,12 +178,8 @@ size_t TwoWire::write(uint8_t data)
 {
   int master, writeLenght;
 
-  OSSPINLOCK(txBuffLock);
-
   master = transmitting;
   writeLenght = txBufferLength;
-
-  OSSPINUNLOCK(txBuffLock);
 
   if(master){
   // in master transmitter mode
@@ -222,15 +189,11 @@ size_t TwoWire::write(uint8_t data)
       return 0;
     }
 
-    OSSPINLOCK(txBuffLock);
-
     // put byte in tx buffer
     txBuffer[txBufferIndex] = data;
     ++txBufferIndex;
     // update amount in buffer   
     txBufferLength = txBufferIndex;
-
-    OSSPINUNLOCK(txBuffLock);
 
   }else{
   // in slave send mode
@@ -247,9 +210,7 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 {
   int master;
 
-  OSSPINLOCK(txBuffLock);
   master = transmitting;
-  OSSPINUNLOCK(txBuffLock);
 
   if(master){
   // in master transmitter mode
@@ -269,13 +230,7 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 // or after requestFrom(address, numBytes)
 int TwoWire::available(void)
 {
-  int ret;
-
-  OSSPINLOCK(rxBuffLock);
-  ret = rxBufferLength - rxBufferIndex;
-  OSSPINUNLOCK(rxBuffLock);
-
-  return ret;
+  return rxBufferLength - rxBufferIndex;
 }
 
 // must be called in:
@@ -284,16 +239,12 @@ int TwoWire::available(void)
 int TwoWire::read(void)
 {
   int value = -1;
-  
-  OSSPINLOCK(rxBuffLock);
 
   // get each successive byte on each call
   if(rxBufferIndex < rxBufferLength){
     value = rxBuffer[rxBufferIndex];
     ++rxBufferIndex;
   }
-
-  OSSPINUNLOCK(rxBuffLock);
 
   return value;
 }
@@ -304,13 +255,11 @@ int TwoWire::read(void)
 int TwoWire::peek(void)
 {
   int value = -1;
-  
-  OSSPINLOCK(rxBuffLock);
 
   if(rxBufferIndex < rxBufferLength){
     value = rxBuffer[rxBufferIndex];
   }
-  OSSPINUNLOCK(rxBuffLock);
+
   return value;
 }
 
@@ -322,7 +271,6 @@ void TwoWire::flush(void)
 // behind the scenes function that is called when data is received
 void TwoWire::onReceiveService(uint8_t* inBytes, int numBytes)
 {
-#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
   // don't bother if user hasn't registered a callback
   if(user_onReceive == NULL){
     return;
@@ -343,13 +291,11 @@ void TwoWire::onReceiveService(uint8_t* inBytes, int numBytes)
   rxBufferLength = numBytes;
   // alert user program
   user_onReceive(numBytes);
-#endif
 }
 
 // behind the scenes function that is called when data is requested
 void TwoWire::onRequestService(void)
 {
-#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
   // don't bother if user hasn't registered a callback
   if(user_onRequest == NULL){
     return;
@@ -360,88 +306,23 @@ void TwoWire::onRequestService(void)
   txBufferLength = 0;
   // alert user program
   user_onRequest();
-#endif
 }
 
 // sets function called on slave write
 void TwoWire::onReceive( void (*function)(int) )
 {
-#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
   user_onReceive = function;
-#endif
 }
 
 // sets function called on slave read
 void TwoWire::onRequest( void (*function)(void) )
 {
-#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
   user_onRequest = function;
-#endif
 }
 
 
 
-#if defined (DMP_LINUX)
-bool TwoWire::send(uint8_t addr, uint8_t* data, int datasize) {
-	int i;
-	bool err = false;
-	if(data == NULL || datasize == 0) return false;
 
-	OSSPINLOCK(multiWireLock);
-
-	Wire.beginTransmission(addr);
-	for(i=0; i<datasize; i++) Wire.write(data[i]);
-	if(Wire.endTransmission() != 0) {printf("%s error\n", __FUNCTION__); err = true;}
-
-	OSSPINUNLOCK(multiWireLock);
-
-	return (err == true) ? false : true;
-}
-
-bool TwoWire::receive(uint8_t addr, uint8_t* buf, uint8_t bufsize) {
-	int i, read;
-	bool err = false;
-	if(buf == NULL || bufsize == 0) return 0;
-
-	OSSPINLOCK(multiWireLock);
-
-	read = Wire.requestFrom(addr, bufsize);
-	if(read < bufsize) {printf("The  bytes read by I2C are less than input buff size\n"); err = true;}
-	for(i=0; i<read; i++) buf[i] = Wire.read();
-
-	OSSPINUNLOCK(multiWireLock);
-
-	return (err == true) ? false : true;
-}
-
-bool TwoWire::sensorRead(uint8_t addr, uint8_t cmd, uint8_t* buf, uint8_t bufsize) {
-	return sensorReadEX(addr, &cmd, 1, buf, bufsize);
-}
-bool TwoWire::sensorReadEX(uint8_t addr, uint8_t* cmds, int cmdsize, uint8_t* buf, uint8_t bufsize) {
-	int i, read;
-	bool err = false;
-
-	if(cmds == NULL || buf == NULL || cmdsize == 0 || bufsize == 0) return false;
-
-	OSSPINLOCK(multiWireLock);
-
-	Wire.beginTransmission(addr);
-	for(i=0; i<cmdsize; i++) Wire.write(cmds[i]);
-	if(Wire.endTransmission(false) != 0) {printf("%s error\n", __FUNCTION__); err = true;} // send restart
-	read = Wire.requestFrom(addr, bufsize);
-	if(read < bufsize) {printf("The  bytes read by I2C are less than input buff size\n"); err = true;}
-	for(i=0; i<read; i++) buf[i] = Wire.read();
-
-	OSSPINUNLOCK(multiWireLock);
-
-	return (err == true) ? false : true;
-}
-#endif
-
-
-OSSPIN sw_rxBuffLock;
-OSSPIN sw_txBuffLock;
-OSSPIN sw_multiWireLock;
 
 // Initialize Class Variables //////////////////////////////////////////////////
 
@@ -460,24 +341,16 @@ uint8_t TwoWireLEGO::transmitting = 0;
 
 TwoWireLEGO::TwoWireLEGO()
 {
-	OSSPININIT(sw_rxBuffLock);
-	OSSPININIT(sw_txBuffLock);
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
 void TwoWireLEGO::begin(unsigned long nHz)
 {
-  OSSPINLOCK(sw_txBuffLock);
-  OSSPINLOCK(sw_rxBuffLock);
-
   rxBufferIndex  = 0;
   rxBufferLength = 0;
 
   txBufferIndex  = 0;
   txBufferLength = 0;
-
-  OSSPINUNLOCK(sw_rxBuffLock);
-  OSSPINUNLOCK(sw_txBuffLock);
 
   if(nHz == 0) nHz = 10000L; // default
 
@@ -498,12 +371,8 @@ uint8_t TwoWireLEGO::requestFrom(uint8_t address, uint8_t quantity, uint8_t send
 
   uint8_t read = twisw_readFrom(address, rxBuffer, quantity, sendStop);
 
-  OSSPINLOCK(sw_rxBuffLock);
-
   rxBufferIndex = 0;
   rxBufferLength = read;
-
-  OSSPINUNLOCK(sw_rxBuffLock);
 
   return read;
 }
@@ -525,15 +394,11 @@ uint8_t TwoWireLEGO::requestFrom(int address, int quantity, int sendStop)
 
 void TwoWireLEGO::beginTransmission(uint8_t address)
 {
-  OSSPINLOCK(sw_txBuffLock);
-
   transmitting   = 1;
   txAddress     = address;
 
   txBufferIndex  = 0;
   txBufferLength = 0;
-
-  OSSPINUNLOCK(sw_txBuffLock);
 }
 
 void TwoWireLEGO::beginTransmission(int address)
@@ -545,11 +410,9 @@ uint8_t TwoWireLEGO::endTransmission(uint8_t sendStop)
 {
   int8_t ret = twisw_writeTo(txAddress, txBuffer, txBufferLength, sendStop);
 
-  OSSPINLOCK(sw_txBuffLock);
   txBufferIndex  = 0;
   txBufferLength = 0;
   transmitting   = 0;
-  OSSPINUNLOCK(sw_txBuffLock);
 
   return ret;
 }
@@ -563,9 +426,7 @@ size_t TwoWireLEGO::write(uint8_t data)
 {
   int txLenght;
 
-  OSSPINLOCK(sw_txBuffLock);
   txLenght = txBufferLength;
-  OSSPINUNLOCK(sw_txBuffLock);
 
   if(txLenght >= BUFFER_LENGTH)
   {
@@ -573,11 +434,9 @@ size_t TwoWireLEGO::write(uint8_t data)
     return 0;
   }
 
-  OSSPINLOCK(sw_txBuffLock);
   txBuffer[txBufferIndex] = data;
   ++txBufferIndex;
   txBufferLength = txBufferIndex;
-  OSSPINUNLOCK(sw_txBuffLock);
 
   return 1;
 }
@@ -590,26 +449,18 @@ size_t TwoWireLEGO::write(const uint8_t *data, size_t quantity)
 
 int TwoWireLEGO::available(void)
 {
-  int ret;
-
-  OSSPINLOCK(sw_rxBuffLock);
-  ret = rxBufferLength - rxBufferIndex;
-  OSSPINUNLOCK(sw_rxBuffLock);
-
-  return ret;
+  return rxBufferLength - rxBufferIndex;
 }
 
 int TwoWireLEGO::read(void)
 {
   int value = -1;
 
-  OSSPINLOCK(sw_rxBuffLock);
   if(rxBufferIndex < rxBufferLength)
   {
     value = rxBuffer[rxBufferIndex];
     ++rxBufferIndex;
   }
-  OSSPINUNLOCK(sw_rxBuffLock);
 
   return value;
 }
@@ -618,12 +469,10 @@ int TwoWireLEGO::peek(void)
 {
   int value = -1;
 
-  OSSPINLOCK(sw_rxBuffLock);
   if(rxBufferIndex < rxBufferLength)
   {
     value = rxBuffer[rxBufferIndex];
   }
-  OSSPINUNLOCK(sw_rxBuffLock);
 
   return value;
 }
@@ -632,60 +481,6 @@ void TwoWireLEGO::flush(void)
 {
   // XXX: to be implemented.
 }
-
-#if defined (DMP_LINUX)
-bool TwoWireLEGO::send(uint8_t addr, uint8_t* data, int datasize) {
-	int i;
-	bool err = false;
-
-	OSSPINLOCK(sw_multiWireLock);
-
-	WireLEGO.beginTransmission(addr);
-	for(i=0; i<datasize; i++) WireLEGO.write(data[i]);
-	if(WireLEGO.endTransmission() != 0) {printf("%s error\n", __FUNCTION__); err = true;}
-
-	OSSPINUNLOCK(sw_multiWireLock);
-
-	return (err == true) ? false : true;
-}
-
-bool TwoWireLEGO::receive(uint8_t addr, uint8_t* buf, uint8_t bufsize) {
-	int i, read;
-	bool err = false;
-	if(buf == NULL || bufsize == 0) return 0;
-
-	OSSPINLOCK(sw_multiWireLock);
-
-	read = WireLEGO.requestFrom(addr, bufsize);
-	if(read < bufsize) {printf("The  bytes read by I2C are less than input buff size\n"); err = true;}
-	for(i=0; i<read; i++) buf[i] = WireLEGO.read();
-
-	OSSPINUNLOCK(sw_multiWireLock);
-
-	return (err == true) ? false : true;
-}
-
-bool TwoWireLEGO::sensorRead(uint8_t addr, uint8_t cmd, uint8_t* buf, uint8_t bufsize) {
-	return sensorReadEX(addr, &cmd, 1, buf, bufsize);
-}
-bool TwoWireLEGO::sensorReadEX(uint8_t addr, uint8_t* cmds, int cmdsize, uint8_t* buf, uint8_t bufsize) {
-	int i, read;
-	bool err = false;
-
-	OSSPINLOCK(sw_multiWireLock);
-
-	WireLEGO.beginTransmission(addr);
-	for(i=0; i<cmdsize; i++) WireLEGO.write(cmds[i]);
-	if(WireLEGO.endTransmission(false) != 0) {printf("%s error\n", __FUNCTION__); err = true;} // send restart
-	read = WireLEGO.requestFrom(addr, bufsize);
-	if(read < bufsize) {printf("The  bytes read by I2C are less than input buff size\n"); err = true;}
-	for(i=0; i<read; i++) buf[i] = WireLEGO.read();
-
-	OSSPINUNLOCK(sw_multiWireLock);
-
-	return (err == true) ? false : true;
-}
-#endif
 
 
 // Preinstantiate Objects //////////////////////////////////////////////////////

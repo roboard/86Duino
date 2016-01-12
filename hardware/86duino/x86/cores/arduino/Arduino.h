@@ -7,16 +7,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "binary.h"
-
-#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
-	#include "itoa.h"
-#endif
+#include "itoa.h"
 
 #include "avr/pgmspace.h"
 #include "v86clock.h"
 #include "io.h"
 #include "pins_arduino.h"
-#include "OSAbstract.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -37,10 +33,8 @@ extern "C"{
 
 #define PCSPEAKER    (250)
 
-#if defined (DMP_LINUX)
-  #define PI 3.1415926535897932384626433832795
-#endif
 
+//#define PI 3.1415926535897932384626433832795
 #define HALF_PI 1.5707963267948966192313216916398
 #define TWO_PI 6.283185307179586476925286766559
 #define DEG_TO_RAD 0.017453292519943295769236907684886
@@ -129,21 +123,13 @@ uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder);
 void attachInterrupt(uint8_t, void (*userFunc)(void), int mode);
 void detachInterrupt(uint8_t);
 
-#if defined (DMP_LINUX)
-int interrupt_init(void);
-void attachTimerInterrupt(uint8_t, void (*callback)(void), uint32_t);
-void detachTimerInterrupt(void);
-#endif
-
 // wdt1 functions
-#if defined (DMP_DOS_BS) || defined (DMP_DOS_DJGPP)
 extern bool rebootByWDT;
 void wdt_enable(unsigned long nTime);
 void wdt_disable(void);
 void wdt_reset(void);
 void wdt_init(void);
 bool get_wdt_timeout(void);
-#endif
 
 void setup(void);
 void loop(void);
@@ -161,15 +147,9 @@ double cpuTemperature(uint8_t);
 extern unsigned long CLOCKS_PER_MICROSEC;
 extern unsigned long VORTEX86EX_CLOCKS_PER_MS;
 
-#if defined (DMP_DOS_BS) || defined (DMP_DOS_DJGPP)
 extern void* USBDEV;
 extern bool Global_irq_Init;
 extern bool timer1_pin32_isUsed; // defined in tone.cpp
-#endif
-
-#if defined (DMP_LINUX)
-	#define Serial      Serial1
-#endif
 
 #define Serial4    Serial485
 #define Serial6    Serial232

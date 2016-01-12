@@ -49,13 +49,6 @@ class TwoWire : public Stream
 	virtual void flush(void);
     void onReceive( void (*)(int) );
     void onRequest( void (*)(void) );
-  
-#if defined (DMP_LINUX)
-	bool send(uint8_t, uint8_t*, int);
-	bool receive(uint8_t, uint8_t*, uint8_t);
-	bool sensorRead(uint8_t, uint8_t, uint8_t*, uint8_t);
-	bool sensorReadEX(uint8_t, uint8_t*, int, uint8_t*, uint8_t);
-#endif
 
     inline size_t write(unsigned long n) { return write((uint8_t)n); }
     inline size_t write(long n) { return write((uint8_t)n); }
@@ -95,12 +88,6 @@ class TwoWireLEGO : public Stream
     virtual int read(void);
     virtual int peek(void);
 	virtual void flush(void);
-#if defined (DMP_LINUX)
-	bool send(uint8_t, uint8_t*, int);
-	bool receive(uint8_t, uint8_t*, uint8_t);
-	bool sensorRead(uint8_t, uint8_t, uint8_t*, uint8_t);
-	bool sensorReadEX(uint8_t, uint8_t*, int, uint8_t*, uint8_t);
-#endif
 };
 
 extern TwoWire Wire;

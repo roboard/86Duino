@@ -35,7 +35,7 @@ static struct wdt_status {
     unsigned char reload_reg; // 0xAE
 } WDT_t;
 
-void wdt1_timer_watchdog(unsigned long usec) {
+DMPAPI(void) wdt1_timer_watchdog(unsigned long usec) {
 	unsigned long ival;
 	double dval;
 	dval = ((double)usec) / 30.5;
@@ -48,7 +48,7 @@ void wdt1_timer_watchdog(unsigned long usec) {
 	io_outpb(0xaa, ival & 0x00ff);
 }
 
-void wdt_enable(unsigned long nTime) { // us unit
+DMPAPI(void) wdt_enable(unsigned long nTime) { // us unit
     unsigned char val;
 
     if(wdt1_init_f == true) return;
@@ -77,7 +77,7 @@ void wdt_enable(unsigned long nTime) { // us unit
     wdt1_init_f = true;
 }
 
-void wdt_disable(void) {
+DMPAPI(void) wdt_disable(void) {
     unsigned char val;
 	if(wdt1_init_f == true)
 	{
@@ -96,13 +96,13 @@ void wdt_disable(void) {
 	}
 }
 
-void wdt_reset(void) {
+DMPAPI(void) wdt_reset(void) {
     if(wdt1_init_f == false) return;
 	io_outpb(0xae, 0xff);  // WDT1 reload register
 }
 
 bool rebootByWDT = false;
-void wdt_init(void) {
+DMPAPI(void) wdt_init(void) {
     unsigned char val;
 	val = io_inpb(0xa8);
 	io_outpb(0xa8, val & (~0x40));
@@ -113,6 +113,6 @@ void wdt_init(void) {
 		rebootByWDT = true;
 }
 
-bool get_wdt_timeout(void) {
+DMPAPI(bool) get_wdt_timeout(void) {
 	return ((io_inpb(0xad) & 0x80) == 0) ? (false) : (true);
 }

@@ -25,22 +25,18 @@
 
 
 #include <stdio.h>
-#if defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP)
-	#include <conio.h>
-	#include <dos.h>
-#endif
+#include <conio.h>
+#include <dos.h>
 
 #include "io.h"
-
 #include "mcm.h"
 
-#if defined(DMP_DOS_DJGPP)
-    #include <go32.h>
-    #include <dpmi.h>
-    #include <sys/farptr.h>
-    #include <pc.h>
-	#include <dos.h>
-#endif
+#include <go32.h>
+#include <dpmi.h>
+#include <sys/farptr.h>
+#include <pc.h>
+#include <dos.h>
+
 
 static bool MC_useMMIO = false;
 

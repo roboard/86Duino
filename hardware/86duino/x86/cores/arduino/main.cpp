@@ -2,18 +2,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if defined (DMP_DOS_DJGPP)
-	#include <conio.h>
-	#include <process.h>
-	#include <signal.h>
-	#include "irq.h"
-	#include <sys/exceptn.h>
-#elif defined (DMP_LINUX)
-	#include <signal.h>
-	#include "irq.h"
-#endif
+#include <conio.h>
+#include <process.h>
+#include <signal.h>
+#include "irq.h"
+#include <sys/exceptn.h>
 
-#if defined (DMP_DOS_DJGPP)
+
 unsigned _stklen = 4096 * 1024;
 
 // Error process
@@ -75,7 +70,6 @@ void _86Duino_error_process(int num) {
 		error_led_blink(ledpin);
 	}
 }
-#endif
 
 // Weak empty variant initialization function.
 // May be redefined by variant files.
@@ -85,23 +79,16 @@ void initVariant() { }
 static __attribute__((constructor(101))) void _f_init()
 {
 	init();
-#if defined (DMP_DOS_DJGPP)
 	signal(SIGSEGV, _86Duino_error_process);
 	signal(SIGFPE, _86Duino_error_process);
-#endif
 }
 
-#if defined (DMP_DOS_DJGPP)
-DPMI_MEMORY_ALL_LOCK(0)
-#endif
 
+DPMI_MEMORY_ALL_LOCK(0)
 int main(void)
 {
-#if defined (DMP_LINUX)
-	interrupt_init();
-#elif defined (DMP_DOS_DJGPP)
 	__djgpp_set_ctrl_c(0);
-#endif
+
 	initVariant();
 	
 	setup();
@@ -109,9 +96,7 @@ int main(void)
 	for (;;)
 	{
 		loop();
-		#if defined (DMP_DOS_DJGPP)
 		if (serialEventRun) serialEventRun();
-		#endif
 	}	
 	return 0;
 }

@@ -1,28 +1,27 @@
-### CODING 211 - 2016.1.11 ###
+### CODING 211 - 2016.1.12 ###
 
 [core]
-* Updated the pgmspace.h : ptr short -> long.
+* Fixed: the pointer type from short to long type in the pgmspace.h.
 * Modify the HardwareSerial.cpp and .h to defined __HARDWARE_SERIAL_LIB.
 * Add dtostrf.c and dtostrf.h in core/arduino/avr directory.
 * Add itoa.c and itoa.h in cores/arduino directory.
 * Add "include "iota.h"" in Arduino.h.
 * Add reconnect function in USBcore.cpp.
-* Fixed reset event in USBCore.cpp to re-handshake with PC.
-* Add "USBDEV = NULL" for Serial.end() in CDC.cpp.
-* Add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" in analogWrite() to aviod not effect for uploading.
+* Add reset event in USBCore.cpp to re-handshake with PC.
+* Fixed: add "USBDEV = NULL" for Serial.end() in CDC.cpp.
+* Add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" in analogWrite() to avoid invalid behavior for reloading new duty.
 * Add wdt.cpp in core\arduino directory and add wdt functions in Arduino.h.
 * Add wdt.h file in core\arduino\avr directory for Arduino compatibility.
 * Add wdt_init() in wiring.cpp.
-* Add "rebootByWDT" boolean in wdt.cpp to record whether 86Duino is rebooted by internal watchdog.
-* Modify the HardwareSerial.h for all serial config value.
-* Add EEPROM library (CMOS mode) into cores/avr directory. (Add "-fpermissive" parameter in platform.txt to avoid form getting error when the ptr is converted to value)
-* Add the OSAbstract.cpp to be compatilbe with Linux platform and add the linux compatible code in the part of files in "cores" directory.
+* Add "rebootByWDT" boolean in wdt.cpp to record whether 86Duino is rebooted by the internal watchdog.
+* Fixed: the type of config value is set to be uint8_t in the HardwareSerial.h.
+* Add EEPROM library (CMOS mode) into cores/avr directory. (Add "-fpermissive" compiling parameter in platform.txt to avoid form getting error when the ptr is converted to value)
 
 [libraries]
-* SPI lib updated
-* TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" to aviod not effect for uploading.
-* Fixed a bug in Servo86 library.
-* Add TimerWDT library.
+* SPI lib is updated to new version of Arduino.
+* TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" to avoid invalid behavior for reloading new period.
+* Fixed: in Servo86 library, re-calculate the endtime when get the same target position during servo moving.
+* Add TimerWDT library (use WDT to do the things like TimerOne).
 * Modify Wire library to add WireLEGO class.
 * For EEPROM lib, use the I/O functions for more platforms.
 * For RF12 lib, use eeprom functions (CMOS mode) to access RF12 config data.

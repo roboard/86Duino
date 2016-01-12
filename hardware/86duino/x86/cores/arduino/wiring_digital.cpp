@@ -30,11 +30,7 @@ void pinMode(uint8_t pin, uint8_t mode) {
 	
 	crossbar_bit = pinMap[pin];
 	
-	#if defined (DMP_LINUX)
-        lockGPIO(crossbar_bit/8);
-    #elif defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
-        io_DisableINT();
-    #endif
+	io_DisableINT();
     
 	if (mode == INPUT)
 	{
@@ -53,12 +49,8 @@ void pinMode(uint8_t pin, uint8_t mode) {
 	}     
 	else
 	    io_outpb(GPIODIRBASE + 4*(crossbar_bit/8), io_inpb(GPIODIRBASE + 4*(crossbar_bit/8))|(1<<(crossbar_bit%8)));      
-	
-    #if defined (DMP_LINUX)
-        unLockGPIO(crossbar_bit/8);
-    #elif defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
-        io_RestoreINT();
-    #endif    
+
+    io_RestoreINT();
 }
 
 void digitalWrite(uint8_t pin, uint8_t val) {
@@ -74,12 +66,8 @@ void digitalWrite(uint8_t pin, uint8_t val) {
 	crossbar_bit = pinMap[pin];
     port = GPIODATABASE + 4*(crossbar_bit/8);
     value = 1<<(crossbar_bit%8);
-    
-    #if defined (DMP_LINUX)
-        lockGPIO(crossbar_bit/8);
-    #elif defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
-        io_DisableINT();
-    #endif
+
+    io_DisableINT();
     
 	if(crossbar_bit > 31)
 		io_outpb(CROSSBARBASE + 0x80 + (crossbar_bit/8), 0x01);
@@ -93,12 +81,8 @@ void digitalWrite(uint8_t pin, uint8_t val) {
         io_outpb(port, io_inpb(port)&(~value));
     else
         io_outpb(port, io_inpb(port)|value);
-    
-    #if defined (DMP_LINUX)
-        unLockGPIO(crossbar_bit/8);
-    #elif defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
-        io_RestoreINT();
-    #endif    
+
+    io_RestoreINT();
 }
 
 int digitalRead(uint8_t pin) {
@@ -111,11 +95,7 @@ int digitalRead(uint8_t pin) {
 	
 	crossbar_bit = pinMap[pin];
 
-    #if defined (DMP_LINUX)
-        lockGPIO(crossbar_bit/8);
-    #elif defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
-        io_DisableINT();
-    #endif
+    io_DisableINT();
     
 	if(crossbar_bit > 31)
 		io_outpb(CROSSBARBASE + 0x80 + (crossbar_bit/8), 0x01);
@@ -126,12 +106,8 @@ int digitalRead(uint8_t pin) {
 	}  
 
 	val = io_inpb(GPIODATABASE + 4*(crossbar_bit/8))&(1<<(crossbar_bit%8));
-    
-    #if defined (DMP_LINUX)
-        unLockGPIO(crossbar_bit/8);
-    #elif defined (DMP_DOS_BC) || defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
-        io_RestoreINT();
-    #endif    
+
+    io_RestoreINT();
 
 	if(val != 0) return HIGH;
 	return LOW;
