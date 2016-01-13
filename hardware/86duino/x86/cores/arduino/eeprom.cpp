@@ -101,67 +101,73 @@ static void write_cmos(unsigned char address, unsigned char buf)
 }
 
 DMPAPI(uint8_t) eeprom_read_byte (const uint8_t *__p) {
-	return read_cmos((uint8_t) __p);
+	return read_cmos(*((uint8_t*)(&__p)));
 }
  
 DMPAPI(uint16_t) 	eeprom_read_word (const uint16_t *__p) {
-	uint16_t tmp;
-	tmp = read_cmos((uint8_t) __p); // read high byte
-	tmp = (tmp << 8) + read_cmos(((uint8_t) __p)+1); // read low byte
+	uint8_t cmos_addr = *((uint8_t*)(&__p));
+	uint16_t tmp = 0;
+	tmp = read_cmos(cmos_addr); // read high byte
+	tmp = (tmp << 8) + read_cmos(cmos_addr + 1); // read low byte
 	return tmp;
 }
  
 DMPAPI(uint32_t) 	eeprom_read_dword (const uint32_t *__p) {
-	uint32_t tmp;
-	tmp = read_cmos((uint8_t) __p); // read 3rd high byte
-	tmp = (tmp << 8) + read_cmos(((uint8_t) __p)+1); // read 2nd high byte
-	tmp = (tmp << 8) + read_cmos(((uint8_t) __p)+2); // read 1st high byte
-	tmp = (tmp << 8) + read_cmos(((uint8_t) __p)+3); // read low byte
+    uint8_t cmos_addr = *((uint8_t*)(&__p));
+	uint32_t tmp = 0L;
+	tmp = read_cmos(cmos_addr); // read 3rd high byte
+	tmp = (tmp << 8) + read_cmos(cmos_addr + 1); // read 2nd high byte
+	tmp = (tmp << 8) + read_cmos(cmos_addr + 2); // read 1st high byte
+	tmp = (tmp << 8) + read_cmos(cmos_addr + 3); // read low byte
 	return tmp;
 }
  
 DMPAPI(float) 	eeprom_read_float (const float *__p) {
+    uint8_t cmos_addr = *((uint8_t*)(&__p));
 	float tmp;
 	unsigned char* p = (unsigned char*)&tmp;
-	p[0] = read_cmos((uint8_t) __p);
-	p[1] = read_cmos(((uint8_t) __p)+1);
-	p[2] = read_cmos(((uint8_t) __p)+2);
-	p[3] = read_cmos(((uint8_t) __p)+3);
+	p[0] = read_cmos(cmos_addr);
+	p[1] = read_cmos(cmos_addr + 1);
+	p[2] = read_cmos(cmos_addr + 2);
+	p[3] = read_cmos(cmos_addr + 3);
 	return tmp;
 }
  
 DMPAPI(void) 	eeprom_read_block (void *__dst, const void *__src, size_t __n) {
 	uint8_t* _dst = (uint8_t*) __dst;
-	for(int i=0; i<__n; i++) _dst[i] = read_cmos(((uint8_t) __src)+i);
+	for(int i=0; i<__n; i++) _dst[i] = read_cmos(*((uint8_t*)(&__src))+i);
 }
  
 DMPAPI(void) 	eeprom_write_byte (uint8_t *__p, uint8_t __value) {
-	write_cmos((uint8_t) __p, __value);
+	write_cmos(*((uint8_t*)(&__p)), __value);
 }
  
 DMPAPI(void) 	eeprom_write_word (uint16_t *__p, uint16_t __value) {
-	write_cmos((uint8_t) __p, (__value & 0xff00) >> 8);
-	write_cmos(((uint8_t) __p)+1, __value & 0x00ff);
+    uint8_t cmos_addr = *((uint8_t*)(&__p));
+	write_cmos(cmos_addr, (__value & 0xff00) >> 8);
+	write_cmos(cmos_addr + 1, __value & 0x00ff);
 }
  
 DMPAPI(void) 	eeprom_write_dword (uint32_t *__p, uint32_t __value) {
-	write_cmos((uint8_t) __p, (__value & 0xff000000L) >> 24);
-	write_cmos(((uint8_t) __p)+1, (__value & 0x00ff0000L) >> 16);
-	write_cmos(((uint8_t) __p)+2, (__value & 0x0000ff00L) >> 8);
-	write_cmos(((uint8_t) __p)+3, __value & 0x000000ffL);
+    uint8_t cmos_addr = *((uint8_t*)(&__p));
+	write_cmos(cmos_addr, (__value & 0xff000000L) >> 24);
+	write_cmos(cmos_addr + 1, (__value & 0x00ff0000L) >> 16);
+	write_cmos(cmos_addr + 2, (__value & 0x0000ff00L) >> 8);
+	write_cmos(cmos_addr + 3, __value & 0x000000ffL);
 }
  
 DMPAPI(void) 	eeprom_write_float (float *__p, float __value) {
+    uint8_t cmos_addr = *((uint8_t*)(&__p));
 	unsigned char* p = (unsigned char*)&__value;
-	write_cmos((uint8_t) __p, p[0]);
-	write_cmos(((uint8_t) __p)+1, p[1]);
-	write_cmos(((uint8_t) __p)+2, p[2]);
-	write_cmos(((uint8_t) __p)+3, p[3]);
+	write_cmos(cmos_addr, p[0]);
+	write_cmos(cmos_addr + 1, p[1]);
+	write_cmos(cmos_addr + 2, p[2]);
+	write_cmos(cmos_addr + 3, p[3]);
 }
  
 DMPAPI(void) 	eeprom_write_block (const void *__src, void *__dst, size_t __n) {
 	uint8_t* _src = (uint8_t*) __src;
-	for(int i=0; i<__n; i++) write_cmos(((uint8_t) __dst)+i, _src[i]);
+	for(int i=0; i<__n; i++) write_cmos(*((uint8_t*)(&__dst))+i, _src[i]);
 }
  
 DMPAPI(void) 	eeprom_update_byte (uint8_t *__p, uint8_t __value) {
