@@ -6,7 +6,7 @@
 * Add dtostrf.c and dtostrf.h in core/arduino/avr directory.
 * Add itoa.c and itoa.h in cores/arduino directory.
 * Add "include "iota.h"" in Arduino.h.
-* Add reconnect function in USBcore.cpp.
+* Add reconnect function in USBcore.cpp, that will force send HIGH and LOW on the USB device's ON/OFF pin to be sure the PC recognizes 86Duino again when we use soft-boot method to reboot 86Duino.
 * Add reset event in USBCore.cpp to re-handshake with PC.
 * Fixed: add "USBDEV = NULL" for Serial.end() in CDC.cpp.
 * Add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" in analogWrite() to avoid invalid behavior for reloading new duty.
