@@ -15,7 +15,7 @@
 * Add wdt_init() in wiring.cpp.
 * Add "rebootByWDT" boolean in wdt.cpp to record whether 86Duino is rebooted by the internal watchdog.
 * Fixed: the type of config value is set to be uint8_t in the HardwareSerial.h.
-* Add EEPROM library (CMOS mode) into cores/avr directory. (Add "-fpermissive" compiling parameter in platform.txt to avoid form getting error when the ptr is converted to value)
+* Add EEPROM library (CMOS mode) into cores/avr directory.
 
 [libraries]
 * SPI lib is updated to new version of Arduino.
