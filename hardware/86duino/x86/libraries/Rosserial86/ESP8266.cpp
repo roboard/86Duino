@@ -3,6 +3,9 @@
  * @brief The implementation of class ESP8266. 
  * @author Wu Pengfei<pengfei.wu@itead.cc> 
  * @date 2015.02
+ *
+ * @modify Sayter <sayter@dmp.com.tw> for 86Duino
+ * @date 2015.12
  * 
  * @par Copyright:
  * Copyright (c) 2015 ITEAD Intelligent Systems Co., Ltd. \n\n

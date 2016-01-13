@@ -1,7 +1,7 @@
 /*
   86DuinoHardWare.cpp - Part of DM&P Vortex86 Rosserial86 library
   Copyright (c) 2015 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
-  Modify by Sayter <sayter@dmp.com.tw>. 01 January 2015
+  Modify by Sayter <sayter@dmp.com.tw>. 01 January 2016
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-  (If you need a commercial license, please contact soc@dmp.com.tw 
+  (If you need a commercial license, please contact soc@dmp.com.tw
    to get more information.)
 */
 
@@ -30,18 +30,18 @@
 #ifndef _86DUINO
 
 	#include <vortex86/utilities/dmpcfg.h>
-
+	
 	/* Use Vortex86 Turbo Serial on Vortex86 chip. */
 	#ifdef  ROS_VORTEX86_TURBO_SERIAL
 	#define ROS_VORTEX86_TURBO_SERIAL__
 	#include <vortex86/utilities/Vortex86TurboSerial.h>
 	#endif
-
+	
 	/* Use SwsSock library on DOS. */
 	#ifdef DMP_DOS_DJGPP
 	#define ROS_USE_SWSSOCK_LIB__
 	#endif
-
+	
 #endif
 
 #if defined(_86DUINO)
@@ -57,6 +57,7 @@
 	#include <queue>
 	#include <HardwareSerial.h>
 	#include <io.h>
+	static bool usedWiFi = false;
 
 #elif defined(DMP_DOS_DJGPP)
 
@@ -72,12 +73,13 @@
 	#include <vortex86/utilities/com.h>
 	#include <vortex86/utilities/sws_sock.h>
 	#include <vortex86/utilities/sws_cfg.h>
+	static bool usedWiFi = false;
 	static bool SwsInited1 = false;
 	static bool SwsInited2 = false;
 	static bool swssock_initialize(char *options)
 	{
 		if (SwsInited2) return true;
-
+		
 		if (SWS_CfgSetName(options, NULL) == 0)
 			return false;
 
@@ -86,7 +88,7 @@
 			SWS_SockExit();
 			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -175,7 +177,7 @@ int serial_read(Vortex86Handle *p)
 		return p->port_->read();
 #else
 	unsigned char ch;
-
+	
 #if defined(DMP_DOS_DJGPP)
 	if (com_Receive(p->port, &ch, 1) > 0)
 #elif defined(DMP_LINUX)
@@ -183,17 +185,17 @@ int serial_read(Vortex86Handle *p)
 #elif defined(DMP_WINDOWS)
 	COMSTAT stat;
 	DWORD dwBytesRead;
-
+        
 	stat.cbInQue = 0;
 	if (ClearCommError(p->port, NULL, &stat) == FALSE)
 		return -1;
 	if (stat.cbInQue <= 0)
 		return -1;
-
+	
 	if (ReadFile(p->port, &ch, 1, &dwBytesRead, NULL) == TRUE)
 #endif
 		return (int)ch;
-
+	
 	return -1;
 #endif
 }
@@ -227,7 +229,7 @@ int tcp_read(Vortex86Handle *p)
 {
 	unsigned char ch;
 	int ret;
-
+	
 #if defined(_86DUINO) || defined(DMP_DOS_DJGPP)
 	if ((ret = SWS_recv(p->sock, &ch, 1, 0)) > 0)
 #elif defined(DMP_LINUX)
@@ -236,14 +238,14 @@ int tcp_read(Vortex86Handle *p)
 	if ((ret = recv(p->sock, (char *)&ch, 1, 0)) > 0)
 #endif
 		return (int)ch;
-
+	
 	return -1;
 }
 
 void tcp_write(Vortex86Handle *p, unsigned char *pBuf, int nByte)
 {
 	int res, ret;
-
+	
 	res = nByte;
 	while (res > 0) {
 #if defined(_86DUINO) || defined(DMP_DOS_DJGPP)
@@ -303,20 +305,20 @@ class Vortex86Hardware
 public:
 	Vortex86Hardware();
 	void Vortex86HardwareExit();
-
+	
 	void init(char *pName, long baud);
-
+	
 	unsigned long time();
-
+	
 	int  (*read)   (Vortex86Handle *p);
 	void (*write)  (Vortex86Handle *p, unsigned char *pBuf, int nByte);
-
+	
 	Vortex86Handle handle;
-
+	
 private:
 	unsigned long initTime;
 	int com;
-
+	
 #ifdef ROS_VORTEX86_TURBO_SERIAL__
 	Vortex86TurboUART uart;
 #endif
@@ -328,26 +330,26 @@ Vortex86Hardware::Vortex86Hardware()
 	this->initTime = 0UL;
 	this->read = dummy_read;
 	this->write = dummy_write;
-
+	
 	#ifdef ROS_VORTEX86_TURBO_SERIAL__
-
+		
 		#ifdef ROS_VORTEX86_CHIP_INITIALIZE
 			uart.Vortex86TurboUARTInit();
 		#endif
-
+		
 	#endif
 }
-
+	
 void Vortex86Hardware::Vortex86HardwareExit()
 {
 	#ifdef ROS_VORTEX86_TURBO_SERIAL__
 
 		uart.RestoreVortex86TurboUART(com);
-
+		
 		#ifdef ROS_VORTEX86_CHIP_INITIALIZE
 			uart.Vortex86TurboUARTClose();
 		#endif
-
+		
 	#endif
 }
 
@@ -360,12 +362,12 @@ void Vortex86Hardware::init(char *p, long baud)
 	if (min > (len = strlen(p))) min = len;
 	strncpy(pName, p, min);
 	pName[min] = '\0';
-
+	
 	if (pName[0] == '/' || pName[0] == '\\') {
-
+		
 		/* Initial Serial on 86Duino. */
 		#if defined(_86DUINO)
-
+		
 			if (strcmp(&pName[1], "Serial1") == 0) {
 				Serial1.begin(baud);
 				handle.port  = &Serial1;
@@ -391,14 +393,14 @@ void Vortex86Hardware::init(char *p, long baud)
 				handle.port  = NULL;
 				handle.port_ = &Serial;
 			}
-
+			
 		/* Initial Serial on DOS for Vortex86 chip. */
 		#elif defined(DMP_DOS_DJGPP)
-
+		
 			unsigned long bps;
-
+		
 			printf("Opening serial port \"%s\".\n", &pName[1]);
-
+			
 				 if (strcmp(&pName[1], "COM1"   ) == 0) com = COM1;
 			else if (strcmp(&pName[1], "COM2"   ) == 0) com = COM2;
 			else if (strcmp(&pName[1], "COM3"   ) == 0) com = COM3;
@@ -419,7 +421,7 @@ void Vortex86Hardware::init(char *p, long baud)
 				printf("init(): Unable to open serial port - Exiting\n");
 				exit(-1);
 			}
-
+			
 			switch (baud)
 			{
 				case 6000000L: bps = COM_UARTBAUD_6000000BPS; break;
@@ -458,16 +460,16 @@ void Vortex86Hardware::init(char *p, long baud)
 			}
 			com_SetFormat(handle.port, BYTESIZE8 + NOPARITY + STOPBIT1);
 			com_SetTimeOut(handle.port, 0L, 500L);
-
+			
 			printf("Serial port \"%s\" is opened successfully.\n", &pName[1]);
-
+		
 		/* Initial Serial on Linux. */
 		#elif defined(DMP_LINUX)
-
+		
 			struct termios options;
 			speed_t bps;
 			long temp_baud = baud;
-
+			
 			printf("Opening serial port \"%s\".\n", &pName[0]);
 
 				 if (strcmp(&pName[0], "/dev/ttyS0") == 0) com = 0;
@@ -487,7 +489,7 @@ void Vortex86Hardware::init(char *p, long baud)
 				exit(-1);
 			}
 			fcntl(handle.fd, F_SETFL, FNDELAY);
-
+			
 			#ifdef ROS_VORTEX86_TURBO_SERIAL__
 				temp_baud = uart.ReCaculateBaudrate(com, baud);
 			#endif
@@ -519,7 +521,7 @@ void Vortex86Hardware::init(char *p, long baud)
 					#endif
 					break;
 			}
-
+			
 			tcgetattr(handle.fd, &options);
 			cfsetispeed(&options, bps);
 			cfsetospeed(&options, bps);
@@ -533,9 +535,9 @@ void Vortex86Hardware::init(char *p, long baud)
 			options.c_iflag &= ~(IXON | IXOFF | IXANY);
 			options.c_oflag &= ~OPOST;
 			tcsetattr(handle.fd, TCSANOW, &options);
-
+			
 			unsigned short crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-
+			
 			if(com == 0)
 			{
 				io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
@@ -551,17 +553,17 @@ void Vortex86Hardware::init(char *p, long baud)
 				io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
 				io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
 			}
-
+			
 			printf("Serial port \"%s\" is opened successfully.\n", &pName[0]);
-
-		/* Initial Serial on Windows. */
+		
+		/* Initial Serial on Windows. */		
 		#elif defined(DMP_WINDOWS)
 			DCB options;
 			COMMTIMEOUTS timeouts;
 			long temp_baud = baud;
 
 			printf("Opening serial port \"%s\".\n", &pName[1]);
-
+			
 				 if (strcmp(&pName[1], "COM1" ) == 0 || strcmp(&pName[1], "\\\\.\\COM1" ) == 0) com = 0;
 			else if (strcmp(&pName[1], "COM2" ) == 0 || strcmp(&pName[1], "\\\\.\\COM2" ) == 0) com = 1;
 			else if (strcmp(&pName[1], "COM3" ) == 0 || strcmp(&pName[1], "\\\\.\\COM3" ) == 0) com = 2;
@@ -572,7 +574,7 @@ void Vortex86Hardware::init(char *p, long baud)
 			else if (strcmp(&pName[1], "COM8" ) == 0 || strcmp(&pName[1], "\\\\.\\COM8" ) == 0) com = 7;
 			else if (strcmp(&pName[1], "COM9" ) == 0 || strcmp(&pName[1], "\\\\.\\COM9" ) == 0) com = 8;
 			else if (strcmp(&pName[1], "COM10") == 0 || strcmp(&pName[1], "\\\\.\\COM10") == 0) com = 9;
-
+			
 			handle.port = CreateFileA(&pName[1],                     // device name of COM port
 									  GENERIC_READ | GENERIC_WRITE,  // access mode
 									  0,                             // share mode
@@ -584,7 +586,7 @@ void Vortex86Hardware::init(char *p, long baud)
 				printf("init(): Unable to open serial port - Exiting\n");
 				exit(-1);
 			}
-
+			
 			#ifdef ROS_VORTEX86_TURBO_SERIAL__
 				temp_baud = uart.ReCaculateBaudrate(com, baud);
 			#endif
@@ -634,113 +636,106 @@ void Vortex86Hardware::init(char *p, long baud)
 			SetupComm(handle.port, 8192, 8192);                    // set read/write FIFO to 8KB
 			PurgeComm(handle.port, PURGE_RXABORT | PURGE_RXCLEAR | // clear all communication buffers
 								   PURGE_TXABORT | PURGE_TXCLEAR);
-
+								   
 			printf("Serial port \"%s\" is opened successfully.\n", &pName[1]);
 		#endif
-
+		
 		this->read = serial_read;
 		this->write = serial_write;
-
-	} else if((pName[0]=='w' || pName[0]=='W') && (pName[1]=='l' || pName[1]=='L') && (pName[2]=='_') ){
-		//WiFi
-		#if defined(_86DUINO)
-			char *np = &pName[3];
-			char *IP;
-
-			char *PortNumStr;
-			long PortNum;
-
-			IP = strtok(np, ":");
-			PortNumStr = strtok(NULL, ":");
-			PortNum = 0;
-			if (PortNumStr != NULL) {
-				PortNum = strtol(PortNumStr, NULL, 10);
-			}
-			if (PortNum == 0) {
-				PortNum = DEFAULT_PORTNUM;
-			}
-
-			handle.wifi.createTCP(IP, PortNum);
-
-			this->read = wifi_read;
-			this->write = wifi_write;
-		#endif
+		
 	} else {
 		/* Initial Ethernet on 86Duino and DOS. */
 		#if defined(_86DUINO) || defined(DMP_DOS_DJGPP)
 			char *IP;
 			char *PortNumStr;
 			long PortNum;
-			int ret;
-			int flag = 1;
-			SWS_u_long lArg = 1;
-			struct SWS_sockaddr_in serv_addr;
-			struct SWS_hostent *server;
-
-			#ifdef ROS_USE_SWSSOCK_LIB__
-				if (swssock_initialize(DEFAULT_NET_OPTIONS) == false) {
-					printf("init(): SwsSock library startup fail.\n");
-					exit(-1);
+			if (usedWiFi)
+			{
+				IP = strtok(pName, ":");
+				PortNumStr = strtok(NULL, ":");
+				PortNum = 0;
+				if (PortNumStr != NULL) {
+					PortNum = strtol(PortNumStr, NULL, 10);
 				}
-				SwsInited2 = true;
-			#endif
-
-			IP = strtok(pName, ":");
-			PortNumStr = strtok(NULL, ":");
-			PortNum = 0;
-			if (PortNumStr != NULL) {
-				PortNum = strtol(PortNumStr, NULL, 10);
+				if (PortNum == 0) {
+					PortNum = DEFAULT_PORTNUM;
+				}
+	
+				handle.wifi.createTCP(IP, PortNum);
 			}
-			if (PortNum == 0) {
-				PortNum = DEFAULT_PORTNUM;
-			}
-
-			handle.sock = SWS_socket(SWS_AF_INET, SWS_SOCK_STREAM, 0);
-			if (handle.sock == SWS_INVALID_SOCKET) {
-				printf("init(): open socket fail.\n");
-				SWS_SockExit();
-				#ifdef _86DUINO
-					return;
-				#else
-					exit(-1);
+			else
+			{
+				int ret;
+				int flag = 1;
+				SWS_u_long lArg = 1;
+				struct SWS_sockaddr_in serv_addr;
+				struct SWS_hostent *server;
+				
+				#ifdef ROS_USE_SWSSOCK_LIB__
+					if (swssock_initialize(DEFAULT_NET_OPTIONS) == false) {
+						printf("init(): SwsSock library startup fail.\n");
+						exit(-1);
+					}
+					SwsInited2 = true;
 				#endif
+				
+				IP = strtok(pName, ":");
+				PortNumStr = strtok(NULL, ":");
+				PortNum = 0;
+				if (PortNumStr != NULL) {
+					PortNum = strtol(PortNumStr, NULL, 10);
+				}
+				if (PortNum == 0) {
+					PortNum = DEFAULT_PORTNUM;
+				}
+	
+				handle.sock = SWS_socket(SWS_AF_INET, SWS_SOCK_STREAM, 0);
+				if (handle.sock == SWS_INVALID_SOCKET) {
+					printf("init(): open socket fail.\n");
+					SWS_SockExit();
+					#ifdef _86DUINO
+						return;
+					#else
+						exit(-1);
+					#endif
+				}
+				ret = SWS_setsockopt(handle.sock, SWS_IPPROTO_TCP, SWS_TCP_NODELAY, (char*)&flag, sizeof(flag));
+				if (ret == -1) {
+					printf("init(): Could not setsockopt(TCP_NODELAY)\n");
+					SWS_close(handle.sock);
+					SWS_SockExit();
+					#if defined(_86DUINO)
+						return;
+					#else
+						exit(-1);
+					#endif
+				}
+				
+				printf("Connecting to TCP server at %s:%ld....\n", IP, PortNum);
+				bzero((char *)&serv_addr, sizeof(serv_addr));
+				serv_addr.sin_family = SWS_AF_INET;
+				serv_addr.sin_port = SWS_htons(PortNum);
+				server = SWS_gethostbyname(IP);
+				if (server == NULL) {
+					serv_addr.sin_addr.SWS_s_addr = SWS_inet_addr(IP);
+				} else {
+					bcopy((char *)server->SWS_h_addr, (char *)&serv_addr.sin_addr.SWS_s_addr, server->h_length);
+				}
+				if (SWS_connect(handle.sock,(struct SWS_sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+					printf("init(): connect to server fail.\n");
+					SWS_close(handle.sock);
+					SWS_SockExit();
+					#if defined(_86DUINO)
+						return;
+					#else
+						exit(-1);
+					#endif
+				}
+				SWS_ioctl(handle.sock, SWS_FIONBIO, &lArg);
+				
+				printf("Connet to %s:%ld successfully\n", IP, PortNum);
 			}
-			ret = SWS_setsockopt(handle.sock, SWS_IPPROTO_TCP, SWS_TCP_NODELAY, (char*)&flag, sizeof(flag));
-			if (ret == -1) {
-				printf("init(): Could not setsockopt(TCP_NODELAY)\n");
-				SWS_close(handle.sock);
-				SWS_SockExit();
-				#if defined(_86DUINO)
-					return;
-				#else
-					exit(-1);
-				#endif
-			}
-
-			printf("Connecting to TCP server at %s:%ld....\n", IP, PortNum);
-			bzero((char *)&serv_addr, sizeof(serv_addr));
-			serv_addr.sin_family = SWS_AF_INET;
-			serv_addr.sin_port = SWS_htons(PortNum);
-			server = SWS_gethostbyname(IP);
-			if (server == NULL) {
-				serv_addr.sin_addr.SWS_s_addr = SWS_inet_addr(IP);
-			} else {
-				bcopy((char *)server->SWS_h_addr, (char *)&serv_addr.sin_addr.SWS_s_addr, server->h_length);
-			}
-			if (SWS_connect(handle.sock,(struct SWS_sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
-				printf("init(): connect to server fail.\n");
-				SWS_close(handle.sock);
-				SWS_SockExit();
-				#if defined(_86DUINO)
-					return;
-				#else
-					exit(-1);
-				#endif
-			}
-			SWS_ioctl(handle.sock, SWS_FIONBIO, &lArg);
-
-			printf("Connet to %s:%ld successfully\n", IP, PortNum);
-
+			
 		/* Initial Ethernet on Linux. */
 		#elif defined(DMP_LINUX)
 			char *IP;
@@ -750,7 +745,7 @@ void Vortex86Hardware::init(char *p, long baud)
 			int flag = 1;
 			struct sockaddr_in serv_addr;
 			struct hostent *server;
-
+			
 			IP = strtok(pName, ":");
 			PortNumStr = strtok(NULL, ":");
 			PortNum = 0;
@@ -779,7 +774,7 @@ void Vortex86Hardware::init(char *p, long baud)
 				close(handle.fd);
 				exit(0);
 			}
-
+			
 			printf("Connecting to TCP server at %s:%ld....\n", IP, PortNum);
 			bzero((char *) &serv_addr, sizeof(serv_addr));
 			serv_addr.sin_family = AF_INET;
@@ -795,8 +790,8 @@ void Vortex86Hardware::init(char *p, long baud)
 			fcntl(handle.fd, F_SETFL, lArg | O_NONBLOCK);
 
 			printf("Connet to %s:%ld successfully\n", IP, PortNum);
-
-		/* Initial Ethernet on Windows. */
+			
+		/* Initial Ethernet on Windows. */		
 		#elif defined(DMP_WINDOWS)
 			char *IP;
 			char *PortNumStr;
@@ -807,12 +802,12 @@ void Vortex86Hardware::init(char *p, long baud)
 			struct sockaddr_in serv_addr;
 			struct hostent *server;
 			WSADATA wsaData;
-
+			
 			if (ret = WSAStartup (MAKEWORD(2, 2), &wsaData)) {
 				printf("init(): Could not initialize windows socket. (%d)\n", ret);
 				exit(-1);
 			}
-
+			
 			IP = strtok(pName, ":");
 			PortNumStr = strtok(NULL, ":");
 			PortNum = 0;
@@ -822,7 +817,7 @@ void Vortex86Hardware::init(char *p, long baud)
 			if (PortNum == 0){
 				PortNum = DEFAULT_PORTNUM;
 			}
-
+			
 			handle.sock = socket(AF_INET, SOCK_STREAM, 0);
 			if (handle.sock == INVALID_SOCKET) {
 				printf("init(): open socket fail.\n");
@@ -835,7 +830,7 @@ void Vortex86Hardware::init(char *p, long baud)
 				WSACleanup();
 				exit(-1);
 			}
-
+			
 			printf("Connecting to TCP server at %s:%ld....\n", IP, PortNum);
 			ZeroMemory((char *)&serv_addr, sizeof(serv_addr));
 			serv_addr.sin_family = AF_INET;
@@ -861,11 +856,24 @@ void Vortex86Hardware::init(char *p, long baud)
 			}
 
 			printf("Connet to %s:%ld successfully\n", IP, PortNum);
-
+			
 		#endif
-
-		this->read = tcp_read;
-		this->write = tcp_write;
+		
+		#if defined(_86DUINO)
+			if(usedWiFi)
+			{
+				this->read = wifi_read;
+				this->write = wifi_write;
+			}
+			else
+			{
+				this->read = tcp_read;
+				this->write = tcp_write;
+			}
+		#else
+			this->read = tcp_read;
+			this->write = tcp_write;
+		#endif
 	}
 	initTime = this->time();
 }
@@ -909,9 +917,9 @@ x86DuinoHardware::x86DuinoHardware()
 x86DuinoHardware::x86DuinoHardware(char *pName, long baud/* = 57600L*/)
 {
 	int len, min;
-
+	
 	x86 = new Vortex86Hardware();
-
+	
 	min = sizeof(portName) - 1;
 	if (min > (len = strlen(pName))) min = len;
 	strncpy(portName, pName, min);
@@ -970,14 +978,14 @@ bool x86DuinoHardware::setDhcp()
 #ifdef ROS_USE_SWSSOCK_LIB__
 	char hostname[128];
 	FILE *opt;
-
+	
 	opt = fopen(CUSTOM_NET_OPTIONS, "w");
-
+	
 	if (opt == NULL) {
 		printf("setDhcp(): Open %s fail.\n", CUSTOM_NET_OPTIONS);
 		return false;
 	}
-
+		
 	fprintf(opt, "[PacketDriverInterface1]\n");
 	fprintf(opt, "dhcp=1\n");
 	fprintf(opt, "\n");
@@ -985,7 +993,7 @@ bool x86DuinoHardware::setDhcp()
 	fprintf(opt, "hostname=86Duino\n");
 	fflush(opt);
 	fclose(opt);
-
+	
 	if (swssock_initialize(CUSTOM_NET_OPTIONS)) {
 		if (SWS_gethostname(hostname, sizeof(hostname)) != 0) {
 			SWS_SockExit();
@@ -1001,7 +1009,7 @@ bool x86DuinoHardware::setDhcp()
 		return true;
 	}
 	printf("setDhcp(): SwsSock library starup fail.\n");
-
+	
 	return false;
 #else
 	return true;
@@ -1051,7 +1059,7 @@ bool x86DuinoHardware::setEthernet(char *ip, char *dns, char *gateway, char *sub
 #ifdef ROS_USE_SWSSOCK_LIB__
 	FILE *opt;
 	unsigned long number;
-
+	
 	if (SWS_inet_addr(ip) == 0xFFFFFFFFUL) {
 		printf("setEthernet(): Unrecognized IP address.\n");
 		return false;
@@ -1068,15 +1076,15 @@ bool x86DuinoHardware::setEthernet(char *ip, char *dns, char *gateway, char *sub
 		printf("setEthernet(): Unrecognized subnet mask.\n");
 		return false;
 	}
-
-
+	
+	
 	opt = fopen(CUSTOM_NET_OPTIONS, "w");
-
+	
 	if (opt == NULL) {
 		printf("setEthernet(): Open %s fail.\n", CUSTOM_NET_OPTIONS);
 		return false;
 	}
-
+	
 	fprintf(opt, (SwsInited1 == false) ? "[PacketDriverInterface1]\n" : "[PacketDriverInterface2]\n");
 	fprintf(opt, "ipaddress=%s\n", ip);
 	fprintf(opt, "ipsubnet=%s\n", subnet);
@@ -1088,13 +1096,13 @@ bool x86DuinoHardware::setEthernet(char *ip, char *dns, char *gateway, char *sub
 	fprintf(opt, "server=%s\n", dns);
 	fflush(opt);
 	fclose(opt);
-
+	
 	if (swssock_initialize(CUSTOM_NET_OPTIONS)) {
 		SwsInited2 = true;
 		return true;
 	}
 	printf("setEthernet(): SwsSock library starup fail.\n");
-
+	
 	return false;
 #else
 	return true;
@@ -1118,9 +1126,9 @@ bool x86DuinoHardware::setESP8266(HardwareSerial &uart, uint32_t baud, int pin)
 
 bool x86DuinoHardware::setWiFi(char *ssid, char *key)
 {
+	usedWiFi = true;
 	return x86->handle.wifi.joinAP(ssid, key);
 }
 #endif
 
 #endif
-

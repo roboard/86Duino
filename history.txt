@@ -1,7 +1,7 @@
 ### CODING 211 - 2016.1.12 ###
 
 [core]
-* Fixed: the pointer type from short to long type in the pgmspace.h.
+* Fixed: modify the pointer type from short to long type in the pgmspace.h.
 * Modify the HardwareSerial.cpp and .h to defined __HARDWARE_SERIAL_LIB.
 * Add dtostrf.c and dtostrf.h in core/arduino/avr directory.
 * Add itoa.c and itoa.h in cores/arduino directory.
@@ -21,8 +21,8 @@
 * SPI lib is updated to new version of Arduino.
 * TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" to avoid invalid behavior for reloading new period.
 * Fixed: in Servo86 library, re-calculate the endtime when getting the same target position during servo moving.
-* Add TimerWDT library (use WDT to do the things like TimerOne).
-* Modify Wire library to add WireLEGO class.
+* Add TimerWDT library (use the internal watchdog to be a timer like TimerOne).
+* Modify the Wire library to add WireLEGO class, you are able to use LEGO sensor (ex: ultrasonic sensor) on 86Duino.
 * For EEPROM lib, use the I/O functions for more platforms.
 * For RF12 lib, use eeprom functions (CMOS mode) in cores to access RF12 config data and then remove the private EEPROM lib.
 * For Rosserial86 lib, now support ESP8266 WiFi module.
