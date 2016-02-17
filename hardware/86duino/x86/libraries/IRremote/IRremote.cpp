@@ -98,11 +98,11 @@ void rcvInit(double us) {
 
 unsigned short crossbar_ioaddr = 0;
 void TimerEnablePWM(void) {
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[iroutpin], 0x08);
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[iroutpin].gpN, 0x08);
 }
 
 void TimerDisablePWM(void) {
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[iroutpin], 0x01);
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[iroutpin].gpN, 0x01);
 }
 
 void IRsend::mark(int time) {
@@ -144,8 +144,8 @@ void IRsend::enableIROut(int khz) {
 	pinMode(iroutpin, OUTPUT);
 	digitalWrite(iroutpin, LOW);
 	
-    mcs = arduino_to_mc_md[0][iroutpin];
-    mds = arduino_to_mc_md[1][iroutpin];
+    mcs = PIN86[iroutpin].PWMMC;
+    mds = PIN86[iroutpin].PWMMD;
     
     if(mcs == NOPWM || mds == NOPWM) return;
 		  

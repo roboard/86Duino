@@ -88,31 +88,31 @@ UTFT::UTFT(byte model, int RS, int WR, int CS, int RST, int SER)
 	unsigned int value;
 	int crossbar_bit;
   
-	crossbar_bit = pinMap[RS];
+	crossbar_bit = PIN86[RS].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][0] = port;
 	pin_p_v[1][0] = value;
 	
-	crossbar_bit = pinMap[WR];
+	crossbar_bit = PIN86[WR].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][1] = port;
 	pin_p_v[1][1] = value;
 	
-	crossbar_bit = pinMap[CS];
+	crossbar_bit = PIN86[CS].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][2] = port;
 	pin_p_v[1][2] = value;
 	
-	crossbar_bit = pinMap[RST];
+	crossbar_bit = PIN86[RST].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][3] = port;
 	pin_p_v[1][3] = value;
 	
-	crossbar_bit = pinMap[SER];
+	crossbar_bit = PIN86[SER].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][4] = port;
@@ -1710,7 +1710,7 @@ void UTFT::To_GPIO(uint8_t pin) {
 	int crossbar_bit;
 	unsigned short crossbar_ioaddr = 0;
 	crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
-	crossbar_bit = pinMap[pin];
+	crossbar_bit = PIN86[pin].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
   
 	if(crossbar_bit > 31)

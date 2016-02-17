@@ -58,6 +58,7 @@ static unsigned long MMIO_baseAddr = 0L;
 static void* io_handle = NULL;
 static void* mcm_p = NULL;
 DMPAPI(int) mcmInit(void) {
+	if(mcm_p != NULL) return 0;
     mcm_p = pci_Alloc(0, 0x10, 0);
 	if(mcm_p == NULL)
 	{
@@ -71,7 +72,7 @@ DMPAPI(int) mcmInit(void) {
 		if(io_handle == NULL)
 		{
 			printf("Alloc MCM MMIO space fail.");
-			return -1L;
+			return -1;
 		}
         MC_useMMIO = true;
 	#elif defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
@@ -82,7 +83,7 @@ DMPAPI(int) mcmInit(void) {
 			if(io_handle == NULL)
 			{
 				printf("Alloc MCM MMIO space fail.");
-				return -1L;
+				return -1;
 			}
 		}
 		else

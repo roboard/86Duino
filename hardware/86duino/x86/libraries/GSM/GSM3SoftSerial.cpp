@@ -81,7 +81,7 @@ static const DELAY_TABLE table[] =
 	{ 300,      1638,      3308,      3308,     3324, },
 };
 
-static int pinMap2[EXTERNAL_NUM_INTERRUPTS] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38};
+// static int pinMap2[EXTERNAL_NUM_INTERRUPTS] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38};
 
 #else
 
@@ -132,7 +132,7 @@ int GSM3SoftSerial::begin(long speed)
 	}
     */
     io_DisableINT();
-    io_outpb(CROSSBARBASE + 0x90 + pinMap[__RXPIN__], 0x08);
+    io_outpb(CROSSBARBASE + 0x90 + PIN86[__RXPIN__].gpN, 0x08);
 	_activeObject = this;
 	io_RestoreINT();
 }
@@ -220,16 +220,11 @@ void GSM3SoftSerial::setRX()
 {   
 	int i;
 	pinMode(__RXPIN__, INPUT);
-	digitalWrite(__RXPIN__, HIGH); 
-    
-    set_MMIO();
-	mc_setbaseaddr();
-	for(i=0; i<4; i++)
-		mc_SetMode(i, MCMODE_PWM_SIFB);
+	digitalWrite(__RXPIN__, HIGH);
 		
 #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
 	for(i=0; i<EXTERNAL_NUM_INTERRUPTS; i++)
-		if(pinMap2[i] == __RXPIN__) break;
+		if(INTPINSMAP[i] == __RXPIN__) break;
 	if(i == EXTERNAL_NUM_INTERRUPTS) i = 0;
 	attachInterrupt(i, GSM3SoftSerial::handle_interrupt, FALLING);
 #endif
@@ -264,7 +259,7 @@ void GSM3SoftSerial::recv()
 
   // If RX line is high, then we don't see any start bit
   // so interrupt is probably not for us
-  io_outpb(CROSSBARBASE + 0x90 + pinMap[__RXPIN__], 0x01); // switch to GPIO
+  io_outpb(CROSSBARBASE + 0x90 + PIN86[__RXPIN__].gpN, 0x01); // switch to GPIO
   if (!rx_pin_read())
   {
 	do
@@ -364,7 +359,7 @@ void GSM3SoftSerial::recv()
 			mgr->manageMsg(thisHead, cb.getTail());
 	}
   }
-  io_outpb(CROSSBARBASE + 0x90 + pinMap[__RXPIN__], 0x08); // switch to Encoder
+  io_outpb(CROSSBARBASE + 0x90 + PIN86[__RXPIN__].gpN, 0x08); // switch to Encoder
 }
 
 bool GSM3SoftSerial::keepThisChar(uint8_t* c)

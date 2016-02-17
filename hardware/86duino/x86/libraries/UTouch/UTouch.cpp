@@ -34,31 +34,31 @@ UTouch::UTouch(byte tclk, byte tcs, byte din, byte dout, byte irq) {
 	unsigned int value;
 	int crossbar_bit;
   
-	crossbar_bit = pinMap[tclk];
+	crossbar_bit = PIN86[tclk].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][0] = port;
 	utouch_pin_p_v[1][0] = value;
 	
-	crossbar_bit = pinMap[tcs];
+	crossbar_bit = PIN86[tcs].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][1] = port;
 	utouch_pin_p_v[1][1] = value;
 	
-	crossbar_bit = pinMap[din];
+	crossbar_bit = PIN86[din].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][2] = port;
 	utouch_pin_p_v[1][2] = value;
 	
-	crossbar_bit = pinMap[dout];
+	crossbar_bit = PIN86[dout].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][3] = port;
 	utouch_pin_p_v[1][3] = value;
 	
-	crossbar_bit = pinMap[irq];
+	crossbar_bit = PIN86[irq].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][4] = port;
@@ -335,7 +335,7 @@ void UTouch::To_GPIO(uint8_t pin) {
 	int crossbar_bit;
 	unsigned short crossbar_ioaddr = 0;
 	crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
-	crossbar_bit = pinMap[pin];
+	crossbar_bit = PIN86[pin].gpN;
 	port = GPIODATABASE + 4*(crossbar_bit/8);
   
 	if(crossbar_bit > 31)

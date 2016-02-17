@@ -124,8 +124,8 @@ void TimerOne::setPeriod(long microseconds)	{ // AR modified for atomic access
 	{
 		if(mc_md_inuse[i] == YES) // if call pwm()...
 		{
-			mcn = arduino_to_mc_md[0][i];
-	    	mdn = arduino_to_mc_md[1][i];
+			mcn = PIN86[i].PWMMC;
+	    	mdn = PIN86[i].PWMMD;
             if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[i]-1.0);
 		    mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_PEREND);
@@ -148,8 +148,8 @@ void TimerOne::setPwmDuty(char pin, int duty) {
 		
 	if(pin < 0 || pin >= PINS || timerOneInit == false) return;
 	
-	mcn = arduino_to_mc_md[0][pin];
-    mdn = arduino_to_mc_md[1][pin];
+	mcn = PIN86[pin].PWMMC;
+    mdn = PIN86[pin].PWMMD;
     
     if(mcn == NOPWM || mdn == NOPWM) return;
 
@@ -187,7 +187,7 @@ void TimerOne::setPwmDuty(char pin, int duty) {
     
     if(isPwmInit[pin] == 1 && (mc_md_inuse[pin] == 0 || mc_md_inuse[pin] == NO))
     {
-    	io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08); // Enable PWM pin
+    	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08); // Enable PWM pin
 		mcpwm_Enable(mcn, mdn);
 		mc_md_inuse[pin] = YES;
     }
@@ -200,8 +200,8 @@ void TimerOne::pwm(char pin, int duty, long microseconds) { // expects duty cycl
 	
 	if(microseconds > 0) setPeriod(microseconds);
 	
-	mcn = arduino_to_mc_md[0][pin];
-	mdn = arduino_to_mc_md[1][pin];
+	mcn = PIN86[pin].PWMMC;
+	mdn = PIN86[pin].PWMMD;
 	  
 	if(mcn == NOPWM || mdn == NOPWM) return;
   	
@@ -214,8 +214,8 @@ void TimerOne::disablePwm(char pin) {
 	
 	if(pin < 0 || pin >= PINS || timerOneInit == false) return;
 	
-	mcn = arduino_to_mc_md[0][pin];
-    mdn = arduino_to_mc_md[1][pin];
+	mcn = PIN86[pin].PWMMC;
+    mdn = PIN86[pin].PWMMD;
     
     if(mcn == NOPWM || mdn == NOPWM) return;
     
@@ -224,7 +224,7 @@ void TimerOne::disablePwm(char pin) {
 		safeClosePwmModule(mcn, mdn, _period);
 		mc_md_inuse[pin] = NO;
 		isPwmInit[pin] = 0;
-		io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x01); // Disable PWM pin (To be GPIO)
+		io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x01); // Disable PWM pin (To be GPIO)
 	}
 }
  
@@ -288,8 +288,8 @@ void TimerOne::start() { // AR addition, renamed by Lex to reflect it's actual r
 	{
 		if(mc_md_inuse[i] == NO)
 		{
-			mcn = arduino_to_mc_md[0][i];
-			mdn = arduino_to_mc_md[1][i];
+			mcn = PIN86[i].PWMMC;
+			mdn = PIN86[i].PWMMD;
             if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[i]-1.0);
 			mcpwm_Enable(mcn, mdn);
@@ -310,8 +310,8 @@ void TimerOne::stop() {
 	{
 		if(mc_md_inuse[i] == YES)
 		{
-			mcn = arduino_to_mc_md[0][i];
-			mdn = arduino_to_mc_md[1][i];
+			mcn = PIN86[i].PWMMC;
+			mdn = PIN86[i].PWMMD;
 			mcpwm_Disable(mcn, mdn);
 			mc_md_inuse[i] = NO;
 		}

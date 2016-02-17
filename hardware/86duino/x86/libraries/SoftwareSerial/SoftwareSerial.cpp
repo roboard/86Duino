@@ -58,7 +58,7 @@ static const DELAY_TABLE table[] =
 	{ 300,      1638,      3308,      3308,     3324, },
 };
 
-static int pinMap2[EXTERNAL_NUM_INTERRUPTS] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38};
+// static int pinMap2[EXTERNAL_NUM_INTERRUPTS] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38};
 
 #else
 	#error This version of SoftwareSerial supports only 20, 16 and 8MHz processors
@@ -94,7 +94,7 @@ bool SoftwareSerial::listen()
 		active_object = this;
 		io_RestoreINT();
 		for(i=0; i<EXTERNAL_NUM_INTERRUPTS; i++)
-			if(pinMap2[i] == _receivePin) break;
+			if(INTPINSMAP[i] == _receivePin) break;
 		if(i == EXTERNAL_NUM_INTERRUPTS) i = 0;
 		attachInterrupt(i, SoftwareSerial::handle_interrupt, FALLING);
 		return true;
@@ -109,7 +109,7 @@ bool SoftwareSerial::listen()
 void SoftwareSerial::recv()
 {
 	uint8_t d = 0;
-	io_outpb(CROSSBARBASE + 0x90 + pinMap[_receivePin], 0x01); // switch to GPIO
+	io_outpb(CROSSBARBASE + 0x90 + PIN86[_receivePin].gpN, 0x01); // switch to GPIO
 	// If RX line is high, then we don't see any start bit
 	// so interrupt is probably not for us
 	if (_inverse_logic ? rx_pin_read() : !rx_pin_read())
@@ -149,7 +149,7 @@ void SoftwareSerial::recv()
 			_buffer_overflow = true;
 		}
 	}
-	io_outpb(CROSSBARBASE + 0x90 + pinMap[_receivePin], 0x08); // switch to Encoder
+	io_outpb(CROSSBARBASE + 0x90 + PIN86[_receivePin].gpN, 0x08); // switch to Encoder
 }
 
 void SoftwareSerial::tx_pin_write(uint8_t pin_state)

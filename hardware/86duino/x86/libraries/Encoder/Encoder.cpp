@@ -355,6 +355,7 @@ void Encoder::_ssiInit(unsigned long bits, unsigned long clk, unsigned long wtim
 	io_RestoreINT();
 }
 
+/*
 static void open_mcm_crossbar(int mc) {
 	unsigned short crossbar_ioaddr;
 	
@@ -372,11 +373,12 @@ static void open_mcm_crossbar(int mc) {
 		io_outpb(crossbar_ioaddr, 0x03);
 	}
 }
+*/
 
 static void open_encoder_pin(int mc, int pin) {
 	unsigned short crossbar_ioaddr;
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-	io_outpb(crossbar_ioaddr + 0x90 + pin_offset[mc*3+pin], 0x08);//RICH IO
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[INTPINSMAP[mc*3+pin]].gpN, 0x08);//RICH IO
 }
 
 void Encoder::begin(int sifmode, unsigned long bits, unsigned long clk, unsigned long wtime, bool gray2bin) {
@@ -396,7 +398,7 @@ void Encoder::begin(int sifmode, unsigned long bits, unsigned long clk, unsigned
 		_pdirInit(1);
 	}
 	
-	open_mcm_crossbar(mcn);
+	//open_mcm_crossbar(mcn);
 	open_encoder_pin(mcn, 0);
 	open_encoder_pin(mcn, 1);
 	open_encoder_pin(mcn, 2);
@@ -952,9 +954,11 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
 	mcsif_Enable(mcn, mdn);
 }
 
-#if defined __86DUINO_ONE || defined __86DUINO_ZERO || defined __86DUINO_EDUCAKE
-Encoder Enc0(0);
-Encoder Enc1(1);
-Encoder Enc2(2);
-Encoder Enc3(3);
+#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO) || defined (__86DUINO_EDUCAKE)
+	Encoder Enc0(0);
+	Encoder Enc1(1);
+	Encoder Enc2(2);
+	Encoder Enc3(3);
+#elif defined (__86DUINO_PLC)
+	Encoder Enc0(0);
 #endif

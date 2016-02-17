@@ -363,8 +363,8 @@ static bool closeServoIRQ(void) {
 }
 
 static bool isPWMPin(uint8_t pin) {
-    int mcpwm = arduino_to_mc_md[0][pin];
-	int mdpwm = arduino_to_mc_md[1][pin];
+    int mcpwm = PIN86[pin].PWMMC;
+	int mdpwm = PIN86[pin].PWMMD;
 	if(mcpwm == NOPWM || mdpwm == NOPWM) return false;
 	if(mcpwm == MC_MODULE3 && mdpwm == MCPWM_MODULEB) return false;// this pin is uesd by tone and IRrmote lib after version 103
     return true;
@@ -408,8 +408,8 @@ uint8_t Servo::attach(int pin, int min, int max) {
 		}
 		else
 		{
-			if(mcpwm_ReadReloadOUT(arduino_to_mc_md[0][pin], arduino_to_mc_md[1][pin]) != 0L)
-				mcpwm_ReloadOUT_Unsafe(arduino_to_mc_md[0][pin], arduino_to_mc_md[1][pin], MCPWM_RELOAD_CANCEL);
+			if(mcpwm_ReadReloadOUT(PIN86[pin].PWMMC, PIN86[pin].PWMMD) != 0L)
+				mcpwm_ReloadOUT_Unsafe(PIN86[pin].PWMMC, PIN86[pin].PWMMD, MCPWM_RELOAD_CANCEL);
 		}
 		servos[this->servoIndex].Pin.isActive = true;  // this must be set after the check for isISRActive
 	} 
@@ -429,8 +429,8 @@ void Servo::detach() {
 	}
 	else
 	{
-		mc_pwm = arduino_to_mc_md[0][pin];
-		md_pwm = arduino_to_mc_md[1][pin];
+		mc_pwm = PIN86[pin].PWMMC;
+		md_pwm = PIN86[pin].PWMMD;
 		mcpwm_SetOutMask(mc_pwm, md_pwm, MCPWM_HMASK_INACTIVE); // Low sigh is sensor interface
 		mcpwm_ReloadOUT_Unsafe(mc_pwm, md_pwm, MCPWM_RELOAD_PEREND);
 		mc_md_inuse[pin] = 0;
@@ -510,17 +510,10 @@ static void sendPWM(uint8_t pin, unsigned int val) {
     unsigned short crossbar_ioaddr = 0;
 	int mc_pwm, md_pwm;
 	
-    mc_pwm = arduino_to_mc_md[0][pin];
-    md_pwm = arduino_to_mc_md[1][pin];
+    mc_pwm = PIN86[pin].PWMMC;
+    md_pwm = PIN86[pin].PWMMD;
     
     crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-    
-	if (pin <= 9)
-		io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-	else if (pin > 28)
-    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-	else
-		io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
     
     // Init H/W PWM
     if(mc_md_inuse[pin] == 0)
@@ -540,7 +533,7 @@ static void sendPWM(uint8_t pin, unsigned int val) {
     if(mc_md_inuse[pin] == 0)
 	{
 		mcpwm_Enable(mc_pwm, md_pwm);
-		io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+		io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 		mc_md_inuse[pin] = 1;
     }  
 }

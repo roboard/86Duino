@@ -116,7 +116,7 @@ void setPinStatus(void) {
 	int i;
 	for(i=0; i<PINS; i++)
 	{
-		if(PIN86[i].gpMode != NONE) pinMode(i, PIN86[i].gpMode);
-		if(PIN86[i].gpOutput != NONE) digitalWrite(i, PIN86[i].gpOutput);
+		if(PIN86[i].gpMode != NOSTATUS) pinMode(i, PIN86[i].gpMode);
+		if(PIN86[i].gpOutput != NOSTATUS) digitalWrite(i, PIN86[i].gpOutput);
 	}
 }

@@ -101,14 +101,8 @@ inline void initPWM1(uint8_t freq) {
 		
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-		
+
 		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-		if (pin <= 9)
-			io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-		else if (pin > 28)
-	    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-		else
-			io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 
 		io_RestoreINT();
 		_initPWM1 = true;
@@ -118,7 +112,7 @@ inline void initPWM1(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM1_freq - 1L, (PWM1_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 	io_RestoreINT();
 }
 
@@ -136,7 +130,7 @@ inline void setPWM1(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM1_freq - 1L, (PWM1_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 		}
 	}
 }
@@ -167,14 +161,8 @@ inline void initPWM2(uint8_t freq) {
 		
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-		
+
 		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-		if (pin <= 9)
-			io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-		else if (pin > 28)
-	    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-		else
-			io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 
 		io_RestoreINT();
 		_initPWM2 = true;
@@ -184,7 +172,7 @@ inline void initPWM2(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM2_freq - 1L, (PWM2_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 	io_RestoreINT();
 }
 
@@ -202,7 +190,7 @@ inline void setPWM2(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM2_freq - 1L, (PWM2_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 		}
 	}
 }
@@ -232,14 +220,8 @@ inline void initPWM3(uint8_t freq) {
 		
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-		
+
 		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-		if (pin <= 9)
-			io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-		else if (pin > 28)
-	    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-		else
-			io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 
 		io_RestoreINT();
 		_initPWM3 = true;
@@ -249,7 +231,7 @@ inline void initPWM3(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM3_freq - 1L, (PWM3_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 	io_RestoreINT();
 }
 
@@ -267,7 +249,7 @@ inline void setPWM3(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM3_freq - 1L, (PWM3_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 		}
 	}
 }
@@ -298,14 +280,8 @@ static void initPWM4(uint8_t freq) {
 		
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-		
+
 		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-		if (pin <= 9)
-			io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-		else if (pin > 28)
-	    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-		else
-			io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 
 		io_RestoreINT();
 		_initPWM4 = true;
@@ -315,7 +291,7 @@ static void initPWM4(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM4_freq - 1L, (PWM4_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 	io_RestoreINT();
 }
 
@@ -333,7 +309,7 @@ void setPWM4(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM4_freq - 1L, (PWM4_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08);
+			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
 		}
 	}
 }
@@ -341,12 +317,6 @@ void setPWM4(uint8_t s) {
 AF_DCMotor::AF_DCMotor(uint8_t num, uint8_t freq) {
   motornum = num;
   pwmfreq = freq;
-
-  io_Init();
-  set_MMIO();
-  mc_setbaseaddr();
-  for(int i=0; i<4; i++)
-	mc_SetMode(i, MCMODE_PWM_SIFB);
     
   MC.enable();
 

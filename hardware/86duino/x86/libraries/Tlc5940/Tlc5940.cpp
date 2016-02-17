@@ -66,15 +66,15 @@ static uint8_t firstGSInput;
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(int pin) {
 	int mc, md;
-	mc = arduino_to_mc_md[MCM_MC][pin];
-    md = arduino_to_mc_md[MCM_MD][pin];
+	mc = PIN86[pin].PWMMC;
+    md = PIN86[pin].PWMMD;
     mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
 }
 
 static void disable_MCINT(int pin) {
     int mc, md;
-	mc = arduino_to_mc_md[MCM_MC][pin];
-    md = arduino_to_mc_md[MCM_MD][pin];
+	mc = PIN86[pin].PWMMC;
+    md = PIN86[pin].PWMMD;
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
@@ -83,8 +83,8 @@ static void disable_MCINT(int pin) {
 static void enable_MCINT(int pin) {
 	unsigned long used_int = PULSE_END_INT;
 	int mc, md;
-	mc = arduino_to_mc_md[MCM_MC][pin];
-    md = arduino_to_mc_md[MCM_MD][pin]; 
+	mc = PIN86[pin].PWMMC;
+    md = PIN86[pin].PWMMD; 
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
 	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
 }
@@ -92,26 +92,26 @@ static void enable_MCINT(int pin) {
 static unsigned short crossbar_ioaddr = 0;
 static void openPWMPin(int pin) {
     if(crossbar_ioaddr == 0) return;
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x08); // switch to PWM
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08); // switch to PWM
 }
 
 static void closePWMPin(int pin) {
     if(crossbar_ioaddr == 0) return;
-	io_outpb(crossbar_ioaddr + 0x90 + pinMap[pin], 0x01); // switch to GPIO
+	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x01); // switch to GPIO
 }
 
 static void sendPWMPulse(int pin) {
     int mc, md;
-    mc = arduino_to_mc_md[MCM_MC][pin];
-	md = arduino_to_mc_md[MCM_MD][pin]; 
+    mc = PIN86[pin].PWMMC;
+	md = PIN86[pin].PWMMD; 
 	mcpwm_Enable(mc, md);
 }
 
 // ISR
 static char* isrname = "Tlc5940";
 static int Tlc5940_interrupt(int irq, void* data) {
-    int mc = arduino_to_mc_md[MCM_MC][XLAT_PIN];
-    int md = arduino_to_mc_md[MCM_MD][XLAT_PIN];
+    int mc = PIN86[XLAT_PIN].PWMMC;
+    int md = PIN86[XLAT_PIN].PWMMD;
     
 	if((mc_inp(mc, 0x04) & (PULSE_END_INT << mcint_offset[md])) == 0) return ISR_NONE;
     
@@ -149,8 +149,8 @@ void initPWM(int pin) {
 	else if(pin == BLANK_PIN && _initPWM[1] == true) return; 
 	else if(pin == GSCLK_PIN && _initPWM[2] == true) return;  
 	
-	mc = arduino_to_mc_md[MCM_MC][pin];
-    md = arduino_to_mc_md[MCM_MD][pin];
+	mc = PIN86[pin].PWMMC;
+    md = PIN86[pin].PWMMD;
   
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
 	mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
@@ -160,14 +160,6 @@ void initPWM(int pin) {
 	
 	mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 	mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-	
-	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-	if (pin <= 9)
-		io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-	else if (pin > 28)
-    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-	else
-		io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 
 	if(pin == XLAT_PIN)
 		mcpwm_SetWidth(mc, md, 100000L - 1L, 125L - 1L);
