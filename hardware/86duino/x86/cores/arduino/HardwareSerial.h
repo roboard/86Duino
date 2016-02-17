@@ -88,12 +88,14 @@ class HardwareSerial : public Stream
 #include "USBAPI.h"
 #define COM_FullDuplex    (1000)
 #define COM_HalfDuplex    (2000)
+
 extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;
 extern HardwareSerial Serial3;
+extern HardwareSerial Serial5;
 extern HardwareSerial Serial485;
 extern HardwareSerial Serial232;
-extern HardwareSerial* HWSerial[4];
+extern HardwareSerial* HWSerial[7];
 
 #ifndef __HARDWARE_SERIAL_LIB
 	extern void serialEventRun();

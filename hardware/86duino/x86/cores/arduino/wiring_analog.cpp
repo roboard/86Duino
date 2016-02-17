@@ -62,10 +62,10 @@ static unsigned long mapResolution(unsigned long value, unsigned long from, unsi
 
 void Close_Pwm(uint8_t pin) {
 	int mc, md;
-	if(pin >= PINS) return;
+	if(pin >= PINS || PIN86[pin].gpN == NOUSED) return;
 
-	mc = arduino_to_mc_md[MCM_MC][pin];
-	md = arduino_to_mc_md[MCM_MD][pin];
+	mc = PIN86[pin].PWMMC;
+	md = PIN86[pin].PWMMD;
 
     io_DisableINT();
 
@@ -78,14 +78,12 @@ void Close_Pwm(uint8_t pin) {
     io_RestoreINT();
 }
 
-int analogRead(uint8_t pin) {
+int analogRead(uint8_t adpin) {
 	unsigned long d;
-
-	if((pin > 6 && pin < 45) || pin > 51) return 0xffff;
-
-	#if defined(__86DUINO_EDUCAKE) || defined(__86DUINO_ONE) || defined(__86DUINO_ZERO)
-		if(pin >= 45) pin -= 45;
-	#endif
+	uint8_t pin;
+	
+	if(adpin >= PINS || PIN86[adpin].AD == NOAD) return 0xffff;
+	pin = PIN86[adpin].AD;
 
     io_DisableINT();
 
@@ -112,7 +110,7 @@ void analogWrite(uint8_t pin, uint32_t val) {
 	float unit;
 	int mc, md;
 
-	if(pin >= PINS) return;
+	if(pin >= PINS || PIN86[pin].gpN == NOUSED) return;
 	pinMode(pin, OUTPUT);
 
 	if (val == 0L)
@@ -121,8 +119,8 @@ void analogWrite(uint8_t pin, uint32_t val) {
 		digitalWrite(pin, HIGH);
 	else
 	{
-	    mc = arduino_to_mc_md[MCM_MC][pin];
-	    md = arduino_to_mc_md[MCM_MD][pin];
+	    mc = PIN86[pin].PWMMC;
+	    md = PIN86[pin].PWMMD;
 
 	    if(mc == NOPWM || md == NOPWM)
 		{
@@ -146,13 +144,6 @@ void analogWrite(uint8_t pin, uint32_t val) {
 
 			mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 			mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
-
-			if (pin <= 9)
-				io_outpb(CROSSBARBASE + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-			else if (pin > 28)
-		    	io_outpb(CROSSBARBASE, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-			else
-				io_outpb(CROSSBARBASE + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
 	    }
 
 	    val = mapResolution(val, _writeResolution, PWM_RESOLUTION);
@@ -164,7 +155,7 @@ void analogWrite(uint8_t pin, uint32_t val) {
 	    if(mc_md_inuse[pin] == 0)
 		{
 			mcpwm_Enable(mc, md);
-			io_outpb(CROSSBARBASE + 0x90 + pinMap[pin], 0x08);
+			io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
 			mc_md_inuse[pin] = 1;
 	    }
 

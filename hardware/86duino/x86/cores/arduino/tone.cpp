@@ -125,18 +125,6 @@ bool timer1_pin32_isUsed = false;
 static bool init_mc_irq(void) {
 	if(toneInitInt == false)
 	{
-		/* this part is moved to wiring.cpp
-		Set_MCIRQ(GetMCIRQ());
-		if(irq_Init() == false)
-		{
-		    printf("irq_init fail\n"); return false;
-		}
-
-		if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER) == false)
-		{
-		    printf("%s\n", __FUNCTION__); return false;
-		}
-		*/
 		if(irq_InstallISR(GetMCIRQ(), isr_handler, name) == false)
 		{
 		    printf("irq_install fail\n"); return false;
@@ -154,7 +142,9 @@ static bool init_mc_irq(void) {
 
 
 void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
-    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
+    if(_pin >= PINS || PIN86[_pin].gpN == NOUSED) return;
+	
+	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
     mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
     mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
     mcpwm_SetDeadband(mc, md, 0L);
@@ -201,6 +191,7 @@ void tone_UPDATE(uint8_t _pin, unsigned int frequency, unsigned long duration) {
 }
 
 void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
+	if(_pin >= PINS || PIN86[_pin].gpN == NOUSED) return;
 	if(use_pin_tone != 255 && use_pin_tone !=_pin) return; // tone() has been used before.
 
 	io_DisableINT();

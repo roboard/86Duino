@@ -28,6 +28,8 @@ unsigned long CLOCKS_PER_MICROSEC = 300L; // The default value is 300Mhz for 86D
 unsigned long VORTEX86EX_CLOCKS_PER_MS = 300000L; // The default value is 300000 for 86Duino, you should call init() to set it automatically.
 bool Global_irq_Init = false;
 
+extern void setPinStatus(void);
+
 unsigned long millis() {
 	return timer_NowTime();
 }
@@ -58,7 +60,14 @@ bool init() {
 	//set corssbar Base Address
 	crossbarBase = sb_Read16(SB_CROSSBASE) & 0xfffe;
 	if(crossbarBase == 0 || crossbarBase == 0xfffe)
+	{
 		sb_Write16(SB_CROSSBASE, CROSSBARBASE | 0x01);
+		crossbarBase = CROSSBARBASE;
+	}
+	
+	#if defined CRB_DEBUGMODE
+	for(i=0; i<CRBTABLE_SIZE; i++) io_outpb(crossbarBase+i, CROSSBARTABLE[i]);
+	#endif
 	
 	// Force set HIGH speed ISA on SB
 	sb_Write(SB_FCREG, sb_Read(SB_FCREG) | 0x8000C000L);
@@ -77,7 +86,9 @@ bool init() {
 	// set GPIO Port 0~7 dircetion & data Address
 	for(i=0;i<8;i++)
 		io_outpdw(gpioBase + (i+1)*4,((GPIODIRBASE + i*4)<<16) + GPIODATABASE + i*4);
-	  
+
+	setPinStatus();
+	
 	// set ADC Base Address
 	sb_Write(0xbc, sb_Read(0xbc) & (~(1L<<28)));  // active adc
 	sb1_Write16(0xde, sb1_Read16(0xde) | 0x02);   // not Available for 8051A Access ADC

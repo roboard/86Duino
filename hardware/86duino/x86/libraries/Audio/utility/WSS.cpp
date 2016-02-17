@@ -4397,6 +4397,8 @@ static void free_dosmem4k(void)
 //		  __dpmi_unlock_linear_region(&info4k);
 //	  }
 	__dpmi_free_dos_memory(g_dosmem4k_sel);
+	g_dosmem4k_sel = 0;
+	g_dosmem4k_addr = 0;
 }
 
 static DWORD get_address_dosmem4k(void)
@@ -4463,6 +4465,8 @@ static void free_dosmem64k_for_dma(void)
 		__dpmi_unlock_linear_region(&info64k);
 	}
 	__dpmi_free_dos_memory(g_wss_dma_sel);
+	g_wss_dma_sel = 0;
+	g_wss_dma_addr = 0;
 }
 
 static DWORD get_address_dosmem64k_for_dma(void)

@@ -22,7 +22,7 @@
 uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder) {
 	uint8_t value = 0;
 	uint8_t i;
-    if(dataPin >= PINS || clockPin >= PINS) return 0x00;
+    if(dataPin >= PINS || clockPin >= PINS || PIN86[dataPin].gpN == NOUSED || PIN86[clockPin].gpN == NOUSED) return 0x00;
     
 	for (i = 0; i < 8; i++)
 	{
@@ -39,7 +39,7 @@ uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder) {
 void shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t val) {
 	uint8_t i;
 
-    if(dataPin >= PINS || clockPin >= PINS) return;
+    if(dataPin >= PINS || clockPin >= PINS || PIN86[dataPin].gpN == NOUSED || PIN86[clockPin].gpN == NOUSED) return;
     
 	for (i = 0; i < 8; i++)
 	{

@@ -120,8 +120,7 @@ void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
 	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
 	if(port == COM1 || port == COM2 || port == COM3)
 		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
-	#endif
-	
+
 	if(port == COM1)
 	{
 		io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
@@ -137,6 +136,7 @@ void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
 		io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
 		io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
 	}
+	#endif
 }
 
 void HardwareSerial::end() {
@@ -197,20 +197,25 @@ void serialEvent() __attribute__((weak));
 void serialEvent1() __attribute__((weak));
 void serialEvent2() __attribute__((weak));
 void serialEvent3() __attribute__((weak));
+void serialEvent5() __attribute__((weak));
 void serialEvent485() __attribute__((weak));
 void serialEvent232() __attribute__((weak));
+
 void serialEvent() {}
 void serialEvent1() {}
 void serialEvent2() {}
 void serialEvent3() {}
+void serialEvent5() {}
 void serialEvent485() {}
 void serialEvent232() {}
+
 void serialEventRun(void)
 {
 	if(USBDEV != NULL && Serial.available() > 0) serialEvent();
 	if(Serial1.handle != NULL && Serial1.available() > 0) serialEvent1();
 	if(Serial2.handle != NULL && Serial2.available() > 0) serialEvent2();
 	if(Serial3.handle != NULL && Serial3.available() > 0) serialEvent3();
+	if(Serial5.handle != NULL && Serial5.available() > 0) serialEvent5();
 	if(Serial485.handle != NULL && Serial485.available() > 0) serialEvent485();
 	if(Serial232.handle != NULL && Serial232.available() > 0) serialEvent232();
 }
@@ -218,7 +223,10 @@ void serialEventRun(void)
 HardwareSerial Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
 HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
 HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial Serial5(COM5, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
 HardwareSerial Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
 HardwareSerial Serial232(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
-HardwareSerial* HWSerial[4] = {NULL, &Serial1, &Serial2, &Serial3};
+
+HardwareSerial* HWSerial[7] = {NULL, &Serial1, &Serial2, &Serial3, &Serial485, &Serial5, &Serial232};
+
 // Preinstantiate Objects //////////////////////////////////////////////////////

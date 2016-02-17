@@ -1,3 +1,13 @@
+### CODING 212 - 2016.2.17 ###
+
+[core]
+* Modify the define method of pin_arduino.h to add new 86Duino board easier. (Knock-on Arduino.h, HardwareSerial.cpp, HardwareSerial.h, WInterrupts.cpp, tone.cpp, wiring.cpp, wiring_analog.cpp, wiring_digital.cpp, wiring_pulse.cpp, wiring_shift.cpp)
+
+[libraries]
+* Fixed: a bug in Audio library.
+* Update: Firmata version from 2.3.6 to 2.5.1.
+
+
 ### CODING 211 - 2016.1.12 ###
 
 [core]
