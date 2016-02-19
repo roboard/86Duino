@@ -6,6 +6,9 @@
 [libraries]
 * Fixed: a bug in Audio library.
 * Update: Firmata version from 2.3.6 to 2.5.1.
+* Use new pin mapping method in some libraries: AFMotor, Servo, Servo86, Encoder, GSM, IRRemote, softwareSerial, TimerOne, Tlc5940, UTFT, UTOUCH
+* Add RTCZero library.
+
 
 
 ### CODING 211 - 2016.1.12 ###
