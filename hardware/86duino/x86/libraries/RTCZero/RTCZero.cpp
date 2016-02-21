@@ -1,3 +1,21 @@
+/*
+  RTC library for Arduino Zero.
+  Copyright (c) 2015 Arduino LLC. All right reserved.
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  Lesser General Public License for more details.
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+  
+  Modified 19 February 2016 by Android Lin for 86Duino.
+*/
+
 #include "RTCZero.h"
 #include <dos.h>
 #include "io.h"
@@ -230,7 +248,7 @@ RTCZero::RTCZero() {}
 
 void RTCZero::begin() {
     RTCZeroInit = true;
-	outpb_cmos(0x0B, 0x02); // set bit 1 to logic 1 is 24 hour, logic 0 is 12 hour
+	outpb_cmos(0x0B, 0x02); // set bit 1 to logic 1 is 24 hours, logic 0 is 12 hours
 }
 
 void RTCZero::attachInterrupt(void (*isr)(void)) {
@@ -314,7 +332,7 @@ void RTCZero::standbyMode() {
 	i8259_DisableIRQ(1);
 	i8259_DisableIRQ(3);
 	i8259_DisableIRQ(4);
-	//i8259_DisableIRQ(5);
+	//i8259_DisableIRQ(5); // USB device
 	i8259_DisableIRQ(6);
 	i8259_DisableIRQ(7);
 	i8259_DisableIRQ(8);
@@ -325,7 +343,6 @@ void RTCZero::standbyMode() {
 	i8259_DisableIRQ(13);
 	i8259_DisableIRQ(14);
 	i8259_DisableIRQ(15);
-	//io_DisableINT();
 	asm __volatile__ ("hlt\n":::"memory");
 	*/
 }
