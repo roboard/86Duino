@@ -318,15 +318,28 @@ void RTCZero::disableAlarm() {
 }
 
 void RTCZero::standbyMode() {
-	// Note: we can't read RTC register C to determine whether exit while() or not, because reading behavior will clear all ineterrupt status,
-	// in addition, in order to implement "year, month, day" alram time, we also set "dummy" alarm time to do it,
-	// so don't depended on whether RTC interrupt occur or not to exit while(), otherwise exit while() will be at wrong time.
-	// we should see "AlarmFlag" to determine whether exit while() or not. If "AlarmFlag" is set to "true" in ISR, then exit while() here.
-	do
+	unsigned char tmp;
+	
+	if(RTCZeroEnable == true)
 	{
-		asm __volatile__ ("hlt\n":::"memory");
-	}while(AlarmFlag == false); 
-	AlarmFlag = false;
+		// Note: in order to implement "year, month, day" alram time, we also set "dummy" alarm time to do it,
+		// so don't depended on whether RTC interrupt occur or not to exit while(), otherwise exit while() will be at wrong time.
+		// we should see "AlarmFlag" to determine whether exit while() or not. If "AlarmFlag" is set to "true" in ISR, then exit while() here.
+		do
+		{
+			asm __volatile__ ("hlt\n":::"memory");
+		} while(AlarmFlag == false); 
+		AlarmFlag = false;
+	}
+	else
+	{
+		do
+		{
+			asm __volatile__ ("hlt\n":::"memory");
+			io_outpb(0x70, 0x0C); // enable NMI and read RTC register C 
+			tmp = io_inpb(0x71); // clear RTC interrupt state
+		} while((tmp & 0x20) == 0);
+	}
 }
 
 uint8_t RTCZero::getSeconds() {
