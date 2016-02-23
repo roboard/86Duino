@@ -318,33 +318,15 @@ void RTCZero::disableAlarm() {
 }
 
 void RTCZero::standbyMode() {
-	while(1)
+	// Note: we can't read RTC register C to determine whether exit while() or not, because reading behavior will clear all ineterrupt status,
+	// in addition, in order to implement "year, month, day" alram time, we also set "dummy" alarm time to do it,
+	// so don't depended on whether RTC interrupt occur or not to exit while(), otherwise exit while() will be at wrong time.
+	// we should see "AlarmFlag" to determine whether exit while() or not. If "AlarmFlag" is set to "true" in ISR, then exit while() here.
+	do
 	{
-		if(AlarmFlag == true)
-		{
-			AlarmFlag = false;
-			break;
-		}
-	}
-
-	/*
-	i8259_DisableIRQ(0);
-	i8259_DisableIRQ(1);
-	i8259_DisableIRQ(3);
-	i8259_DisableIRQ(4);
-	//i8259_DisableIRQ(5); // USB device
-	i8259_DisableIRQ(6);
-	i8259_DisableIRQ(7);
-	i8259_DisableIRQ(8);
-	i8259_DisableIRQ(9);
-	i8259_DisableIRQ(10);
-	i8259_DisableIRQ(11);
-	i8259_DisableIRQ(12);
-	i8259_DisableIRQ(13);
-	i8259_DisableIRQ(14);
-	i8259_DisableIRQ(15);
-	asm __volatile__ ("hlt\n":::"memory");
-	*/
+		asm __volatile__ ("hlt\n":::"memory");
+	}while(AlarmFlag == false); 
+	AlarmFlag = false;
 }
 
 uint8_t RTCZero::getSeconds() {
