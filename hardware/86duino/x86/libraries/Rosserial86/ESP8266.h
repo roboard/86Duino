@@ -386,6 +386,8 @@ class ESP8266 {
      */
     uint32_t recv(uint8_t *coming_mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout = 1000);
 	
+	bool disableEcho();
+	
 	void recvQ(uint32_t timeout);
 	void recvQ(String data);
 

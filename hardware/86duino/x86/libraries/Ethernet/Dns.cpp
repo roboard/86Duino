@@ -29,7 +29,7 @@
 
 DNSClient::DNSClient()
 {
-	iDNSServer = IPADDR_NONE;
+	iDNSServer = INADDR_NONE;
 }
 
 void DNSClient::begin(const IPAddress& aDNSServer)
@@ -110,7 +110,7 @@ int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult)
     }
 
     // Check we've got a valid DNS server to use
-    if (iDNSServer == IPADDR_NONE)
+    if (iDNSServer == INADDR_NONE)
         return 0;
 	
     // Find a socket to use

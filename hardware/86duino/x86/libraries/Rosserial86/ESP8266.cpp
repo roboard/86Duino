@@ -302,6 +302,19 @@ uint32_t ESP8266::recv(uint8_t *coming_mux_id, uint8_t *buffer, uint32_t buffer_
     return recvPkg(buffer, buffer_size, NULL, timeout, coming_mux_id);
 }
 
+bool ESP8266::disableEcho()
+{
+    String data;
+    rx_empty();
+    m_puart->print("ATE0");
+    
+    data = recvString("OK", 100);
+    if (data.indexOf("OK") != -1 ) {
+        return true;
+    }
+    return false;
+}
+
 /*----------------------------------------------------------------------------*/
 /* +IPD,<id>,<len>:<data> */
 /* +IPD,<len>:<data> */
@@ -497,9 +510,9 @@ String ESP8266::recvString(String target, uint32_t timeout)
     while (millis() - start < timeout) {
         while(m_puart->available() > 0) {
             a = m_puart->read();
+			wifi_data.push( a );
 			if(a == '\0') continue;
             data += a;
-			wifi_data.push( a );
         }
         if (data.indexOf(target) != -1) {
             break;
@@ -516,9 +529,9 @@ String ESP8266::recvString(String target1, String target2, uint32_t timeout)
     while (millis() - start < timeout) {
         while(m_puart->available() > 0) {
             a = m_puart->read();
+			wifi_data.push( a );
 			if(a == '\0') continue;
             data += a;
-			wifi_data.push( a );
         }
         if (data.indexOf(target1) != -1) {
             break;
@@ -537,9 +550,9 @@ String ESP8266::recvString(String target1, String target2, String target3, uint3
     while (millis() - start < timeout) {
         while(m_puart->available() > 0) {
             a = m_puart->read();
+			wifi_data.push( a );
 			if(a == '\0') continue;
             data += a;
-			wifi_data.push( a );
         }
         if (data.indexOf(target1) != -1) {
             break;
@@ -830,4 +843,3 @@ bool ESP8266::sATCIPSTO(uint32_t timeout)
     m_puart->println(timeout);
     return recvFind("OK");
 }
-

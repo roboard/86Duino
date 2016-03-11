@@ -643,6 +643,8 @@ void Servo::setPosition(long pos, unsigned long time) {
 }
 
 void Servo::setPosition(double angle, unsigned long time) {
+	if(angle == 0.0) return;
+	
 	if(had_target_pos[servoIndex] == 0)
 	{
 		if(isPWMPin(servos[servoIndex].Pin.nbr) == false) insert(servos[servoIndex]);
@@ -768,6 +770,7 @@ void Servo::run(void) {
             sv86[servoIndex].starttime = millis();
 			sv86[servoIndex].endtime = sv86[servoIndex].starttime + total_time;
 		}
+		// if sv86[servoIndex].state is IDLE, do nothing.
 		io_RestoreINT();
 		return;
 	}
@@ -1062,25 +1065,25 @@ void ServoFrame::setPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo 
 		
 	if(&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->setPosition(positions[i]);}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i]);}
 		return;
 	}
 		
-	s1.setPosition(positions[0]); s2.setPosition(positions[1]); s3.setPosition(positions[2]);
-	s4.setPosition(positions[3]); s5.setPosition(positions[4]); s6.setPosition(positions[5]);
-	s7.setPosition(positions[6]); s8.setPosition(positions[7]); s9.setPosition(positions[8]);
-	s10.setPosition(positions[9]); s11.setPosition(positions[10]); s12.setPosition(positions[11]);
-	s13.setPosition(positions[12]); s14.setPosition(positions[13]); s15.setPosition(positions[14]);
-	s16.setPosition(positions[15]); s17.setPosition(positions[16]); s18.setPosition(positions[17]);
-	s19.setPosition(positions[18]); s20.setPosition(positions[19]); s21.setPosition(positions[20]);
-	s22.setPosition(positions[21]); s23.setPosition(positions[22]); s24.setPosition(positions[23]);
-	s25.setPosition(positions[24]); s26.setPosition(positions[25]); s27.setPosition(positions[26]);
-	s28.setPosition(positions[27]); s29.setPosition(positions[28]); s30.setPosition(positions[29]);
-	s31.setPosition(positions[30]); s32.setPosition(positions[31]); s33.setPosition(positions[32]);
-	s34.setPosition(positions[33]); s35.setPosition(positions[34]); s36.setPosition(positions[35]);
-	s37.setPosition(positions[36]); s38.setPosition(positions[37]); s39.setPosition(positions[38]);
-	s40.setPosition(positions[39]); s41.setPosition(positions[40]); s42.setPosition(positions[41]);
-	s43.setPosition(positions[42]); s44.setPosition(positions[43]); s45.setPosition(positions[44]);
+	s1.setPosition(positions[s1.servoIndex]); s2.setPosition(positions[s2.servoIndex]); s3.setPosition(positions[s3.servoIndex]);
+	s4.setPosition(positions[s4.servoIndex]); s5.setPosition(positions[s5.servoIndex]); s6.setPosition(positions[s6.servoIndex]);
+	s7.setPosition(positions[s7.servoIndex]); s8.setPosition(positions[s8.servoIndex]); s9.setPosition(positions[s9.servoIndex]);
+	s10.setPosition(positions[s10.servoIndex]); s11.setPosition(positions[s11.servoIndex]); s12.setPosition(positions[s12.servoIndex]);
+	s13.setPosition(positions[s13.servoIndex]); s14.setPosition(positions[s14.servoIndex]); s15.setPosition(positions[s15.servoIndex]);
+	s16.setPosition(positions[s16.servoIndex]); s17.setPosition(positions[s17.servoIndex]); s18.setPosition(positions[s18.servoIndex]);
+	s19.setPosition(positions[s19.servoIndex]); s20.setPosition(positions[s20.servoIndex]); s21.setPosition(positions[s21.servoIndex]);
+	s22.setPosition(positions[s22.servoIndex]); s23.setPosition(positions[s23.servoIndex]); s24.setPosition(positions[s24.servoIndex]);
+	s25.setPosition(positions[s25.servoIndex]); s26.setPosition(positions[s26.servoIndex]); s27.setPosition(positions[s27.servoIndex]);
+	s28.setPosition(positions[s28.servoIndex]); s29.setPosition(positions[s29.servoIndex]); s30.setPosition(positions[s30.servoIndex]);
+	s31.setPosition(positions[s31.servoIndex]); s32.setPosition(positions[s32.servoIndex]); s33.setPosition(positions[s33.servoIndex]);
+	s34.setPosition(positions[s34.servoIndex]); s35.setPosition(positions[s35.servoIndex]); s36.setPosition(positions[s36.servoIndex]);
+	s37.setPosition(positions[s37.servoIndex]); s38.setPosition(positions[s38.servoIndex]); s39.setPosition(positions[s39.servoIndex]);
+	s40.setPosition(positions[s40.servoIndex]); s41.setPosition(positions[s41.servoIndex]); s42.setPosition(positions[s42.servoIndex]);
+	s43.setPosition(positions[s43.servoIndex]); s44.setPosition(positions[s44.servoIndex]); s45.setPosition(positions[s45.servoIndex]);
 }
 
 void ServoFrame::setPositions(unsigned long playtime, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
@@ -1097,25 +1100,25 @@ void ServoFrame::setPositions(unsigned long playtime, Servo &s1, Servo &s2, Serv
 		
 	if(&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->setPosition(positions[i], playtime);}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i], playtime);}
 		return;
 	}
 		
-	s1.setPosition(positions[0], playtime); s2.setPosition(positions[1], playtime); s3.setPosition(positions[2], playtime);
-	s4.setPosition(positions[3], playtime); s5.setPosition(positions[4], playtime); s6.setPosition(positions[5], playtime);
-	s7.setPosition(positions[6], playtime); s8.setPosition(positions[7], playtime); s9.setPosition(positions[8], playtime);
-	s10.setPosition(positions[9], playtime); s11.setPosition(positions[10], playtime); s12.setPosition(positions[11], playtime);
-	s13.setPosition(positions[12], playtime); s14.setPosition(positions[13], playtime); s15.setPosition(positions[14], playtime);
-	s16.setPosition(positions[15], playtime); s17.setPosition(positions[16], playtime); s18.setPosition(positions[17], playtime);
-	s19.setPosition(positions[18], playtime); s20.setPosition(positions[19], playtime); s21.setPosition(positions[20], playtime);
-	s22.setPosition(positions[21], playtime); s23.setPosition(positions[22], playtime); s24.setPosition(positions[23], playtime);
-	s25.setPosition(positions[24], playtime); s26.setPosition(positions[25], playtime); s27.setPosition(positions[26], playtime);
-	s28.setPosition(positions[27], playtime); s29.setPosition(positions[28], playtime); s30.setPosition(positions[29], playtime);
-	s31.setPosition(positions[30], playtime); s32.setPosition(positions[31], playtime); s33.setPosition(positions[32], playtime);
-	s34.setPosition(positions[33], playtime); s35.setPosition(positions[34], playtime); s36.setPosition(positions[35], playtime);
-	s37.setPosition(positions[36], playtime); s38.setPosition(positions[37], playtime); s39.setPosition(positions[38], playtime);
-	s40.setPosition(positions[39], playtime); s41.setPosition(positions[40], playtime); s42.setPosition(positions[41], playtime);
-	s43.setPosition(positions[42], playtime); s44.setPosition(positions[43], playtime); s45.setPosition(positions[44], playtime);
+	s1.setPosition(positions[s1.servoIndex], playtime); s2.setPosition(positions[s2.servoIndex], playtime); s3.setPosition(positions[s3.servoIndex], playtime);
+	s4.setPosition(positions[s4.servoIndex], playtime); s5.setPosition(positions[s5.servoIndex], playtime); s6.setPosition(positions[s6.servoIndex], playtime);
+	s7.setPosition(positions[s7.servoIndex], playtime); s8.setPosition(positions[s8.servoIndex], playtime); s9.setPosition(positions[s9.servoIndex], playtime);
+	s10.setPosition(positions[s10.servoIndex], playtime); s11.setPosition(positions[s11.servoIndex], playtime); s12.setPosition(positions[s12.servoIndex], playtime);
+	s13.setPosition(positions[s13.servoIndex], playtime); s14.setPosition(positions[s14.servoIndex], playtime); s15.setPosition(positions[s15.servoIndex], playtime);
+	s16.setPosition(positions[s16.servoIndex], playtime); s17.setPosition(positions[s17.servoIndex], playtime); s18.setPosition(positions[s18.servoIndex], playtime);
+	s19.setPosition(positions[s19.servoIndex], playtime); s20.setPosition(positions[s20.servoIndex], playtime); s21.setPosition(positions[s21.servoIndex], playtime);
+	s22.setPosition(positions[s22.servoIndex], playtime); s23.setPosition(positions[s23.servoIndex], playtime); s24.setPosition(positions[s24.servoIndex], playtime);
+	s25.setPosition(positions[s25.servoIndex], playtime); s26.setPosition(positions[s26.servoIndex], playtime); s27.setPosition(positions[s27.servoIndex], playtime);
+	s28.setPosition(positions[s28.servoIndex], playtime); s29.setPosition(positions[s29.servoIndex], playtime); s30.setPosition(positions[s30.servoIndex], playtime);
+	s31.setPosition(positions[s31.servoIndex], playtime); s32.setPosition(positions[s32.servoIndex], playtime); s33.setPosition(positions[s33.servoIndex], playtime);
+	s34.setPosition(positions[s34.servoIndex], playtime); s35.setPosition(positions[s35.servoIndex], playtime); s36.setPosition(positions[s36.servoIndex], playtime);
+	s37.setPosition(positions[s37.servoIndex], playtime); s38.setPosition(positions[s38.servoIndex], playtime); s39.setPosition(positions[s39.servoIndex], playtime);
+	s40.setPosition(positions[s40.servoIndex], playtime); s41.setPosition(positions[s41.servoIndex], playtime); s42.setPosition(positions[s42.servoIndex], playtime);
+	s43.setPosition(positions[s43.servoIndex], playtime); s44.setPosition(positions[s44.servoIndex], playtime); s45.setPosition(positions[s45.servoIndex], playtime);
 }
 
 static void get_real_path(const char* dir, char* path) {
@@ -1267,28 +1270,30 @@ void ServoFrame::playPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo
 	int i;
 		
 	if(&s1 == &nullServo) // no input servo class
-	{                                                             
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->setPosition(positions[i]);}
-		servoMultiRun();
+	{  
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i]);}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->run();}
 		return;
 	}
-		
-	s1.setPosition(positions[0]); s2.setPosition(positions[1]); s3.setPosition(positions[2]);
-	s4.setPosition(positions[3]); s5.setPosition(positions[4]); s6.setPosition(positions[5]);
-	s7.setPosition(positions[6]); s8.setPosition(positions[7]); s9.setPosition(positions[8]);
-	s10.setPosition(positions[9]); s11.setPosition(positions[10]); s12.setPosition(positions[11]);
-	s13.setPosition(positions[12]); s14.setPosition(positions[13]); s15.setPosition(positions[14]);
-	s16.setPosition(positions[15]); s17.setPosition(positions[16]); s18.setPosition(positions[17]);
-	s19.setPosition(positions[18]); s20.setPosition(positions[19]); s21.setPosition(positions[20]);
-	s22.setPosition(positions[21]); s23.setPosition(positions[22]); s24.setPosition(positions[23]);
-	s25.setPosition(positions[24]); s26.setPosition(positions[25]); s27.setPosition(positions[26]);
-	s28.setPosition(positions[27]); s29.setPosition(positions[28]); s30.setPosition(positions[29]);
-	s31.setPosition(positions[30]); s32.setPosition(positions[31]); s33.setPosition(positions[32]);
-	s34.setPosition(positions[33]); s35.setPosition(positions[34]); s36.setPosition(positions[35]);
-	s37.setPosition(positions[36]); s38.setPosition(positions[37]); s39.setPosition(positions[38]);
-	s40.setPosition(positions[39]); s41.setPosition(positions[40]); s42.setPosition(positions[41]);
-	s43.setPosition(positions[42]); s44.setPosition(positions[43]); s45.setPosition(positions[44]);
-    servoMultiRun();
+
+	s1.setPosition(positions[s1.servoIndex]); s2.setPosition(positions[s2.servoIndex]); s3.setPosition(positions[s3.servoIndex]);
+	s4.setPosition(positions[s4.servoIndex]); s5.setPosition(positions[s5.servoIndex]); s6.setPosition(positions[s6.servoIndex]);
+	s7.setPosition(positions[s7.servoIndex]); s8.setPosition(positions[s8.servoIndex]); s9.setPosition(positions[s9.servoIndex]);
+	s10.setPosition(positions[s10.servoIndex]); s11.setPosition(positions[s11.servoIndex]); s12.setPosition(positions[s12.servoIndex]);
+	s13.setPosition(positions[s13.servoIndex]); s14.setPosition(positions[s14.servoIndex]); s15.setPosition(positions[s15.servoIndex]);
+	s16.setPosition(positions[s16.servoIndex]); s17.setPosition(positions[s17.servoIndex]); s18.setPosition(positions[s18.servoIndex]);
+	s19.setPosition(positions[s19.servoIndex]); s20.setPosition(positions[s20.servoIndex]); s21.setPosition(positions[s21.servoIndex]);
+	s22.setPosition(positions[s22.servoIndex]); s23.setPosition(positions[s23.servoIndex]); s24.setPosition(positions[s24.servoIndex]);
+	s25.setPosition(positions[s25.servoIndex]); s26.setPosition(positions[s26.servoIndex]); s27.setPosition(positions[s27.servoIndex]);
+	s28.setPosition(positions[s28.servoIndex]); s29.setPosition(positions[s29.servoIndex]); s30.setPosition(positions[s30.servoIndex]);
+	s31.setPosition(positions[s31.servoIndex]); s32.setPosition(positions[s32.servoIndex]); s33.setPosition(positions[s33.servoIndex]);
+	s34.setPosition(positions[s34.servoIndex]); s35.setPosition(positions[s35.servoIndex]); s36.setPosition(positions[s36.servoIndex]);
+	s37.setPosition(positions[s37.servoIndex]); s38.setPosition(positions[s38.servoIndex]); s39.setPosition(positions[s39.servoIndex]);
+	s40.setPosition(positions[s40.servoIndex]); s41.setPosition(positions[s41.servoIndex]); s42.setPosition(positions[s42.servoIndex]);
+	s43.setPosition(positions[s43.servoIndex]); s44.setPosition(positions[s44.servoIndex]); s45.setPosition(positions[s45.servoIndex]);
+    servoMultiRun(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
+	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
+	              s41, s42, s43, s44, s45);
 }
 
 void ServoFrame::playPositions(unsigned long playtime, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
@@ -1302,30 +1307,32 @@ void ServoFrame::playPositions(unsigned long playtime, Servo &s1, Servo &s2, Ser
                                Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
                                
 	int i;
-		
+
 	if(&s1 == &nullServo) // no input servo class
 	{
 		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->setPosition(positions[i], playtime);}
-		servoMultiRun();
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->run();}
 		return;
 	}
-		
-	s1.setPosition(positions[0], playtime); s2.setPosition(positions[1], playtime); s3.setPosition(positions[2], playtime);
-	s4.setPosition(positions[3], playtime); s5.setPosition(positions[4], playtime); s6.setPosition(positions[5], playtime);
-	s7.setPosition(positions[6], playtime); s8.setPosition(positions[7], playtime); s9.setPosition(positions[8], playtime);
-	s10.setPosition(positions[9], playtime); s11.setPosition(positions[10], playtime); s12.setPosition(positions[11], playtime);
-	s13.setPosition(positions[12], playtime); s14.setPosition(positions[13], playtime); s15.setPosition(positions[14], playtime);
-	s16.setPosition(positions[15], playtime); s17.setPosition(positions[16], playtime); s18.setPosition(positions[17], playtime);
-	s19.setPosition(positions[18], playtime); s20.setPosition(positions[19], playtime); s21.setPosition(positions[20], playtime);
-	s22.setPosition(positions[21], playtime); s23.setPosition(positions[22], playtime); s24.setPosition(positions[23], playtime);
-	s25.setPosition(positions[24], playtime); s26.setPosition(positions[25], playtime); s27.setPosition(positions[26], playtime);
-	s28.setPosition(positions[27], playtime); s29.setPosition(positions[28], playtime); s30.setPosition(positions[29], playtime);
-	s31.setPosition(positions[30], playtime); s32.setPosition(positions[31], playtime); s33.setPosition(positions[32], playtime);
-	s34.setPosition(positions[33], playtime); s35.setPosition(positions[34], playtime); s36.setPosition(positions[35], playtime);
-	s37.setPosition(positions[36], playtime); s38.setPosition(positions[37], playtime); s39.setPosition(positions[38], playtime);
-	s40.setPosition(positions[39], playtime); s41.setPosition(positions[40], playtime); s42.setPosition(positions[41], playtime);
-	s43.setPosition(positions[42], playtime); s44.setPosition(positions[43], playtime); s45.setPosition(positions[44], playtime);
-    servoMultiRun();
+
+	s1.setPosition(positions[s1.servoIndex], playtime); s2.setPosition(positions[s2.servoIndex], playtime); s3.setPosition(positions[s3.servoIndex], playtime);
+	s4.setPosition(positions[s4.servoIndex], playtime); s5.setPosition(positions[s5.servoIndex], playtime); s6.setPosition(positions[s6.servoIndex], playtime);
+	s7.setPosition(positions[s7.servoIndex], playtime); s8.setPosition(positions[s8.servoIndex], playtime); s9.setPosition(positions[s9.servoIndex], playtime);
+	s10.setPosition(positions[s10.servoIndex], playtime); s11.setPosition(positions[s11.servoIndex], playtime); s12.setPosition(positions[s12.servoIndex], playtime);
+	s13.setPosition(positions[s13.servoIndex], playtime); s14.setPosition(positions[s14.servoIndex], playtime); s15.setPosition(positions[s15.servoIndex], playtime);
+	s16.setPosition(positions[s16.servoIndex], playtime); s17.setPosition(positions[s17.servoIndex], playtime); s18.setPosition(positions[s18.servoIndex], playtime);
+	s19.setPosition(positions[s19.servoIndex], playtime); s20.setPosition(positions[s20.servoIndex], playtime); s21.setPosition(positions[s21.servoIndex], playtime);
+	s22.setPosition(positions[s22.servoIndex], playtime); s23.setPosition(positions[s23.servoIndex], playtime); s24.setPosition(positions[s24.servoIndex], playtime);
+	s25.setPosition(positions[s25.servoIndex], playtime); s26.setPosition(positions[s26.servoIndex], playtime); s27.setPosition(positions[s27.servoIndex], playtime);
+	s28.setPosition(positions[s28.servoIndex], playtime); s29.setPosition(positions[s29.servoIndex], playtime); s30.setPosition(positions[s30.servoIndex], playtime);
+	s31.setPosition(positions[s31.servoIndex], playtime); s32.setPosition(positions[s32.servoIndex], playtime); s33.setPosition(positions[s33.servoIndex], playtime);
+	s34.setPosition(positions[s34.servoIndex], playtime); s35.setPosition(positions[s35.servoIndex], playtime); s36.setPosition(positions[s36.servoIndex], playtime);
+	s37.setPosition(positions[s37.servoIndex], playtime); s38.setPosition(positions[s38.servoIndex], playtime); s39.setPosition(positions[s39.servoIndex], playtime);
+	s40.setPosition(positions[s40.servoIndex], playtime); s41.setPosition(positions[s41.servoIndex], playtime); s42.setPosition(positions[s42.servoIndex], playtime);
+	s43.setPosition(positions[s43.servoIndex], playtime); s44.setPosition(positions[s44.servoIndex], playtime); s45.setPosition(positions[s45.servoIndex], playtime);
+    servoMultiRun(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
+	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
+	              s41, s42, s43, s44, s45);
 }
 
 /******************************* End of Servo Frame ***************************/
@@ -1359,25 +1366,25 @@ void ServoOffset::setOffsets(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &
 		
 	if(&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->setOffset(offsets[i]);}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && offsets[i] != 0L) Servoptr[i]->setOffset(offsets[i]);}
 		return;
 	}
 		
-	s1.setOffset(offsets[0]); s2.setOffset(offsets[1]); s3.setOffset(offsets[2]);
-	s4.setOffset(offsets[3]); s5.setOffset(offsets[4]); s6.setOffset(offsets[5]);
-	s7.setOffset(offsets[6]); s8.setOffset(offsets[7]); s9.setOffset(offsets[8]);
-	s10.setOffset(offsets[9]); s11.setOffset(offsets[10]); s12.setOffset(offsets[11]);
-	s13.setOffset(offsets[12]); s14.setOffset(offsets[13]); s15.setOffset(offsets[14]);
-	s16.setOffset(offsets[15]); s17.setOffset(offsets[16]); s18.setOffset(offsets[17]);
-	s19.setOffset(offsets[18]); s20.setOffset(offsets[19]); s21.setOffset(offsets[20]);
-	s22.setOffset(offsets[21]); s23.setOffset(offsets[22]); s24.setOffset(offsets[23]);
-	s25.setOffset(offsets[24]); s26.setOffset(offsets[25]); s27.setOffset(offsets[26]);
-	s28.setOffset(offsets[27]); s29.setOffset(offsets[28]); s30.setOffset(offsets[29]);
-	s31.setOffset(offsets[30]); s32.setOffset(offsets[31]); s33.setOffset(offsets[32]);
-	s34.setOffset(offsets[33]); s35.setOffset(offsets[34]); s36.setOffset(offsets[35]);
-	s37.setOffset(offsets[36]); s38.setOffset(offsets[37]); s39.setOffset(offsets[38]);
-	s40.setOffset(offsets[39]); s41.setOffset(offsets[40]); s42.setOffset(offsets[41]);
-	s43.setOffset(offsets[42]); s44.setOffset(offsets[43]); s45.setOffset(offsets[44]);
+	s1.setOffset(offsets[s1.servoIndex]); s2.setOffset(offsets[s2.servoIndex]); s3.setOffset(offsets[s3.servoIndex]);
+	s4.setOffset(offsets[s4.servoIndex]); s5.setOffset(offsets[s5.servoIndex]); s6.setOffset(offsets[s6.servoIndex]);
+	s7.setOffset(offsets[s7.servoIndex]); s8.setOffset(offsets[s8.servoIndex]); s9.setOffset(offsets[s9.servoIndex]);
+	s10.setOffset(offsets[s10.servoIndex]); s11.setOffset(offsets[s11.servoIndex]); s12.setOffset(offsets[s12.servoIndex]);
+	s13.setOffset(offsets[s13.servoIndex]); s14.setOffset(offsets[s14.servoIndex]); s15.setOffset(offsets[s15.servoIndex]);
+	s16.setOffset(offsets[s16.servoIndex]); s17.setOffset(offsets[s17.servoIndex]); s18.setOffset(offsets[s18.servoIndex]);
+	s19.setOffset(offsets[s19.servoIndex]); s20.setOffset(offsets[s20.servoIndex]); s21.setOffset(offsets[s21.servoIndex]);
+	s22.setOffset(offsets[s22.servoIndex]); s23.setOffset(offsets[s23.servoIndex]); s24.setOffset(offsets[s24.servoIndex]);
+	s25.setOffset(offsets[s25.servoIndex]); s26.setOffset(offsets[s26.servoIndex]); s27.setOffset(offsets[s27.servoIndex]);
+	s28.setOffset(offsets[s28.servoIndex]); s29.setOffset(offsets[s29.servoIndex]); s30.setOffset(offsets[s30.servoIndex]);
+	s31.setOffset(offsets[s31.servoIndex]); s32.setOffset(offsets[s32.servoIndex]); s33.setOffset(offsets[s33.servoIndex]);
+	s34.setOffset(offsets[s34.servoIndex]); s35.setOffset(offsets[s35.servoIndex]); s36.setOffset(offsets[s36.servoIndex]);
+	s37.setOffset(offsets[s37.servoIndex]); s38.setOffset(offsets[s38.servoIndex]); s39.setOffset(offsets[s39.servoIndex]);
+	s40.setOffset(offsets[s40.servoIndex]); s41.setOffset(offsets[s41.servoIndex]); s42.setOffset(offsets[s42.servoIndex]);
+	s43.setOffset(offsets[s43.servoIndex]); s44.setOffset(offsets[s44.servoIndex]); s45.setOffset(offsets[s45.servoIndex]);
 }
 
 bool ServoOffset::load(const char* dir) {
