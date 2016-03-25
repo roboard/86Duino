@@ -1,20 +1,37 @@
-#include "wifi_drv.h"
+/*
+  WiFi.cpp - Library for Arduino Wifi shield.
+  Copyright (c) 2011-2014 Arduino LLC.  All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
+#include "utility/wifi_drv.h"
 #include "WiFi.h"
 
 extern "C" {
   #include "utility/wl_definitions.h"
   #include "utility/wl_types.h"
-  #include "debug.h"
+  #include "utility/debug.h"
 }
 
 // XXX: don't make assumptions about the value of MAX_SOCK_NUM.
-int16_t 	WiFiClass::_state[MAX_SOCK_NUM] = { 0, 0, 0, 0 };
+int16_t 	WiFiClass::_state[MAX_SOCK_NUM] = { NA_STATE, NA_STATE, NA_STATE, NA_STATE };
 uint16_t 	WiFiClass::_server_port[MAX_SOCK_NUM] = { 0, 0, 0, 0 };
 
 WiFiClass::WiFiClass()
 {
-	// Driver initialization
-	init();
 }
 
 void WiFiClass::init()
@@ -71,8 +88,7 @@ int WiFiClass::begin(char* ssid, uint8_t key_idx, const char *key)
 	   {
 		   delay(WL_DELAY_START_CONNECTION);
 		   status = WiFiDrv::getConnectionStatus();
-	   }
-	   while ((( status == WL_IDLE_STATUS)||(status == WL_SCAN_COMPLETED))&&(--attempts>0));
+	   }while ((( status == WL_IDLE_STATUS)||(status == WL_SCAN_COMPLETED))&&(--attempts>0));
    }else{
 	   status = WL_CONNECT_FAILED;
    }
@@ -97,6 +113,39 @@ int WiFiClass::begin(char* ssid, const char *passphrase)
     	status = WL_CONNECT_FAILED;
     }
     return status;
+}
+
+void WiFiClass::config(IPAddress local_ip)
+{
+	WiFiDrv::config(1, (uint32_t)local_ip, 0, 0);
+}
+
+void WiFiClass::config(IPAddress local_ip, IPAddress dns_server)
+{
+	WiFiDrv::config(1, (uint32_t)local_ip, 0, 0);
+	WiFiDrv::setDNS(1, (uint32_t)dns_server, 0);
+}
+
+void WiFiClass::config(IPAddress local_ip, IPAddress dns_server, IPAddress gateway)
+{
+	WiFiDrv::config(2, (uint32_t)local_ip, (uint32_t)gateway, 0);
+	WiFiDrv::setDNS(1, (uint32_t)dns_server, 0);
+}
+
+void WiFiClass::config(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
+{
+	WiFiDrv::config(3, (uint32_t)local_ip, (uint32_t)gateway, (uint32_t)subnet);
+	WiFiDrv::setDNS(1, (uint32_t)dns_server, 0);
+}
+
+void WiFiClass::setDNS(IPAddress dns_server1)
+{
+	WiFiDrv::setDNS(1, (uint32_t)dns_server1, 0);
+}
+
+void WiFiClass::setDNS(IPAddress dns_server1, IPAddress dns_server2)
+{
+	WiFiDrv::setDNS(2, (uint32_t)dns_server1, (uint32_t)dns_server2);
 }
 
 int WiFiClass::disconnect()

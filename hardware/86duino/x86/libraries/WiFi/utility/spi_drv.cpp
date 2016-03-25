@@ -1,49 +1,61 @@
+/*
+  spi_drv.cpp - Library for Arduino Wifi shield.
+  Copyright (c) 2011-2014 Arduino.  All right reserved.
 
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+   
+   Modified 25 March 2016 by Johnson Hung   
+*/
+
+#include <math.h>
 #include "Arduino.h"
-#include "spi_drv.h"                   
+#include "wSPI.h"
+#include "utility/spi_drv.h"                   
 #include "pins_arduino.h"
 //#define _DEBUG_
 extern "C" {
-#include "debug.h"
+#include "utility/debug.h"
 }
-#include "wSPI.h"
+#include "io.h"
 
-
-#define DATAOUT 	11 // MOSI
-#define DATAIN  	12 // MISO
-#define SPICLOCK  	13 // sck
+#define DATAOUT     11 // MOSI
+#define DATAIN      12 // MISO
+#define SPICLOCK    13 // sck
 #define SLAVESELECT 10 // ss
-#define SLAVEREADY 	7  // handshake pin
-#define WIFILED 	9  // led on wifi shield
+#define SLAVEREADY  7  // handshake pin
+#define WIFILED     9  // led on wifi shield
 
-// #define DELAY_100NS do { asm volatile("nop"); }while(0);
-// #define DELAY_SPI(X) { int ii=0; do {  asm volatile("nop"); }while(++ii<X);}
-#define DELAY_SPI(X)			\
-{								\
-	volatile int ii=0;			\
-	do {						\
-		;						\
-	}while(++ii<X);				\
+#define DELAY_SPI(X)                                                                 \
+{                                                                                    \
+    long postClk;                                                                    \
+                                                                                     \
+    postClk = timer_GetClocks() + (unsigned long)ceil(0.84 * vx86_CpuCLK() * X);     \
+                                                                                     \
+    while ((postClk - (long)timer_GetClocks()) > 0);                                 \
 }
-#define DELAY_TRANSFER() DELAY_SPI(500)
+#define DELAY_TRANSFER() DELAY_SPI(10)
 
 void SpiDrv::begin()
 {
-	  // Set direction register for SCK and MOSI pin.
-	  // MISO pin automatically overrides to INPUT.
-	  // When the SS pin is set as OUTPUT, it can be used as
-	  // a general purpose output port (it doesn't influence
-	  // SPI operations).
-
-	  pinMode(SCK, OUTPUT);
-	  pinMode(MOSI, OUTPUT);
-	  pinMode(SS, OUTPUT);
+	  wSPI.begin();
 	  pinMode(SLAVESELECT, OUTPUT);
 	  pinMode(SLAVEREADY, INPUT);
 	  pinMode(WIFILED, OUTPUT);
 
-	  digitalWrite(SCK, LOW);
-	  digitalWrite(MOSI, LOW);
+	  // digitalWrite(SCK, LOW);
+	  // digitalWrite(MOSI, LOW);
 	  digitalWrite(SS, HIGH);
 	  digitalWrite(SLAVESELECT, HIGH);
 	  digitalWrite(WIFILED, LOW);
@@ -51,19 +63,10 @@ void SpiDrv::begin()
 #ifdef _DEBUG_
 	  INIT_TRIGGER()
 #endif
-
-	  // Warning: if the SS pin ever becomes a LOW INPUT then SPI
-	  // automatically switches to Slave, so the data direction of
-	  // the SS pin MUST be kept as OUTPUT.
-	  // SPCR |= _BV(MSTR);
-	  // SPCR |= _BV(SPE);
-	  //SPSR |= _BV(SPI2X);
-	  
-	  wSPI.begin();
 }
 
 void SpiDrv::end() {
-  // SPCR &= ~_BV(SPE);
+    wSPI.end();
 }
 
 void SpiDrv::spiSlaveSelect()
@@ -77,37 +80,19 @@ void SpiDrv::spiSlaveDeselect()
     digitalWrite(SLAVESELECT,HIGH);
 }
 
-void delaySpi()
-{
-	int i = 0;
-	const int DELAY = 1000;
-	for (;i<DELAY;++i)
-	{
-		int a =a+1;
-	}
-}
 
 char SpiDrv::spiTransfer(volatile char data)
 {
-	return (char)wSPI.transfer((uint8_t)data);
-    // SPDR = data;                    // Start the transmission
-    // while (!(SPSR & (1<<SPIF)))     // Wait the end of the transmission
-    // {
-    // };
-    // char result = SPDR;
-    // DELAY_TRANSFER();
+    char result = wSPI.transfer(data);
+    DELAY_TRANSFER();
 
-    // return result;                    // return the received byte
+    return result;                    // return the received byte
 }
 
 int SpiDrv::waitSpiChar(unsigned char waitChar)
 {
-    // int timeout = TIMEOUT_CHAR;
-    // volatile int timeout = TIMEOUT_CHAR;
-	unsigned long begin;
+    int timeout = TIMEOUT_CHAR;
     unsigned char _readChar = 0;
-	
-	begin = timer_NowTime();
     do{
         _readChar = readChar(); //get data byte
         if (_readChar == ERR_CMD)
@@ -115,8 +100,7 @@ int SpiDrv::waitSpiChar(unsigned char waitChar)
         	WARN("Err cmd received\n");
         	return -1;
         }
-    } while((timer_NowTime() - begin) <= TIMEOUT_CHAR && (_readChar != waitChar));
-    //}while((timeout-- > 0) && (_readChar != waitChar));
+    }while((timeout-- > 0) && (_readChar != waitChar));
     return  (_readChar == waitChar);
 }
 
@@ -136,7 +120,7 @@ char SpiDrv::readChar()
 
 #define WAIT_START_CMD(x) waitSpiChar(START_CMD)
 
-#define IF_CHECK_START_CMD(x)                   \
+#define IF_CHECK_START_CMD(x)                      \
     if (!WAIT_START_CMD(_data))                 \
     {                                           \
         TOGGLE_TRIGGER()                        \
@@ -144,26 +128,15 @@ char SpiDrv::readChar()
         return 0;                               \
     }else                                       \
 
-#define CHECK_DATA(check, x)                    \
-        if (!readAndCheckChar(check, &x))       \
-        {                                       \
-        	TOGGLE_TRIGGER()                    \
-            WARN("Reply error");                \
-            INFO2(check, (uint8_t)x);			\
-            return 0;                           \
-        }else                                           
-// #define IF_CHECK_START_CMD(x)                      \
-    // if (!WAIT_START_CMD(_data))                 \
-    // {                                           \
-        // return 0;                               \
-    // }else                                       \
+#define CHECK_DATA(check, x)                   \
+        if (!readAndCheckChar(check, &x))   \
+        {                                               \
+        	TOGGLE_TRIGGER()                        \
+            WARN("Reply error");                        \
+            INFO2(check, (uint8_t)x);							\
+            return 0;                                   \
+        }else                                           \
 
-// #define CHECK_DATA(check, x)                   \
-        // if (!readAndCheckChar(check, &x))   \
-        // {                                               \
-            // return 0;                                   \
-        // }else                                           \
-		
 #define waitSlaveReady() (digitalRead(SLAVEREADY) == LOW)
 #define waitSlaveSign() (digitalRead(SLAVEREADY) == HIGH)
 #define waitSlaveSignalH() while(digitalRead(SLAVEREADY) != HIGH){}

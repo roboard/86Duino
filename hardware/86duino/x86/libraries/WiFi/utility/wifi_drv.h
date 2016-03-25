@@ -1,10 +1,29 @@
+/*
+  wifi_drv.h - Library for Arduino Wifi shield.
+  Copyright (c) 2011-2014 Arduino.  All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
 #ifndef WiFi_Drv_h
 #define WiFi_Drv_h
 
-#include <stdio.h>
 #include <inttypes.h>
-#include "wifi_spi.h"
+#include "utility/wifi_spi.h"
 #include "IPAddress.h"
+#include "WiFiUdp.h"
 
 // Key index length
 #define KEY_IDX_LEN     1
@@ -40,6 +59,11 @@ private:
     static uint8_t reqHostByName(const char* aHostname);
 
     static int getHostByName(IPAddress& aResult);
+
+    /*
+     * Get remote Data information on UDP socket
+     */
+    static void getRemoteData(uint8_t sock, uint8_t *ip, uint8_t *port);
 
 public:
 
@@ -84,6 +108,27 @@ public:
      * return: WL_SUCCESS or WL_FAILURE
      */
     static int8_t wifiSetKey(char* ssid, uint8_t ssid_len, uint8_t key_idx, const void *key, const uint8_t len);
+
+    /* Set ip configuration disabling dhcp client
+        *
+        * param validParams: set the number of parameters that we want to change
+        * 					 i.e. validParams = 1 means that we'll change only ip address
+        * 					 	  validParams = 3 means that we'll change ip address, gateway and netmask
+        * param local_ip: 	Static ip configuration
+        * param gateway: 	Static gateway configuration
+        * param subnet: 	Static subnet mask configuration
+        */
+    static void config(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet);
+
+    /* Set DNS ip configuration
+           *
+           * param validParams: set the number of parameters that we want to change
+           * 					 i.e. validParams = 1 means that we'll change only dns_server1
+           * 					 	  validParams = 2 means that we'll change dns_server1 and dns_server2
+           * param dns_server1: Static DNS server1 configuration
+           * param dns_server2: Static DNS server2 configuration
+           */
+    static void setDNS(uint8_t validParams, uint32_t dns_server1, uint32_t dns_server2);
 
     /*
      * Disconnect from the network
@@ -212,6 +257,8 @@ public:
      * result: version as string with this format a.b.c
      */
     static char* getFwVersion();
+
+    friend class WiFiUDP;
 
 };
 

@@ -43,7 +43,7 @@ typedef struct _DELAY_TABLE
 #define pgm_read_word(word)   (*(unsigned short*)(word))
 #define pgm_read_dword(dword) (*(unsigned long*)(dword))
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC)
 // time unit is microseconds
 static const DELAY_TABLE table[] = 
 {

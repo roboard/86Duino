@@ -114,6 +114,12 @@ bool get_wdt_timeout(void);
 void setup(void);
 void loop(void);
 
+/*
+#if defined PLCBOARDID
+unsigned short getDeviceID(void);
+#endif
+*/
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
@@ -136,6 +142,7 @@ extern bool timer1_pin32_isUsed; // defined in tone.cpp
 
 #include "WCharacter.h"
 #include "WString.h"
+#include "avr/dtostrf.h"
 #include "HardwareSerial.h"
 
 uint16_t makeWord(uint16_t w);

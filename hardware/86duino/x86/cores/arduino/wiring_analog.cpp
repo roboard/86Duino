@@ -79,7 +79,7 @@ void Close_Pwm(uint8_t pin) {
 }
 
 int analogRead(uint8_t adpin) {
-	unsigned long d;
+	unsigned long d, t;
 	uint8_t pin;
 	
 	if(adpin >= PINS || PIN86[adpin].AD == NOAD) return 0xffff;
@@ -90,11 +90,13 @@ int analogRead(uint8_t adpin) {
 	io_outpb(BaseAddress + 1, 0x08); // disable ADC
 	io_outpb(BaseAddress + 0, (0x01<<pin));
 	io_outpb(BaseAddress + 1, 0x01); // enable ADC_ST
-    for(int i=0; i<20; i++) io_inpb(BaseAddress + 2);
-	if((io_inpb(BaseAddress + 2) & 0x01) == 0)
+	for(t=timer_NowTime();(io_inpb(BaseAddress + 2) & 0x01) == 0;)
     {
-        io_RestoreINT();
-        return 0xffff;
+		if((timer_NowTime() - t) >= 1000L)
+        {
+			io_RestoreINT();
+			return 0xffff;
+		}
     }
     d = io_inpw(BaseAddress + 4);
 

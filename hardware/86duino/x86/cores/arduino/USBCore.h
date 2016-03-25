@@ -28,8 +28,14 @@
 
 #include "USBDesc.h"
 #include "queue.h"
+#include "v86clock.h"
 
-#define DMP_86DUINO_MODE
+#define DMP_86DUINO_RESET_ACTIVE
+
+#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO)
+	#define DMP_86DUINO_LED_ACTIVE
+#endif
+
 #if COM_LIB_TIMEOUT_DEBUG != 0
 #define USB_TIMEOUT_DEBUG  (1)
 #else

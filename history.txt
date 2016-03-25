@@ -1,17 +1,20 @@
-### CODING 212 - 2016.03.11 ###
+### CODING 212 - 2016.03.25 ###
 
 [core]
 * Modify the define method of pin_arduino.h to add new 86Duino board easier. (Knock-on Arduino.h, HardwareSerial.cpp, HardwareSerial.h, WInterrupts.cpp, tone.cpp, wiring.cpp, wiring_analog.cpp, wiring_digital.cpp, wiring_pulse.cpp, wiring_shift.cpp)
 * The IPADDR_NONE is changed to INADDR_NONE for compatibility, same change in dns.cpp for Ethernet library.
 * Fixed: the strlen() in findUntil() will crash if it get the NULL character pointer.
+* Fixed: the analogRead() will return the value of another pin when the CPU runs on 500MHz.
+* Add the getDeviceID() to get the ID number on 86Duino PLC.
 
 [libraries]
 * Fixed: a bug in Audio library.
-* Update: Firmata version from 2.3.6 to 2.5.1.
+* Update: Firmata version from 2.3.6 to 2.5.2.
 * Use new pin mapping method in some libraries: AFMotor, Servo, Servo86, Encoder, GSM, IRRemote, softwareSerial, TimerOne, Tlc5940, UTFT, UTOUCH
 * Add RTCZero library.
 * Fixed: sometimes lost data via ESP8266 module using rosserial86 library.
 * Fixed: the servoMultiRun() in playPositions() should use 45 parameters to know which servo should be moved.
+* Update: WiFi library for Arduino 1.6.8 compatibility.
 
 
 

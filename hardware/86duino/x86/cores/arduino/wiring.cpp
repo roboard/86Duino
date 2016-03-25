@@ -140,3 +140,15 @@ bool init() {
 	//io_Close();
 	return true;
 }
+
+/*
+// only for 86Duino PLC board
+unsigned short getDeviceID(void) {
+	unsigned char mask = 0xC3;
+	int port = 7;
+	unsigned char data;
+	data = io_inpb(GPIODIRBASE + port*4) & mask;
+	io_outpb(GPIODIRBASE + port*4, data); // switch GP72, GP73, GP74, GP75 to input direction
+	return (io_inpb(GPIODATABASE + port*4) >> 2) & 0x0F;
+}
+*/

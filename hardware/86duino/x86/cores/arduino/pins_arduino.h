@@ -147,6 +147,9 @@ struct pinsconfig {
 	#endif
 	
 #elif defined (__86DUINO_PLC)
+
+	// #define PLCBOARDID
+
 	#define PINS                       (14)
 	#define EXTERNAL_NUM_INTERRUPTS    (4)
 	#define CRBTABLE_SIZE              (0xC0)

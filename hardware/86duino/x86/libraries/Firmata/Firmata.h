@@ -1,5 +1,5 @@
 /*
-  Firmata.h - Firmata library v2.5.1 - 2015-12-26
+  Firmata.h - Firmata library v2.5.2 - 2016-2-15
   Copyright (C) 2006-2008 Hans-Christoph Steiner.  All rights reserved.
   Copyright (C) 2009-2015 Jeff Hoefs.  All rights reserved.
   Modify 2013 by hellion for 86Duino.
@@ -32,7 +32,7 @@
  */
 #define FIRMATA_FIRMWARE_MAJOR_VERSION  2
 #define FIRMATA_FIRMWARE_MINOR_VERSION  5
-#define FIRMATA_FIRMWARE_BUGFIX_VERSION 1
+#define FIRMATA_FIRMWARE_BUGFIX_VERSION 2
 
 /* DEPRECATED as of Firmata v2.5.1. As of 2.5.1 there are separate version numbers for
  * the protocol version and the firmware version.
@@ -41,7 +41,7 @@
 #define FIRMATA_MINOR_VERSION           5 // same as FIRMATA_PROTOCOL_MINOR_VERSION
 #define FIRMATA_BUGFIX_VERSION          1 // same as FIRMATA_PROTOCOL_BUGFIX_VERSION
 
-#define MAX_DATA_BYTES 255 // max number of data bytes in non-Sysex messages
+#define MAX_DATA_BYTES                  255 // max number of data bytes in non-Sysex messages
 
 // Arduino 101 also defines SET_PIN_MODE as a macro in scss_registers.h
 #ifdef SET_PIN_MODE
@@ -94,8 +94,8 @@
 #define SYSEX_SAMPLING_INTERVAL 0x7A // same as SAMPLING_INTERVAL
 
 // pin modes
-//#define INPUT                 0x00 // defined in wiring.h
-//#define OUTPUT                0x01 // defined in wiring.h
+//#define INPUT                 0x00 // defined in Arduino.h
+//#define OUTPUT                0x01 // defined in Arduino.h
 #define PIN_MODE_ANALOG         0x02 // analog pin in analogInput mode
 #define PIN_MODE_PWM            0x03 // digital pin in PWM output mode
 #define PIN_MODE_SERVO          0x04 // digital pin in Servo output mode
@@ -110,15 +110,15 @@
 #define TOTAL_PIN_MODES         13
 
 // DEPRECATED as of Firmata v2.5
-#define ANALOG                  0x02 // analog pin in analogInput mode
-#define PWM                     0x03 // digital pin in PWM output mode
-#define SERVO                   0x04 // digital pin in Servo output mode
-#define SHIFT                   0x05 // shiftIn/shiftOut mode
-#define I2C                     0x06 // pin included in I2C setup
+#define ANALOG                  0x02 // same as PIN_MODE_ANALOG
+#define PWM                     0x03 // same as PIN_MODE_PWM
+#define SERVO                   0x04 // same as PIN_MODE_SERVO
+#define SHIFT                   0x05 // same as PIN_MODE_SHIFT
+#define I2C                     0x06 // same as PIN_MODE_I2C
 #define ONEWIRE                 0x07 // same as PIN_MODE_ONEWIRE
 #define STEPPER                 0x08 // same as PIN_MODE_STEPPER
 #define ENCODER                 0x09 // same as PIN_MODE_ENCODER
-
+#define IGNORE                  0x7F // same as PIN_MODE_IGNORE
 
 extern "C" {
 // callback function types
@@ -144,9 +144,12 @@ public:
     void printFirmwareVersion(void);
   //void setFirmwareVersion(byte major, byte minor);  // see macro below
     void setFirmwareNameAndVersion(const char *name, byte major, byte minor);
+    void disableBlinkVersion();
 /* serial receive handling */
     int available(void);
     void processInput(void);
+    void parse(unsigned char value);
+    boolean isParsingMessage(void);
 /* serial send handling */
 	void sendAnalog(byte pin, int value);
 	void sendDigital(byte pin, int value); // TODO implement this
@@ -161,6 +164,14 @@ public:
     void attach(byte command, stringCallbackFunction newFunction);
     void attach(byte command, sysexCallbackFunction newFunction);
     void detach(byte command);
+
+    /* access pin state and config */
+    byte getPinMode(byte pin);
+    void setPinMode(byte pin, byte config);
+    /* access pin state */
+    int getPinState(byte pin);
+    void setPinState(byte pin, int state);
+
 /* utility methods */
     void sendValueAsTwo7bitBytes(int value);
     void startSysex(void);
@@ -179,6 +190,11 @@ private:
 /* sysex */
     boolean parsingSysex;
     int sysexBytesRead;
+
+    /* pin configuration */
+    byte pinConfig[TOTAL_PINS];
+    int pinState[TOTAL_PINS];
+
 /* callback functions */
     callbackFunction currentAnalogCallback;
     callbackFunction currentDigitalCallback;
@@ -189,6 +205,8 @@ private:
     systemResetCallbackFunction currentSystemResetCallback;
     stringCallbackFunction currentStringCallback;
     sysexCallbackFunction currentSysexCallback;
+
+    boolean blinkVersionDisabled = false;
 
 /* private methods ------------------------------ */
     void processSysexMessage(void);

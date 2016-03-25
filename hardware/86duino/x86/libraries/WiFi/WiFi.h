@@ -1,7 +1,25 @@
+/*
+  WiFi.h - Library for Arduino Wifi shield.
+  Copyright (c) 2011-2014 Arduino LLC.  All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
 #ifndef WiFi_h
 #define WiFi_h
 
-#include <stdio.h>
 #include <inttypes.h>
 
 extern "C" {
@@ -59,6 +77,50 @@ public:
      *        must be between ASCII 32-126 (decimal).
      */
     int begin(char* ssid, const char *passphrase);
+
+    /* Change Ip configuration settings disabling the dhcp client
+        *
+        * param local_ip: 	Static ip configuration
+        */
+    void config(IPAddress local_ip);
+
+    /* Change Ip configuration settings disabling the dhcp client
+        *
+        * param local_ip: 	Static ip configuration
+	* param dns_server:     IP configuration for DNS server 1
+        */
+    void config(IPAddress local_ip, IPAddress dns_server);
+
+    /* Change Ip configuration settings disabling the dhcp client
+        *
+        * param local_ip: 	Static ip configuration
+	* param dns_server:     IP configuration for DNS server 1
+        * param gateway : 	Static gateway configuration
+        */
+    void config(IPAddress local_ip, IPAddress dns_server, IPAddress gateway);
+
+    /* Change Ip configuration settings disabling the dhcp client
+        *
+        * param local_ip: 	Static ip configuration
+	* param dns_server:     IP configuration for DNS server 1
+        * param gateway: 	Static gateway configuration
+        * param subnet:		Static Subnet mask
+        */
+    void config(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet);
+
+    /* Change DNS Ip configuration
+     *
+     * param dns_server1: ip configuration for DNS server 1
+     */
+    void setDNS(IPAddress dns_server1);
+
+    /* Change DNS Ip configuration
+     *
+     * param dns_server1: ip configuration for DNS server 1
+     * param dns_server2: ip configuration for DNS server 2
+     *
+     */
+    void setDNS(IPAddress dns_server1, IPAddress dns_server2);
 
     /*
      * Disconnect from the network

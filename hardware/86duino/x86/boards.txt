@@ -82,3 +82,30 @@ EduCake.build.pid=0x8036
 EduCake.build.core=arduino
 EduCake.build.variant=educake
 EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+
+################################################################################
+
+86DuinoPLC.name=86Duino PLC
+86DuinoPLC.upload.tool=86upload
+86DuinoPLC.upload.protocol=avr109
+86DuinoPLC.upload.maximum_size=2048000
+86DuinoPLC.upload.speed=57600
+86DuinoPLC.upload.disable_flushing=true
+86DuinoPLC.upload.use_1200bps_touch=true
+86DuinoPLC.upload.wait_for_upload_port=true
+
+86DuinoPLC.bootloader.tool=86upload
+86DuinoPLC.bootloader.low_fuses=0xff
+86DuinoPLC.bootloader.high_fuses=0xd8
+86DuinoPLC.bootloader.extended_fuses=0xcb
+86DuinoPLC.bootloader.file=v86boot.exe
+86DuinoPLC.bootloader.unlock_bits=0x3F
+86DuinoPLC.bootloader.lock_bits=0x2F
+
+86DuinoPLC.build.mcu=atmega32u4
+86DuinoPLC.build.f_cpu=16000000L
+86DuinoPLC.build.vid=0x2341
+86DuinoPLC.build.pid=0x8036
+86DuinoPLC.build.core=arduino
+86DuinoPLC.build.variant=plc
+86DuinoPLC.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}

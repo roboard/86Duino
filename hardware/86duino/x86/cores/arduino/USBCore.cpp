@@ -92,7 +92,7 @@ static unsigned short usb_on_off_dir   = 0x0000;
 static char usb_detect_pin = 0;
 static char usb_on_off_pin = 0;
 
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 static unsigned short tx_led_data  = 0x0000;
 static unsigned short tx_led_dir   = 0x0000;
 static unsigned short rx_led_data  = 0x0000;
@@ -152,7 +152,7 @@ static void set_pin_out(char port, char pin)
 	usb_on_off_pin = pin;
 }
 
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 static void set_tx_led(char port, char pin)
 {
 	io_outpdw(gpio_config_addr + 0x00, io_inpdw(gpio_config_addr + 0x00) | 0x01L << port);
@@ -205,7 +205,7 @@ static void USB_Reconnect(void)
     USB_Connect();
 }
 
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 #define LED_MAX_COUNT    (100)
 static int tx_led_count = 0;
 static int rx_led_count = 0;
@@ -727,7 +727,7 @@ DMP_INLINE(void) Set_Control_Line_State(USB_Device *usb)
 	//printf("%d %d\n", usb->control_line_state, usb->state);	
 	SetEPnDLR(usb, EP0, IN, ENABLE | STSACK);
 	
-#ifdef DMP_86DUINO_MODE	
+#ifdef DMP_86DUINO_RESET_ACTIVE
 	// the below behavier is only for compatible of Arduino Leonado (windows)
 	if(usb->ling_coding.dwDTERate == 1200 && (usb->control_line_state & 0x01) == 0)
 	{   
@@ -903,7 +903,7 @@ DMP_INLINE(void) EP0_InHandler(USB_Device *usb)
 	static int j = 0;
 	
 	if (usb->setup_in_handled == false) return;
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 	TX_LED_ON();
 #endif
 	if (j < usb->InDataSize)
@@ -940,7 +940,7 @@ DMP_INLINE(void) EP0_OutHandler(USB_Device *usb)
 	static int j = 0;
 	
 	if (usb->setup_out_handled == false) return; 
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 	RX_LED_ON();
 #endif
 	size = (WORD)(io_inpdw(usb->EP[0].OutDLR) & 0x00001FFFFL);
@@ -976,7 +976,7 @@ DMP_INLINE(void) EP1_InHandler(USB_Device *usb)
 {
 	static BYTE notification[8] = {0xA1, 0x20, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00};
 	static bool Completed = true;
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 	TX_LED_ON();
 #endif	
 	if (Completed == true)
@@ -1017,7 +1017,7 @@ DMP_INLINE(void) EP2_InHandler(USB_Device *usb)
 		return;
 	}
 	
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 	TX_LED_ON();
 #endif	
 	
@@ -1042,7 +1042,7 @@ DMP_INLINE(void) EP2_OutHandler(USB_Device *usb)
 	int i;
 	WORD size;
 	
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 	RX_LED_ON();
 #endif	
 	size = (WORD)(io_inpdw(usb->EP[2].OutDLR) & 0x00001FFFFL);
@@ -1072,7 +1072,7 @@ DMP_INLINE(void) EP3_InHandler(USB_Device *usb)
 		return;
 	}
 	
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 	TX_LED_ON();
 #endif	
 	
@@ -1201,7 +1201,7 @@ static int USB_ISR(int irq, void* data)
 				io_outpb(usb->DAR, usb->DevAddr | 0x80);
 				usb->ReadySetAddr = false;
 			}
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 			if(tx_led_count && !(--tx_led_count)) TX_LED_OFF();
 			if(rx_led_count && !(--rx_led_count)) RX_LED_OFF();
 #endif
@@ -1213,7 +1213,7 @@ static int USB_ISR(int irq, void* data)
 			io_outpdw(usb->ISR, ISUSP);
 			usb->IsSet = 0;
 			usb->state = USB_DEV_POWERED;
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 			TX_LED_OFF();
 			RX_LED_OFF();
 #endif
@@ -1398,7 +1398,7 @@ DMPAPI(void *) CreateUSBDevice(void)
 	usb->EP[3].OutDSR   = usb->addr + 0x60;
 	usb->EP[3].InDSR    = usb->addr + 0x64;	
 
-#ifdef DMP_86DUINO_MODE
+#ifdef DMP_86DUINO_LED_ACTIVE
 	set_gpio_config_addr(GPIO_CONFIG_ADDR); // for 86duino
 	set_tx_led(7, 2);
 	set_rx_led(7, 3);
