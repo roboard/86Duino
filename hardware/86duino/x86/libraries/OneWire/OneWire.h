@@ -15,6 +15,10 @@
 // is the exception, because it selects a fast but large algorithm
 // or a small but slow algorithm.
 
+#if defined (__86DUINO_PLC)
+	#error this library is only used on 86Duino Zero/One/EduCake!
+#endif
+
 // you can exclude onewire_search by defining that to 0
 #ifndef ONEWIRE_SEARCH
 #define ONEWIRE_SEARCH 1

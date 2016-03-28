@@ -14,8 +14,8 @@
 #include "Arduino.h"
 #include "Print.h"
 
-#ifndef __86DUINO_ONE
-#error Audio library is only used on 86Duino ONE!
+#if defined (__86DUINO_ZERO)
+#error Audio library is only used on 86Duino ONE/EduCake/PLC!
 #endif
 
 class AudioClass : public Print {

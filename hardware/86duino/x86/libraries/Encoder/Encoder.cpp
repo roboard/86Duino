@@ -391,8 +391,17 @@ void Encoder::begin(int sifmode, unsigned long bits, unsigned long clk, unsigned
 	else if(mode == MODE_CWCCW_x2)    _cwccwInit(2);
 	else if(mode == MODE_AB_PHASE_x2) _pabInit(2);
 	else if(mode == MODE_CAPTURE)     _pcapInit();
-	else if(mode == MODE_SSI)         _ssiInit(bits, clk, wtime, gray2bin);
-	else 
+	else if(mode == MODE_SSI)
+    {
+		#if defined ENCSSI_MODE_AVAILABLE
+			_ssiInit(bits, clk, wtime, gray2bin);
+		#else
+			mode = MODE_NOSET;
+			Serial.println("the SSI mode is not supported on the selected board!");
+			return;
+		#endif
+	}
+	else
 	{
 		mode = MODE_STEP_DIR;
 		_pdirInit(1);

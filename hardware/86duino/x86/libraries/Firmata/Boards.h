@@ -683,16 +683,16 @@ writePort(port, value, bitmask):  Write an 8 bit port.
 #define PIN_TO_SERVO(p)         (p)
 
 #elif defined (__86DUINO_PLC)
-#define TOTAL_ANALOG_PINS       0
-#define TOTAL_PINS              8
+#define TOTAL_ANALOG_PINS       7
+#define TOTAL_PINS              23
 #define VERSION_BLINK_PIN 		13
 #define IS_PIN_DIGITAL(p)  		((p) >= 0 && (p) < 8)
-#define IS_PIN_ANALOG(p)        (0) // no used
+#define IS_PIN_ANALOG(p)        ((p) >= 14 && (p) < (TOTAL_PINS-2))
 #define IS_PIN_PWM(p)          	((p) == 1 || (p) == 3 || (p) == 4 || (p) == 7)
 #define IS_PIN_SERVO(p)         IS_PIN_PWM(p)
-#define IS_PIN_I2C(p)           (0) // no used
+#define IS_PIN_I2C(p)           ((p) == 21 || (p) == 22)
 #define PIN_TO_DIGITAL(p)       (p)
-#define PIN_TO_ANALOG(p)        (p) // no used
+#define PIN_TO_ANALOG(p)        (p-14)
 #define PIN_TO_PWM(p)           (p)
 #define PIN_TO_SERVO(p)         (p)
 

@@ -1,11 +1,10 @@
-### CODING 212 - 2016.03.25 ###
+### CODING 212 - 2016.03.28 ###
 
 [core]
 * Modify the define method of pin_arduino.h to add new 86Duino board easier. (Knock-on Arduino.h, HardwareSerial.cpp, HardwareSerial.h, WInterrupts.cpp, tone.cpp, wiring.cpp, wiring_analog.cpp, wiring_digital.cpp, wiring_pulse.cpp, wiring_shift.cpp)
 * The IPADDR_NONE is changed to INADDR_NONE for compatibility, same change in dns.cpp for Ethernet library.
 * Fixed: the strlen() in findUntil() will crash if it get the NULL character pointer.
 * Fixed: the analogRead() will return the value of another pin when the CPU runs on 500MHz.
-* Add the getDeviceID() to get the ID number on 86Duino PLC.
 
 [libraries]
 * Fixed: a bug in Audio library.

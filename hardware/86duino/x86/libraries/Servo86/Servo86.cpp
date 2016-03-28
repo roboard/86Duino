@@ -1310,7 +1310,7 @@ void ServoFrame::playPositions(unsigned long playtime, Servo &s1, Servo &s2, Ser
 
 	if(&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->setPosition(positions[i], playtime);}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i], playtime);}
 		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->run();}
 		return;
 	}

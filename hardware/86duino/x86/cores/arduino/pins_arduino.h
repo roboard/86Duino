@@ -56,6 +56,8 @@ struct pinsconfig {
 	#define EXTERNAL_NUM_INTERRUPTS    (12)
 	#define CRBTABLE_SIZE              (0xC0)
 
+    #define ENCSSI_MODE_AVAILABLE
+
 	static const uint8_t SS   = 10;
 	static const uint8_t MOSI = 11;
 	static const uint8_t MISO = 12;
@@ -150,11 +152,27 @@ struct pinsconfig {
 
 	// #define PLCBOARDID
 
-	#define PINS                       (14)
+	#define PINS                       (21)
 	#define EXTERNAL_NUM_INTERRUPTS    (4)
 	#define CRBTABLE_SIZE              (0xC0)
 
+	static const uint8_t SS   = 10;
+	static const uint8_t MOSI = 11;
+	static const uint8_t MISO = 12;
+	static const uint8_t SCK  = 13;
+
 	static const uint8_t LED_BUILTIN = 13;
+
+	static const uint8_t A0 = 14;
+	static const uint8_t A1 = 15;
+	static const uint8_t A2 = 16;
+	static const uint8_t A3 = 17;
+	static const uint8_t A4 = 18;
+	static const uint8_t A5 = 19;
+	static const uint8_t A6 = 20;
+
+	static const uint8_t SDA = 21;
+	static const uint8_t SCL = 22;
 
 	static struct pinsconfig PIN86[PINS] = 
 	{
@@ -171,7 +189,14 @@ struct pinsconfig {
 		{NOUSED, NOSTATUS, NOSTATUS, NOAD, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 10
 		{NOUSED, NOSTATUS, NOSTATUS, NOAD, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 11
 		{NOUSED, NOSTATUS, NOSTATUS, NOAD, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 12
-		{8, NOSTATUS, NOSTATUS, NOAD, NOPWM, NOPWM, NOENC, NOENC, NULL} // pin 13
+		{8, NOSTATUS, NOSTATUS, NOAD, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 13
+        {NOUSED, NOSTATUS, NOSTATUS, 0, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 14
+		{NOUSED, NOSTATUS, NOSTATUS, 1, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 15
+		{NOUSED, NOSTATUS, NOSTATUS, 2, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 16
+		{NOUSED, NOSTATUS, NOSTATUS, 3, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 17
+		{NOUSED, NOSTATUS, NOSTATUS, 4, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 18
+		{NOUSED, NOSTATUS, NOSTATUS, 5, NOPWM, NOPWM, NOENC, NOENC, NULL}, // pin 19
+		{NOUSED, NOSTATUS, NOSTATUS, 6, NOPWM, NOPWM, NOENC, NOENC, NULL} // pin 20
 	};
 	
 	static int INTPINSMAP[EXTERNAL_NUM_INTERRUPTS] = {4, 5, 6, 7};

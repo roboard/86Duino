@@ -56,7 +56,7 @@
 #elif defined __86DUINO_ZERO
     #include "hardware/HW_Zero.h"
 #else
-    #error "This library only runs on 86Duino Zero/One/EduCake!"
+    #include "hardware/HW_PLC.h"
 #endif
 
 static int UseVirtualPort = 1; // this is only available for 86Duino one
