@@ -963,11 +963,9 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
 	mcsif_Enable(mcn, mdn);
 }
 
-#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO) || defined (__86DUINO_EDUCAKE)
+#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC)
 	Encoder Enc0(0);
 	Encoder Enc1(1);
 	Encoder Enc2(2);
 	Encoder Enc3(3);
-#elif defined (__86DUINO_PLC)
-	Encoder Enc0(0);
 #endif
