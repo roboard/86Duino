@@ -1,7 +1,7 @@
 86Duino
 ---------
 
-_VERSION_: Coding 211
+_VERSION_: Coding 212
 
 This is the IDE of the open-source 86Duino electronic platforms, which is 
 compatible to Arduino 1.5.8. The binaries of this IDE for Windows, Linux, 
