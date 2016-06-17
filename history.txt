@@ -2,7 +2,7 @@
 
 [core]
 * Updated the implementation of marco of F(string_literal) in WString.h and the implementation of print(const __FlashStringHelper *ifsh).
-* Add the uintptr_t define in inttype.h.
+* Add the uintptr_t define in stdint.h.
 
 [libraries]
 * For Servo86, the read() and load() on ServoFrame class allow "String" type parameters.
