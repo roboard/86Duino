@@ -1,13 +1,28 @@
+### CODING 213 - 2016.06.16 ###
+
+[core]
+* Updated the implementation of marco of F(string_literal) in WString.h and the implementation of print(const __FlashStringHelper *ifsh).
+* Add the uintptr_t define in inttype.h.
+
+[libraries]
+* For Servo86, the read() and load() on ServoFrame class allow "String" type parameters.
+* For Servo86, add the servoMultiRealTimeMixing() to regulate one frame.
+* For Servo86, update the MotionEditor.ino example to accept the 6-axis or 9-axis sensor (ex. LSM330 or RM-G146).
+* For FreeIMU1, modify the implementation of getRegVal() to speed up if no any I2C device connected with 86Duino.
+* For FreeIMU1, now support the RM-G146 module (RM-G146 info: http://www.roboard.com/?page_id=1055)
+
+
+
 ### CODING 212 - 2016.03.28 ###
 
 [core]
-* Modify the define method of pin_arduino.h to add new 86Duino board easier. (Knock-on Arduino.h, HardwareSerial.cpp, HardwareSerial.h, WInterrupts.cpp, tone.cpp, wiring.cpp, wiring_analog.cpp, wiring_digital.cpp, wiring_pulse.cpp, wiring_shift.cpp)
+* Support the new 86Duino PLC board. (Use the new pinmap method in Arduino.h, HardwareSerial.cpp, HardwareSerial.h, WInterrupts.cpp, tone.cpp, wiring.cpp, wiring_analog.cpp, wiring_digital.cpp, wiring_pulse.cpp, wiring_shift.cpp)
 * The IPADDR_NONE is changed to INADDR_NONE for compatibility, same change in dns.cpp for Ethernet library.
 * Fixed: the strlen() in findUntil() will crash if it get the NULL character pointer.
 * Fixed: the analogRead() will return the value of another pin when the CPU runs on 500MHz.
 
 [libraries]
-* Fixed: a bug in Audio library.
+* Fixed: a bug for adjusting the frequency in Audio library.
 * Update: Firmata version from 2.3.6 to 2.5.2.
 * Use new pin mapping method in some libraries: AFMotor, Servo, Servo86, Encoder, GSM, IRRemote, softwareSerial, TimerOne, Tlc5940, UTFT, UTOUCH
 * Add RTCZero library.

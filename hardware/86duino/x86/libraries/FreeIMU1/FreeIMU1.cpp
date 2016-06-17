@@ -19,7 +19,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-Modified 23 December 2015 by Johnson Hung
+Modified 31 May 2016 by Johnson Hung
 
 */
 
@@ -36,6 +36,29 @@ Modified 23 December 2015 by Johnson Hung
 
 #include "i2c.h"
 
+#include "utility/lsm330dlc.h"
+#include "utility/rmg146.h"
+
+struct _imu_sensor_ {
+    void   *handler;
+    int     acc;
+    int     gyro;
+    int     magn;
+    void* (*init)       (int acc_addr, int gyro_addr, int magn_addr);
+    bool  (*getraw)     (void *h, int *raw);
+    void  (*raw2value)  (void *h, int *src, double *dst);
+    void  (*close)      (void *h);
+    int     dir[9];
+};
+
+struct _imu_sensor_ Sensors[] = {
+    {NULL, LSM330DLC_ACC_ADDR, LSM330DLC_GYRO_ADDR,             0xFF, lsm330dlc_init, lsm330dlc_getraw, lsm330dlc_raw2value, lsm330dlc_close,  1, -1, -1,  1, -1, -1,  1,  1,  1},
+    {NULL,    RMG146_ACC_ADDR,    RMG146_GYRO_ADDR, RMG146_MAGN_ADDR,    rmg146_init,    rmg146_getraw,    rmg146_raw2value,    rmg146_close,  1,  1,  1,  1,  1,  1,  1,  1,  1},
+    {NULL,    RMG146_ACC_ADDR,    RMG146_GYRO_ADDR,             0xFF,    rmg146_init,    rmg146_getraw,    rmg146_raw2value,    rmg146_close,  1,  1,  1,  1,  1,  1,  1,  1,  1}
+};
+
+#define GRAVITY (9.80665)
+
 //Setup Motion Detect Averages
 MovingAvarageFilter accnorm_avg(5);
 MovingAvarageFilter accnorm_test_avg(7);
@@ -47,11 +70,17 @@ uint8_t num_gyros = 1;
 #define INS_MAX_INSTANCES   (2)
 
 FreeIMU1::FreeIMU1() {
-    #if HAS_LSM330DLC()
-    accgyro = LSM330DLC(); 
-    #endif
-    maghead = iCompass(MAG_DEC, WINDOW_SIZE, 500);	
+    reset();
+    
+    maghead = iCompass(MAG_DEC, WINDOW_SIZE, 500);
+    
+    MARG = DEFULT_MARG;
+    
+    imu = DEFAULT_IMU;
+    sensor = NULL;
+}
 
+void FreeIMU1::reset() {
     // initialize quaternion
     q0 = 1.0f;
     q1 = 0.0f;
@@ -94,8 +123,6 @@ FreeIMU1::FreeIMU1() {
     magn_scale_z = ::magn_scale_z;
     #endif
     
-    MARG = DEFULT_MARG;
-    
     acceDataFromExternal = false;
     gyroDataFromExternal = false;
     magnDataFromExternal = false;
@@ -130,28 +157,64 @@ void FreeIMU1::init(int acc_addr, int gyro_addr, bool fastmode) {
 }
 
 void FreeIMU1::init(int type) {
-    init(FIMU1_ACC_ADDR, FIMU1_GYRO_ADDR, false, type);
+    init(false, type);
 }
 
 void FreeIMU1::init(bool fastmode, int type) {
-    init(FIMU1_ACC_ADDR, FIMU1_GYRO_ADDR, fastmode, type);
+    initEX(DEFAULT_IMU, fastmode, type);
 }
 
 void FreeIMU1::init(int acc_addr, int gyro_addr, bool fastmode, int type) {
-    if (type == 0 || type == 1 || type == 3 || type == 4) {
-        MARG = type;
+    initEX(DEFAULT_IMU, acc_addr, gyro_addr, fastmode, type);
+}
+
+int FreeIMU1::initEX(int imu) {
+    return initEX(imu, DEFULT_MARG);
+}
+
+int FreeIMU1::initEX(int imu, bool fastmode) {
+    return initEX(imu, false, DEFULT_MARG);
+}
+
+int FreeIMU1::initEX(int imu, int acc_addr, int gyro_addr, bool fastmode) {
+    return initEX(imu, acc_addr, gyro_addr, fastmode, DEFULT_MARG);
+}
+
+int FreeIMU1::initEX(int imu, int acc_addr, int gyro_addr, int magn_addr, bool fastmode) {
+    return initEX(imu, acc_addr, gyro_addr, magn_addr, fastmode, DEFULT_MARG);
+}
+
+int FreeIMU1::initEX(int imu, int type) {
+    return initEX(imu, false, type);
+}
+
+int FreeIMU1::initEX(int imu, bool fastmode, int type) {
+    int sensor_num = sizeof(Sensors)/sizeof(Sensors[0]);
+    
+    if (imu >= 0 && imu < sensor_num) {
+        
+        sensor = &Sensors[imu];
+        return initEX(imu, sensor->acc, sensor->gyro, sensor->magn, fastmode, type);
+        
+    } else {
+    
+        sensor = NULL;
+        
     }
     
-    if(fastmode) {
-        i2c_SetSpeed(0, I2CMODE_AUTO, 400000L);
-    }
-  
-    #if HAS_LSM330DLC()
-    accgyro.init(acc_addr, gyro_addr);
-    #endif
+    return 1;
+}
 
-    initGyros();
-  
+int FreeIMU1::initEX(int imu, int acc_addr, int gyro_addr, bool fastmode, int type) {
+    return initEX(imu, acc_addr, gyro_addr, 0xFF, fastmode, type);
+}
+
+int FreeIMU1::initEX(int imu, int acc_addr, int gyro_addr, int magn_addr, bool fastmode, int type) {
+    
+    int ret = 1;
+    
+    reset();
+    
     #ifndef CALIBRATION_H
     // load calibration from eeprom
     calLoad();
@@ -160,6 +223,37 @@ void FreeIMU1::init(int acc_addr, int gyro_addr, bool fastmode, int type) {
     RESET_Q();
 
     dcm = DCM();
+    
+    if (type == 0 || type == 1 || type == 3 || type == 4) {
+        MARG = type;
+    }
+    
+    if(fastmode) {
+        i2c_SetSpeed(0, I2CMODE_AUTO, 400000L);
+    }
+
+    if (sensor) {
+        
+        sensor->handler = sensor->init(acc_addr, gyro_addr, magn_addr);
+        if (sensor->handler) {
+            
+            ret = 0;
+            initGyros();
+            if (QuaternionInitialize() == false) {
+                
+                ret = 3;
+                
+            }
+            
+        } else {
+            
+            ret = 2;
+            
+        }
+        
+    }
+    
+    return ret;
 }
 
 #ifndef CALIBRATION_H
@@ -214,35 +308,41 @@ void FreeIMU1::calLoad() {
  * Populates raw_values with the raw_values from the sensors
 */
 void FreeIMU1::getRawValues(int * raw_values) {
-    #if HAS_LSM330DLC()
-    accgyro.getMotion6(&raw_values[0], &raw_values[1], &raw_values[2], &raw_values[3], &raw_values[4], &raw_values[5]);
-    #endif
+    int i;
+    
+    if (sensor) {
+        
+        sensor->getraw(sensor->handler, raw_values);
+        
+    }
 }
 
 /**
  * Populates values with calibrated readings from the sensors
 */
-void FreeIMU1::getValues(double * values) { 
+void FreeIMU1::getValues(double * values) {
     int i;
     double values_cal[9] = {0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
     if (acceDataFromExternal == false || gyroDataFromExternal == false) {
-        #if HAS_LSM330DLC()
-        int accgyroval[6];
-        accgyro.getMotion6(&accgyroval[0], &accgyroval[1], &accgyroval[2], &accgyroval[3], &accgyroval[4], &accgyroval[5]);
 
-        // remove offsets from the gyroscope
-        accgyroval[3] = accgyroval[3] - gyro_off_x;
-        accgyroval[4] = accgyroval[4] - gyro_off_y;
-        accgyroval[5] = accgyroval[5] - gyro_off_z;
-
-        values_cal[0] = ((double)accgyroval[0]*4096/65535)*9.80665*accgyro.accFactor/1000.0;
-        values_cal[1] = ((double)accgyroval[1]*4096/65535)*9.80665*accgyro.accFactor/1000.0;
-        values_cal[2] = ((double)accgyroval[2]*4096/65535)*9.80665*accgyro.accFactor/1000.0;
-        values_cal[3] = (double)accgyroval[3]*accgyro.gyroFactor/1000.0;
-        values_cal[4] = (double)accgyroval[4]*accgyro.gyroFactor/1000.0;
-        values_cal[5] = (double)accgyroval[5]*accgyro.gyroFactor/1000.0;
-        #endif
+        if (sensor) {
+            
+            int accgyroval[9];
+            
+            getRawValues(accgyroval);
+            accgyroval[3] = accgyroval[3] - gyro_off_x;
+            accgyroval[4] = accgyroval[4] - gyro_off_y;
+            accgyroval[5] = accgyroval[5] - gyro_off_z;
+        
+            for (i = 0; i < 9; i++) {
+                
+                accgyroval[i] = sensor->dir[i] * accgyroval[i];
+                
+            }
+            
+            sensor->raw2value(sensor->handler, accgyroval, values_cal);
+        }
     }
 
 
@@ -400,7 +500,6 @@ void FreeIMU1::initGyros() {
 */
 void FreeIMU1::getQ(double * q, double * val) {
     int type;
-    bool magn_exist = magnDataFromExternal;
     getValues(val);
 
     now = micros();
@@ -408,7 +507,7 @@ void FreeIMU1::getQ(double * q, double * val) {
     lastUpdate = now;
     
     val[9] = 0.0;
-    if (magn_exist) {
+    if (magnDataFromExternal || sensor->magn != 0xFF) {
         val[9] = maghead.iheading(1, 0, 0, val[0], val[1], val[2], val[6], val[7], val[8]);
     }
     
@@ -421,18 +520,27 @@ void FreeIMU1::getQ(double * q, double * val) {
         q[3] = q3;
         timeSampleFirst = false;
     } else if (MARG == 0) {
+        val[0] = val[0]*GRAVITY;
+        val[1] = val[1]*GRAVITY;
+        val[2] = val[2]*GRAVITY;
         AHRSupdate(val[3] * M_PI/180, val[4] * M_PI/180, val[5] * M_PI/180, val[0], val[1], val[2], val[6], val[7], val[8]);
         q[0] = q0;	
         q[1] = q1;
         q[2] = q2;
         q[3] = q3;
     } else if (MARG == 1) {
+        val[0] = val[0]*GRAVITY;
+        val[1] = val[1]*GRAVITY;
+        val[2] = val[2]*GRAVITY;
         MadgwickAHRSupdate(val[3] * M_PI/180, val[4] * M_PI/180, val[5] * M_PI/180, val[0], val[1], val[2], val[6], val[7], val[8]);
         q[0] = q0;	
         q[1] = q1;
         q[2] = q2;
         q[3] = q3;
     } else if (MARG == 3) {
+        val[0] = val[0]*GRAVITY;
+        val[1] = val[1]*GRAVITY;
+        val[2] = val[2]*GRAVITY;
         MARGUpdateFilter(val[3] * M_PI/180, val[4] * M_PI/180, val[5] * M_PI/180, val[0], val[1], val[2], val[6], val[7], val[8]);
         q[0] = q0;	
         q[1] = q1;
@@ -684,9 +792,9 @@ void FreeIMU1::getYawPitchRollRad(double * ypr) {
     gy = 2 * (q[0]*q[1] + q[2]*q[3]);
     gz = q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3];
 
-    ypr[0] = atan2(2 * q[1] * q[2] - 2 * q[0] * q[3], 2 * q[0]*q[0] + 2 * q[1] * q[1] - 1);
-    ypr[1] = atan(gx / sqrt(gy*gy + gz*gz));
-    ypr[2] = atan(gy / sqrt(gx*gx + gz*gz));
+    ypr[0] = atan2(2 * q[1] * q[2] + 2 * q[0] * q[3], 2 * q[0]*q[0] + 2 * q[1] * q[1] - 1);
+    ypr[1] = -atan2(gx, sqrt(gy*gy + gz*gz));
+    ypr[2] = atan2(gy, gz);
 }
 
 void FreeIMU1::getYawPitchRollRad(float * ypr) {
@@ -715,9 +823,9 @@ void FreeIMU1::getYawPitchRollRadAHRS(double * ypr, double * q) {
     gy = 2 * (q[0]*q[1] + q[2]*q[3]);
     gz = q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3];
 
-    ypr[0] = atan2(2 * q[1] * q[2] - 2 * q[0] * q[3], 2 * q[0]*q[0] + 2 * q[1] * q[1] - 1);
-    ypr[1] = atan(gx / sqrt(gy*gy + gz*gz));
-    ypr[2] = atan(gy / sqrt(gx*gx + gz*gz));
+    ypr[0] = atan2(2 * q[1] * q[2] + 2 * q[0] * q[3], 2 * q[0]*q[0] + 2 * q[1] * q[1] - 1);
+    ypr[1] = -atan2(gx, sqrt(gy*gy + gz*gz));
+    ypr[2] = atan2(gy, gz);
 }
 
 void FreeIMU1::getYawPitchRollRadAHRS(float * ypr, float * q) {
@@ -1084,4 +1192,150 @@ void FreeIMU1::setMagnValues(double mx, double my, double mz) {
     externMagn[0] = mx;
     externMagn[1] = my;
     externMagn[2] = mz;
+}
+
+bool FreeIMU1::QuaternionInitialize() {
+    int i, n, cnt;
+    int a2qMethod;
+    double x, y, z;
+    double cx, cy, cz, sx, sy, sz;
+    double m00, m01, m02, m10, m11, m12, m20, m21, m22;
+    double hx, hy;
+    double s;
+    double val[9], sum[9];
+    double recipNorm;
+    
+    cnt = 0;
+    do {
+        
+        if (cnt >= 3) {
+            
+            return false;
+            
+        }
+        
+        for (i = 0; i < 9; i++) {
+            
+            sum[i] = 0.0;
+            
+        }
+        
+        for (n = 0; n < nsamples; n++) {
+        
+            getValues(val);
+            
+            for (i = 0; i < 9; i++) {
+                
+                sum[i] += val[i];
+                
+            }
+        
+        }
+        
+        for (i = 0; i < 9; i++) {
+            
+            val[i] = sum[i]/nsamples;
+            
+        }
+        
+        x = atan2(val[1], val[2]);
+        y = -atan2(val[0], sqrt(val[1]*val[1] + val[2]*val[2]));
+        z = 0;
+
+        sx = sin(x);
+        sy = sin(y);
+        cx = cos(x);
+        cy = cos(y);
+        sz = sin(z);
+        cz = cos(z);
+        
+        if (val[6] != 0.0 || val[7] != 0.0 || val[8] != 0.0) {
+            
+            hx = val[6]*cy + val[7]*sy*sx + val[8]*cx*sy;
+            hy = val[7]*cx - val[8]*sx;
+            
+            z = atan2(hx, hy) - M_PI/2;
+            sz = sin(z);
+            cz = cos(z);
+            
+        }
+        
+        m00 = cy*cz;
+        m10 = cy*sz;
+        m20 = -sy;
+        m01 = cz*sy*sx - cx*sz;
+        m11 = cx*cz + sy*sx*sz;
+        m21 = cy*sx;
+        m02 = cx*cz*sy + sx*sz;
+        m12 = cx*sy*sz - cz*sx;
+        m22 = cy*cx;
+        
+        if ((m00 + m11 + m22) > 0) {
+            
+            s = sqrt(1 + m00 + m11 + m22)*2.0;
+            a2qMethod = 0;
+            
+        } else if (m00 > m11 && m00 > m22) {
+            
+            s = sqrt(1 + m00 - m11 - m22)*2.0;
+            a2qMethod = 1;
+            
+        } else if (m11 > m22) {
+            
+            s = sqrt(1 + m11 - m00 - m22)*2.0;
+            a2qMethod = 2;
+            
+        } else {
+            
+            s = sqrt(1 + m22 - m00 - m11)*2.0;
+            a2qMethod = 3;
+            
+        }
+        
+        cnt++;
+        
+    } while (fabs(s) < 0.000001);
+    
+    if (a2qMethod == 0) {
+        
+        q0 = 0.25*s;
+        q1 = (m21 - m12)/s;
+        q2 = (m02 - m20)/s;
+        q3 = (m10 - m01)/s;
+        
+    } else if (a2qMethod == 1) {
+        
+        q0 = (m21 - m12)/s;
+        q1 = 0.25*s;
+        q2 = (m01 + m10)/s;
+        q3 = (m02 + m20)/s;
+        
+    } else if (a2qMethod == 2) {
+        
+        q0 = (m02 - m20)/s;
+        q1 = (m01 + m10)/s;
+        q2 = 0.25*s;
+        q3 = (m12 + m21)/s;
+        
+    } else {
+        
+        q0 = (m10 - m01)/s;
+        q1 = (m02 + m20)/s;
+        q2 = (m12 + m21)/s;
+        q3 = 0.25*s;
+        
+    }
+    
+	recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+	q0 *= recipNorm;
+	q1 *= recipNorm;
+	q2 *= recipNorm;
+	q3 *= recipNorm;
+
+    SEq_1 = q0;
+    SEq_2 = q1;
+    SEq_3 = q2;
+    SEq_4 = q3;
+    
+    return true;
 }

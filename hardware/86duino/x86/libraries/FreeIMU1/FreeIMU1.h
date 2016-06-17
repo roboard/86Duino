@@ -19,7 +19,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-Modified 23 December 2015 by Johnson Hung
+Modified 31 May 2016 by Johnson Hung
 
 */
 #ifndef FreeIMU1_h
@@ -37,19 +37,22 @@ Modified 23 December 2015 by Johnson Hung
 #define FREEIMU_EEPROM_BASE         (0x0A)
 #define FREEIMU_EEPROM_SIGNATURE    (0x19)
 
-#define HAS_LSM330DLC()  (0)
-#define FIMU1_ACC_ADDR   (0x30 >> 1)
-#define FIMU1_GYRO_ADDR  (0xD4 >> 1)
+struct _imu_sensor_;
+// IMU class:
+//   0    for LSM330DLC
+//   1    for RMG146
+#define IMU_LSM330DLC   (0)
+#define IMU_RMG146      (1)
+#define DEFAULT_IMU     (IMU_LSM330DLC)
 
-#ifdef __86DUINO_ONE
-	#define HAS_LSM330DLC()  (1)
-	#define FIMU1_ACC_ADDR   (0x30 >> 1)
-	#define FIMU1_GYRO_ADDR  (0xD4 >> 1)
-#endif
+// LSM330DLC address
+#define LSM330DLC_ACC_ADDR          (0x30 >> 1)
+#define LSM330DLC_GYRO_ADDR         (0xD4 >> 1)
 
-#if HAS_LSM330DLC()
-	#include "utility/lsm330dlc.h"
-#endif
+// RM-G146 address
+#define RMG146_ACC_ADDR             (0x30 >> 1)
+#define RMG146_GYRO_ADDR            (0xD0 >> 1)
+#define RMG146_MAGN_ADDR            (0x3C >> 1)
 
 //Magnetic declination angle for iCompass
 #define MAG_DEC 0
@@ -106,6 +109,15 @@ public:
     void init(int type);
     void init(bool fastmode, int type);
     void init(int acc_addr, int gyro_addr, bool fastmode, int type);
+    
+    int initEX(int imu);
+    int initEX(int imu, bool fastmode);
+    int initEX(int imu, int acc_addr, int gyro_addr, bool fastmode);
+    int initEX(int imu, int acc_addr, int gyro_addr, int magn_addr, bool fastmode);
+    int initEX(int imu, int type);
+    int initEX(int imu, bool fastmode, int type);
+    int initEX(int imu, int acc_addr, int gyro_addr, bool fastmode, int type);
+    int initEX(int imu, int acc_addr, int gyro_addr, int magn_addr, bool fastmode, int type);
 
     #ifndef CALIBRATION_H
     void calLoad();
@@ -159,11 +171,8 @@ public:
     
     DCM dcm;
     iCompass maghead;
-    #if HAS_LSM330DLC()
-    LSM330DLC accgyro;
-    #endif
-
-    //Global Variables
+    
+    struct _imu_sensor_ *sensor;
 
     // calibration parameters
     int16_t gyro_off_x, gyro_off_y, gyro_off_z;
@@ -173,6 +182,7 @@ public:
 
 private:
 
+    int imu;
     int MARG;
     double bx, by, bz;
     volatile double twoKp;      				// 2 * proportional gain (Kp)
@@ -195,6 +205,9 @@ private:
     void MadgwickAHRSupdateIMU(double gx, double gy, double gz, double ax, double ay, double az);
     void MARGUpdateFilter(double gx, double gy, double gz, double ax, double ay, double az, double mx, double my, double mz);
     void MARGUpdateFilterIMU(double w_x, double w_y, double w_z, double a_x, double a_y, double a_z);
+    
+    bool QuaternionInitialize();
+    void reset();
 };
 
 void arr3_rad_to_deg(double * arr);

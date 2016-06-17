@@ -1,6 +1,6 @@
 /*
-  LSM330.h - Part of DM&P Vortex86 FreeIMU1 library
-  Copyright (c) 2013 DY Huang <Dyhung@dmp.com.tw>. All right reserved.
+  LSM330DLC.h - Part of DM&P Vortex86 FreeIMU1 library
+  Copyright (c) 2016 DY Huang <Dyhung@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -22,9 +22,6 @@
 
 #ifndef __LSM330DLC_H
 #define __LSM330DLC_H
-
-#include "Arduino.h"
-#include "Wire.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,27 +45,15 @@ extern "C" {
 #define LSM330DLC_G_FULLSCALE_2KDPS1  (0x02)
 #define LSM330DLC_G_FULLSCALE_2KDPS2  (0x03)
 
-class LSM330DLC {
-  public:
-    LSM330DLC();
-	
-    void init(int acc_addr, int gyro_addr);
-	void getMotion6(int* ax, int* ay, int* az, int* gx, int* gy, int* gz);
-	
-	void setAccelDataRate(uint8_t);
-	void setFullScaleAccelRange(uint8_t);
-	void setFullScaleGyroRange(uint8_t);
-	
-	double accFactor;
-	double gyroFactor;
-	
-  private:
-    void enableGyro(void);
-	int8_t getRegVal(uint8_t addr, uint8_t offset, uint8_t *pVal);
-	
-    int accAddr;
-    int gyroAddr;
-};
+void *lsm330dlc_init(int acc_addr, int gyro_addr, int magn_addr);
+bool  lsm330dlc_getraw(void *h, int *raw);
+void  lsm330dlc_raw2value(void *h, int *src, double *dst);
+void  lsm330dlc_close(void *h);
+
+bool  lsm330dlc_setAccelDataRate(void *h, int rate);
+bool  lsm330dlc_setFullScaleAccelRange(void *h, int scale);
+bool  lsm330dlc_enableGyro(void *h);
+bool  lsm330dlc_setFullScaleGyroRange(void *h, int scale);
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+#include "WString.h"
 
 #define Servo_VERSION           2      // software version of this library
 #define MAX_SERVOS             45
@@ -60,7 +61,8 @@ public:
 	void setPosition(long pos, unsigned long time=0L);
 	void setPosition(double angle, unsigned long time=0L);
 	void setOffset(long offset);
-	void setRealTimeMixing(long offset);
+	void setRealTimeMixing(long mixoffset);
+	void setRealTimeMixing(long mixoffset, bool interrupt);
 	long getPosition(void);
 	void write(unsigned long pos);
 	void write(double angle);
@@ -86,6 +88,8 @@ extern Servo nullServo;
 
 class ServoFrame
 {
+private:
+	unsigned long long used_servos;
 public:
 	long positions[45]; //45 channels
 	ServoFrame();
@@ -114,9 +118,24 @@ public:
                       Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
                       Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
                       Servo &s45=nullServo);
+	void setPositions(int playtime, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+                      Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
+                      Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
+                      Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
+                      Servo &s17=nullServo, Servo &s18=nullServo, Servo &s19=nullServo, Servo &s20=nullServo,
+                      Servo &s21=nullServo, Servo &s22=nullServo, Servo &s23=nullServo, Servo &s24=nullServo,
+                      Servo &s25=nullServo, Servo &s26=nullServo, Servo &s27=nullServo, Servo &s28=nullServo,
+                      Servo &s29=nullServo, Servo &s30=nullServo, Servo &s31=nullServo, Servo &s32=nullServo,
+                      Servo &s33=nullServo, Servo &s34=nullServo, Servo &s35=nullServo, Servo &s36=nullServo,
+                      Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
+                      Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
+                      Servo &s45=nullServo);
     virtual bool load(const char* dir);
+	virtual bool load(const String &s);
     virtual bool save(const char* dir);
-    void playPositions(Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+	virtual bool save(const String &s);
+
+	void playPositions(Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
                        Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
                        Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
                        Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
@@ -128,7 +147,19 @@ public:
                        Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
                        Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
                        Servo &s45=nullServo);
-    void playPositions(unsigned long playtime, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+	void playPositions(unsigned long long enabled_servos, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+                      Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
+                      Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
+                      Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
+                      Servo &s17=nullServo, Servo &s18=nullServo, Servo &s19=nullServo, Servo &s20=nullServo,
+                      Servo &s21=nullServo, Servo &s22=nullServo, Servo &s23=nullServo, Servo &s24=nullServo,
+                      Servo &s25=nullServo, Servo &s26=nullServo, Servo &s27=nullServo, Servo &s28=nullServo,
+                      Servo &s29=nullServo, Servo &s30=nullServo, Servo &s31=nullServo, Servo &s32=nullServo,
+                      Servo &s33=nullServo, Servo &s34=nullServo, Servo &s35=nullServo, Servo &s36=nullServo,
+                      Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
+                      Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
+                      Servo &s45=nullServo);
+	void playPositions(unsigned long playtime, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
                        Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
                        Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
                        Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
@@ -140,6 +171,42 @@ public:
                        Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
                        Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
                        Servo &s45=nullServo);
+	void playPositions(int playtime, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+                       Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
+                       Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
+                       Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
+                       Servo &s17=nullServo, Servo &s18=nullServo, Servo &s19=nullServo, Servo &s20=nullServo,
+                       Servo &s21=nullServo, Servo &s22=nullServo, Servo &s23=nullServo, Servo &s24=nullServo,
+                       Servo &s25=nullServo, Servo &s26=nullServo, Servo &s27=nullServo, Servo &s28=nullServo,
+                       Servo &s29=nullServo, Servo &s30=nullServo, Servo &s31=nullServo, Servo &s32=nullServo,
+                       Servo &s33=nullServo, Servo &s34=nullServo, Servo &s35=nullServo, Servo &s36=nullServo,
+                       Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
+                       Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
+                       Servo &s45=nullServo);
+	void playPositions(unsigned long playtime, unsigned long long enabled_servos, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+                      Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
+                      Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
+                      Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
+                      Servo &s17=nullServo, Servo &s18=nullServo, Servo &s19=nullServo, Servo &s20=nullServo,
+                      Servo &s21=nullServo, Servo &s22=nullServo, Servo &s23=nullServo, Servo &s24=nullServo,
+                      Servo &s25=nullServo, Servo &s26=nullServo, Servo &s27=nullServo, Servo &s28=nullServo,
+                      Servo &s29=nullServo, Servo &s30=nullServo, Servo &s31=nullServo, Servo &s32=nullServo,
+                      Servo &s33=nullServo, Servo &s34=nullServo, Servo &s35=nullServo, Servo &s36=nullServo,
+                      Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
+                      Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
+                      Servo &s45=nullServo);
+	void playPositions(int playtime, unsigned long long enabled_servos, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+                      Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
+                      Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
+                      Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
+                      Servo &s17=nullServo, Servo &s18=nullServo, Servo &s19=nullServo, Servo &s20=nullServo,
+                      Servo &s21=nullServo, Servo &s22=nullServo, Servo &s23=nullServo, Servo &s24=nullServo,
+                      Servo &s25=nullServo, Servo &s26=nullServo, Servo &s27=nullServo, Servo &s28=nullServo,
+                      Servo &s29=nullServo, Servo &s30=nullServo, Servo &s31=nullServo, Servo &s32=nullServo,
+                      Servo &s33=nullServo, Servo &s34=nullServo, Servo &s35=nullServo, Servo &s36=nullServo,
+                      Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
+                      Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
+                      Servo &s45=nullServo);
 
 	ServoFrame & operator = (const ServoFrame &s) {
 		int i;
@@ -169,14 +236,15 @@ public:
                     Servo &s45=nullServo);
     
 	virtual bool load(const char* dir);
+	virtual bool load(const String &s);
     virtual bool save(const char* dir);
+	virtual bool save(const String &s);
     
     ServoOffset & operator = (const ServoOffset &s) {
 		int i;
 		for(i=0; i<45; i++) offsets[i] = s.offsets[i];
 	}
 };
-
 
 /***************************** Other Servo Controler **************************/
 
@@ -202,6 +270,7 @@ public:
 	char all_string[2][256];
 	
 	bool load(const char* dir);
+	bool load(const String &s);
 	
 	ServoFrameInno & operator = (const ServoFrame &s) {
 		int i;
@@ -230,6 +299,7 @@ public:
 	ServoOffsetInno(const char* dir);
 	
 	bool load(const char* dir);
+	bool load(const String &s);
 	
 	ServoOffsetInno & operator = (const ServoOffset &s) {
 		int i;
@@ -250,6 +320,7 @@ public:
     ServoFrameKondo(const char* dir, const char* fname);
 
     bool load(const char* dir, const char* fname = NULL);
+	bool load(const String &dir, const String &fname = NULL);
 	
     long capture(Servo &s);
     
@@ -270,6 +341,7 @@ public:
 	ServoOffsetKondo();
 	ServoOffsetKondo(const char* dir);
 	bool load(const char* dir);
+	bool load(const String &s);
 	
 	ServoOffsetKondo & operator = (const ServoOffset &s) {
 		int i;
@@ -290,6 +362,7 @@ public:
     ServoFramePololu(const char* dir, const char* sname, const char* fname);
     
     bool load(const char* dir, const char* sname=NULL, const char* fname=NULL);
+	bool load(const String &dir, const String &sname=NULL, const String &fname=NULL);
 
 	ServoFramePololu & operator = (const ServoFrame &s) {
 		int i;
@@ -377,6 +450,17 @@ bool isServoMultiMoving(Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=null
                         Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
                         Servo &s45=nullServo);
 
-
+void servoMultiRealTimeMixing(long* mixoffsets, Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
+                              Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
+                              Servo &s9=nullServo, Servo &s10=nullServo, Servo &s11=nullServo, Servo &s12=nullServo,
+                              Servo &s13=nullServo, Servo &s14=nullServo, Servo &s15=nullServo, Servo &s16=nullServo,
+                              Servo &s17=nullServo, Servo &s18=nullServo, Servo &s19=nullServo, Servo &s20=nullServo,
+                              Servo &s21=nullServo, Servo &s22=nullServo, Servo &s23=nullServo, Servo &s24=nullServo,
+                              Servo &s25=nullServo, Servo &s26=nullServo, Servo &s27=nullServo, Servo &s28=nullServo,
+                              Servo &s29=nullServo, Servo &s30=nullServo, Servo &s31=nullServo, Servo &s32=nullServo,
+                              Servo &s33=nullServo, Servo &s34=nullServo, Servo &s35=nullServo, Servo &s36=nullServo,
+                              Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
+                              Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
+                              Servo &s45=nullServo);
 //void update_position();
 #endif

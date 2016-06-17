@@ -88,7 +88,7 @@ static volatile irqservo_t *servosB = irqservosB; // for interrupt ISR, it will 
 static volatile bool uploading = false;
 static volatile bool havemail = false;
 //static volatile int8_t Channel[_Nbr_16timers ];             // counter for the servo being pulsed for each timer (or -1 if refresh interval)
-											
+
 uint8_t ServoCount = 0;                                     // the total number of attached servos
 uint8_t ServoSortCount = 0;
 static volatile uint8_t ServoIRQCountA = 0; // it is real time
@@ -681,9 +681,13 @@ void Servo::setOffset(long offset) {
 }
 
 void Servo::setRealTimeMixing(long mixoffset) {
-    io_DisableINT();
+    setRealTimeMixing(mixoffset, true);
+}
+
+void Servo::setRealTimeMixing(long mixoffset, bool interrupt) {
+    if(interrupt) io_DisableINT();
 	sv86[servoIndex].mixoffset = mixoffset;
-	io_RestoreINT();
+	if(interrupt) io_RestoreINT();
 }
 
 void Servo::write(int value) {
@@ -752,6 +756,21 @@ void Servo::run(void) {
 		io_RestoreINT();
 		
 		_write(servoIndex, sv86[servoIndex].curposition);
+		
+		// First call run(), enable RTC Timer
+		if(RTC_Timer_Used == false)
+		{
+			RTC_initialize(15625L); // 15.625ms
+			RTC_timer_start(15625L);
+			
+			//RTC_initialize(31250L); // 31.25ms
+			//RTC_timer_start(31250L);
+			
+			//RTC_initialize(62500L); // 62.5ms
+			//RTC_timer_start(62500L);
+			RTC_Timer_Used = true;
+		}
+		
 		return;
 	}
 	else // PAUSE state
@@ -787,20 +806,6 @@ void Servo::run(void) {
 	sv86[servoIndex].endtime = sv86[servoIndex].starttime + total_time;
 	sv86[servoIndex].state = SERVO_MOVING;
 	io_RestoreINT();
-	
-	// 4. Enable RTC Timer
-	if(RTC_Timer_Used == false)
-	{
-		RTC_initialize(15625L); // 15.625ms
-		RTC_timer_start(15625L);
-		
-		//RTC_initialize(31250L); // 31.25ms
-		//RTC_timer_start(31250L);
-		
-		//RTC_initialize(62500L); // 62.5ms
-		//RTC_timer_start(62500L);
-	    RTC_Timer_Used = true;
-	}
 }
 
 void Servo::pause(void) {
@@ -1035,6 +1040,44 @@ END:
 	return false;
 }
 
+void servoMultiRealTimeMixing(long* mixoffsets, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
+                              Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
+                              Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
+                              Servo &s16, Servo &s17, Servo &s18, Servo &s19, Servo &s20,
+                              Servo &s21, Servo &s22, Servo &s23, Servo &s24, Servo &s25,
+                              Servo &s26, Servo &s27, Servo &s28, Servo &s29, Servo &s30,
+                              Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
+                              Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
+                              Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
+   
+	int i;
+		
+	if(&s1 == &nullServo) // no input servo class
+	{
+		io_DisableINT();
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && mixoffsets[i] != 0L) Servoptr[i]->setRealTimeMixing(mixoffsets[i], false);}
+		io_RestoreINT();
+		return;
+	}
+	
+	io_DisableINT();
+	s1.setRealTimeMixing(mixoffsets[s1.servoIndex], false); s2.setRealTimeMixing(mixoffsets[s2.servoIndex], false); s3.setRealTimeMixing(mixoffsets[s3.servoIndex], false);
+	s4.setRealTimeMixing(mixoffsets[s4.servoIndex], false); s5.setRealTimeMixing(mixoffsets[s5.servoIndex], false); s6.setRealTimeMixing(mixoffsets[s6.servoIndex], false);
+	s7.setRealTimeMixing(mixoffsets[s7.servoIndex], false); s8.setRealTimeMixing(mixoffsets[s8.servoIndex], false); s9.setRealTimeMixing(mixoffsets[s9.servoIndex], false);
+	s10.setRealTimeMixing(mixoffsets[s10.servoIndex], false); s11.setRealTimeMixing(mixoffsets[s11.servoIndex], false); s12.setRealTimeMixing(mixoffsets[s12.servoIndex], false);
+	s13.setRealTimeMixing(mixoffsets[s13.servoIndex], false); s14.setRealTimeMixing(mixoffsets[s14.servoIndex], false); s15.setRealTimeMixing(mixoffsets[s15.servoIndex], false);
+	s16.setRealTimeMixing(mixoffsets[s16.servoIndex], false); s17.setRealTimeMixing(mixoffsets[s17.servoIndex], false); s18.setRealTimeMixing(mixoffsets[s18.servoIndex], false);
+	s19.setRealTimeMixing(mixoffsets[s19.servoIndex], false); s20.setRealTimeMixing(mixoffsets[s20.servoIndex], false); s21.setRealTimeMixing(mixoffsets[s21.servoIndex], false);
+	s22.setRealTimeMixing(mixoffsets[s22.servoIndex], false); s23.setRealTimeMixing(mixoffsets[s23.servoIndex], false); s24.setRealTimeMixing(mixoffsets[s24.servoIndex], false);
+	s25.setRealTimeMixing(mixoffsets[s25.servoIndex], false); s26.setRealTimeMixing(mixoffsets[s26.servoIndex], false); s27.setRealTimeMixing(mixoffsets[s27.servoIndex], false);
+	s28.setRealTimeMixing(mixoffsets[s28.servoIndex], false); s29.setRealTimeMixing(mixoffsets[s29.servoIndex], false); s30.setRealTimeMixing(mixoffsets[s30.servoIndex], false);
+	s31.setRealTimeMixing(mixoffsets[s31.servoIndex], false); s32.setRealTimeMixing(mixoffsets[s32.servoIndex], false); s33.setRealTimeMixing(mixoffsets[s33.servoIndex], false);
+	s34.setRealTimeMixing(mixoffsets[s34.servoIndex], false); s35.setRealTimeMixing(mixoffsets[s35.servoIndex], false); s36.setRealTimeMixing(mixoffsets[s36.servoIndex], false);
+	s37.setRealTimeMixing(mixoffsets[s37.servoIndex], false); s38.setRealTimeMixing(mixoffsets[s38.servoIndex], false); s39.setRealTimeMixing(mixoffsets[s39.servoIndex], false);
+	s40.setRealTimeMixing(mixoffsets[s40.servoIndex], false); s41.setRealTimeMixing(mixoffsets[s41.servoIndex], false); s42.setRealTimeMixing(mixoffsets[s42.servoIndex], false);
+	s43.setRealTimeMixing(mixoffsets[s43.servoIndex], false); s44.setRealTimeMixing(mixoffsets[s44.servoIndex], false); s45.setRealTimeMixing(mixoffsets[s45.servoIndex], false);
+	io_RestoreINT();
+}
 
 /******************************** ServoFrame **********************************/
 
@@ -1042,6 +1085,7 @@ ServoFrame::ServoFrame() {
 	int i;
 	
 	for(i=0; i<45; i++) positions[i] = 0L;
+	used_servos = 0x00001FFFFFFFFFFFLL;
 }
 
 ServoFrame::ServoFrame(const char* dir) {
@@ -1049,6 +1093,7 @@ ServoFrame::ServoFrame(const char* dir) {
 	
 	for(i=0; i<45; i++) positions[i] = 0L;
 	load(dir);
+	used_servos = 0x00001FFFFFFFFFFFLL;
 }
 
 void ServoFrame::setPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
@@ -1119,6 +1164,21 @@ void ServoFrame::setPositions(unsigned long playtime, Servo &s1, Servo &s2, Serv
 	s37.setPosition(positions[s37.servoIndex], playtime); s38.setPosition(positions[s38.servoIndex], playtime); s39.setPosition(positions[s39.servoIndex], playtime);
 	s40.setPosition(positions[s40.servoIndex], playtime); s41.setPosition(positions[s41.servoIndex], playtime); s42.setPosition(positions[s42.servoIndex], playtime);
 	s43.setPosition(positions[s43.servoIndex], playtime); s44.setPosition(positions[s44.servoIndex], playtime); s45.setPosition(positions[s45.servoIndex], playtime);
+}
+
+void ServoFrame::setPositions(int playtime, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
+                              Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
+                              Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
+                              Servo &s16, Servo &s17, Servo &s18, Servo &s19, Servo &s20,
+                              Servo &s21, Servo &s22, Servo &s23, Servo &s24, Servo &s25,
+                              Servo &s26, Servo &s27, Servo &s28, Servo &s29, Servo &s30,
+                              Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
+                              Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
+                              Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
+	if(playtime <= 0) playtime = 0;
+	setPositions((unsigned long) playtime, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
+	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
+	              s41, s42, s43, s44, s45);					  
 }
 
 static void get_real_path(const char* dir, char* path) {
@@ -1215,6 +1275,10 @@ bool ServoFrame::load(const char* dir) {
 	return true;
 }
 
+bool ServoFrame::load(const String &s) {
+	load(s.c_str());
+}
+
 void combine(char* result, int channel, long value) {
 	int i, j;
 	const char* head = "channel";
@@ -1257,6 +1321,10 @@ bool ServoFrame::save(const char* dir) {
 	return true;
 }
 
+bool ServoFrame::save(const String &s) {
+	save(s.c_str());
+}
+
 void ServoFrame::playPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
                                Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
                                Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
@@ -1271,8 +1339,8 @@ void ServoFrame::playPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo
 		
 	if(&s1 == &nullServo) // no input servo class
 	{  
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i]);}
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->run();}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->setPosition(positions[i]);}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->run();}
 		return;
 	}
 
@@ -1296,6 +1364,22 @@ void ServoFrame::playPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo
 	              s41, s42, s43, s44, s45);
 }
 
+void ServoFrame::playPositions(unsigned long long enabled_servos, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
+                               Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
+                               Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
+                               Servo &s16, Servo &s17, Servo &s18, Servo &s19, Servo &s20,
+                               Servo &s21, Servo &s22, Servo &s23, Servo &s24, Servo &s25,
+                               Servo &s26, Servo &s27, Servo &s28, Servo &s29, Servo &s30,
+                               Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
+                               Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
+                               Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
+	used_servos = enabled_servos;
+	playPositions(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
+	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
+	              s41, s42, s43, s44, s45);
+	used_servos = 0x00001FFFFFFFFFFFLL;
+}
+
 void ServoFrame::playPositions(unsigned long playtime, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
                                Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
                                Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
@@ -1310,8 +1394,8 @@ void ServoFrame::playPositions(unsigned long playtime, Servo &s1, Servo &s2, Ser
 
 	if(&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i], playtime);}
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->run();}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->setPosition(positions[i], playtime);}
+		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->run();}
 		return;
 	}
 
@@ -1333,6 +1417,54 @@ void ServoFrame::playPositions(unsigned long playtime, Servo &s1, Servo &s2, Ser
     servoMultiRun(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
 	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
 	              s41, s42, s43, s44, s45);
+}
+
+void ServoFrame::playPositions(int playtime, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
+                               Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
+                               Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
+                               Servo &s16, Servo &s17, Servo &s18, Servo &s19, Servo &s20,
+                               Servo &s21, Servo &s22, Servo &s23, Servo &s24, Servo &s25,
+                               Servo &s26, Servo &s27, Servo &s28, Servo &s29, Servo &s30,
+                               Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
+                               Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
+                               Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
+	if(playtime <= 0) playtime = 0;
+	playPositions((unsigned long) playtime, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
+	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
+	              s41, s42, s43, s44, s45);
+}
+
+void ServoFrame::playPositions(unsigned long playtime, unsigned long long enabled_servos, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
+                               Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
+                               Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
+                               Servo &s16, Servo &s17, Servo &s18, Servo &s19, Servo &s20,
+                               Servo &s21, Servo &s22, Servo &s23, Servo &s24, Servo &s25,
+                               Servo &s26, Servo &s27, Servo &s28, Servo &s29, Servo &s30,
+                               Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
+                               Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
+                               Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
+	used_servos = enabled_servos;
+	playPositions(playtime, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
+	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
+	              s41, s42, s43, s44, s45);
+	used_servos = 0x00001FFFFFFFFFFFLL;
+}
+
+void ServoFrame::playPositions(int playtime, unsigned long long enabled_servos, Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
+                               Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
+                               Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
+                               Servo &s16, Servo &s17, Servo &s18, Servo &s19, Servo &s20,
+                               Servo &s21, Servo &s22, Servo &s23, Servo &s24, Servo &s25,
+                               Servo &s26, Servo &s27, Servo &s28, Servo &s29, Servo &s30,
+                               Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
+                               Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
+                               Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
+	if(playtime <= 0) playtime = 0;
+	used_servos = enabled_servos;
+	playPositions((unsigned long) playtime, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
+	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
+	              s41, s42, s43, s44, s45);
+	used_servos = 0x00001FFFFFFFFFFFLL;
 }
 
 /******************************* End of Servo Frame ***************************/
@@ -1423,6 +1555,10 @@ bool ServoOffset::load(const char* dir) {
 	return true;
 }
 
+bool ServoOffset::load(const String &s) {
+	load(s.c_str());
+}
+
 bool ServoOffset::save(const char* dir) {
     int i;
 	FILE *fp;
@@ -1446,7 +1582,12 @@ bool ServoOffset::save(const char* dir) {
 	return true;
 }
 
+bool ServoOffset::save(const String &s) {
+	save(s.c_str());
+}
+
 /******************************* End of Servo Offset **************************/
+
 
 
 /***************************** Other Servo Controler **************************/
@@ -1809,6 +1950,9 @@ bool ServoFrameInno::load(const char* dir) {
 	return true;
 }
 
+bool ServoFrameInno::load(const String &s) {
+	load(s.c_str());
+}
 
 ServoOffsetInno::ServoOffsetInno() : ServoOffset() {
 	int i;
@@ -1950,6 +2094,10 @@ bool ServoOffsetInno::load(const char* dir) {
 	}
 	
 	return true;
+}
+
+bool ServoOffsetInno::load(const String &s) {
+	load(s.c_str());
 }
 
 /*
@@ -2215,6 +2363,10 @@ bool ServoFrameKondo::load(const char* dir, const char* fname) {
 	return (_handled == true) ? true : false;
 } 
 
+bool ServoFrameKondo::load(const String &s, const String &s1) {
+	load(s.c_str(), s1.c_str());
+}
+
 
 ServoOffsetKondo::ServoOffsetKondo() : ServoOffset() {}
 
@@ -2322,6 +2474,10 @@ bool ServoOffsetKondo::load(const char* dir) {
 	}
 	
 	return true;
+}
+
+bool ServoOffsetKondo::load(const String &s) {
+	load(s.c_str());
 }
 
 
@@ -2480,6 +2636,10 @@ bool ServoFramePololu::load(const char* dir, const char* sname, const char* fnam
 	return (_handled == true) ? true : false;
 }
 
+bool ServoFramePololu::load(const String &s, const String &s1, const String &s2) {
+	load(s.c_str(), s1.c_str(), s2.c_str());
+}
+
 /*
 ServoOffsetPololu::ServoOffsetPololu() : ServoOffset() {}
 
@@ -2631,7 +2791,15 @@ static int timerrtc_isr_handler(int irq, void* data) {
 		
 		for(i=0; i<MAX_SERVOS; i++)                       
 		{
-			if(sv86[i].state != SERVO_MOVING) continue;
+			if(sv86[i].state != SERVO_MOVING)
+			{
+				if(sv86[i].state == SERVO_IDLE && sv86[i].mixoffset != 0L) // if the mixoffset != 0, do something
+				{
+					_write(i, (long)sv86[i].curposition + sv86[i].mixoffset);
+				}	
+				continue;
+			}
+			
 			if(time_over[i] == 1)
 			{
 				sv86[i].curposition = sv86[i].targetposition;
