@@ -1,4 +1,4 @@
-### CODING 213 - 2016.06.16 ###
+### CODING 213 - 2016.06.17 ###
 
 [core]
 * Updated the implementation of marco of F(string_literal) in WString.h and the implementation of print(const __FlashStringHelper *ifsh).
@@ -10,6 +10,7 @@
 * For Servo86, update the MotionEditor.ino example to accept the 6-axis or 9-axis sensor (ex. LSM330 or RM-G146).
 * For FreeIMU1, modify the implementation of getRegVal() to speed up if no any I2C device connected with 86Duino.
 * For FreeIMU1, now support the RM-G146 module (RM-G146 info: http://www.roboard.com/?page_id=1055)
+* Remove the SpiderL3S from the \libraries.
 
 
 
