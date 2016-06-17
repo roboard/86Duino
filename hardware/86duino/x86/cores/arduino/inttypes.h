@@ -5,6 +5,5 @@
 
 typedef int32_t  int_farptr_t;
 typedef uint32_t uint_farptr_t;
-typedef uint32_t uintptr_t;
 
 #endif /* __INTTYPES_H_ */
