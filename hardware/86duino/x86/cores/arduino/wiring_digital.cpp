@@ -25,7 +25,7 @@
 #define PULL_DOWN     (0x02)
 
 DMPAPI(void) pinMode(uint8_t pin, uint8_t mode) {
-	int i, crossbar_bit;
+	int crossbar_bit;
 	if(pin >= PINS || PIN86[pin].gpN == NOUSED) return;
 	
 	crossbar_bit = PIN86[pin].gpN;

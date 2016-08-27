@@ -24,9 +24,7 @@ rm -rf processing-*
 mkdir processing
 cp -r ../shared/lib processing/
 cp -r ../shared/libraries processing/
-cp ../../app/lib/antlr.jar processing/lib/
 cp ../../app/lib/ecj.jar processing/lib/
-cp ../../app/lib/jna.jar processing/lib/
 cp ../shared/revisions.txt processing/
 
 # add the libraries folder with source

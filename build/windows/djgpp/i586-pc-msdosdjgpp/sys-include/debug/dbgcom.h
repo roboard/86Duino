@@ -1,3 +1,4 @@
+/* Copyright (C) 2012 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1999 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1996 DJ Delorie, see COPYING.DJ for details */

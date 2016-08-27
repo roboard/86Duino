@@ -5,36 +5,34 @@ import cc.arduino.packages.ssh.NoInteractionUserInfo;
 import cc.arduino.packages.ssh.SSHClientSetupChainRing;
 import cc.arduino.packages.ssh.SSHConfigFileSetup;
 import cc.arduino.packages.ssh.SSHPwdSetup;
+
 import com.jcraft.jsch.*;
+
+import processing.app.debug.MessageConsumer;
 import processing.app.debug.MessageSiphon;
 
 import javax.swing.*;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import static processing.app.I18n._;
+import static processing.app.I18n.tr;
 
 @SuppressWarnings("serial")
-public class NetworkMonitor extends AbstractMonitor {
+public class NetworkMonitor extends AbstractTextMonitor implements MessageConsumer {
 
   private static final int MAX_CONNECTION_ATTEMPTS = 5;
-
-  private final BoardPort port;
-  private final String ipAddress;
 
   private MessageSiphon inputConsumer;
   private Session session;
   private Channel channel;
-  private MessageSiphon errorConsumer;
   private int connectionAttempts;
 
-  public NetworkMonitor(BoardPort port, Base base) {
-    super(port.getLabel());
-    this.port = port;
-    this.ipAddress = port.getAddress();
+  public NetworkMonitor(BoardPort port) {
+    super(port);
 
     onSendCommand(new ActionListener() {
       public void actionPerformed(ActionEvent event) {
@@ -58,18 +56,20 @@ public class NetworkMonitor extends AbstractMonitor {
 
   @Override
   public String getAuthorizationKey() {
-    return "runtime.pwd." + ipAddress;
+    return "runtime.pwd." + getBoardPort().getAddress();
   }
 
   @Override
   public void open() throws Exception {
+    super.open();
     this.connectionAttempts = 0;
 
     JSch jSch = new JSch();
     SSHClientSetupChainRing sshClientSetupChain = new SSHConfigFileSetup(new SSHPwdSetup());
-    session = sshClientSetupChain.setup(port, jSch);
+    session = sshClientSetupChain.setup(getBoardPort(), jSch);
 
-    session.setUserInfo(new NoInteractionUserInfo(Preferences.get(getAuthorizationKey())));
+    session.setConfig("PreferredAuthentications", "publickey,keyboard-interactive,password");
+    session.setUserInfo(new NoInteractionUserInfo(PreferencesData.get(getAuthorizationKey())));
     session.connect(30000);
 
     tryConnect();
@@ -98,7 +98,7 @@ public class NetworkMonitor extends AbstractMonitor {
     channel.connect();
 
     inputConsumer = new MessageSiphon(inputStream, this);
-    errorConsumer = new MessageSiphon(errStream, this);
+    new MessageSiphon(errStream, this);
 
     if (connectionAttempts > 1) {
       SwingUtilities.invokeLater(new Runnable() {
@@ -111,7 +111,7 @@ public class NetworkMonitor extends AbstractMonitor {
             // ignore
           }
           if (channel.isConnected()) {
-            NetworkMonitor.this.message(_("connected!") + '\n');
+            NetworkMonitor.this.message(tr("connected!") + '\n');
           }
         }
 
@@ -130,7 +130,7 @@ public class NetworkMonitor extends AbstractMonitor {
         }
       }
       if (connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
-        s = "\n" + _("Unable to connect: retrying") + " (" + connectionAttempts + ")... ";
+        s = "\n" + tr("Unable to connect: retrying") + " (" + connectionAttempts + ")... ";
 
         SwingUtilities.invokeLater(new Runnable() {
           @Override
@@ -145,7 +145,7 @@ public class NetworkMonitor extends AbstractMonitor {
           }
         });
       } else {
-        s = "\n" + _("Unable to connect: is the sketch using the bridge?");
+        s = "\n" + tr("Unable to connect: is the sketch using the bridge?");
       }
     }
     super.message(s);
@@ -153,6 +153,8 @@ public class NetworkMonitor extends AbstractMonitor {
 
   @Override
   public void close() throws Exception {
+    super.close();
+
     if (channel != null) {
       inputConsumer.stop();
       channel.disconnect();

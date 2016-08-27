@@ -323,7 +323,7 @@ void TwoWire::onRequest( void (*function)(void) )
 
 
 
-
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
 // Initialize Class Variables //////////////////////////////////////////////////
 
 uint8_t TwoWireLEGO::rxBuffer[BUFFER_LENGTH];
@@ -484,7 +484,7 @@ void TwoWireLEGO::flush(void)
 
 
 // Preinstantiate Objects //////////////////////////////////////////////////////
+TwoWireLEGO WireLEGO = TwoWireLEGO();
+#endif
 
 TwoWire Wire = TwoWire();
-TwoWireLEGO WireLEGO = TwoWireLEGO();
-

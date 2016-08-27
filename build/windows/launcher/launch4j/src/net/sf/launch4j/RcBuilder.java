@@ -2,33 +2,33 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2007 Grzegorz Kowal
-
+	Copyright (c) 2004, 2015 Grzegorz Kowal
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without modification,
 	are permitted provided that the following conditions are met:
-
-	    * Redistributions of source code must retain the above copyright notice,
-	      this list of conditions and the following disclaimer.
-	    * Redistributions in binary form must reproduce the above copyright notice,
-	      this list of conditions and the following disclaimer in the documentation
-	      and/or other materials provided with the distribution.
-	    * Neither the name of the Launch4j nor the names of its contributors
-	      may be used to endorse or promote products derived from this software without
-	      specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-	CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-	LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	
+	1. Redistributions of source code must retain the above copyright notice,
+	   this list of conditions and the following disclaimer.
+	
+	2. Redistributions in binary form must reproduce the above copyright notice,
+	   this list of conditions and the following disclaimer in the documentation
+	   and/or other materials provided with the distribution.
+	
+	3. Neither the name of the copyright holder nor the names of its contributors
+	   may be used to endorse or promote products derived from this software without
+	   specific prior written permission.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+	AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*
@@ -38,8 +38,10 @@ package net.sf.launch4j;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.List;
 
 import net.sf.launch4j.config.Config;
@@ -78,7 +80,6 @@ public class RcBuilder {
 	public static final int SPLASH_TIMEOUT = 6;
 	public static final int SPLASH_TIMEOUT_ERR = 7;
 	public static final int CHDIR = 8;
-	public static final int SET_PROC_NAME = 9;
 	public static final int ERR_TITLE = 10;
 	public static final int GUI_HEADER_STAYS_ALIVE = 11;
 	public static final int JVM_OPTIONS = 12;
@@ -98,13 +99,17 @@ public class RcBuilder {
 	public static final int INITIAL_HEAP_PERCENT = 26;
 	public static final int MAX_HEAP_SIZE = 27;
 	public static final int MAX_HEAP_PERCENT = 28;
-	
+	public static final int BUNDLED_JRE_64_BIT = 29;
+	public static final int RUNTIME_BITS = 30;
+	public static final int RESTART_ON_CRASH = 31;
+	public static final int BUNDLED_JRE_AS_FALLBACK	= 32;
+
 	public static final int STARTUP_ERR = 101;
 	public static final int BUNDLED_JRE_ERR = 102;
 	public static final int JRE_VERSION_ERR = 103;
 	public static final int LAUNCHER_ERR = 104;
 	public static final int INSTANCE_ALREADY_EXISTS_MSG = 105;
-	
+
 	private final StringBuffer _sb = new StringBuffer();
 
 	public String getContent() {
@@ -131,8 +136,8 @@ public class RcBuilder {
 		addText(CMD_LINE, c.getCmdLine());
 		addWindowsPath(CHDIR, c.getChdir());
 		addText(PRIORITY_CLASS, String.valueOf(c.getPriorityClass()));
-		addTrue(SET_PROC_NAME, c.isCustomProcName());
 		addTrue(GUI_HEADER_STAYS_ALIVE, c.isStayAlive());
+		addTrue(RESTART_ON_CRASH, c.isRestartOnCrash());
 		addSplash(c.getSplash());
 		addMessages(c);
 
@@ -149,25 +154,66 @@ public class RcBuilder {
 
 		// MAIN_CLASS / JAR
 		addTrue(WRAPPER, !c.isDontWrapJar());
+
 		if (c.getClassPath() != null) {
 			addText(MAIN_CLASS, c.getClassPath().getMainClass());
 			addWindowsPath(CLASSPATH, c.getClassPath().getPathsString());
 		}
+
 		if (c.isDontWrapJar() && c.getJar() != null) {
 			addWindowsPath(JAR, c.getJar().getPath());
 		}
+		
+		File file = Util.createTempFile("rc");
 
-		File f = Util.createTempFile("rc");
-		BufferedWriter w = new BufferedWriter(new FileWriter(f));
-		w.write(_sb.toString());
-		w.close();
-		return f;
+		if ("MS932".equals(System.getProperty("file.encoding"))) {
+			writeKanjiResourceFile(file);
+		} else {
+			writeResourceFile(file);
+		}
+
+		return file;
+	}
+	
+	private void writeResourceFile(File file) throws IOException {
+		BufferedWriter w = null;
+
+		try {
+			w = new BufferedWriter(new FileWriter(file));
+			w.write(_sb.toString());
+		} finally {
+			Util.close(w);
+		}
+	}
+
+	/**
+	 * Handle Japanese encoding - by toshimm.
+	 */
+	private void writeKanjiResourceFile(File file) throws IOException {
+		FileOutputStream output = null;
+		KanjiEscapeOutputStream kanji = null;
+		OutputStreamWriter writer = null;
+		BufferedWriter w = null;
+
+		try {
+			output = new FileOutputStream(file);
+			kanji = new KanjiEscapeOutputStream(output);
+			writer = new OutputStreamWriter(kanji);
+			w = new BufferedWriter(writer);
+			w.write(_sb.toString());
+		} finally {
+			Util.close(w);
+			Util.close(writer);
+			Util.close(kanji);
+			Util.close(output);
+		}
 	}
 
 	private void addVersionInfo(VersionInfo v) {
 		if (v == null) {
 			return;
 		}
+
 		_sb.append("1 VERSIONINFO\n");
 		_sb.append("FILEVERSION ");
 		_sb.append(v.getFileVersion().replaceAll("\\.", ", "));
@@ -181,6 +227,7 @@ public class RcBuilder {
 				" {\n" +
 				"  BLOCK \"040904E4\"\n" +	// English
 				"  {\n");
+
 		addVerBlockValue("CompanyName", v.getCompanyName());
 		addVerBlockValue("FileDescription", v.getFileDescription());
 		addVerBlockValue("FileVersion", v.getTxtFileVersion());
@@ -194,19 +241,25 @@ public class RcBuilder {
 
 	private void addJre(Jre jre) {
 		addWindowsPath(JRE_PATH, jre.getPath());
+		addTrue(BUNDLED_JRE_64_BIT, jre.getBundledJre64Bit());
+		addTrue(BUNDLED_JRE_AS_FALLBACK, jre.getBundledJreAsFallback());
 		addText(JAVA_MIN_VER, jre.getMinVersion());
 		addText(JAVA_MAX_VER, jre.getMaxVersion());
 		addText(JDK_PREFERENCE, String.valueOf(jre.getJdkPreferenceIndex()));
+
+		addInteger(RUNTIME_BITS, jre.getRuntimeBitsIndex() + 1);
 		addInteger(INITIAL_HEAP_SIZE, jre.getInitialHeapSize());
 		addInteger(INITIAL_HEAP_PERCENT, jre.getInitialHeapPercent());
 		addInteger(MAX_HEAP_SIZE, jre.getMaxHeapSize());
 		addInteger(MAX_HEAP_PERCENT, jre.getMaxHeapPercent());
 
 		StringBuffer options = new StringBuffer();
+
 		if (jre.getOptions() != null && !jre.getOptions().isEmpty()) {
 			addSpace(options);
 			append(options, jre.getOptions(), " ");
 		}
+
 		addText(JVM_OPTIONS, options.toString());
 	}
 	
@@ -214,6 +267,7 @@ public class RcBuilder {
 		if (splash == null) {
 			return;
 		}
+
 		addTrue(SHOW_SPLASH, true);
 		addTrue(SPLASH_WAITS_FOR_WINDOW, splash.getWaitForWindow());
 		addText(SPLASH_TIMEOUT, String.valueOf(splash.getTimeout()));
@@ -223,21 +277,25 @@ public class RcBuilder {
 	
 	private void addMessages(Config c) {
 		Msg msg = c.getMessages();
+
 		if (msg == null) {
 			msg = new Msg();
 		}
+
 		addText(STARTUP_ERR, msg.getStartupErr());
 		addText(BUNDLED_JRE_ERR, msg.getBundledJreErr());
 		addText(JRE_VERSION_ERR, msg.getJreVersionErr());
 		addText(LAUNCHER_ERR, msg.getLauncherErr());
+
 		if (c.getSingleInstance() != null) {
 			addText(INSTANCE_ALREADY_EXISTS_MSG, msg.getInstanceAlreadyExistsMsg());
 		}
 	}
 
-	private void append(StringBuffer sb, List list, String separator) {
+	private void append(StringBuffer sb, List<String> list, String separator) {
 		for (int i = 0; i < list.size(); i++) {
 			sb.append(list.get(i));
+
 			if (i < list.size() - 1) {
 				sb.append(separator);
 			}
@@ -248,6 +306,7 @@ public class RcBuilder {
 		if (text == null || text.equals("")) {
 			return;
 		}
+
 		_sb.append(id);
 		_sb.append(" RCDATA BEGIN \"");
 		_sb.append(escape(text));
@@ -273,6 +332,7 @@ public class RcBuilder {
 		if (path == null || path.equals("")) {
 			return;
 		}
+
 		_sb.append(id);
 		_sb.append(" RCDATA BEGIN \"");
 		_sb.append(path.replaceAll("\\\\", "\\\\\\\\")
@@ -284,6 +344,7 @@ public class RcBuilder {
 		if (manifest == null || manifest.getPath().equals("")) {
 			return;
 		}
+
 		_sb.append(id);
 		_sb.append(" 24 \"");
 		_sb.append(getPath(Util.getAbsoluteFile(
@@ -295,6 +356,7 @@ public class RcBuilder {
 		if (icon == null || icon.getPath().equals("")) {
 			return;
 		}
+
 		_sb.append(id);
 		_sb.append(" ICON DISCARDABLE \"");
 		_sb.append(getPath(Util.getAbsoluteFile(
@@ -306,6 +368,7 @@ public class RcBuilder {
 		if (bitmap == null) {
 			return;
 		}
+
 		_sb.append(id);
 		_sb.append(" BITMAP \"");
 		_sb.append(getPath(Util.getAbsoluteFile(
@@ -319,6 +382,7 @@ public class RcBuilder {
 	
 	private void addSpace(StringBuffer sb) {
 		int len = sb.length();
+
 		if (len-- > 0 && sb.charAt(len) != ' ') {
 			sb.append(' ');
 		}
@@ -328,13 +392,17 @@ public class RcBuilder {
 		_sb.append("   VALUE \"");
 		_sb.append(key);
 		_sb.append("\", \"");
+
 		if (value != null) {
 			_sb.append(escape(value));
 		}
+
 		_sb.append("\"\n");
 	}
 
 	private String escape(String text) {
-		return text.replaceAll("\"", "\"\"");
+		return text.replace("\"", "\"\"")
+				.replace("\\", "\\\\")
+				.replace("\n", "\\r\\n");
 	}
 }

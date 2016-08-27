@@ -22,7 +22,7 @@
 
  This example code is in the public domain.
 
- http://arduino.cc/en/Tutorial/WhileLoop
+ http://www.arduino.cc/en/Tutorial/WhileLoop
 
  */
 
@@ -43,8 +43,8 @@ int sensorValue = 0;         // the sensor value
 void setup() {
   // set the LED pins as outputs and the switch pin as input:
   pinMode(indicatorLedPin, OUTPUT);
-  pinMode (ledPin, OUTPUT);
-  pinMode (buttonPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  pinMode(buttonPin, INPUT);
 }
 
 void loop() {

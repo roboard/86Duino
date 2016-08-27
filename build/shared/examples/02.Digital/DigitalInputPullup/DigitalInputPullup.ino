@@ -9,7 +9,7 @@
  * Built-in LED on pin 13
 
  Unlike pinMode(INPUT), there is no pull-down resistor necessary. An internal
- 20K-ohm resistor is pulled to 5V. This configuration causes the input to
+ 20K-ohm resistor is pulled to 3.3V. This configuration causes the input to
  read HIGH when the switch is open, and LOW when it is closed.
 
  created 14 March 2012
@@ -42,8 +42,7 @@ void loop() {
   // button's pressed, and off when it's not:
   if (sensorVal == HIGH) {
     digitalWrite(13, LOW);
-  }
-  else {
+  } else {
     digitalWrite(13, HIGH);
   }
 }

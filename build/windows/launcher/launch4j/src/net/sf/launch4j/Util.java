@@ -2,33 +2,33 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2007 Grzegorz Kowal
-
+	Copyright (c) 2004, 2015 Grzegorz Kowal
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without modification,
 	are permitted provided that the following conditions are met:
-
-	    * Redistributions of source code must retain the above copyright notice,
-	      this list of conditions and the following disclaimer.
-	    * Redistributions in binary form must reproduce the above copyright notice,
-	      this list of conditions and the following disclaimer in the documentation
-	      and/or other materials provided with the distribution.
-	    * Neither the name of the Launch4j nor the names of its contributors
-	      may be used to endorse or promote products derived from this software without
-	      specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-	CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-	LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	
+	1. Redistributions of source code must retain the above copyright notice,
+	   this list of conditions and the following disclaimer.
+	
+	2. Redistributions in binary form must reproduce the above copyright notice,
+	   this list of conditions and the following disclaimer in the documentation
+	   and/or other materials provided with the distribution.
+	
+	3. Neither the name of the copyright holder nor the names of its contributors
+	   may be used to endorse or promote products derived from this software without
+	   specific prior written permission.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+	AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*
@@ -44,6 +44,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,8 +56,18 @@ import java.util.regex.Pattern;
 public class Util {
 	public static final boolean WINDOWS_OS = System.getProperty("os.name")
 			.toLowerCase().startsWith("windows");
+	
+	private static final String Launch4jProperties = "launch4j.properties";
 
 	private Util() {}
+	
+	public static Properties getProperties() throws IOException {
+		Properties props = new Properties();
+		InputStream in = Main.class.getClassLoader().getResourceAsStream(Launch4jProperties);
+		props.load(in);
+		in.close();
+		return props;
+	}
 
 	public static File createTempFile(String suffix) throws IOException {
 		String tmpdir = System.getProperty("launch4j.tmpdir");
@@ -68,27 +81,25 @@ public class Util {
 		}
 	}
 
-	/**
-	 * Returns the base directory of a jar file or null if the class is a standalone file. 
-	 * @return System specific path
-	 * 
-	 * Based on a patch submitted by Josh Elsasser
-	 */
 	public static File getJarBasedir() {
-		String url = Util.class.getClassLoader()
-				.getResource(Util.class.getName().replace('.', '/') + ".class")
-				.getFile()
-				.replaceAll("%20", " ");
-		if (url.startsWith("file:")) {
-			String jar = url.substring(5, url.lastIndexOf('!'));
-			int x = jar.lastIndexOf('/');
-			if (x == -1) {
-				x = jar.lastIndexOf('\\');	
+		try {
+			URI uri = new URI(Util.class.getClassLoader()
+					.getResource(Launch4jProperties)
+					.getFile());
+
+			String path = uri.getPath();
+
+			if (path.startsWith("/") && path.contains("!")) {
+				// jar file
+				String jarPath = path.substring(0, path.lastIndexOf('!'));
+				String basedir = jarPath.substring(0, jarPath.lastIndexOf('/') + 1);
+				return new File(basedir);
+			} else {
+				// class files - launch4j development
+				return new File(".");
 			}
-			String basedir = jar.substring(0, x + 1);
-			return new File(basedir);
-		} else {
-			return new File(".");
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -126,9 +137,6 @@ public class Util {
 					errLine = Integer.valueOf(
 							line.substring(matcher.start() + 1, matcher.end() - 1))
 							.intValue();
-					if (line.matches("(?i).*unrecognized escape sequence")) {
-						log.append(Messages.getString("Util.use.double.backslash"));
-					}
 					break;
 				}
 			}

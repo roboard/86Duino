@@ -1,3 +1,4 @@
+/* Copyright (C) 2015 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2013 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1999 DJ Delorie, see COPYING.DJ for details */
@@ -35,6 +36,7 @@ double frexp(double _x, int *_pexp);
 double ldexp(double _x, int _exp);
 double log(double _y);
 double log10(double _x);
+double log2(double _x);
 double modf(double _x, double *_pint);
 double pow(double _x, double _y);
 double sin(double _x);
@@ -74,6 +76,7 @@ extern float frexpf(float, int *);
 extern float ldexpf(float, int);
 extern float logf(float);
 extern float log10f(float);
+extern float log2f(float);
 extern float modff(float, float *);
 extern float powf(float, float);
 extern float sqrtf(float);
@@ -174,7 +177,6 @@ double exp2(double _x);
 double expm1(double _x);
 double hypot(double _x, double _y);
 double log1p(double _x);
-double log2(double _x);
 
 /* These are in libm.a (Cygnus).  You must link -lm to get these */
 /* See libm/math.h for comments */
@@ -258,7 +260,7 @@ double exp10(double _x);
 double pow10(double _x);
 double pow2(double _x);
 double powi(double _base, int _exp);
-void   sincos(double *_cos, double *_sin, double _x);
+void   sincos(double _x, double *_sin, double *_cos);
 
 /* These are in libm.a (Cygnus).  You must link -lm to get these */
 /* See libm/math.h for comments */

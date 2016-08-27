@@ -1,3 +1,5 @@
+/* Copyright (C) 2015 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2012 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_include_dlfcn_h_
 #define __dj_include_dlfcn_h_
 
@@ -17,18 +19,18 @@ extern "C" {
 #ifndef _POSIX_SOURCE
 
 /* The MODE argument to `dlopen' contains one of the following: */
-#define RTLD_LAZY	0x001	/* Lazy function call binding.  */
-#define RTLD_NOW	0x002	/* Immediate function call binding.  */
+#define RTLD_LAZY	0x0001	/* Lazy function call binding.  */
+#define RTLD_NOW	0x0002	/* Immediate function call binding.  */
 
 /* If the following bit is set in the MODE argument to `dlopen',
    the symbols of the loaded object and its dependencies are made
    visible as if the object were linked directly into the program. */
-#define RTLD_GLOBAL	0x100
+#define RTLD_GLOBAL	0x0100
 
 /* Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
    The implementation does this by default and so we can define the
    value to zero.  */
-#define RTLD_LOCAL	0
+#define RTLD_LOCAL	0x0000
 
 /* If the first argument to `dlsym' is set to RTLD_DEFAULT the run-time
    address of the symbol called NAME in the global scope is returned. */

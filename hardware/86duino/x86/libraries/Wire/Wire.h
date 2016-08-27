@@ -57,7 +57,7 @@ class TwoWire : public Stream
     using Print::write;
 };
 
-
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
 class TwoWireLEGO : public Stream
 {
   private:
@@ -90,8 +90,9 @@ class TwoWireLEGO : public Stream
 	virtual void flush(void);
 };
 
-extern TwoWire Wire;
 extern TwoWireLEGO WireLEGO;
+#endif
 
+extern TwoWire Wire;
 #endif
 

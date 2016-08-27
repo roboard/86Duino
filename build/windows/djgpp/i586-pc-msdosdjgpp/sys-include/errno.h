@@ -1,3 +1,5 @@
+/* Copyright (C) 2015 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2012 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2000 DJ Delorie, see COPYING.DJ for details */
@@ -24,7 +26,9 @@ extern int errno;
 
 #endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
   
-#ifndef __STRICT_ANSI__
+#if !defined(__STRICT_ANSI__) || (defined(__cplusplus) && ( \
+   (__GNUC__ == 4 && (__GNUC_MINOR__ > 2 && __GNUC_MINOR < 7) && \
+   defined(__GXX_EXPERIMENTAL_CXX0X__)) || (__cplusplus >= 201103L)))
 
 #define E2BIG		3
 #define EACCES		4
@@ -76,7 +80,7 @@ extern int		__sys_nerr;
 extern int		_doserrno;
 
 #endif /* !_POSIX_SOURCE */
-#endif /* !__STRICT_ANSI__ */
+#endif /* !__STRICT_ANSI__ || ... */
 #endif /* !__dj_ENFORCE_ANSI_FREESTANDING */
 
 #ifndef __dj_ENFORCE_FUNCTION_CALLS

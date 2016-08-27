@@ -2,33 +2,33 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2007 Grzegorz Kowal
-
+	Copyright (c) 2004, 2015 Grzegorz Kowal
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without modification,
 	are permitted provided that the following conditions are met:
-
-	    * Redistributions of source code must retain the above copyright notice,
-	      this list of conditions and the following disclaimer.
-	    * Redistributions in binary form must reproduce the above copyright notice,
-	      this list of conditions and the following disclaimer in the documentation
-	      and/or other materials provided with the distribution.
-	    * Neither the name of the Launch4j nor the names of its contributors
-	      may be used to endorse or promote products derived from this software without
-	      specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-	CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-	LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	
+	1. Redistributions of source code must retain the above copyright notice,
+	   this list of conditions and the following disclaimer.
+	
+	2. Redistributions in binary form must reproduce the above copyright notice,
+	   this list of conditions and the following disclaimer in the documentation
+	   and/or other materials provided with the distribution.
+	
+	3. Neither the name of the copyright holder nor the names of its contributors
+	   may be used to endorse or promote products derived from this software without
+	   specific prior written permission.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+	AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*
@@ -38,9 +38,6 @@ package net.sf.launch4j.binding;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.launch4j.Util;
@@ -84,16 +81,18 @@ public class Validator {
 		}
 	}
 
-	public static void checkOptStrings(List strings, int maxLength, int totalMaxLength,
+	public static void checkOptStrings(List<String> strings, int maxLength, int totalMaxLength,
 			String property, String name) {
 		if (strings == null) {
 			return;
 		}
+
 		int totalLength = 0;
-		for (Iterator iter = strings.iterator(); iter.hasNext();) {
-			String s = (String) iter.next();
+
+		for (String s : strings) {
 			checkString(s, maxLength, property, name);
 			totalLength += s.length();
+
 			if (totalLength > totalMaxLength) {
 				signalLengthViolation(property, name, totalMaxLength);
 			}
@@ -103,27 +102,32 @@ public class Validator {
 	public static void checkString(String s, int maxLength, String pattern,
 			String property, String name) {
 		checkString(s, maxLength, property, name);
+
 		if (!s.matches(pattern)) {
 			signalViolation(property,
 					Messages.getString("Validator.invalid.data", name));
 		}
 	}
 
-	public static void checkOptStrings(List strings, int maxLength, int totalMaxLength,
+	public static void checkOptStrings(List<String> strings, int maxLength, int totalMaxLength,
 			String pattern, String property, String name, String msg) {
 		if (strings == null) {
 			return;
 		}
+
 		int totalLength = 0;
-		for (Iterator iter = strings.iterator(); iter.hasNext();) {
-			String s = (String) iter.next();
+
+		for (String s : strings) {
 			checkString(s, maxLength, property, name);
+
 			if (!s.matches(pattern)) {
 				signalViolation(property, msg != null
 						? msg 
 						: Messages.getString("Validator.invalid.data", name));
 			}
+			
 			totalLength += s.length();
+			
 			if (totalLength > totalMaxLength) {
 				signalLengthViolation(property, name, totalMaxLength);
 			}
@@ -135,6 +139,7 @@ public class Validator {
 		if (s == null || s.length() == 0) {
 			return;
 		}
+
 		if (s.length() > maxLength) {
 			signalLengthViolation(property, name, maxLength);
 		}
@@ -145,9 +150,11 @@ public class Validator {
 		if (s == null || s.length() == 0) {
 			return;
 		}
+
 		if (s.length() > maxLength) {
 			signalLengthViolation(property, name, maxLength);
 		}
+
 		if (!s.matches(pattern)) {
 			signalViolation(property,
 					Messages.getString("Validator.invalid.data", name));
@@ -185,7 +192,9 @@ public class Validator {
 			signalViolation(property,
 					Messages.getString("Validator.empty.field", name));
 		}
-		List list = Arrays.asList(strings);
+
+		List<String> list = Arrays.asList(strings);
+
 		if (!list.contains(s)) {
 			signalViolation(property,
 					Messages.getString("Validator.invalid.option", name, list.toString())); 
@@ -204,22 +213,6 @@ public class Validator {
 		}
 	}
 	
-	public static void checkElementsNotNullUnique(Collection c, String property,
-			String msg) {
-		if (c.contains(null)
-				|| new HashSet(c).size() != c.size()) {
-			signalViolation(property,
-					Messages.getString("Validator.already.exists", msg)); 
-		}
-	}
-
-	public static void checkElementsUnique(Collection c, String property, String msg) {
-		if (new HashSet(c).size() != c.size()) {
-			signalViolation(property,
-					Messages.getString("Validator.already.exists", msg));
-		}
-	}
-
 	public static void checkFile(File f, String property, String fileDescription) {
 		File cfgPath = ConfigPersister.getInstance().getConfigPath();
 		if (f == null

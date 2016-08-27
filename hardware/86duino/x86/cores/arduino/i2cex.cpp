@@ -35,7 +35,8 @@
  *    to 1 (GS[1] = 1: I2C0; PINS0 = 0: GPIO3[5:4]). To use I2C1 interface, the
  *    should set GS[2] (bit 2 of SB_IPFCTRL3_REG) to 1 (GS[2] = 1: I2C1;
  *    PINS0 = 0: GPIO3[7:6])
- *********************************************************************************/
+ *********************************************************************************
+ */
 
 #define SB_I2CCTRL_REG   (0xd4)
 /***************  South Bridge Internal I2C Control REG: 0xd4~0xd7  **************

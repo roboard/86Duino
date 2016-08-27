@@ -5,11 +5,13 @@
    LICENSE and/or the terms of COPYING.DJ, all available at
    <http://www.delorie.com>.
 
-   Bug reports to <mailto:cbfalconer@worldnet.att.net>
+   Bug reports to <mailto:djgpp@delorie.com>
+
+   Revised 2015 for use in DJGPP libs by Andris Pavenis <andris.pavenis@iki.fi>
 */
 
-#ifndef sysquery_h
-#define sysquery_h
+#ifndef nmalloc_sysquery_h
+#define nmalloc_sysquery_h
 #ifdef __cplusplus
    extern "C" {
 #endif

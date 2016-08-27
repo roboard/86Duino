@@ -23,16 +23,22 @@
 
 package processing.app.tools;
 
-import processing.app.*;
+import org.apache.commons.compress.utils.IOUtils;
+import processing.app.Base;
+import processing.app.Editor;
+import processing.app.Sketch;
 
-import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
-import static processing.app.I18n._;
-
-import java.io.*;
-import java.text.*;
-import java.util.*;
-import java.util.zip.*;
+import static processing.app.I18n.tr;
 
 
 public class Archiver implements Tool {
@@ -47,7 +53,7 @@ public class Archiver implements Tool {
 
 
   public String getMenuTitle() {
-    return _("Archive Sketch");
+    return tr("Archive Sketch");
   }
   
   
@@ -73,8 +79,8 @@ public class Archiver implements Tool {
       e.printStackTrace();
     }
     if (!success) {
-      Base.showWarning(_("Couldn't archive sketch"),
-                       _("Archiving the sketch has been canceled because\nthe sketch couldn't save properly."), null);
+      Base.showWarning(tr("Couldn't archive sketch"),
+                       tr("Archiving the sketch has been canceled because\nthe sketch couldn't save properly."), null);
       return;
     }
 
@@ -107,36 +113,36 @@ public class Archiver implements Tool {
     } while (newbie.exists());
 
     // open up a prompt for where to save this fella
-    JFileChooser fd = new JFileChooser();
-    fd.setDialogTitle(_("Archive sketch as:"));
-    fd.setDialogType(JFileChooser.SAVE_DIALOG);
-    fd.setSelectedFile(newbie);
+    FileDialog fd = new FileDialog(editor, tr("Archive sketch as:"), FileDialog.SAVE);
+    fd.setDirectory(parent.getAbsolutePath());
+    fd.setFile(newbie.getName());
+    fd.setVisible(true);
 
-    int returnVal = fd.showSaveDialog(editor);
+    String directory = fd.getDirectory();
+    String filename = fd.getFile();
 
-    if (returnVal != JFileChooser.APPROVE_OPTION) {
-      editor.statusNotice(_("Archive sketch canceled."));
-      return;
-    }
+    // only write the file if not canceled
+    if (filename != null) {
+      newbie = new File(directory, filename);
 
-    newbie = fd.getSelectedFile();
+      ZipOutputStream zos = null;
+      try {
+        //System.out.println(newbie);
+        zos = new ZipOutputStream(new FileOutputStream(newbie));
 
-    try {
-      //System.out.println(newbie);
-      FileOutputStream zipOutputFile = new FileOutputStream(newbie);
-      ZipOutputStream zos = new ZipOutputStream(zipOutputFile);
+        // recursively fill the zip file
+        buildZip(location, name, zos);
 
-      // recursively fill the zip file
-      buildZip(location, name, zos);
-
-      // close up the jar file
-      zos.flush();
-      zos.close();
-
-      editor.statusNotice("Created archive " + newbie.getName() + ".");
-
-    } catch (IOException e) {
-      e.printStackTrace();
+        // close up the jar file
+        zos.flush();
+        editor.statusNotice("Created archive " + newbie.getName() + ".");
+      } catch (IOException e) {
+        e.printStackTrace();
+      } finally {
+        IOUtils.closeQuietly(zos);
+      }
+    } else {
+      editor.statusNotice(tr("Archive sketch canceled."));
     }
   }
 
@@ -144,6 +150,9 @@ public class Archiver implements Tool {
   public void buildZip(File dir, String sofar,
                        ZipOutputStream zos) throws IOException {
     String files[] = dir.list();
+    if (files == null) {
+      throw new IOException("Unable to list files from " + dir);
+    }
     for (int i = 0; i < files.length; i++) {
       if (files[i].equals(".") ||
           files[i].equals("..")) continue;

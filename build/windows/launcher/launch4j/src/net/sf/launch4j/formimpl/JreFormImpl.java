@@ -2,33 +2,33 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2007 Grzegorz Kowal
-
+	Copyright (c) 2004, 2015 Grzegorz Kowal
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without modification,
 	are permitted provided that the following conditions are met:
-
-	    * Redistributions of source code must retain the above copyright notice,
-	      this list of conditions and the following disclaimer.
-	    * Redistributions in binary form must reproduce the above copyright notice,
-	      this list of conditions and the following disclaimer in the documentation
-	      and/or other materials provided with the distribution.
-	    * Neither the name of the Launch4j nor the names of its contributors
-	      may be used to endorse or promote products derived from this software without
-	      specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-	CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-	LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	
+	1. Redistributions of source code must retain the above copyright notice,
+	   this list of conditions and the following disclaimer.
+	
+	2. Redistributions in binary form must reproduce the above copyright notice,
+	   this list of conditions and the following disclaimer in the documentation
+	   and/or other materials provided with the distribution.
+	
+	3. Neither the name of the copyright holder nor the names of its contributors
+	   may be used to endorse or promote products derived from this software without
+	   specific prior written permission.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+	AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*
@@ -59,11 +59,20 @@ public class JreFormImpl extends JreForm {
 				Messages.getString("jdkPreference.prefer.jre"),
 				Messages.getString("jdkPreference.prefer.jdk"),
 				Messages.getString("jdkPreference.jdk.only")}));
+
+		_runtimeBitsCombo.setModel(new DefaultComboBoxModel(new String[] {
+				Messages.getString("runtimeBits.64"),
+				Messages.getString("runtimeBits.64And32"),
+				Messages.getString("runtimeBits.32And64"),
+				Messages.getString("runtimeBits.32")}));
+
 		bindings.add("jre.path", _jrePathField)
+				.add("jre.bundledJre64Bit", _bundledJre64BitCheck)
+				.add("jre.bundledJreAsFallback", _bundledJreAsFallbackCheck)
 				.add("jre.minVersion", _jreMinField)
 				.add("jre.maxVersion", _jreMaxField)
-				.add("jre.jdkPreferenceIndex", _jdkPreferenceCombo,
-						Jre.DEFAULT_JDK_PREFERENCE_INDEX)
+				.add("jre.jdkPreferenceIndex", _jdkPreferenceCombo,	Jre.DEFAULT_JDK_PREFERENCE_INDEX)
+				.add("jre.runtimeBitsIndex", _runtimeBitsCombo, Jre.DEFAULT_JDK_PREFERENCE_INDEX)
 				.add("jre.initialHeapSize", _initialHeapSizeField)
 				.add("jre.initialHeapPercent", _initialHeapPercentField)
 				.add("jre.maxHeapSize", _maxHeapSizeField)
@@ -71,7 +80,7 @@ public class JreFormImpl extends JreForm {
 				.add("jre.options", _jvmOptionsTextArea);
 
 		_varCombo.setModel(new DefaultComboBoxModel(new String[] {
-				"EXEDIR", "EXEFILE", "PWD", "OLDPWD",
+				"EXEDIR", "EXEFILE", "PWD", "OLDPWD", "JREHOMEDIR",
 				"HKEY_CLASSES_ROOT", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE",
 				"HKEY_USERS", "HKEY_CURRENT_CONFIG" }));
 
@@ -98,7 +107,7 @@ public class JreFormImpl extends JreForm {
 			final String var = (String) _varCombo.getSelectedItem();
 			if (var.startsWith("HKEY_")) {
 				_jvmOptionsTextArea.insert("-Dreg.key=\"%"
-						+ var + "\\\\...%\"\n", pos);
+						+ var + "\\...%\"\n", pos);
 			} else {
 				_jvmOptionsTextArea.insert("-Dlaunch4j." + var.toLowerCase()
 						+ "=\"%" + var + "%\"\n", pos);
@@ -111,7 +120,7 @@ public class JreFormImpl extends JreForm {
 			final int pos = _jvmOptionsTextArea.getCaretPosition();
 			final String var = (String) _varCombo.getSelectedItem();
 			if (var.startsWith("HKEY_")) {
-				_jvmOptionsTextArea.insert("%" + var + "\\\\...%\n", pos);
+				_jvmOptionsTextArea.insert("%" + var + "\\...%\n", pos);
 			} else {
 				_jvmOptionsTextArea.insert("%" + var + "%\n", pos);
 			}

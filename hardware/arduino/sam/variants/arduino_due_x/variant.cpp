@@ -291,6 +291,9 @@ extern const PinDescription g_APinDescription[]=
   { NULL, 0, 0, PIO_NOT_A_PIN, PIO_DEFAULT, 0, NO_ADC, NO_ADC, NOT_ON_PWM, NOT_ON_TIMER }
 } ;
 
+
+uint8_t g_pinStatus[PINS_COUNT] = {0};
+
 #ifdef __cplusplus
 }
 #endif
@@ -299,8 +302,9 @@ extern const PinDescription g_APinDescription[]=
  * UART objects
  */
 RingBuffer rx_buffer1;
+RingBuffer tx_buffer1;
 
-UARTClass Serial(UART, UART_IRQn, ID_UART, &rx_buffer1);
+UARTClass Serial(UART, UART_IRQn, ID_UART, &rx_buffer1, &tx_buffer1);
 void serialEvent() __attribute__((weak));
 void serialEvent() { }
 
@@ -317,14 +321,17 @@ void UART_Handler(void)
 RingBuffer rx_buffer2;
 RingBuffer rx_buffer3;
 RingBuffer rx_buffer4;
+RingBuffer tx_buffer2;
+RingBuffer tx_buffer3;
+RingBuffer tx_buffer4;
 
-USARTClass Serial1(USART0, USART0_IRQn, ID_USART0, &rx_buffer2);
+USARTClass Serial1(USART0, USART0_IRQn, ID_USART0, &rx_buffer2, &tx_buffer2);
 void serialEvent1() __attribute__((weak));
 void serialEvent1() { }
-USARTClass Serial2(USART1, USART1_IRQn, ID_USART1, &rx_buffer3);
+USARTClass Serial2(USART1, USART1_IRQn, ID_USART1, &rx_buffer3, &tx_buffer3);
 void serialEvent2() __attribute__((weak));
 void serialEvent2() { }
-USARTClass Serial3(USART3, USART3_IRQn, ID_USART3, &rx_buffer4);
+USARTClass Serial3(USART3, USART3_IRQn, ID_USART3, &rx_buffer4, &tx_buffer4);
 void serialEvent3() __attribute__((weak));
 void serialEvent3() { }
 
@@ -372,9 +379,6 @@ void init( void )
     // Capture error
     while (true);
   }
-
-  // Disable watchdog
-  WDT_Disable(WDT);
 
   // Initialize C library
   __libc_init_array();

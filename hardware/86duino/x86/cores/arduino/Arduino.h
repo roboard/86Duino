@@ -13,7 +13,7 @@
 #include "v86clock.h"
 #include "io.h"
 #include "pins_arduino.h"
-
+	
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -44,8 +44,11 @@ extern "C"{
 #undef abs
 #endif
 
-#define min(a,b)                ((a)<(b)?(a):(b))
-#define max(a,b)                ((a)>(b)?(a):(b))
+#ifndef NOMINMAX
+	#define min(a,b)                ((a)<(b)?(a):(b))
+	#define max(a,b)                ((a)>(b)?(a):(b))
+#endif
+
 //#define abs(x) ((x)>0?(x):-(x))
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define round(x)                ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))

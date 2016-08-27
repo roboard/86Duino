@@ -2,33 +2,33 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2007 Grzegorz Kowal
-
+	Copyright (c) 2004, 2015 Grzegorz Kowal
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without modification,
 	are permitted provided that the following conditions are met:
-
-	    * Redistributions of source code must retain the above copyright notice,
-	      this list of conditions and the following disclaimer.
-	    * Redistributions in binary form must reproduce the above copyright notice,
-	      this list of conditions and the following disclaimer in the documentation
-	      and/or other materials provided with the distribution.
-	    * Neither the name of the Launch4j nor the names of its contributors
-	      may be used to endorse or promote products derived from this software without
-	      specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-	CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-	LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	
+	1. Redistributions of source code must retain the above copyright notice,
+	   this list of conditions and the following disclaimer.
+	
+	2. Redistributions in binary form must reproduce the above copyright notice,
+	   this list of conditions and the following disclaimer in the documentation
+	   and/or other materials provided with the distribution.
+	
+	3. Neither the name of the copyright holder nor the names of its contributors
+	   may be used to endorse or promote products derived from this software without
+	   specific prior written permission.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+	AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*
@@ -36,10 +36,11 @@
  */
 package net.sf.launch4j.binding;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.swing.JComboBox;
@@ -57,21 +58,28 @@ import org.apache.commons.beanutils.PropertyUtils;
  * 
  * @author Copyright (C) 2005 Grzegorz Kowal
  */
-public class Bindings implements PropertyChangeListener {
-	private final Map _bindings = new HashMap();
-	private final Map _optComponents = new HashMap();
+public class Bindings implements PropertyChangeListener, ActionListener {
+	private final Map<String, Binding> _bindings = new HashMap<String, Binding>();
+	private final Map<String, Binding> _optComponents = new HashMap<String, Binding>();
 	private boolean _modified = false;
 
 	/**
 	 * Used to track component modifications.
 	 */
+	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
 		String prop = evt.getPropertyName();
 		if ("AccessibleValue".equals(prop)
 				|| "AccessibleText".equals(prop)
-				|| "AccessibleVisibleData".equals(prop)) {
+				|| ("AccessibleVisibleData".equals(prop)
+						&& evt.getSource().getClass().getName().contains("JList"))) {
 			_modified = true;
 		}
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		_modified = true;
 	}
 
 	/** 
@@ -82,27 +90,27 @@ public class Bindings implements PropertyChangeListener {
 	}
 
 	public Binding getBinding(String property) {
-		return (Binding) _bindings.get(property);
+		return _bindings.get(property);
 	}
 
 	private void registerPropertyChangeListener(JComponent c) {
 		c.getAccessibleContext().addPropertyChangeListener(this);
 	}
 
-	private void registerPropertyChangeListener(JComponent[] cs) {
-		for (int i = 0; i < cs.length; i++) {
-			cs[i].getAccessibleContext().addPropertyChangeListener(this);
+	private void registerPropertyChangeListener(JComponent[] components) {
+		for (JComponent c : components) {
+			c.getAccessibleContext().addPropertyChangeListener(this);
 		}
 	}
 
 	private boolean isPropertyNull(IValidatable bean, Binding b) {
 		try {
-			for (Iterator iter = _optComponents.keySet().iterator(); iter.hasNext();) {
-				String property = (String) iter.next();
+			for (String property : _optComponents.keySet()) {
 				if (b.getProperty().startsWith(property)) {
 					return PropertyUtils.getProperty(bean, property) == null;
 				}
 			}
+
 			return false;
 		} catch (Exception e) {
 			throw new BindingException(e);
@@ -113,8 +121,7 @@ public class Bindings implements PropertyChangeListener {
 	 * Enables or disables all components bound to properties that begin with given prefix.
 	 */
 	public void setComponentsEnabled(String prefix, boolean enabled) {
-		for (Iterator iter = _bindings.values().iterator(); iter.hasNext();) {
-			Binding b = (Binding) iter.next();
+		for (Binding b : _bindings.values()) {
 			if (b.getProperty().startsWith(prefix)) {
 				b.setEnabled(enabled);
 			}
@@ -126,12 +133,14 @@ public class Bindings implements PropertyChangeListener {
 	 * Clears the _modified flag.
 	 */
 	public void clear(IValidatable bean) {
-		for (Iterator iter = _optComponents.values().iterator(); iter.hasNext();) {
-			((Binding) iter.next()).clear(bean);
+		for (Binding b : _optComponents.values()) {
+			b.clear(bean);
 		}
-		for (Iterator iter = _bindings.values().iterator(); iter.hasNext();) {
-			((Binding) iter.next()).clear(bean);
+
+		for (Binding b : _bindings.values()) {
+			b.clear(bean);
 		}
+
 		_modified = false;
 	}
 
@@ -140,17 +149,18 @@ public class Bindings implements PropertyChangeListener {
 	 * Clears the _modified flag.
 	 */
 	public void put(IValidatable bean) {
-		for (Iterator iter = _optComponents.values().iterator(); iter.hasNext();) {
-			((Binding) iter.next()).put(bean);
+		for (Binding b : _optComponents.values()) {
+			b.put(bean);
 		}
-		for (Iterator iter = _bindings.values().iterator(); iter.hasNext();) {
-			Binding b = (Binding) iter.next();
+
+		for (Binding b : _bindings.values()) {
 			if (isPropertyNull(bean, b)) {
 				b.clear(null);
 			} else {
 				b.put(bean);
 			}
 		}
+
 		_modified = false;
 	}
 
@@ -162,24 +172,27 @@ public class Bindings implements PropertyChangeListener {
 	 */
 	public void get(IValidatable bean) {
 		try {
-			for (Iterator iter = _optComponents.values().iterator(); iter.hasNext();) {
-				((Binding) iter.next()).get(bean);
+			for (Binding b : _optComponents.values()) {
+				b.get(bean);
 			}
-			for (Iterator iter = _bindings.values().iterator(); iter.hasNext();) {
-				Binding b = (Binding) iter.next();
+
+			for (Binding b : _bindings.values()) {
 				if (!isPropertyNull(bean, b)) {
 					b.get(bean);
 				}
 			}
+
 			bean.checkInvariants();
-			for (Iterator iter = _optComponents.keySet().iterator(); iter.hasNext();) {
-				String property = (String) iter.next();
+			
+			for (String property : _optComponents.keySet()) {
 				IValidatable component = (IValidatable) PropertyUtils.getProperty(bean,
 						property);
+
 				if (component != null) {
 					component.checkInvariants();
 				}
 			}
+
 			_modified = false;	// XXX
 		} catch (InvariantViolationException e) {
 			e.setBinding(getBinding(e.getProperty()));
@@ -193,6 +206,7 @@ public class Bindings implements PropertyChangeListener {
 		if (_bindings.containsKey(b.getProperty())) {
 			throw new BindingException(Messages.getString("Bindings.duplicate.binding"));
 		}
+
 		_bindings.put(b.getProperty(), b);
 		return this;
 	}
@@ -200,12 +214,14 @@ public class Bindings implements PropertyChangeListener {
 	/**
 	 * Add an optional (nullable) Java Bean component of type clazz.
 	 */
-	public Bindings addOptComponent(String property, Class clazz, JToggleButton c,
+	public Bindings addOptComponent(String property, Class<? extends IValidatable> clazz, JToggleButton c,
 			boolean enabledByDefault) {
 		Binding b = new OptComponentBinding(this, property, clazz, c, enabledByDefault);
+
 		if (_optComponents.containsKey(property)) {
 			throw new BindingException(Messages.getString("Bindings.duplicate.binding"));
 		}
+
 		_optComponents.put(property, b);
 		return this;
 	}
@@ -213,7 +229,7 @@ public class Bindings implements PropertyChangeListener {
 	/**
 	 * Add an optional (nullable) Java Bean component of type clazz.
 	 */
-	public Bindings addOptComponent(String property, Class clazz, JToggleButton c) {
+	public Bindings addOptComponent(String property, Class<? extends IValidatable> clazz, JToggleButton c) {
 		return addOptComponent(property, clazz, c, false);
 	}
 
@@ -303,7 +319,7 @@ public class Bindings implements PropertyChangeListener {
 	 * Handles JComboBox
 	 */
 	public Bindings add(String property, JComboBox combo, int defaultValue) {
-		registerPropertyChangeListener(combo);
+		combo.addActionListener(this);
 		return add(new JComboBoxBinding(property, combo, defaultValue));
 	}
 
@@ -311,7 +327,7 @@ public class Bindings implements PropertyChangeListener {
 	 * Handles JComboBox
 	 */
 	public Bindings add(String property, JComboBox combo) {
-		registerPropertyChangeListener(combo);
+		combo.addActionListener(this);
 		return add(new JComboBoxBinding(property, combo, 0));
 	}
 }

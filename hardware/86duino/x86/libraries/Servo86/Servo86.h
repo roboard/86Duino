@@ -31,6 +31,8 @@ public:
 	Servo();
 	
 	uint8_t servoIndex;                // index into the channel data for this servo
+	long min;                       // minimum is this value times 4 added to MIN_PULSE_WIDTH    
+	long max;                       // maximum is this value times 4 added to MAX_PULSE_WIDTH
 	
 	uint8_t attach(int pin);           // attach the given pin to the next free channel, sets pinMode, returns channel number or 0 if failure
 	uint8_t attach(int pin, unsigned long min, unsigned long max); // as above but also sets min and max values for writes. 
@@ -60,6 +62,8 @@ public:
 	}
 	void setPosition(long pos, unsigned long time=0L);
 	void setPosition(double angle, unsigned long time=0L);
+	void setPositionAcceleration(double acc);
+	void setPositionAcceleration(double acc_in, double acc_out);
 	void setOffset(long offset);
 	void setRealTimeMixing(long mixoffset);
 	void setRealTimeMixing(long mixoffset, bool interrupt);
@@ -75,13 +79,13 @@ public:
 	bool isMoving(void);
   
 protected:
-	long min;                       // minimum is this value times 4 added to MIN_PULSE_WIDTH    
-	long max;                       // maximum is this value times 4 added to MAX_PULSE_WIDTH
 	long speed_us;
 	double angle_resolution;
 	unsigned long total_time;
 	unsigned long target_position;
-	long pos_offset;  
+	long pos_offset;
+	long long acc_in; // For CubicSpline
+	long long acc_out; // For CubicSpline
 };
 
 extern Servo nullServo;
@@ -92,6 +96,8 @@ private:
 	unsigned long long used_servos;
 public:
 	long positions[45]; //45 channels
+	unsigned long playtime[45];
+	double accelerations[45][2]; // index 0 is enter acc, index 1 is exit acc
 	ServoFrame();
 	ServoFrame(const char* dir);
 	void setPositions(Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
@@ -376,10 +382,48 @@ public:
 };
 
 
+class ServoFrameVstone : public ServoFrame
+{
+public:
+	ServoFrameVstone();
+    ServoFrameVstone(const char* dir, const char* fname);
+
+    bool load(const char* dir, const char* fname = NULL);
+	bool load(const String &dir, const String &fname = NULL);
+    
+    ServoFrameVstone & operator = (const ServoFrame &s) {
+		int i;
+		for(i=0; i<30; i++) positions[i] = s.positions[i];
+	}
+	
+	ServoFrameVstone & operator = (const ServoFrameKondo &s) {
+		int i;
+		for(i=0; i<30; i++) positions[i] = s.positions[i];
+	}
+};
+
+class ServoOffsetVstone : public ServoOffset
+{	
+public:
+	ServoOffsetVstone();
+	ServoOffsetVstone(const char* dir, const char* offsetname);
+	bool load(const char* dir, const char* offsetname);
+	bool load(const String &s1, const String &s2);
+	
+	ServoOffsetVstone & operator = (const ServoOffset &s) {
+		int i;
+		for(i=0; i<30; i++) offsets[i] = s.offsets[i];
+	}
+	
+	ServoOffsetVstone & operator = (const ServoOffsetVstone &s) {
+		int i;
+		for(i=0; i<30; i++) offsets[i] = s.offsets[i];
+	}
+};
+
 /* TODO:
  * Hitec Servo Controler
- * Lynxmotion Servo Controler
- * vstone Servo Controler  
+ * Lynxmotion Servo Controler  
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -462,5 +506,14 @@ void servoMultiRealTimeMixing(long* mixoffsets, Servo &s1=nullServo, Servo &s2=n
                               Servo &s37=nullServo, Servo &s38=nullServo, Servo &s39=nullServo, Servo &s40=nullServo,
                               Servo &s41=nullServo, Servo &s42=nullServo, Servo &s43=nullServo, Servo &s44=nullServo,
                               Servo &s45=nullServo);
+							  
+void EnableMixing (void);
+void DisableMixing (void);
+
+#define CONSTRAINED_CUBIC    (30)
+#define NATURAL_CUBIC        (40)
+void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTime, int numFrames);
+void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameTime, int numFrames);
+void servoEndSplineMotion();
 //void update_position();
 #endif

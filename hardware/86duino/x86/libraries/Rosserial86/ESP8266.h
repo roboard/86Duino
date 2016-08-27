@@ -21,8 +21,8 @@
 #ifndef __ESP8266_H__
 #define __ESP8266_H__
 
-#include "Arduino.h"
 #include <queue>
+#include "Arduino.h"
 
 //#define ESP8266_USE_SOFTWARE_SERIAL
 

@@ -1,3 +1,4 @@
+/* Copyright (C) 2012 DJ Delorie, see COPYING.DJ for details */
 #ifndef __dj_stdbool__h_
 #define __dj_stdbool__h_
 

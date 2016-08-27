@@ -26,6 +26,7 @@
 #include "io.h"
 #include "irq.h"
 #include "pins_arduino.h"
+#include "Cubic.h"
 
 /* RTC */   
 #define RTCIRQ    (8)
@@ -47,9 +48,14 @@ volatile struct _servo86 {
 	unsigned long pausetime;
 	int           state;
 	long          mixoffset;
+	long long     acc_prev_out;
+	long long     acc_now_in;
+	long long     acc_now_out;
 } sv86[MAX_SERVOS];
 
-
+#define ON    (10)
+#define OFF   (20)
+int mixingSwitch = ON;
 
 /* SERVO86 */
 //#define DEBUG_MSG
@@ -124,7 +130,7 @@ static void enable_MCINT(unsigned long used_int) {
 static volatile int channel;
 static volatile int evtnumber; // It is a excess variable, but can read the code more clearly. 
 static void pulse_init(bool mcm_init) {
-	if(mcm_init == true)
+	if (mcm_init == true)
 	{  
 		// Set_MCIRQ(GetMCIRQ()); // moved to wiring.cpp
 		mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
@@ -159,7 +165,7 @@ static int isr_handler(int irq, void* data) {
 	unsigned long val;
 	volatile irqservo_t *tmp;
 	unsigned long svintmask = USER_EVT_INT << mcint_offset[md];
-    if((mc_inp(mc, 0x04) & svintmask) == 0L) return ISR_NONE;
+    if ((mc_inp(mc, 0x04) & svintmask) == 0L) return ISR_NONE;
 	
 	mc_outp(mc, 0x04, svintmask);
     
@@ -168,24 +174,24 @@ static int isr_handler(int irq, void* data) {
     while(val>=80L && val<EVTPOINT);
 	
 	
-	if(evtnumber > 0)
+	if (evtnumber > 0)
 	{
-		if(evtnumber == ServoIRQCountB) // have no next pulse, ready to complete
+		if (evtnumber == ServoIRQCountB) // have no next pulse, ready to complete
 		{
-			if((evtnumber & 0x03) == 0x03 || (evtnumber & 0x03) == 0x00) digitalWrite((*(servosB + channel - 1)).pin, HIGH); // delay 1 I/O time
+			if ((evtnumber & 0x03) == 0x03 || (evtnumber & 0x03) == 0x00) digitalWrite((*(servosB + channel - 1)).pin, HIGH); // delay 1 I/O time
 			digitalWrite((*(servosB + channel - 1)).pin, LOW); // Set pin form high to low
-			if(over_periodB == true) goto NEXT; else evtnumber = -2;
+			if (over_periodB == true) goto NEXT; else evtnumber = -2;
 		}
-		else if(evtnumber == (ServoIRQCountB - 1)) // It is the last pin, has no next pin to send pulse
+		else if (evtnumber == (ServoIRQCountB - 1)) // It is the last pin, has no next pin to send pulse
 		{
-			if((evtnumber & 0x03) == 0x03 || (evtnumber & 0x03) == 0x00) digitalWrite((*(servosB + channel - 1)).pin, HIGH); // delay 1 I/O time
+			if ((evtnumber & 0x03) == 0x03 || (evtnumber & 0x03) == 0x00) digitalWrite((*(servosB + channel - 1)).pin, HIGH); // delay 1 I/O time
 			digitalWrite((*(servosB + channel - 1)).pin, LOW); // Set pin form high to low
 			mcpwm_SetWidth(mc, md, (*(servosB + ServoIRQCountB)).value, 1000L);
 	  		mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 		}
 		else // Have the next pin
 		{
-			if((evtnumber & 0x03) == 0x03 || (evtnumber & 0x03) == 0x00)
+			if ((evtnumber & 0x03) == 0x03 || (evtnumber & 0x03) == 0x00)
 			{
 				digitalWrite((*(servosB + channel + 1)).pin, HIGH);
 				digitalWrite((*(servosB + channel - 1)).pin, LOW);
@@ -199,9 +205,9 @@ static int isr_handler(int irq, void* data) {
 	  		mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 		}
 	}
-	else if(evtnumber == 0) // First enter ISR 
+	else if (evtnumber == 0) // First enter ISR 
 	{
-		if(evtnumber == (ServoIRQCountB - 1)) // It is the last pin, has no next pin to send pulse
+		if (evtnumber == (ServoIRQCountB - 1)) // It is the last pin, has no next pin to send pulse
 		{
 			mcpwm_SetWidth(mc, md, (*(servosB + ServoIRQCountB)).value, 1000L); 
 	  		mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
@@ -213,12 +219,12 @@ static int isr_handler(int irq, void* data) {
 	  		mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 		}
 	}
-	else if(evtnumber == -1)
+	else if (evtnumber == -1)
 	{
 NEXT:
 		mcpwm_Disable(mc, md);
 		// exchange pointer of array servosA and servosB to get new data
-		if(uploading == false && havemail == true)
+		if (uploading == false && havemail == true)
 		{
 			tmp = servosA;
 			servosA = servosB;
@@ -227,7 +233,7 @@ NEXT:
 			over_periodB = over_periodA;
 			havemail = false;
 		}
-		if(ServoIRQCountB <= 0) {pwm_IsEnable = false; return ISR_HANDLED;} // after this, interrupt will not be enabled again
+		if (ServoIRQCountB <= 0) {pwm_IsEnable = false; return ISR_HANDLED;} // after this, interrupt will not be enabled again
 		pulse_init(false); // Init again
 		return ISR_HANDLED;
 	}
@@ -241,8 +247,8 @@ NEXT:
 
 
 static bool isISRActive(void) {
-	for(uint8_t channel=0; channel < ServoCount; channel++)
-		if(servos[channel].Pin.isActive == true)
+	for (uint8_t channel=0; channel < ServoCount; channel++)
+		if (servos[channel].Pin.isActive == true)
 			return true;
 	return false;
 }
@@ -253,8 +259,8 @@ static bool isISRActive(void) {
 static void insert(servo_t s) {
 	uint8_t i;
 	
-	for(i=ServoSortCount; i>=0; i--)
-		if((i == 0) || (i != 0 && s.ticks >= sorted[i-1].ticks))
+	for (i=ServoSortCount; i>=0; i--)
+		if ((i == 0) || (i != 0 && s.ticks >= sorted[i-1].ticks))
 		{
 			sorted[i].ticks = s.ticks;
 			sorted[i].Pin.nbr = s.Pin.nbr;
@@ -270,10 +276,10 @@ static void insert(servo_t s) {
 
 static void del(servo_t s) {
 	int i;
-	for(i=0; i<ServoSortCount; i++)
-		if(sorted[i].Pin.nbr == s.Pin.nbr) break;
-	for(; i<ServoSortCount; i++)
-		if(i == (ServoSortCount-1))
+	for (i=0; i<ServoSortCount; i++)
+		if (sorted[i].Pin.nbr == s.Pin.nbr) break;
+	for (; i<ServoSortCount; i++)
+		if (i == (ServoSortCount-1))
 		{
 			sorted[i].ticks = s.ticks;
 			sorted[i].Pin.nbr = ENDPIN;
@@ -288,13 +294,13 @@ static void del(servo_t s) {
 
 static void update(servo_t s) {
     int i;
-	for(i=0; i<ServoSortCount; i++)
-		if(sorted[i].Pin.nbr == s.Pin.nbr) break;
+	for (i=0; i<ServoSortCount; i++)
+		if (sorted[i].Pin.nbr == s.Pin.nbr) break;
 	
-	if(i != (ServoSortCount-1) && s.ticks >= sorted[i+1].ticks)
+	if (i != (ServoSortCount-1) && s.ticks >= sorted[i+1].ticks)
 	{
-		for(; i<ServoSortCount; i++)
-			if((i == (ServoSortCount-1)) || (i != (ServoSortCount-1) && s.ticks <= sorted[i+1].ticks))
+		for (; i<ServoSortCount; i++)
+			if ((i == (ServoSortCount-1)) || (i != (ServoSortCount-1) && s.ticks <= sorted[i+1].ticks))
 			{
 				sorted[i].ticks = s.ticks;
 				sorted[i].Pin.nbr = s.Pin.nbr;
@@ -308,8 +314,8 @@ static void update(servo_t s) {
 	}
 	else
 	{
-		for(; i>=0; i--)
-			if((i == 0) || (i != 0 && s.ticks >= sorted[i-1].ticks))
+		for (; i>=0; i--)
+			if ((i == 0) || (i != 0 && s.ticks >= sorted[i-1].ticks))
 			{
 				sorted[i].ticks = s.ticks;
 				sorted[i].Pin.nbr = s.Pin.nbr;
@@ -329,7 +335,7 @@ static void cp2irqservos(void) {
     unsigned long total = 0L;
     
 	#if defined DEBUG_MODE
-    	for(i=0; i<ServoSortCount; i++)
+    	for (i=0; i<ServoSortCount; i++)
 			printf("%d. channel:%d value:%d\n", i, sorted[i].Pin.nbr, sorted[i].ticks);
 	#endif
     
@@ -338,12 +344,12 @@ static void cp2irqservos(void) {
 	io_RestoreINT();
 	
 	ServoIRQCountA = ServoSortCount;
-	if(ServoSortCount == 0) goto END; // if user detach all channel, ServoSortCount will be 0
+	if (ServoSortCount == 0) goto END; // if user detach all channel, ServoSortCount will be 0
 	
-	for(i=0; i<ServoSortCount; i++)
+	for (i=0; i<ServoSortCount; i++)
     {   
 		(*(servosA + i)).pin = sorted[i].Pin.nbr;
-    	if(i == 0)
+    	if (i == 0)
 			(*(servosA + i)).value = sorted[i].ticks/2;
 	    else 
 	    	(*(servosA + i)).value = sorted[i].ticks - (*(servosA + i - 1)).value;
@@ -351,7 +357,7 @@ static void cp2irqservos(void) {
     }
     (*(servosA + i)).pin = sorted[i-1].Pin.nbr;
 	(*(servosA + i)).value = 2000000L - (total + (*(servosA + 0)).value) - INIT_TIME;
-	if((*(servosA + i)).value < EVTPOINT)
+	if ((*(servosA + i)).value < EVTPOINT)
 	{
 		(*(servosA + i)).value = 0xFFFFFFFFL;
 		over_periodA = true;
@@ -360,7 +366,7 @@ static void cp2irqservos(void) {
 		over_periodA = false;
 	
 	#if defined DEBUG_MODE
-		for(i=0; i<(ServoSortCount+1); i++)
+		for (i=0; i<(ServoSortCount+1); i++)
 			printf("%d. channel:%d value:%d\n", i, (*(servosA + i)).pin, (*(servosA + i)).value);
 	#endif
 END:		
@@ -372,21 +378,21 @@ END:
 
 static char* name = "Servo";
 static bool initServoIRQ(void) {
-	if(Global_irq_Init == false)
+	if (Global_irq_Init == false)
 	{
-		if(irq_Init() == false) 
+		if (irq_Init() == false) 
 	    {
 	        printf("irq_init fail\n"); return false;
 	    }
 	    
-	    if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
+	    if (irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
 	    {
 	        printf("%s\n", __FUNCTION__); return false;
 	    }
 	    Global_irq_Init = true;
 	}
     
-    if(irq_InstallISR(GetMCIRQ(), isr_handler, (void*)name) == false)
+    if (irq_InstallISR(GetMCIRQ(), isr_handler, (void*)name) == false)
     {
         printf("irq_install fail\n"); return false;
     }
@@ -401,8 +407,8 @@ static bool closeServoIRQ(void) {
 static bool isPWMPin(uint8_t pin) {
     int mcpwm = PIN86[pin].PWMMC;
 	int mdpwm = PIN86[pin].PWMMD;
-	if(mcpwm == NOPWM || mdpwm == NOPWM) return false;
-	if(mcpwm == MC_MODULE3 && mdpwm == MCPWM_MODULEB) return false;// this pin is uesd by tone and IRrmote lib after version 103
+	if (mcpwm == NOPWM || mdpwm == NOPWM) return false;
+	if (mcpwm == MC_MODULE3 && mdpwm == MCPWM_MODULEB) return false;// this pin is uesd by tone and IRrmote lib after version 103
     return true;
 }
 
@@ -413,9 +419,9 @@ static Servo* Servoptr[45] = {NULL};
 static double _min = 0.0;   // the value can be changed by angleMap()
 static double _max = 180.0; // the value can be changed by angleMap()
 Servo::Servo() {
-	if(ServoCount < MAX_SERVOS)
+	if (ServoCount < MAX_SERVOS)
 	{
-		if(ServoCount == 0) initServoIRQ(); 
+		if (ServoCount == 0) initServoIRQ(); 
 		this->servoIndex = ServoCount++; // assign a servo index to this instance
 		this->min = MIN_PULSE_WIDTH;
 		this->max = MAX_PULSE_WIDTH;
@@ -430,6 +436,11 @@ Servo::Servo() {
 		sv86[this->servoIndex].mixoffset = 0L;
 		Servoptr[servoIndex] = NULL;
 		this->angle_resolution = (MAX_PULSE_WIDTH - MIN_PULSE_WIDTH) / 180.0;
+		acc_in = 0LL;
+		acc_out = 0LL;
+		sv86[this->servoIndex].acc_prev_out = 0LL;
+		sv86[this->servoIndex].acc_now_in = 0LL;
+		sv86[this->servoIndex].acc_now_out = 0LL;
 	}
 	else
 		this->servoIndex = INVALID_SERVO ;  // too many servos
@@ -440,21 +451,21 @@ uint8_t Servo::attach(int pin) {
 }
 
 uint8_t Servo::attach(int pin, unsigned long min, unsigned long max) {
-	if(pin >= PINS || pin < 0) return 0;
-	if(servos[this->servoIndex].Pin.isActive == true) return this->servoIndex; // if pin have been active, ingore sort process
-	if(this->servoIndex < MAX_SERVOS)
+	if (pin >= PINS || pin < 0) return 0;
+	if (servos[this->servoIndex].Pin.isActive == true) return this->servoIndex; // if pin have been active, ingore sort process
+	if (this->servoIndex < MAX_SERVOS)
 	{
 		servos[this->servoIndex].Pin.nbr = pin;
 		this->min = min;
 		this->max = max; 
-		if(isPWMPin(pin) == false)
+		if (isPWMPin(pin) == false)
 		{
 			pinMode(pin, OUTPUT);
 			digitalWrite(pin, LOW);
 		}
 		else
 		{
-			if(mcpwm_ReadReloadOUT(PIN86[pin].PWMMC, PIN86[pin].PWMMD) != 0L)
+			if (mcpwm_ReadReloadOUT(PIN86[pin].PWMMC, PIN86[pin].PWMMD) != 0L)
 				mcpwm_ReloadOUT_Unsafe(PIN86[pin].PWMMC, PIN86[pin].PWMMD, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetOutMask(PIN86[pin].PWMMC, PIN86[pin].PWMMD, MCPWM_HMASK_INACTIVE);
 			mcpwm_ReloadOUT_Unsafe(PIN86[pin].PWMMC, PIN86[pin].PWMMD, MCPWM_RELOAD_NOW);
@@ -470,13 +481,13 @@ void Servo::detach() {
 	uint8_t pin;
 	int mc_pwm, md_pwm;
 	
-	if(this->servoIndex >= MAX_SERVOS) return;
-	if(servos[this->servoIndex].Pin.isActive == false) return; // if pin have been inactive, ingore sort process
+	if (this->servoIndex >= MAX_SERVOS) return;
+	if (servos[this->servoIndex].Pin.isActive == false) return; // if pin have been inactive, ingore sort process
 	
 	servos[this->servoIndex].Pin.isActive = false;
 	pin = servos[this->servoIndex].Pin.nbr;
 	
-	if(isPWMPin(pin) == false)
+	if (isPWMPin(pin) == false)
 	{
 		del(servos[this->servoIndex]);
 		cp2irqservos();
@@ -511,7 +522,7 @@ static void sendPWM(uint8_t pin, unsigned int val) {
 		io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
     
     // Init H/W PWM
-    if(mc_md_inuse[pin] == 0)
+    if (mc_md_inuse[pin] == 0)
 	{
 		mcpwm_SetOutMask(mc_pwm, md_pwm, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
 		mcpwm_SetOutPolarity(mc_pwm, md_pwm, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
@@ -525,7 +536,7 @@ static void sendPWM(uint8_t pin, unsigned int val) {
     mcpwm_SetWidth(mc_pwm, md_pwm, 20000L*SYSCLK, val);
     mcpwm_ReloadPWM(mc_pwm, md_pwm, MCPWM_RELOAD_PEREND);
     
-    if(mc_md_inuse[pin] == 0)
+    if (mc_md_inuse[pin] == 0)
 	{
 		mcpwm_Enable(mc_pwm, md_pwm);
 		io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
@@ -536,16 +547,22 @@ static void sendPWM(uint8_t pin, unsigned int val) {
 static void _write(byte channel, long value) {
 	int i;
 	
-	if(channel < MAX_SERVOS)   // ensure channel is valid
+	if (channel < MAX_SERVOS)   // ensure channel is valid
 	{  
 		//value = value - TRIM_DURATION;
+		if (Servoptr[channel] != NULL)
+		{
+			if(value > Servoptr[channel]->max) value = Servoptr[channel]->max;
+			else if (value < Servoptr[channel]->min) value = Servoptr[channel]->min;
+		}
+		
 		value = usToTicks(value);  // convert to ticks after compensating for interrupt overhead - 12 Aug 2009
 		
-		// if(servos[channel].ticks == value) return; // if set the same value to same pin, do nothong.
+		// if (servos[channel].ticks == value) return; // if set the same value to same pin, do nothong.
 		servos[channel].ticks = value; // update date
-		if(servos[channel].Pin.isActive == false) return; 
+		if (servos[channel].Pin.isActive == false) return; 
 		
-		if(isPWMPin(servos[channel].Pin.nbr) == true)
+		if (isPWMPin(servos[channel].Pin.nbr) == true)
 		{
 			sendPWM(servos[channel].Pin.nbr, servos[channel].ticks);
 			return;
@@ -554,9 +571,9 @@ static void _write(byte channel, long value) {
 		update(servos[channel]);
 		cp2irqservos();
 		// setting and start fisrt pulse
-		if(pwm_IsEnable == false)
+		if (pwm_IsEnable == false)
 		{
-			for(i=0; i<(ServoSortCount+1); i++)
+			for (i=0; i<(ServoSortCount+1); i++)
 		    {
 				(*(servosB + i)).pin = (*(servosA + i)).pin;
 				(*(servosB + i)).value = (*(servosA + i)).value;
@@ -585,23 +602,23 @@ bool Servo::attached() {
 }
 
 void _attach_hw_servos(int pin) {
-	if(isPWMPin(pin) == true)
+	if (isPWMPin(pin) == true)
 	{  
-		if(mcpwm_ReadReloadOUT(PIN86[pin].PWMMC, PIN86[pin].PWMMD) != 0L)
+		if (mcpwm_ReadReloadOUT(PIN86[pin].PWMMC, PIN86[pin].PWMMD) != 0L)
 			mcpwm_ReloadOUT_Unsafe(PIN86[pin].PWMMC, PIN86[pin].PWMMD, MCPWM_RELOAD_CANCEL);
 	}	
 }
 
 void Servo::angleMap(double angle_min, double angle_max) {
-	if(angle_min < 0.0 || angle_max < 0.0) return;
-	if(angle_min > 360.0 || angle_max > 360.0) return;
+	if (angle_min < 0.0 || angle_max < 0.0) return;
+	if (angle_min > 360.0 || angle_max > 360.0) return;
 	
 	_min = (angle_min > angle_max) ? angle_max : angle_min;
     _max = (angle_min < angle_max) ? angle_max : angle_min;
 }
 
 void Servo::setVelocity(unsigned long velocity) { // unit: us/s
-	if(velocity == 0L)
+	if (velocity == 0L)
 	{
 		speed_us = FULL_SPEED;
 		return;
@@ -611,7 +628,7 @@ void Servo::setVelocity(unsigned long velocity) { // unit: us/s
 
 void Servo::setVelocity(double angular_velocity) {
 	unsigned long tmp;
-	if(angular_velocity <= 0.0)
+	if (angular_velocity <= 0.0)
 	{
 		speed_us = FULL_SPEED;
 		return;
@@ -620,21 +637,21 @@ void Servo::setVelocity(double angular_velocity) {
 	this->angle_resolution = ((SERVO_MAX() - SERVO_MIN()) / (_max - _min));
 	speed_us = (long) (angular_velocity * this->angle_resolution);
 	
-	if(speed_us <= 0L) speed_us = FULL_SPEED;
+	if (speed_us <= 0L) speed_us = FULL_SPEED;
 }
 
 void Servo::setPosition(long pos, unsigned long time) {
-	if(pos <= 0L) return; // Added for ServoFrame.setPosition()
+	if (pos <= 0L) return; // Added for ServoFrame.setPosition()
 
-    if(had_target_pos[servoIndex] == 0)
+    if (had_target_pos[servoIndex] == 0)
 	{
-		if(isPWMPin(servos[servoIndex].Pin.nbr) == false) insert(servos[servoIndex]);
+		if (isPWMPin(servos[servoIndex].Pin.nbr) == false) insert(servos[servoIndex]);
 		had_target_pos[servoIndex] = 1;
 	}
 	
-	if(pos <= SERVO_MIN())
+	if (pos <= SERVO_MIN())
 		target_position = SERVO_MIN();
-	else if(pos >= SERVO_MAX())
+	else if (pos >= SERVO_MAX())
 		target_position = SERVO_MAX();
 	else
 		target_position = pos;
@@ -643,17 +660,17 @@ void Servo::setPosition(long pos, unsigned long time) {
 }
 
 void Servo::setPosition(double angle, unsigned long time) {
-	if(angle == 0.0) return;
+	if (angle == 0.0) return;
 	
-	if(had_target_pos[servoIndex] == 0)
+	if (had_target_pos[servoIndex] == 0)
 	{
-		if(isPWMPin(servos[servoIndex].Pin.nbr) == false) insert(servos[servoIndex]);
+		if (isPWMPin(servos[servoIndex].Pin.nbr) == false) insert(servos[servoIndex]);
 		had_target_pos[servoIndex] = 1;
 	}
 	
-	if(angle <= _min)
+	if (angle <= _min)
 		target_position = SERVO_MIN();
-	else if(angle >= _max)
+	else if (angle >= _max)
 		target_position = SERVO_MAX();
 	else
 	{
@@ -668,15 +685,31 @@ void Servo::setPosition(double angle, unsigned long time) {
 	*/
 }
 
+void Servo::setPositionAcceleration(double _acc) {
+	setPositionAcceleration(_acc, _acc);
+}
+
+void Servo::setPositionAcceleration(double _acc_in, double _acc_out) {
+	if (_acc_in > 1.000) _acc_in = 1.000;         // The 1.0 and -1.0 is bound for hobby servos, no AI servos
+	else if (_acc_in < -1.000) _acc_in = -1.000;  // The unit is us/(ms^2), translate it to us/(s^2) by yourself if need
+	
+	if (_acc_out > 1.000) _acc_out = -1.000;
+	else if (_acc_out < -1.000) _acc_out = -1.000;
+	
+	// we turn _acc to fixed point, so multiply 2^20
+	acc_in = (long long) (_acc_in*1024.0*1024.0);
+	acc_out = (long long) (_acc_out*1024.0*1024.0);
+}
+
 long Servo::getPosition(void) {
-	if(sv86[servoIndex].state == SERVO_NONE) return 0L;
+	if (sv86[servoIndex].state == SERVO_NONE) return 0L;
 	
 	return target_position;
 }
 
 void Servo::setOffset(long offset) {
-    if(offset < -256L) offset = -256L;
-    if(offset > 256L)  offset = 256L;
+    if (offset < -256L) offset = -256L;
+    if (offset > 256L)  offset = 256L;
 	pos_offset = offset;
 }
 
@@ -685,16 +718,16 @@ void Servo::setRealTimeMixing(long mixoffset) {
 }
 
 void Servo::setRealTimeMixing(long mixoffset, bool interrupt) {
-    if(interrupt) io_DisableINT();
+    if (interrupt) io_DisableINT();
 	sv86[servoIndex].mixoffset = mixoffset;
-	if(interrupt) io_RestoreINT();
+	if (interrupt) io_RestoreINT();
 }
 
 void Servo::write(int value) {
-	if(value < MIN_PULSE_WIDTH)
+	if (value < MIN_PULSE_WIDTH)
 	{   // treat values less than 450 as angles in degrees (valid values in microseconds are handled as microseconds)
-		if(value < _min) value = _min;
-		if(value > _max) value = _max;
+		if (value < _min) value = _min;
+		if (value > _max) value = _max;
 		value = map(value, _min, _max, SERVO_MIN(), SERVO_MAX());      
 	}
 
@@ -718,9 +751,9 @@ void Servo::write(double angle) {
 
 unsigned long Servo::readMicroseconds(void) {
 	unsigned long tmp;
-    if(servoIndex >= MAX_SERVOS) return 0L;
-    if(servos[servoIndex].Pin.isActive == false) return 0L;
-	if(sv86[servoIndex].state == SERVO_NONE) return 0L;
+    if (servoIndex >= MAX_SERVOS) return 0L;
+    if (servos[servoIndex].Pin.isActive == false) return 0L;
+	if (sv86[servoIndex].state == SERVO_NONE) return 0L;
 	
 	io_DisableINT();
 	tmp = sv86[servoIndex].curposition - pos_offset;
@@ -731,24 +764,28 @@ unsigned long Servo::readMicroseconds(void) {
 
 static bool RTC_Timer_Used = false;
 void Servo::run(void) {
-	if(servoIndex >= MAX_SERVOS) return;
-	if(servos[servoIndex].Pin.isActive == false) return;
+	if (servoIndex >= MAX_SERVOS) return;
+	if (servos[servoIndex].Pin.isActive == false) return;
 	
 	// 1. check whether the angle is over the limit value.
-	if((target_position + pos_offset) < SERVO_MIN())
+	if ((target_position + pos_offset) < SERVO_MIN())
 		target_position = SERVO_MIN() - pos_offset;
-	else if((target_position + pos_offset) > SERVO_MAX())
+	else if ((target_position + pos_offset) > SERVO_MAX())
 		target_position = SERVO_MAX() - pos_offset;
 	
 	// 2. set servo parameters
 	io_DisableINT();
-	if(sv86[servoIndex].state == SERVO_MOVING || sv86[servoIndex].state == SERVO_IDLE)
+	if (sv86[servoIndex].state == SERVO_MOVING || sv86[servoIndex].state == SERVO_IDLE)
     {
     	sv86[servoIndex].prevposition = sv86[servoIndex].curposition;
+		sv86[servoIndex].acc_prev_out = sv86[servoIndex].acc_now_out;
+		sv86[servoIndex].acc_now_in = acc_in;
+		sv86[servoIndex].acc_now_out = acc_out;
+		acc_in = 0LL; acc_out = 0LL;
 	}
-	else if(sv86[servoIndex].state == SERVO_NONE)  // GO to HOME position
+	else if (sv86[servoIndex].state == SERVO_NONE)  // GO to HOME position
 	{
-		if(had_target_pos[servoIndex] == 0) {io_RestoreINT(); return;}
+		if (had_target_pos[servoIndex] == 0) {io_RestoreINT(); return;}
 		_attach_hw_servos(servos[servoIndex].Pin.nbr);
 
 		sv86[servoIndex].prevposition = sv86[servoIndex].curposition = target_position + pos_offset;
@@ -756,9 +793,13 @@ void Servo::run(void) {
 		io_RestoreINT();
 		
 		_write(servoIndex, sv86[servoIndex].curposition);
+		sv86[servoIndex].acc_prev_out = 0LL;
+		sv86[servoIndex].acc_now_in = 0LL;
+		sv86[servoIndex].acc_now_out = acc_out;
+		acc_in = 0LL; acc_out = 0LL;
 		
 		// First call run(), enable RTC Timer
-		if(RTC_Timer_Used == false)
+		if (RTC_Timer_Used == false)
 		{
 			RTC_initialize(15625L); // 15.625ms
 			RTC_timer_start(15625L);
@@ -782,9 +823,9 @@ void Servo::run(void) {
 	// 3. set new position to the servo
 	sv86[servoIndex].targetposition = target_position + pos_offset;
 	
-	if(sv86[servoIndex].curposition == sv86[servoIndex].targetposition) // if target is equal to current, do nothing.
+	if (sv86[servoIndex].curposition == sv86[servoIndex].targetposition) // if target is equal to current, do nothing.
 	{
-		if(sv86[servoIndex].state == SERVO_MOVING) // if servo is moving and get the same target position, we need to update the endtime value
+		if (sv86[servoIndex].state == SERVO_MOVING) // if servo is moving and get the same target position, we need to update the endtime value
 		{
             sv86[servoIndex].starttime = millis();
 			sv86[servoIndex].endtime = sv86[servoIndex].starttime + total_time;
@@ -794,9 +835,9 @@ void Servo::run(void) {
 		return;
 	}
 	
-	if(speed_us > 0 && speed_us != FULL_SPEED && total_time == 0L) // transform speed to time
+	if (speed_us > 0 && speed_us != FULL_SPEED && total_time == 0L) // transform speed to time
 	{
-		if(sv86[servoIndex].targetposition > sv86[servoIndex].curposition)
+		if (sv86[servoIndex].targetposition > sv86[servoIndex].curposition)
 			total_time = (sv86[servoIndex].targetposition - sv86[servoIndex].curposition) * 1000L / speed_us;
 		else
 			total_time = (sv86[servoIndex].curposition - sv86[servoIndex].targetposition) * 1000L / speed_us;
@@ -809,22 +850,22 @@ void Servo::run(void) {
 }
 
 void Servo::pause(void) {
-	if(servoIndex >= MAX_SERVOS) return;
-	if(servos[servoIndex].Pin.isActive == false) return;
+	if (servoIndex >= MAX_SERVOS) return;
+	if (servos[servoIndex].Pin.isActive == false) return;
 
 	io_DisableINT();
-	if(sv86[servoIndex].state != SERVO_MOVING) {io_RestoreINT(); return;}
+	if (sv86[servoIndex].state != SERVO_MOVING) {io_RestoreINT(); return;}
 	sv86[servoIndex].pausetime = millis();
 	sv86[servoIndex].state = SERVO_PAUSE;
 	io_RestoreINT();
 }
 
 void Servo::resume(void) {
-	if(servoIndex >= MAX_SERVOS) return;
-	if(servos[servoIndex].Pin.isActive == false) return;
+	if (servoIndex >= MAX_SERVOS) return;
+	if (servos[servoIndex].Pin.isActive == false) return;
 
 	io_DisableINT();
-    if(sv86[servoIndex].state != SERVO_PAUSE) {io_RestoreINT(); return;}
+    if (sv86[servoIndex].state != SERVO_PAUSE) {io_RestoreINT(); return;}
 	sv86[servoIndex].pausetime = millis() - sv86[servoIndex].pausetime;
 	sv86[servoIndex].starttime += sv86[servoIndex].pausetime;
 	sv86[servoIndex].endtime += sv86[servoIndex].pausetime;
@@ -833,15 +874,15 @@ void Servo::resume(void) {
 }
 
 void Servo::stop(void) {  
-	if(servoIndex >= MAX_SERVOS) return;
-	if(servos[servoIndex].Pin.isActive == false) return;
+	if (servoIndex >= MAX_SERVOS) return;
+	if (servos[servoIndex].Pin.isActive == false) return;
 	
 	io_DisableINT();
 	target_position = sv86[servoIndex].prevposition = sv86[servoIndex].targetposition = sv86[servoIndex].curposition;
 	sv86[servoIndex].starttime = 0L;
 	sv86[servoIndex].endtime = 0L;
 	sv86[servoIndex].pausetime = 0L;
-	if(sv86[servoIndex].state != SERVO_NONE)
+	if (sv86[servoIndex].state != SERVO_NONE)
 		sv86[servoIndex].state = SERVO_IDLE;
 	total_time = 0L;
 	speed_us = FULL_SPEED;
@@ -851,7 +892,7 @@ void Servo::stop(void) {
 void _detach(int index, int pin) {
 	int mc_pwm, md_pwm;
 	
-	if(isPWMPin(pin) == false)
+	if (isPWMPin(pin) == false)
 	{
 		del(servos[index]);
 		cp2irqservos();
@@ -868,9 +909,9 @@ void _detach(int index, int pin) {
 }
 
 void Servo::release(void) {
-	if(servoIndex >= MAX_SERVOS) return;
-	if(servos[servoIndex].Pin.isActive == false) return;
-	if(had_target_pos[servoIndex] == 0) return;
+	if (servoIndex >= MAX_SERVOS) return;
+	if (servos[servoIndex].Pin.isActive == false) return;
+	if (had_target_pos[servoIndex] == 0) return;
 	
 	stop();
 	_detach(servoIndex, servos[servoIndex].Pin.nbr);
@@ -883,8 +924,8 @@ void Servo::release(void) {
 
 bool Servo::isMoving(void) {
     int tmp;
-    if(servoIndex >= MAX_SERVOS) return false;
-	if(servos[servoIndex].Pin.isActive == false) return false;
+    if (servoIndex >= MAX_SERVOS) return false;
+	if (servos[servoIndex].Pin.isActive == false) return false;
 	
 	io_DisableINT();
 	tmp = sv86[servoIndex].state;
@@ -904,9 +945,9 @@ void servoMultiRun(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
 		
 		int i;
 		
-		if(&s1 == &nullServo) // no input servo class
+		if (&s1 == &nullServo) // no input servo class
 		{
-			for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->run();}
+			for (i=0; i<45; i++) {if (Servoptr[i] != NULL) Servoptr[i]->run();}
 			return;
 		}
 		
@@ -932,9 +973,9 @@ void servoMultiPause(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
 	
 		int i;
 		
-		if(&s1 == &nullServo) // no input servo class
+		if (&s1 == &nullServo) // no input servo class
 		{
-			for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->pause();}
+			for (i=0; i<45; i++) {if (Servoptr[i] != NULL) Servoptr[i]->pause();}
 			return;
 		}
 		
@@ -960,9 +1001,9 @@ void servoMultiResume(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
 	
 		int i;
 		
-		if(&s1 == &nullServo) // no input servo class
+		if (&s1 == &nullServo) // no input servo class
 		{
-			for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->resume();}
+			for (i=0; i<45; i++) {if (Servoptr[i] != NULL) Servoptr[i]->resume();}
 			return;
 		}
 		
@@ -988,9 +1029,9 @@ void servoMultiStop(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
 
         int i;
 		
-		if(&s1 == &nullServo) // no input servo class
+		if (&s1 == &nullServo) // no input servo class
 		{
-			for(i=0; i<45; i++) {if(Servoptr[i] != NULL) Servoptr[i]->stop();}
+			for (i=0; i<45; i++) {if (Servoptr[i] != NULL) Servoptr[i]->stop();}
 			return;
 		}
 		
@@ -1017,11 +1058,11 @@ bool isServoMultiMoving(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
 	int i;
 	int tmp[45];
 	
-	for(i=0; i<45; i++) tmp[i] = false;
+	for (i=0; i<45; i++) tmp[i] = false;
 		
-	if(&s1 == &nullServo) // no input servo class
+	if (&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL) tmp[i] = Servoptr[i]->isMoving();}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL) tmp[i] = Servoptr[i]->isMoving();}
 		goto END;
 	}
 		
@@ -1034,8 +1075,8 @@ bool isServoMultiMoving(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
 	tmp[42] = s43.isMoving(); tmp[43] = s44.isMoving(); tmp[44] = s45.isMoving();
 
 END:	
-	for(i=0; i<45; i++)
-		if(tmp[i] == true) return true;
+	for (i=0; i<45; i++)
+		if (tmp[i] == true) return true;
 		
 	return false;
 }
@@ -1052,10 +1093,10 @@ void servoMultiRealTimeMixing(long* mixoffsets, Servo &s1, Servo &s2, Servo &s3,
    
 	int i;
 		
-	if(&s1 == &nullServo) // no input servo class
+	if (&s1 == &nullServo) // no input servo class
 	{
 		io_DisableINT();
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && mixoffsets[i] != 0L) Servoptr[i]->setRealTimeMixing(mixoffsets[i], false);}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL) Servoptr[i]->setRealTimeMixing(mixoffsets[i], false);}
 		io_RestoreINT();
 		return;
 	}
@@ -1079,19 +1120,27 @@ void servoMultiRealTimeMixing(long* mixoffsets, Servo &s1, Servo &s2, Servo &s3,
 	io_RestoreINT();
 }
 
+void EnableMixing (void) {
+	mixingSwitch = ON;
+}
+
+void DisableMixing (void) {
+	mixingSwitch = OFF;
+}
+
 /******************************** ServoFrame **********************************/
 
 ServoFrame::ServoFrame() {
 	int i;
 	
-	for(i=0; i<45; i++) positions[i] = 0L;
+	for (i=0; i<45; i++) {positions[i] = 0L; accelerations[i][0] = 0.0; accelerations[i][1] = 0.0;}
 	used_servos = 0x00001FFFFFFFFFFFLL;
 }
 
 ServoFrame::ServoFrame(const char* dir) {
 	int i;
 	
-	for(i=0; i<45; i++) positions[i] = 0L;
+	for (i=0; i<45; i++) {positions[i] = 0L; accelerations[i][0] = 0.0; accelerations[i][1] = 0.0;}
 	load(dir);
 	used_servos = 0x00001FFFFFFFFFFFLL;
 }
@@ -1108,9 +1157,9 @@ void ServoFrame::setPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo 
 
     int i;
 		
-	if(&s1 == &nullServo) // no input servo class
+	if (&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i]);}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i]);}
 		return;
 	}
 		
@@ -1143,9 +1192,9 @@ void ServoFrame::setPositions(unsigned long playtime, Servo &s1, Servo &s2, Serv
 
     int i;
 		
-	if(&s1 == &nullServo) // no input servo class
+	if (&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i], playtime);}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL && positions[i] != 0L) Servoptr[i]->setPosition(positions[i], playtime);}
 		return;
 	}
 		
@@ -1175,7 +1224,7 @@ void ServoFrame::setPositions(int playtime, Servo &s1, Servo &s2, Servo &s3, Ser
                               Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
                               Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
                               Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
-	if(playtime <= 0) playtime = 0;
+	if (playtime <= 0) playtime = 0;
 	setPositions((unsigned long) playtime, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
 	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
 	              s41, s42, s43, s44, s45);					  
@@ -1185,17 +1234,17 @@ static void get_real_path(const char* dir, char* path) {
     int i;
 	const char* parent = "C:\\";
 	
-	if(dir[0] == 'c' || dir[0] == 'C' || dir[0] == 'a' || dir[0] == 'A')
+	if (dir[0] == 'c' || dir[0] == 'C' || dir[0] == 'a' || dir[0] == 'A')
 	{
-		if(dir[1] == ':' && dir[2] == '\\')
+		if (dir[1] == ':' && dir[2] == '\\')
 		{
-			for(i=0; dir[i] != '\0'; i++) path[i] = dir[i];
+			for (i=0; dir[i] != '\0'; i++) path[i] = dir[i];
 			return;
 		}
 	}
 
-	for(i=0; i<3; i++) path[i] = parent[i];
-	for(i=0; dir[i] != '\0'; i++) path[i+3] = dir[i];
+	for (i=0; i<3; i++) path[i] = parent[i];
+	for (i=0; dir[i] != '\0'; i++) path[i+3] = dir[i];
 
 	return;
 }
@@ -1205,21 +1254,21 @@ static bool analysis(const char* line, int* channel, long* value) {
 	char tmp[256] = {'\0'};
 	bool negative = false;
 	
-	for(i=0; line[i] != '\0' && line[i] != '\n'; i++)
+	for (i=0; line[i] != '\0' && line[i] != '\n'; i++)
 	{
-		if(line[i] == ';') break;
-		if(line[i] != ' ') tmp[j++] = line[i];
+		if (line[i] == ';') break;
+		if (line[i] != ' ') tmp[j++] = line[i];
 	}
 	
-	if(strncmp("channel", tmp, 7) != 0) return false;
+	if (strncmp("channel", tmp, 7) != 0) return false;
 
-	if(isdigit(tmp[7]))
+	if (isdigit(tmp[7]))
 	{
-		if(tmp[8] == '=')
+		if (tmp[8] == '=')
 		{
 			*channel = tmp[7] - '0'; i = 9;
 		}			
-		else if(isdigit(tmp[8]) && tmp[9] == '=')
+		else if (isdigit(tmp[8]) && tmp[9] == '=')
 		{
 			*channel = (tmp[7] - '0')*10 + (tmp[8] - '0'); i = 10;
 		}
@@ -1230,11 +1279,11 @@ static bool analysis(const char* line, int* channel, long* value) {
 		return false;
 	
 	*value = 0;
-	if(tmp[i] == '-') {negative = true; i++;}	
-	for(;isdigit(tmp[i]) != 0; i++) *value = *value*10 + (tmp[i] - '0');
+	if (tmp[i] == '-') {negative = true; i++;}	
+	for (;isdigit(tmp[i]) != 0; i++) *value = *value*10 + (tmp[i] - '0');
 	
-	if(tmp[i] != '\0') return false;
-	if(negative == true) *value = (-1) * (*value);
+	if (tmp[i] != '\0') return false;
+	if (negative == true) *value = (-1) * (*value);
 	
 	return true;
 }
@@ -1246,20 +1295,20 @@ bool ServoFrame::load(const char* dir) {
 	char _line[256] = {'\0'};
 	long tmp[45] = {0L}, value;
 	
-	if(dir == NULL) return false;
+	if (dir == NULL) return false;
 
 	get_real_path(dir, path);
 
-	if((fp = fopen(path, "r")) == NULL) return false;
+	if ((fp = fopen(path, "r")) == NULL) return false;
 
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == ';' || _line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == ';' || _line[i] == '\0' || _line[i] == '\n') continue;
 		
-		if(analysis(_line, &channel, &value) == true && channel < 45)
+		if (analysis(_line, &channel, &value) == true && channel < 45)
 			tmp[channel] = value;
 		else
 		{
@@ -1270,7 +1319,7 @@ bool ServoFrame::load(const char* dir) {
 	
 	fclose(fp);
 	
-	for(i=0; i<45; i++) positions[i] = tmp[i];
+	for (i=0; i<45; i++) positions[i] = tmp[i];
 
 	return true;
 }
@@ -1285,13 +1334,13 @@ void combine(char* result, int channel, long value) {
 	char tmp[256] = {'\0'};
 	char num[16]  = {'\0'};
 	
-	for(i=0; i<7; i++) tmp[i] = head[i];
+	for (i=0; i<7; i++) tmp[i] = head[i];
 	itoa(channel, num, 10);
-	for(j=0; num[j] != '\0'; j++) tmp[i++] = num[j];
+	for (j=0; num[j] != '\0'; j++) tmp[i++] = num[j];
 	tmp[i++] = '=';
-	for(j=0; j<16; j++) num[j] = '\0';
+	for (j=0; j<16; j++) num[j] = '\0';
 	itoa(value, num, 10);
-	for(j = 0; num[j] != '\0'; j++) tmp[i++] = num[j];
+	for (j = 0; num[j] != '\0'; j++) tmp[i++] = num[j];
 	tmp[i] = '\n';
 	
 	strncpy(result, tmp, 256);
@@ -1304,15 +1353,15 @@ bool ServoFrame::save(const char* dir) {
 	char path[256] = {'\0'};
 	char _line[256] = {'\0'};
 	
-	if(dir == NULL) return false;
+	if (dir == NULL) return false;
 
 	get_real_path(dir, path);
 	
-	if((fp = fopen(path, "a")) == NULL) return false;
+	if ((fp = fopen(path, "a")) == NULL) return false;
 	
-	for(i=0; i<45; i++)
+	for (i=0; i<45; i++)
 	{
-		if(positions[i] == 0L) continue;
+		if (positions[i] == 0L) continue;
 		combine(_line, i, positions[i]);
 		fputs(_line, fp);
 	}
@@ -1337,10 +1386,10 @@ void ServoFrame::playPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo
                    
 	int i;
 		
-	if(&s1 == &nullServo) // no input servo class
+	if (&s1 == &nullServo) // no input servo class
 	{  
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->setPosition(positions[i]);}
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->run();}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->setPosition(positions[i]);}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->run();}
 		return;
 	}
 
@@ -1392,10 +1441,19 @@ void ServoFrame::playPositions(unsigned long playtime, Servo &s1, Servo &s2, Ser
                                
 	int i;
 
-	if(&s1 == &nullServo) // no input servo class
+	if (&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->setPosition(positions[i], playtime);}
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->run();}
+		for (i=0; i<45; i++)
+		{
+			if (Servoptr[i] != NULL)
+			{
+				Servoptr[i]->setPositionAcceleration(accelerations[i][0], accelerations[i][1]);
+				if (playtime == 0L && (accelerations[i][0] != 0.0 || accelerations[i][1] != 0.0)) playtime = 20L; // If we have acceleration, the playtime is not as 0.
+				accelerations[i][0] = 0.0; accelerations[i][1] = 0.0;
+			}
+		}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->setPosition(positions[i], playtime);}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL && positions[i] != 0L && (used_servos & (0x01LL<<i)) != 0LL) Servoptr[i]->run();}
 		return;
 	}
 
@@ -1428,7 +1486,7 @@ void ServoFrame::playPositions(int playtime, Servo &s1, Servo &s2, Servo &s3, Se
                                Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
                                Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
                                Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
-	if(playtime <= 0) playtime = 0;
+	if (playtime <= 0) playtime = 0;
 	playPositions((unsigned long) playtime, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
 	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
 	              s41, s42, s43, s44, s45);
@@ -1459,12 +1517,179 @@ void ServoFrame::playPositions(int playtime, unsigned long long enabled_servos, 
                                Servo &s31, Servo &s32, Servo &s33, Servo &s34, Servo &s35,
                                Servo &s36, Servo &s37, Servo &s38, Servo &s39, Servo &s40,
                                Servo &s41, Servo &s42, Servo &s43, Servo &s44, Servo &s45) {
-	if(playtime <= 0) playtime = 0;
+	if (playtime <= 0) playtime = 0;
 	used_servos = enabled_servos;
 	playPositions((unsigned long) playtime, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20,
 	              s21, s22, s23, s24, s25, s26, s27, s28, s29, s30, s31, s32, s33, s34, s35, s36, s37, s38, s39, s40,
 	              s41, s42, s43, s44, s45);
 	used_servos = 0x00001FFFFFFFFFFFLL;
+}
+
+void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTime, int numFrames) {
+	int i, j, k=0;
+	double **p;
+	double **_acc;
+	double ***acc;
+	double ***pp;
+	unsigned int servoNum = 0;
+	
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1) return;
+
+	// Caculate moter number, suppose that user don't add motor quantity during playing frames
+	for (i=0; i<45; i++)
+		if (Frames[0].positions[i] != 0L) servoNum++;
+
+	pp = (double***) malloc(servoNum*sizeof(double**)); // we have "servoNum" cubic splines
+
+	for (i=0; i<servoNum; i++)
+	{
+		p = mallocMyDoubleMatrix(numFrames, 2); // {{x0, y0}, {x1, y1}, {x2, y2}, ...}
+		pp[i] = p;
+	}
+
+	for (i=0; i<45; i++)
+	{
+		if (Frames[0].positions[i] == 0) continue; // just see the first frame
+		for (j=0; j<numFrames; j++)
+		{
+			if (mode == NATURAL_CUBIC && frameTime[j] < 20L) frameTime[j] = 20L; // if frameTime < 20, frameTime = 20
+			
+			if (j == 0)
+				pp[k][j][0] = frameTime[j]; // set X-axis value
+			else
+				pp[k][j][0] = (double) (frameTime[j] + pp[k][j-1][0]); // the frameTime need to be accumulated
+
+			pp[k][j][1] = (double) Frames[j].positions[i]; // set Y-axis value
+		}
+		k++; // next servo
+	}
+
+	acc = (double***) malloc(k*sizeof(double**));
+	for (i=0; i<servoNum; i++)
+	{
+		_acc = mallocMyDoubleMatrix(numFrames, 2);
+		acc[i] = _acc;
+	}
+	
+	if (mode == NATURAL_CUBIC)
+	{
+		for (i=0; i<servoNum; i++)
+			servoComputeCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
+	else if (mode == CONSTRAINED_CUBIC)
+	{
+		for (i=0; i<servoNum; i++)
+			servoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
+
+	for (i=0; i<numFrames; i++)
+	{
+		for (j=0; j<k; j++)
+		{
+			Frames[i].accelerations[j][0] = acc[j][i][0];
+			Frames[i].accelerations[j][1] = acc[j][i][1];
+		}
+	}
+
+	/*
+	for (i=0; i<numFrames; i++)
+	{
+		for (j=0; j<k; j++)
+			printf("%f ", Frames[i].accelerations[j]);
+		printf("\n");
+	}
+	*/
+	
+	freeMyDoubleMatrix(_acc, _acc[0]);
+	freeMyDoubleMatrix(p, p[0]);
+	free(acc);
+	free(pp);
+}
+
+void servoEndSplineMotion() {
+
+}
+
+void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameTime, int numFrames) {
+	int i, j, k=0;
+	double **p;
+	double **_acc;
+	double ***acc;
+	double ***pp;
+	unsigned int servoNum = 0;
+	
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1) return;
+	for (i=0; i<numFrames; i++) if (Frames[i] == NULL) return;
+
+	// Caculate moter number, suppose that user don't add motor quantity during playing frames
+	for (i=0; i<45; i++)
+		if (Frames[0]->positions[i] != 0L) servoNum++;
+
+	pp = (double***) malloc(servoNum*sizeof(double**)); // we have "servoNum" cubic splines
+
+	for (i=0; i<servoNum; i++)
+	{
+		p = mallocMyDoubleMatrix(numFrames, 2); // {{x0, y0}, {x1, y1}, {x2, y2}, ...}
+		pp[i] = p;
+	}
+
+	for (i=0; i<45; i++)
+	{
+		if (Frames[0]->positions[i] == 0) continue; // just see the first frame
+		for (j=0; j<numFrames; j++)
+		{
+			if (mode == NATURAL_CUBIC && frameTime[j] < 20L) frameTime[j] = 20L; // if frameTime < 20, frameTime = 20
+			
+			if (j == 0)
+				pp[k][j][0] = frameTime[j]; // set X-axis value
+			else
+				pp[k][j][0] = (double) (frameTime[j] + pp[k][j-1][0]); // the frameTime need to be accumulated
+
+			pp[k][j][1] = (double) Frames[j]->positions[i]; // set Y-axis value
+		}
+		k++; // next servo
+	}
+
+	acc = (double***) malloc(k*sizeof(double**));
+	for (i=0; i<k; i++)
+	{
+		_acc = mallocMyDoubleMatrix(numFrames, 2);
+		acc[i] = _acc;
+	}
+
+	if (mode == NATURAL_CUBIC)
+	{
+		for (i=0; i<servoNum; i++)
+			servoComputeCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
+	else if (mode == CONSTRAINED_CUBIC)
+	{
+		for (i=0; i<servoNum; i++)
+			servoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
+
+	for (i=0; i<numFrames; i++)
+	{
+		for (j=0; j<k; j++)
+		{
+			Frames[i]->accelerations[j][0] = acc[j][i][0];
+			Frames[i]->accelerations[j][1] = acc[j][i][1];
+		}
+	}
+
+	/*
+	for (i=0; i<numFrames; i++)
+	{
+		for (j=0; j<k; j++)
+			printf("%f ", Frames[i].accelerations[j]);
+		printf("\n");
+	}
+	*/
+	
+	freeMyDoubleMatrix(_acc, _acc[0]);
+	freeMyDoubleMatrix(p, p[0]);
+	free(acc);
+	free(pp);
 }
 
 /******************************* End of Servo Frame ***************************/
@@ -1474,13 +1699,13 @@ void ServoFrame::playPositions(int playtime, unsigned long long enabled_servos, 
 ServoOffset::ServoOffset() {
 	int i;
 	
-	for(i=0; i<45; i++) offsets[i] = 0L;
+	for (i=0; i<45; i++) offsets[i] = 0L;
 }
 
 ServoOffset::ServoOffset(const char* dir) {
 	int i;
 	
-	for(i=0; i<45; i++) offsets[i] = 0L;
+	for (i=0; i<45; i++) offsets[i] = 0L;
 	load(dir);
 }
 
@@ -1496,9 +1721,9 @@ void ServoOffset::setOffsets(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &
     
 	int i;
 		
-	if(&s1 == &nullServo) // no input servo class
+	if (&s1 == &nullServo) // no input servo class
 	{
-		for(i=0; i<45; i++) {if(Servoptr[i] != NULL && offsets[i] != 0L) Servoptr[i]->setOffset(offsets[i]);}
+		for (i=0; i<45; i++) {if (Servoptr[i] != NULL && offsets[i] != 0L) Servoptr[i]->setOffset(offsets[i]);}
 		return;
 	}
 		
@@ -1526,20 +1751,20 @@ bool ServoOffset::load(const char* dir) {
 	char _line[256] = {'\0'};
 	long tmp[45] = {0L}, value;
 	
-	if(dir == NULL) return false;    
+	if (dir == NULL) return false;    
 
 	get_real_path(dir, path);
 
-	if((fp = fopen(path, "r")) == NULL) return false;
+	if ((fp = fopen(path, "r")) == NULL) return false;
 
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == ';' || _line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == ';' || _line[i] == '\0' || _line[i] == '\n') continue;
 		
-		if(analysis(_line, &channel, &value) == true && channel < 45)
+		if (analysis(_line, &channel, &value) == true && channel < 45)
 			tmp[channel] = value;
 		else
 		{
@@ -1550,7 +1775,7 @@ bool ServoOffset::load(const char* dir) {
 	
 	fclose(fp);
 	
-	for(i=0; i<45; i++) offsets[i] = tmp[i];
+	for (i=0; i<45; i++) offsets[i] = tmp[i];
 
 	return true;
 }
@@ -1565,15 +1790,15 @@ bool ServoOffset::save(const char* dir) {
 	char path[256] = {'\0'};
 	char _line[256] = {'\0'};
 	
-	if(dir == NULL) return false;
+	if (dir == NULL) return false;
 
 	get_real_path(dir, path);
 	
-	if((fp = fopen(path, "a")) == NULL) return false;
+	if ((fp = fopen(path, "a")) == NULL) return false;
 	
-	for(i=0; i<45; i++)
+	for (i=0; i<45; i++)
 	{
-		if(offsets[i] == 0L) continue;
+		if (offsets[i] == 0L) continue;
 		combine(_line, i, offsets[i]);
 		fputs(_line, fp);
 	}
@@ -1596,18 +1821,18 @@ ServoFrameInno::ServoFrameInno() : ServoFrame() {
 	int i, j;
 	
 	frameno = 0; M1ID = -1; M2ID = -1; 
-	for(i=0; i<32; i++)
+	for (i=0; i<32; i++)
 	{
 		en[i] = 0;
 		time[i] = 0L;
 		speed[i] = 0L;
-		for(j=0; j<10; j++) mode[i][j] = '\0';
+		for (j=0; j<10; j++) mode[i][j] = '\0';
 	}
 	
-	for(i=0; i<173; i++) frmfile[i] = 0L;
+	for (i=0; i<173; i++) frmfile[i] = 0L;
 	
-	for(i=0; i<2; i++)
-	for(j=0; j<256; j++)
+	for (i=0; i<2; i++)
+	for (j=0; j<256; j++)
 		all_string[i][j] = '\0';
 }
 
@@ -1615,18 +1840,18 @@ ServoFrameInno::ServoFrameInno(const char* dir) : ServoFrame() {
     int i, j;
 	
 	frameno = 0; M1ID = -1; M2ID = -1; 
-	for(i=0; i<32; i++)
+	for (i=0; i<32; i++)
 	{
 		en[i] = 0;
 		time[i] = 0L;
 		speed[i] = 0L;
-		for(j=0; j<10; j++) mode[i][j] = '\0';
+		for (j=0; j<10; j++) mode[i][j] = '\0';
 	}
 	
-	for(i=0; i<173; i++) frmfile[i] = 0L;
+	for (i=0; i<173; i++) frmfile[i] = 0L;
 	
-	for(i=0; i<2; i++)
-	for(j=0; j<256; j++)
+	for (i=0; i<2; i++)
+	for (j=0; j<256; j++)
 		all_string[i][j] = '\0';
 	
 	load(dir);
@@ -1634,12 +1859,12 @@ ServoFrameInno::ServoFrameInno(const char* dir) : ServoFrame() {
 
 void clear_string_space(const char* src, char* result) {
     int i, j = 0;
-	char tmp[256] = {'\0'};
+	char tmp[600] = {'\0'};
 	
-	for(i=0; src[i] != '\0' && src[i] != '\n'; i++)
-		if(src[i] != ' ') tmp[j++] = src[i];
+	for (i=0; src[i] != '\0' && src[i] != '\n'; i++)
+		if (src[i] != ' ') tmp[j++] = src[i];
 	
-	for(i=0; tmp[i] != '\0'; i++) result[i] = tmp[i];
+	for (i=0; tmp[i] != '\0'; i++) result[i] = tmp[i];
 	result[i] = '\0';
 	//printf("%s\n", result);
 }
@@ -1649,16 +1874,16 @@ bool get_inno_ch(const char* src, int *value) {
 	char *ch = "ch";
 	long tmp = 0L;
 	
-	if(src[0] != ch[0] || src[1] != ch[1]) return false;
+	if (src[0] != ch[0] || src[1] != ch[1]) return false;
 
-	for(i=0; i<2; i++)
+	for (i=0; i<2; i++)
 	{
-		if(isdigit(src[i+2]))
+		if (isdigit(src[i+2]))
 			tmp = tmp * 10L + (src[i+2] - '0');
 		else
 			return false;
 	}
-	if(src[i+2] != '=') return false;
+	if (src[i+2] != '=') return false;
 	*value = tmp;
 	//printf("ch:%d ", *value);
 	return true;
@@ -1668,10 +1893,10 @@ bool get_inno_chen(const char* src, char *is_enable) {
 	char *target = "=en:";
 	char *result;
 
-	if((result = strstr(src, target)) == NULL) return false;
+	if ((result = strstr(src, target)) == NULL) return false;
 	
-	if(result[4] == '0') *is_enable = 0;
-	else if(result[4] == '1') *is_enable = 1;
+	if (result[4] == '0') *is_enable = 0;
+	else if (result[4] == '1') *is_enable = 1;
 	else *is_enable = 0;
 	
 	return true;
@@ -1683,11 +1908,11 @@ bool get_inno_pos(const char* src, long *pos) {
 	char *result;
 	long tmp = 0L;
 
-	if((result = strstr(src, target)) == NULL) return false;
+	if ((result = strstr(src, target)) == NULL) return false;
 
-	for(i=0; isdigit(result[i+5]); i++)
+	for (i=0; isdigit(result[i+5]); i++)
 		tmp = tmp * 10L + (result[i+5] - '0');
-	if(result[i+5] != ',') return false;
+	if (result[i+5] != ',') return false;
 
 	*pos = tmp;
 	//printf("pos:%ld ", *pos);
@@ -1700,13 +1925,13 @@ bool get_inno_mode(const char* src, char *mode) {
 	char *result;
 	long tmp = 0L;
 
-	if((result = strstr(src, target)) == NULL) return false;
+	if ((result = strstr(src, target)) == NULL) return false;
 
-	for(i=0; result[i+6] != ','; i++)
+	for (i=0; result[i+6] != ','; i++)
 		mode[i] = result[i+6];
 
 	// modes: full, time or speed
-	if(i>5) return false;
+	if (i>5) return false;
 	
 	//printf("mode:%s ", mode);
 	return true;
@@ -1718,11 +1943,11 @@ bool get_inno_speed(const char* src, long *speed) {
 	char *result;
 	long tmp = 0L;
 
-	if((result = strstr(src, target)) == NULL) return false;
+	if ((result = strstr(src, target)) == NULL) return false;
 
-	for(i=0; isdigit(result[i+7]); i++)
+	for (i=0; isdigit(result[i+7]); i++)
 		tmp = tmp * 10L + (result[i+7] - '0');
-	if(result[i+7] != ',') return false;
+	if (result[i+7] != ',') return false;
 
 	*speed = tmp;
 	//printf("speed:%ld ", *speed);
@@ -1735,11 +1960,11 @@ bool get_inno_time(const char* src, long *_time) {
 	char *result;
 	long tmp = 0L;
 
-	if((result = strstr(src, target)) == NULL) return false;
+	if ((result = strstr(src, target)) == NULL) return false;
 
-	for(i=0; isdigit(result[i+6]); i++)
+	for (i=0; isdigit(result[i+6]); i++)
 		tmp = tmp * 10L + (result[i+6] - '0');
-	if(result[i+6] != ' ' && result[i+6] != '\n' && result[i+6] != '\0') return false;
+	if (result[i+6] != ' ' && result[i+6] != '\n' && result[i+6] != '\0') return false;
 
 	*_time = tmp;
 	//printf("time:%ld \n", *_time);
@@ -1749,12 +1974,12 @@ bool get_inno_time(const char* src, long *_time) {
 bool inno_frame_analysis(const char* line, long* value, char* is_enable, long* _time, long* speed, char* mode) {
     int channel = 0;
     
-	if(get_inno_ch(line, &channel) == false) return false;
-    if(get_inno_chen(line, is_enable) == false) return false;
-    if(get_inno_pos(line, value) == false) return false;
-    if(get_inno_mode(line, mode) == false) return false;
-    if(get_inno_speed(line, speed) == false) return false;
-    if(get_inno_time(line, _time) == false) return false;
+	if (get_inno_ch(line, &channel) == false) return false;
+    if (get_inno_chen(line, is_enable) == false) return false;
+    if (get_inno_pos(line, value) == false) return false;
+    if (get_inno_mode(line, mode) == false) return false;
+    if (get_inno_speed(line, speed) == false) return false;
+    if (get_inno_time(line, _time) == false) return false;
     
     return true;
 }
@@ -1763,32 +1988,32 @@ bool is_innoFrameFile(char* _line, FILE* fp, int* frmno, int* m1id, int* m2id) {
     int i, tmp = 0;
     char result[256] = {'\0'};
     
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("[ID]", result, 4) != 0) {printf("[ID] false\n"); return false;}
+		if (strncmp("[ID]", result, 4) != 0) {printf("[ID] false\n"); return false;}
 	}
 	else
 		return false;
 	
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("Signature=FRAME", result, 15) != 0) {printf("Signature=FRAME false\n"); return false;}
+		if (strncmp("Signature=FRAME", result, 15) != 0) {printf("Signature=FRAME false\n"); return false;}
 	}
 	else
 		return false;
 	
 	// Get frame number
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("Frame=", result, 6) != 0) {printf("Frame= false\n"); return false;}
+		if (strncmp("Frame=", result, 6) != 0) {printf("Frame= false\n"); return false;}
 		else
 		{
-			for(i=0; isdigit(result[i+6]); i++)
+			for (i=0; isdigit(result[i+6]); i++)
 				tmp = tmp * 10 + (result[i+6] - '0');
-			if(result[i+6] != ' ' && result[i+6] != '\n' && result[i+6] != '\0') return false;
+			if (result[i+6] != ' ' && result[i+6] != '\n' && result[i+6] != '\0') return false;
 			*frmno = tmp;
 		}
 	}
@@ -1797,15 +2022,15 @@ bool is_innoFrameFile(char* _line, FILE* fp, int* frmno, int* m1id, int* m2id) {
 	
 	// Get M1ID
 	tmp = 0;
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("M1=", result, 3) != 0) {printf("M1= false\n"); return false;}
+		if (strncmp("M1=", result, 3) != 0) {printf("M1= false\n"); return false;}
 		else
 		{
-			for(i=0; isdigit(result[i+3]); i++)
+			for (i=0; isdigit(result[i+3]); i++)
 				tmp = tmp * 10 + (result[i+3] - '0');
-			if(result[i+3] != ' ' && result[i+3] != '\n' && result[i+3] != '\0') return false;
+			if (result[i+3] != ' ' && result[i+3] != '\n' && result[i+3] != '\0') return false;
 			*m1id = tmp;
 		}
 	}
@@ -1814,15 +2039,15 @@ bool is_innoFrameFile(char* _line, FILE* fp, int* frmno, int* m1id, int* m2id) {
 		
 	// Get M2ID
 	tmp = 0;
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("M2=", _line, 3) != 0) {printf("M2= false\n"); return true;} // some inno board has no M2
+		if (strncmp("M2=", _line, 3) != 0) {printf("M2= false\n"); return true;} // some inno board has no M2
 		else
 		{
-			for(i=0; isdigit(result[i+3]); i++)
+			for (i=0; isdigit(result[i+3]); i++)
 				tmp = tmp * 10 + (result[i+3] - '0');
-			if(result[i+3] != ' ' && result[i+3] != '\n' && result[i+3] != '\0') return false;
+			if (result[i+3] != ' ' && result[i+3] != '\n' && result[i+3] != '\0') return false;
 			*m2id = tmp;
 		}
 	}
@@ -1840,54 +2065,54 @@ bool ServoFrameInno::load(const char* dir) {
 	char _line[256] = {'\0'}, tmp_mode[45][10] = {'\0'}, tmp_ch[256] = {'\0'}, _mode[10] = {'\0'};
 	long tmp_pos[45] = {0L}, tmp_time[45] = {0L}, tmp_speed[45] = {0L}, _pos, _time, _speed;
 	
-	if(dir == NULL) return false;    
+	if (dir == NULL) return false;    
 
 	get_real_path(dir, path);
 	
-	if((exten = strstr(path, ".frm")) != NULL && exten[4] == '\0')
+	if ((exten = strstr(path, ".frm")) != NULL && exten[4] == '\0')
     {
 		is_frmfile = 1;
-    	if((fp = fopen(path, "rb")) == NULL) return false;
+    	if ((fp = fopen(path, "rb")) == NULL) return false;
     }
-    else if((exten = strstr(path, ".FRM")) != NULL && exten[4] == '\0')
+    else if ((exten = strstr(path, ".FRM")) != NULL && exten[4] == '\0')
     {
 		is_frmfile = 1;
-    	if((fp = fopen(path, "rb")) == NULL) return false;
+    	if ((fp = fopen(path, "rb")) == NULL) return false;
     }
-	else if((exten = strstr(path, ".ftxt")) != NULL && exten[5] == '\0')
+	else if ((exten = strstr(path, ".ftxt")) != NULL && exten[5] == '\0')
 	{
 		is_ftxtfile = 1;
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
-	else if((exten = strstr(path, ".FTXT")) != NULL && exten[5] == '\0')
+	else if ((exten = strstr(path, ".FTXT")) != NULL && exten[5] == '\0')
 	{
 		is_ftxtfile = 1;
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
 	else // the file is not supported
 		return false;
 	
-	if(is_ftxtfile == 1)
+	if (is_ftxtfile == 1)
 	{
-		if(is_innoFrameFile(_line, fp, &frameno, &M1ID, &M2ID) == false) {fclose(fp); return false;}
+		if (is_innoFrameFile(_line, fp, &frameno, &M1ID, &M2ID) == false) {fclose(fp); return false;}
 
 		while(fgets(_line, 256, fp))
 		{
-			for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-				if(_line[i] == ' ') continue; else break;
+			for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+				if (_line[i] == ' ') continue; else break;
 	
-			if(_line[i] == '\0' || _line[i] == '\n') continue;
+			if (_line[i] == '\0' || _line[i] == '\n') continue;
 			
-			if(_line[0] == 'c' && _line[1] == 'h')
+			if (_line[0] == 'c' && _line[1] == 'h')
 			{
 				clear_string_space(_line, tmp_ch);
-				if(inno_frame_analysis(tmp_ch, &_pos, &is_enable, &_time, &_speed, _mode) == true)
+				if (inno_frame_analysis(tmp_ch, &_pos, &is_enable, &_time, &_speed, _mode) == true)
 				{
 					tmp_chen[channel]  = is_enable;
 					tmp_pos[channel]   = _pos;
 					tmp_time[channel]  = _time;
 					tmp_speed[channel] = _speed;
-					for(j=0; j<10; j++) tmp_mode[channel][j] = _mode[j];
+					for (j=0; j<10; j++) tmp_mode[channel][j] = _mode[j];
 					channel++;
 				}
 				else
@@ -1896,14 +2121,14 @@ bool ServoFrameInno::load(const char* dir) {
 					return false;
 				}
 			}
-			else if(_line[0] == 'a' && _line[1] == 'l' && _line[2] == 'l')
+			else if (_line[0] == 'a' && _line[1] == 'l' && _line[2] == 'l')
 			{
 				strcpy(all_string[k], _line);
 				k++; // k is module ID
 			}
 		}
-	} // if(is_ftxtfile == 1) ...
-	else if(is_frmfile == 1)
+	} // if (is_ftxtfile == 1) ...
+	else if (is_frmfile == 1)
 	{
 		unsigned int index;
 		fread(frmfile, 4, 173, fp);
@@ -1911,21 +2136,21 @@ bool ServoFrameInno::load(const char* dir) {
 		M1ID    = frmfile[1];
 		M2ID    = frmfile[2];
 		
-		for(i=3, j=0; i<173; i+=5) // include all_string
+		for (i=3, j=0; i<173; i+=5) // include all_string
 		{
 			tmp_chen[j] = frmfile[i];
 			tmp_pos[j]  = frmfile[i+1];
-			if(frmfile[i+2] == 0) strcpy(tmp_mode[j], "time");
-			else if(frmfile[i+2] == 1) strcpy(tmp_mode[j], "speed");
-			else if(frmfile[i+2] == 2) strcpy(tmp_mode[j], "full");
+			if (frmfile[i+2] == 0) strcpy(tmp_mode[j], "time");
+			else if (frmfile[i+2] == 1) strcpy(tmp_mode[j], "speed");
+			else if (frmfile[i+2] == 2) strcpy(tmp_mode[j], "full");
 			tmp_speed[j] = frmfile[i+3];
 			tmp_time[j]  = frmfile[i+4];
 			j++;
 			
-			if(j == 16 || j == 32)
+			if (j == 16 || j == 32)
 			{
 				i += 5;
-				if(j == 16) index = 0; else index = 5;
+				if (j == 16) index = 0; else index = 5;
 				all_string2[index]   = frmfile[i];
 				all_string2[index+1] = frmfile[i+1];
 				all_string2[index+2] = frmfile[i+2];
@@ -1937,14 +2162,14 @@ bool ServoFrameInno::load(const char* dir) {
 	
 	fclose(fp);
 
-	for(i=0; i<32; i++)
+	for (i=0; i<32; i++)
 	{
-		//if(i != 0 && (i % 16) == 0) getchar();
+		//if (i != 0 && (i % 16) == 0) getchar();
 		en[i] = tmp_chen[i];
-		if(en[i] == 1) positions[i] = tmp_pos[i];
+		if (en[i] == 1) positions[i] = tmp_pos[i];
 		time[i] = tmp_time[i];
 		speed[i] = tmp_speed[i];
-		for(j=0; j<10; j++) mode[i][j] = tmp_mode[i][j];
+		for (j=0; j<10; j++) mode[i][j] = tmp_mode[i][j];
 	}
 
 	return true;
@@ -1956,12 +2181,12 @@ bool ServoFrameInno::load(const String &s) {
 
 ServoOffsetInno::ServoOffsetInno() : ServoOffset() {
 	int i;
-	for(i=0; i<32; i++) ofsfile[i] = 0L;
+	for (i=0; i<32; i++) ofsfile[i] = 0L;
 }
 
 ServoOffsetInno::ServoOffsetInno(const char* dir) : ServoOffset() {
 	int i;
-	for(i=0; i<32; i++) ofsfile[i] = 0L;
+	for (i=0; i<32; i++) ofsfile[i] = 0L;
 	load(dir);
 }
 
@@ -1969,18 +2194,18 @@ bool is_innoOffsetFile(char* _line, FILE* fp) {
     int i, tmp = 0;
     char result[256] = {'\0'};
     
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("[ID]", result, 4) != 0) {printf("[ID] false\n"); return false;}
+		if (strncmp("[ID]", result, 4) != 0) {printf("[ID] false\n"); return false;}
 	}
 	else
 		return false;
 	
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("Signature=OFFSET", result, 16) != 0) {printf("Signature=OFFSET false\n"); return false;}
+		if (strncmp("Signature=OFFSET", result, 16) != 0) {printf("Signature=OFFSET false\n"); return false;}
 	}
 	else
 		return false;
@@ -1993,26 +2218,26 @@ bool inno_offset_analysis(char* line, long* offset) {
 	char tmp[256] = {'\0'};
 	bool negative = false;
 
-	for(i=0; line[i] != '\0' && line[i] != '\n'; i++)
+	for (i=0; line[i] != '\0' && line[i] != '\n'; i++)
 	{
-		if(line[i] != ' ') tmp[j++] = line[i];
+		if (line[i] != ' ') tmp[j++] = line[i];
 	}
 	
-	if(strncmp("ch", tmp, 2) != 0) return false;
+	if (strncmp("ch", tmp, 2) != 0) return false;
 
-	if(isdigit(tmp[2]) && isdigit(tmp[3]) && tmp[4] == '=')
+	if (isdigit(tmp[2]) && isdigit(tmp[3]) && tmp[4] == '=')
 	{
-		for(i=5; tmp[i] == ' '; i++);
+		for (i=5; tmp[i] == ' '; i++);
 		
 		*offset = 0;
-		if(tmp[i] == '-') {negative = true; i++;}	
-		for(;isdigit(tmp[i]); i++) *offset = *offset*10 + (tmp[i] - '0');
+		if (tmp[i] == '-') {negative = true; i++;}	
+		for (;isdigit(tmp[i]); i++) *offset = *offset*10 + (tmp[i] - '0');
 	}
 	else
 		return false;
 	
-	if(tmp[i] != '\0' && tmp[i] != '\n' && tmp[i] != ' ') return false;
-	if(negative == true) *offset = (-1) * (*offset);
+	if (tmp[i] != '\0' && tmp[i] != '\n' && tmp[i] != ' ') return false;
+	if (negative == true) *offset = (-1) * (*offset);
 	
 	return true;
 }
@@ -2025,48 +2250,48 @@ bool ServoOffsetInno::load(const char* dir) {
 	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
 	long tmp_offset[45] = {0L}, offset;
 	
-	if(dir == NULL) return false;    
+	if (dir == NULL) return false;    
 
 	get_real_path(dir, path);
 	
-	if((exten = strstr(path, ".ofs")) != NULL && exten[4] == '\0')
+	if ((exten = strstr(path, ".ofs")) != NULL && exten[4] == '\0')
     {
 		is_ofsfile = 1;
-    	if((fp = fopen(path, "rb")) == NULL) return false;
+    	if ((fp = fopen(path, "rb")) == NULL) return false;
     }
-    else if((exten = strstr(path, ".OFS")) != NULL && exten[4] == '\0')
+    else if ((exten = strstr(path, ".OFS")) != NULL && exten[4] == '\0')
     {
 		is_ofsfile = 1;
-    	if((fp = fopen(path, "rb")) == NULL) return false;
+    	if ((fp = fopen(path, "rb")) == NULL) return false;
     }
-	else if((exten = strstr(path, ".otxt")) != NULL && exten[5] == '\0')
+	else if ((exten = strstr(path, ".otxt")) != NULL && exten[5] == '\0')
 	{
 		is_otxtfile = 1;
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
-	else if((exten = strstr(path, ".OTXT")) != NULL && exten[5] == '\0')
+	else if ((exten = strstr(path, ".OTXT")) != NULL && exten[5] == '\0')
 	{
 		is_otxtfile = 1;
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
 	else // the file is not supported
 		return false;
 
-    if(is_otxtfile == 1)
+    if (is_otxtfile == 1)
 	{
-		if(is_innoOffsetFile(_line, fp) == false) {fclose(fp); return false;}
+		if (is_innoOffsetFile(_line, fp) == false) {fclose(fp); return false;}
 	
 		while(fgets(_line, 256, fp))
 		{
-			for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-				if(_line[i] == ' ') continue; else break;
+			for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+				if (_line[i] == ' ') continue; else break;
 	
-			if(_line[i] == '\0' || _line[i] == '\n') continue;
+			if (_line[i] == '\0' || _line[i] == '\n') continue;
 			
-			if(_line[0] == 'c' && _line[1] == 'h')
+			if (_line[0] == 'c' && _line[1] == 'h')
 			{
 				clear_string_space(_line, tmp_ch);
-				if(inno_offset_analysis(tmp_ch, &offset) == true)
+				if (inno_offset_analysis(tmp_ch, &offset) == true)
 				{
 					tmp_offset[channel] = offset;
 					channel++;
@@ -2078,16 +2303,16 @@ bool ServoOffsetInno::load(const char* dir) {
 				}
 			}
 		}
-	} // if(is_otxtfile == 1) ...
-	else if(is_ofsfile == 1)
+	} // if (is_otxtfile == 1) ...
+	else if (is_ofsfile == 1)
 	{
 		fread(ofsfile, 4, 32, fp);
-		for(i=0; i<32; i++) tmp_offset[i] = ofsfile[i];
+		for (i=0; i<32; i++) tmp_offset[i] = ofsfile[i];
 	}
 	
 	fclose(fp);
 	
-	for(i=0; i<32; i++)
+	for (i=0; i<32; i++)
 	{
 		offsets[i] = tmp_offset[i];
 		//printf("ch%d: offset %ld \n", i, tmp_offset[i]);
@@ -2107,26 +2332,26 @@ void offset_combine_value(char* target, char* src, int value, bool linkprev, boo
 	char num[16]  = {'\0'};
 	char space;
 	
-	if(linkprev == true) for(i=0; i < 256 && target[i] != '\0'; i++);
-	if(i >= 256) return;
+	if (linkprev == true) for (i=0; i < 256 && target[i] != '\0'; i++);
+	if (i >= 256) return;
 	
-	if(src[0] == 'c' || src[1] == 'h')
+	if (src[0] == 'c' || src[1] == 'h')
 	{
-		for(j=0; src[j] != '\0'; j++) target[i++] = src[j];
+		for (j=0; src[j] != '\0'; j++) target[i++] = src[j];
 		itoa(value, num, 10);
-		if(value < 10) target[i++] = '0';
-		for(j=0; num[j] != '\0'; j++) target[i++] = num[j];
+		if (value < 10) target[i++] = '0';
+		for (j=0; num[j] != '\0'; j++) target[i++] = num[j];
 		target[i++] = '\0';
 	}
 	else
 	{
-		for(j=0; src[j] != '\0'; j++) target[i++] = src[j];
+		for (j=0; src[j] != '\0'; j++) target[i++] = src[j];
 		itoa(value, num, 10);
-		for(j=0; num[j] != '\0'; j++);
-		for(space = (4 - j); space>0; space--) target[i++] = ' ';
+		for (j=0; num[j] != '\0'; j++);
+		for (space = (4 - j); space>0; space--) target[i++] = ' ';
 		
-		for(j=0; num[j] != '\0'; j++) target[i++] = num[j];
-		if(next_line == true) target[i++] = '\n'; else target[i++] = ' ';
+		for (j=0; num[j] != '\0'; j++) target[i++] = num[j];
+		if (next_line == true) target[i++] = '\n'; else target[i++] = ' ';
 		target[i++] = '\0';
 	}
 
@@ -2143,26 +2368,26 @@ bool ServoOffsetInno::save(const char* dir) {
 
 	char path[256] = {'\0'};
 	
-	if(dir == NULL) return false;
+	if (dir == NULL) return false;
 
 	get_real_path(dir, path);
 	
-	if((exten = strstr(path, ".ofs")) != NULL && exten[4] == '\0')
+	if ((exten = strstr(path, ".ofs")) != NULL && exten[4] == '\0')
     {
 		is_ofsfile = 1;
-    	if((fp = fopen(path, "wb")) == NULL) return false;
+    	if ((fp = fopen(path, "wb")) == NULL) return false;
     }
-	else if((exten = strstr(path, ".otxt")) != NULL && exten[5] == '\0')
+	else if ((exten = strstr(path, ".otxt")) != NULL && exten[5] == '\0')
 	{
 		is_otxtfile = 1;
-		if((fp = fopen(path, "w")) == NULL) return false;
+		if ((fp = fopen(path, "w")) == NULL) return false;
 	}
 	else // the file is not supported
 		return false;
 	
-	if(is_ofsfile == 1)
+	if (is_ofsfile == 1)
 	{
-		for(i=0; i<32; i++) ofsfile[i] = offsets[i];
+		for (i=0; i<32; i++) ofsfile[i] = offsets[i];
 		fwrite(ofsfile, 4, 32, fp);
 		fclose(fp);
 		return true;
@@ -2172,7 +2397,7 @@ bool ServoOffsetInno::save(const char* dir) {
 	fputs(line2, fp);
 	
 	fputs("[M1]\n", fp);
-	for(i=0; i<16; i++)
+	for (i=0; i<16; i++)
 	{
 		offset_combine_value(_line, "ch", i, false, false);
 		offset_combine_value(_line, "=", offsets[i], true, true);
@@ -2180,7 +2405,7 @@ bool ServoOffsetInno::save(const char* dir) {
 	}
 	
 	fputs("[M2]\n", fp);
-	for(i=16, j=0; i<32; i++, j++)
+	for (i=16, j=0; i<32; i++, j++)
 	{
 		offset_combine_value(_line, "ch", j, false, false);
 		offset_combine_value(_line, "=", offsets[i], true, true);
@@ -2229,7 +2454,7 @@ long _capture(int pin) {
     delayMicroseconds(250);
 	io_RestoreINT();
     
-    if(width < MIN_PULSE_WIDTH || width > MAX_PULSE_WIDTH) return 0L;
+    if (width < MIN_PULSE_WIDTH || width > MAX_PULSE_WIDTH) return 0L;
     return width;
 }
 
@@ -2238,11 +2463,11 @@ long ServoFrameKondo::capture(Servo &s) {
 	
 	int i;
 	// check whether all pins are released status, if not, return false.
-	for(i=0; i<45; i++)
-		if(Servoptr[i] != NULL && sv86[Servoptr[i]->servoIndex].state != SERVO_NONE)
+	for (i=0; i<45; i++)
+		if (Servoptr[i] != NULL && sv86[Servoptr[i]->servoIndex].state != SERVO_NONE)
 			return 0L;
 	
-	if(&s == &nullServo) return 0L;
+	if (&s == &nullServo) return 0L;
 		
 	return _capture(servos[s.servoIndex].Pin.nbr) + CAP_WOFFSET;;
 }
@@ -2251,10 +2476,10 @@ bool is_kondoFrameFile(char* _line, FILE* fp) {
     int i, tmp = 0;
     char result[256] = {'\0'};
     
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("[GraphicalEdit]", result, 15) != 0) {printf("[GraphicalEdit] false\n"); return false;}
+		if (strncmp("[GraphicalEdit]", result, 15) != 0) {printf("[GraphicalEdit] false\n"); return false;}
 	}
 	else
 		return false;
@@ -2266,10 +2491,10 @@ bool kondo_frame_analysis(char* ch, long* target) {
 	int i, j = 0, k = 0;
 	char start = 0, tmp_ch[10] = {'\0'};
 
-	for(i=0; ch[i] != '\0'; i++)
+	for (i=0; ch[i] != '\0'; i++)
 	{
-		if(isdigit(ch[i])) {tmp_ch[j++] = ch[i]; continue;}	
-		if(start == 1)
+		if (isdigit(ch[i])) {tmp_ch[j++] = ch[i]; continue;}	
+		if (start == 1)
 		{
 			tmp_ch[j] = '\0';
 			target[k++] = atoi(tmp_ch);
@@ -2280,22 +2505,22 @@ bool kondo_frame_analysis(char* ch, long* target) {
 		j = 0;
 	}
 	
-	if(j != 0)
+	if (j != 0)
 	{
 		tmp_ch[j] = '\0';
 		target[k++] = atoi(tmp_ch);
 	}
 	
-	if(k != 24) return false;
+	if (k != 24) return false;
 	return true;
 }
 
 bool get_kondo_frame_name(char* ch, const char* fname) {
     int i;
     
-    for(i=0; fname[i] != '\0'; i++)
-    	if(fname[i] != ch[i]) return false;
-    if(ch[i] == '\n' || ch[i] == '\0' || ch[i] == '\r') return true;
+    for (i=0; fname[i] != '\0'; i++)
+    	if (fname[i] != ch[i]) return false;
+    if (ch[i] == '\n' || ch[i] == '\0' || ch[i] == '\r') return true;
 	return false;
 }
 
@@ -2308,46 +2533,46 @@ bool ServoFrameKondo::load(const char* dir, const char* fname) {
 	long tmp_frame[24] = {0L};
 	bool _handled = false;
 	
-	if(dir == NULL) return false;    
+	if (dir == NULL) return false;    
 
 	get_real_path(dir, path);
 	
-	if((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
+	if ((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
     {
-    	if((fp = fopen(path, "r")) == NULL) return false;
+    	if ((fp = fopen(path, "r")) == NULL) return false;
     }
-	else if((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
+	else if ((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
 	{
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
 	else // the file is not supported
 		return false;
 	
-	if(is_kondoFrameFile(_line, fp) == false) {fclose(fp); return false;}
+	if (is_kondoFrameFile(_line, fp) == false) {fclose(fp); return false;}
 	
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
 		
-		if((exten = strstr(_line, "[Item")) != NULL)
+		if ((exten = strstr(_line, "[Item")) != NULL)
 		{
 			fgets(_line, 256, fp); // get next line
 			clear_string_space(_line, tmp_ch);
-			if((exten = strstr(tmp_ch, "Name=")) == NULL) continue;
-			if(fname != NULL && get_kondo_frame_name(exten + 5, fname) == false) continue;
+			if ((exten = strstr(tmp_ch, "Name=")) == NULL) continue;
+			if (fname != NULL && get_kondo_frame_name(exten + 5, fname) == false) continue;
 
-			for(i=0; i<7; i++) fgets(_line, 256, fp);
+			for (i=0; i<7; i++) fgets(_line, 256, fp);
 			clear_string_space(_line, tmp_ch);
-			if((exten = strstr(tmp_ch, "Prm=")) != NULL)
+			if ((exten = strstr(tmp_ch, "Prm=")) != NULL)
 			{
-				if(kondo_frame_analysis(exten + 4, tmp_frame) == true)
+				if (kondo_frame_analysis(exten + 4, tmp_frame) == true)
 				{
-					for(i=0; i<24; i++)
+					for (i=0; i<24; i++)
 					{
-						if(tmp_frame[i] < 16039 || tmp_frame[i] > 16729) continue; // not servo position
+						if (tmp_frame[i] < 16039 || tmp_frame[i] > 16729) continue; // not servo position
 						positions[i] = 1500L + (tmp_frame[i] - 16384L)*3L; // resolution is 3us
 					}
 					_handled = true;
@@ -2378,10 +2603,10 @@ bool is_kondoOffsetFile(char* _line, FILE* fp) {
     int i, tmp = 0;
     char result[256] = {'\0'};
     
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("[TrimData]", result, 10) != 0) {printf("[TrimData] false\n"); return false;}
+		if (strncmp("[TrimData]", result, 10) != 0) {printf("[TrimData] false\n"); return false;}
 	}
 	else
 		return false;
@@ -2394,25 +2619,25 @@ bool kondo_offset_analysis(char* line, long* offset) {
 	char tmp[256] = {'\0'};
 	bool negative = false;
 
-	for(i=0; line[i] != '\0' && line[i] != '\n'; i++)
+	for (i=0; line[i] != '\0' && line[i] != '\n'; i++)
 	{
-		if(line[i] != ' ') tmp[j++] = line[i];
+		if (line[i] != ' ') tmp[j++] = line[i];
 	}
 	
-	if(strncmp("CH", tmp, 2) != 0) return false;
+	if (strncmp("CH", tmp, 2) != 0) return false;
 
-	if(isdigit(tmp[2]) && isdigit(tmp[3]) && tmp[4] == '=') i = 5;
-	else if(isdigit(tmp[2]) && tmp[3] == '=') i = 4;
+	if (isdigit(tmp[2]) && isdigit(tmp[3]) && tmp[4] == '=') i = 5;
+	else if (isdigit(tmp[2]) && tmp[3] == '=') i = 4;
 	else return false;
 	
-	for(; tmp[i] == ' '; i++);
+	for (; tmp[i] == ' '; i++);
 	
 	*offset = 0;
-	if(tmp[i] == '-') {negative = true; i++;}	
-	for(;isdigit(tmp[i]); i++) *offset = *offset*10 + (tmp[i] - '0');
+	if (tmp[i] == '-') {negative = true; i++;}	
+	for (;isdigit(tmp[i]); i++) *offset = *offset*10 + (tmp[i] - '0');
 
-	if(tmp[i] != '\0' && tmp[i] != '\n' && tmp[i] != ' ') return false;
-	if(negative == true) *offset = (-1) * (*offset);
+	if (tmp[i] != '\0' && tmp[i] != '\n' && tmp[i] != ' ') return false;
+	if (negative == true) *offset = (-1) * (*offset);
 	
 	return true;
 }
@@ -2425,34 +2650,34 @@ bool ServoOffsetKondo::load(const char* dir) {
 	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
 	long tmp_offset[45] = {0L}, offset;
 	
-	if(dir == NULL) return false;    
+	if (dir == NULL) return false;    
 
 	get_real_path(dir, path);
 	
-	if((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
+	if ((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
     {
-    	if((fp = fopen(path, "r")) == NULL) return false;
+    	if ((fp = fopen(path, "r")) == NULL) return false;
     }
-	else if((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
+	else if ((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
 	{
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
 	else // the file is not supported
 		return false;
 
-	if(is_kondoOffsetFile(_line, fp) == false) {fclose(fp); return false;}
+	if (is_kondoOffsetFile(_line, fp) == false) {fclose(fp); return false;}
 
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
 		
-		if(_line[0] == 'C' && _line[1] == 'H')
+		if (_line[0] == 'C' && _line[1] == 'H')
 		{
 			clear_string_space(_line, tmp_ch);
-			if(kondo_offset_analysis(tmp_ch, &offset) == true)
+			if (kondo_offset_analysis(tmp_ch, &offset) == true)
 			{
 				tmp_offset[channel] = offset;
 				channel++;
@@ -2466,9 +2691,9 @@ bool ServoOffsetKondo::load(const char* dir) {
 	}
 	fclose(fp);
 
-	for(i=0; i<24; i++)
+	for (i=0; i<24; i++)
 	{
-		if(tmp_offset[i] < 16039 || tmp_offset[i] > 16729) continue; // not servo position
+		if (tmp_offset[i] < 16039 || tmp_offset[i] > 16729) continue; // not servo position
 		offsets[i] = (tmp_offset[i] - 16384L)*3L;
 		// printf("CH%d: offset %ld \n", i, offsets[i]);
 	}
@@ -2494,10 +2719,10 @@ bool is_pololuFrameFile(char* _line, FILE* fp) {
     int i, tmp = 0;
     char result[256] = {'\0'};
     
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("<!--Pololu", result, 10) != 0) {printf("<!--Pololu false\n"); return false;}
+		if (strncmp("<!--Pololu", result, 10) != 0) {printf("<!--Pololu false\n"); return false;}
 	}
 	else
 		return false;
@@ -2509,39 +2734,39 @@ bool pololu_frame_analysis(char* ch, long* target) {
 	int i, j = 0, k = 0;
 	char tmp_ch[10] = {'\0'};
 
-	for(i=0; ch[i] != '<'; i++)
+	for (i=0; ch[i] != '<'; i++)
 	{
-		if(isdigit(ch[i])) {tmp_ch[j++] = ch[i]; continue;}
+		if (isdigit(ch[i])) {tmp_ch[j++] = ch[i]; continue;}
 		tmp_ch[j] = '\0';
 		target[k++] = atoi(tmp_ch);
 		j = 0;
 	}
 	
-	if(j != 0)
+	if (j != 0)
 	{
 		tmp_ch[j] = '\0';
 		target[k++] = atoi(tmp_ch);
 	}
 	
-	if(k != 24) return false;
+	if (k != 24) return false;
 	return true;
 }
 
 bool get_pololu_sequence_name(char* ch, const char* sname) {
     int i;
 
-    for(i=1; ch[i] != '"'; i++)
-    	if(sname[i-1] != ch[i]) return false;
-    if(sname[i-1] == '\n' || sname[i-1] == '\r' || sname[i-1] == '\0')  return true;
+    for (i=1; ch[i] != '"'; i++)
+    	if (sname[i-1] != ch[i]) return false;
+    if (sname[i-1] == '\n' || sname[i-1] == '\r' || sname[i-1] == '\0')  return true;
 	return false;
 }
 
 bool get_pololu_frame_name(char* ch, const char* fname) {
     int i;
     
-    for(i=1; ch[i] != '"'; i++)
-    	if(fname[i-1] != ch[i]) return false;
-    if(fname[i-1] == '\n' || fname[i-1] == '\r' || fname[i-1] == '\0')  return true;
+    for (i=1; ch[i] != '"'; i++)
+    	if (fname[i-1] != ch[i]) return false;
+    if (fname[i-1] == '\n' || fname[i-1] == '\r' || fname[i-1] == '\0')  return true;
 	return false;
 }
 
@@ -2558,70 +2783,70 @@ bool ServoFramePololu::load(const char* dir, const char* sname, const char* fnam
 	
 	bool _handled = false, find_sequences = false, find_sequence = false;
 	
-	if(dir == NULL) return false;    
+	if (dir == NULL) return false;    
 
 	get_real_path(dir, path);
 	
-	if((exten = strstr(path, ".txt")) != NULL && exten[4] == '\0')
+	if ((exten = strstr(path, ".txt")) != NULL && exten[4] == '\0')
     {
-    	if((fp = fopen(path, "r")) == NULL) return false;
+    	if ((fp = fopen(path, "r")) == NULL) return false;
     }
-	else if((exten = strstr(path, ".TXT")) != NULL && exten[4] == '\0')
+	else if ((exten = strstr(path, ".TXT")) != NULL && exten[4] == '\0')
 	{
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
 	else // the file is not supported
 		return false;
 	
-	if(is_pololuFrameFile(_line, fp) == false) {fclose(fp); return false;}
+	if (is_pololuFrameFile(_line, fp) == false) {fclose(fp); return false;}
 	
 	// find the head of sequences 
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
 		
 		clear_string_space(_line, tmp_ch);
-		if(strcmp(tmp_ch, sequence_start) == 0) {find_sequences = true; break;}
+		if (strcmp(tmp_ch, sequence_start) == 0) {find_sequences = true; break;}
 	}
 	
-	if(find_sequences == false) return false;
+	if (find_sequences == false) return false;
 	
 	// find the sequence name
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
 
-		if((exten = strstr(_line, "<Sequence name=")) == NULL) continue;
-		if(sname != NULL && get_pololu_sequence_name(exten + 15, sname) == false) continue;
+		if ((exten = strstr(_line, "<Sequence name=")) == NULL) continue;
+		if (sname != NULL && get_pololu_sequence_name(exten + 15, sname) == false) continue;
 		find_sequence = true;
 		break;
 	}
 	
-	if(find_sequence == false) return false;
+	if (find_sequence == false) return false;
 		
 	// find the frame name
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
 
-		if(strstr(_line, "</Sequence>") != NULL) break; // fine the final line of this sequence
-		if((exten = strstr(_line, "Frame name=")) == NULL) continue;
-		if(fname != NULL && get_pololu_frame_name(exten + 11, fname) == false) continue;
+		if (strstr(_line, "</Sequence>") != NULL) break; // fine the final line of this sequence
+		if ((exten = strstr(_line, "Frame name=")) == NULL) continue;
+		if (fname != NULL && get_pololu_frame_name(exten + 11, fname) == false) continue;
 		
-		if((exten = strstr(_line, ">")) != NULL)
+		if ((exten = strstr(_line, ">")) != NULL)
 		{
-			if(pololu_frame_analysis(exten + 1, tmp_frame) == true)
+			if (pololu_frame_analysis(exten + 1, tmp_frame) == true)
 			{
-				for(i=0; i<24; i++)
+				for (i=0; i<24; i++)
 				{
 					positions[i] = tmp_frame[i]/4L;
 				}
@@ -2651,10 +2876,10 @@ bool is_pololuOffsetFile(char* _line, FILE* fp) {
     int i, tmp = 0;
     char result[256] = {'\0'};
     
-	if(fgets(_line, 256, fp))
+	if (fgets(_line, 256, fp))
 	{
 		clear_string_space(_line, result);
-		if(strncmp("<!--Pololu", result, 10) != 0) {printf("<!--Pololu false\n"); return false;}
+		if (strncmp("<!--Pololu", result, 10) != 0) {printf("<!--Pololu false\n"); return false;}
 	}
 	else
 		return false;
@@ -2666,10 +2891,10 @@ bool pololu_offset_analysis(char* ch, long* offset) {
 	int i, j = 0;
 	char tmp_ch[10] = {'\0'};
 
-	if(ch[0] != '"') return false;
+	if (ch[0] != '"') return false;
 	
-	for(i=1; ch[i] != '"'; i++)
-		if(isdigit(ch[i])) tmp_ch[j++] = ch[i];
+	for (i=1; ch[i] != '"'; i++)
+		if (isdigit(ch[i])) tmp_ch[j++] = ch[i];
 
 	tmp_ch[j] = '\0';
 	*offset = atoi(tmp_ch);
@@ -2687,50 +2912,50 @@ bool ServoOffsetPololu::load(const char* dir) {
 	
 	bool _handled = false, find_channels = false;
 	
-	if(dir == NULL) return false;    
+	if (dir == NULL) return false;    
 
 	get_real_path(dir, path);
 	
-	if((exten = strstr(path, ".txt")) != NULL && exten[4] == '\0')
+	if ((exten = strstr(path, ".txt")) != NULL && exten[4] == '\0')
     {
-    	if((fp = fopen(path, "r")) == NULL) return false;
+    	if ((fp = fopen(path, "r")) == NULL) return false;
     }
-	else if((exten = strstr(path, ".TXT")) != NULL && exten[4] == '\0')
+	else if ((exten = strstr(path, ".TXT")) != NULL && exten[4] == '\0')
 	{
-		if((fp = fopen(path, "r")) == NULL) return false;
+		if ((fp = fopen(path, "r")) == NULL) return false;
 	}
 	else // the file is not supported
 		return false;
 	
-	if(is_pololuFrameFile(_line, fp) == false) {fclose(fp); return false;}
+	if (is_pololuFrameFile(_line, fp) == false) {fclose(fp); return false;}
 	
 	// find the sequence name
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
 
-		if((exten = strstr(_line, "<Channels MiniMaestroServoPeriod=")) == NULL) continue;
+		if ((exten = strstr(_line, "<Channels MiniMaestroServoPeriod=")) == NULL) continue;
 		find_channels = true;
 		break;
 	}
 	
-	if(find_channels == false) return false;
+	if (find_channels == false) return false;
 		
 	// find the frame name
 	while(fgets(_line, 256, fp))
 	{
-		for(i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
-			if(_line[i] == ' ') continue; else break;
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
 
-		if(_line[i] == '\0' || _line[i] == '\n') continue;
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
 
-		if(strstr(_line, "</Channels>") != NULL) break; // fine the final line of this sequence
-		if((exten = strstr(_line, "neutral=")) == NULL) continue;
+		if (strstr(_line, "</Channels>") != NULL) break; // fine the final line of this sequence
+		if ((exten = strstr(_line, "neutral=")) == NULL) continue;
 
-		if(pololu_offset_analysis(exten + 8, &offset) == true)
+		if (pololu_offset_analysis(exten + 8, &offset) == true)
 		{
 			tmp_offset[channel] = offset;
 			channel++;
@@ -2742,9 +2967,9 @@ bool ServoOffsetPololu::load(const char* dir) {
 		}
 	}
 	fclose(fp);
-	if(channel < 24) return false;
+	if (channel < 24) return false;
 
-	for(i=0; i<24; i++)
+	for (i=0; i<24; i++)
 	{
 		offsets[i] = tmp_offset[i]/4L - 1500L;
 	}
@@ -2753,12 +2978,475 @@ bool ServoOffsetPololu::load(const char* dir) {
 }
 */
 
+
+/************************ Vstone Servo Control Board **************************/
+typedef unsigned int ucs4_t;
+#define RET_SHIFT_ILSEQ(n)  (-1-2*(n))
+/* Return code if invalid. (xxx_mbtowc) */
+#define RET_ILSEQ           RET_SHIFT_ILSEQ(0)
+/* Return code if only a shift sequence of n bytes was read. (xxx_mbtowc) */
+#define RET_TOOFEW(n)       (-2-2*(n))
+/* Return code if invalid. (xxx_wctomb) */
+#define RET_ILUNI      -1
+/* Return code if output buffer is too small. (xxx_wctomb, xxx_reset) */
+#define RET_TOOSMALL   -2
+
+ServoFrameVstone::ServoFrameVstone() : ServoFrame() {}
+
+ServoFrameVstone::ServoFrameVstone(const char* filename, const char* framename) : ServoFrame() {
+	load(filename, framename);
+}
+
+static int utf16_mbtowc (int state, ucs4_t *pwc, const unsigned char *s, int n)
+{
+  // state_t state = conv->istate;
+  int count = 0;
+  for (; n >= 2;) {
+    ucs4_t wc = (state ? s[0] + (s[1] << 8) : (s[0] << 8) + s[1]);
+    if (wc == 0xfeff) {
+    } else if (wc == 0xfffe) {
+      state ^= 1;
+    } else if (wc >= 0xd800 && wc < 0xdc00) {
+      if (n >= 4) {
+        ucs4_t wc2 = (state ? s[2] + (s[3] << 8) : (s[2] << 8) + s[3]);
+        if (!(wc2 >= 0xdc00 && wc2 < 0xe000))
+          goto ilseq;
+        *pwc = 0x10000 + ((wc - 0xd800) << 10) + (wc2 - 0xdc00);
+        // conv->istate = state;
+        return count+4;
+      } else
+        break;
+    } else if (wc >= 0xdc00 && wc < 0xe000) {
+      goto ilseq;
+    } else {
+      *pwc = wc;
+      // conv->istate = state;
+      return count+2;
+    }
+    s += 2; n -= 2; count += 2;
+  }
+  // conv->istate = state;
+  return RET_TOOFEW(count);
+
+ilseq:
+  // conv->istate = state;
+  return RET_SHIFT_ILSEQ(count);
+}
+
+static int utf8_wctomb (unsigned char *r, ucs4_t wc, int n) /* n == 0 is acceptable */
+{
+  int count;
+  if (wc < 0x80)
+    count = 1;
+  else if (wc < 0x800)
+    count = 2;
+  else if (wc < 0x10000)
+    count = 3;
+  else if (wc < 0x200000)
+    count = 4;
+  else if (wc < 0x4000000)
+    count = 5;
+  else if (wc <= 0x7fffffff)
+    count = 6;
+  else
+    return RET_ILUNI;
+  if (n < count)
+    return RET_TOOSMALL;
+  switch (count) { /* note: code falls through cases! */
+    case 6: r[5] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x4000000;
+    case 5: r[4] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x200000;
+    case 4: r[3] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x10000;
+    case 3: r[2] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0x800;
+    case 2: r[1] = 0x80 | (wc & 0x3f); wc = wc >> 6; wc |= 0xc0;
+    case 1: r[0] = wc;
+  }
+  return count;
+}
+
+bool conv (uint16_t* src, size_t inlen, unsigned char* target, size_t outlen) {
+    int i, j;
+	int ucs4count = 0;
+	int outcount;
+	int incount = inlen;
+	ucs4_t tmp[4096] = {'\0'}; // self area
+	unsigned char r[7] = {'\0'};
+	unsigned char* t = target;
+	unsigned char* c = (unsigned char*)src;
+	
+	//conv UTF-16 multibyte to wchar
+	while(incount>=2)
+	{
+		outcount = utf16_mbtowc(1, &tmp[ucs4count], (const unsigned char*)c, incount);
+		if (outcount < 0) return false;
+		incount -= outcount;
+		c += outcount;
+		ucs4count++;
+	}
+
+	//conv wchar to UTF-8 multibyte 
+	for (j=0; j<ucs4count; j++)
+	{
+		outcount = utf8_wctomb((unsigned char*)r, tmp[j], outlen);
+		if (outcount == RET_ILUNI || outcount == RET_TOOSMALL) return false;
+		for (i=0; outcount>0; i++, outcount--)
+			*t++ = r[i];
+		outlen -= outcount;
+	}
+	t[0] = '\0';
+	
+	// for (i=0; target[i] != '\0'; i++) printf("%02X ", target[i]);
+	return true;
+}
+
+char* cfgets (char* line, int number, FILE* fp) {
+	int i, j;
+	char _char[4096] = {'\0'};
+	char val;
+	
+	// read one line
+	for (i=0; fread(&val, sizeof(char), 1, fp); )
+	{
+		if (val == 0x0D) // '\r' = 0x0D
+		{
+			fread(&val, sizeof(char), 1, fp);
+			if (val == 0x0A) // '\n' = 0x0A
+			{
+				if (i != 0)
+				{
+					_char[i] = '\0';
+					break;
+				}
+				else
+					continue;
+			}
+		}
+		else if (val == '\0')
+			continue;
+		
+		_char[i++] = val;
+		if (i >= number) {_char[i] = '\0'; break;}
+	}
+	
+	if (i != 0)
+	{
+		_char[i] = '\0';
+		if ((_char[0]&0xFF) == 0xEF && (_char[1]&0xFF) == 0xBB && (_char[2]&0xFF) == 0xBF) i = 3; else i = 0; // ignore UTF-8 BOM
+		for (j=0; _char[i] != '\0'; i++, j++) line[j] = _char[i];
+		line[j] = '\0';
+	}
+	
+	return (i != 0) ? line : NULL;
+}
+
+char* wfgets (char* line, int number, FILE* fp) {
+	int i;
+	int startbit = 1;
+	uint16_t wchar[2048] = {'\0'};
+	uint16_t val;
+	bool conv_start = false;
+	
+	// read one line
+	for (i=0; fread(&val, sizeof(uint16_t), 1, fp); )
+	{
+		if (val == 0x000D) // '\r' = 0x000D
+		{
+			fread(&val, sizeof(uint16_t), 1, fp);
+			if (val == 0x000A) // '\n' = 0x000A
+			{
+				if (i != 0)
+				{
+					wchar[startbit+i] = '\0';
+					conv_start = true;
+					break;
+				}
+				else
+					continue;
+			}
+		}
+		else if (val == '\0')
+			continue;
+		
+		wchar[startbit+i] = val; i++;
+		if (i >= number) {wchar[startbit+i] = '\0'; conv_start = true; break;}
+	}
+	
+	if (i != 0)
+	{
+		wchar[startbit+i] = '\0';
+		conv_start = true;
+	}
+
+	if (conv_start == false) return NULL;
+	wchar[0] = 0xFEFF; // Unicode UTF-16 title
+	
+	// convert this line
+	return (conv(wchar, (i+2)*2, (unsigned char*)line, (i+2)*4) == true) ? line : NULL;
+}
+
+long _htol(char* ch) {
+	long n = 0;
+	for(int i=0; ch[i] != '\0';i++)
+	{
+		if(ch[i]>='0' && ch[i]<='9') n = n * 16 + (ch[i] - '0');
+		if(ch[i]>='a' && ch[i]<='f') n = n * 16 + (ch[i] - 'a' + 10);
+		if(ch[i]>='A' && ch[i]<='F') n = n * 16 + (ch[i] - 'A' + 10);
+	}
+	return n;
+}
+
+void Vstone_frame_analysis(char* ch, long* target, int servoNum) {
+	int i = 0, j = 0, k = 0;
+	char tmp_ch[10] = {'\0'};
+
+	for (;servoNum > 0; servoNum--)
+	{
+		for (; ch[i] != ',' && ch[i] != ']'; i++)
+			tmp_ch[j++] = ch[i];
+		tmp_ch[j] = '\0';
+		target[k++] = _htol(tmp_ch);
+		if (ch[i] == ']') return;
+		j = 0;
+		i+=3;
+	}
+}
+
+#define NOFILE          (0)
+#define UTF8_ACSII      (1)
+#define UTF16           (2)
+int getFileType (char* path, const char* extername1, const char* extername2, FILE** fp) {
+	FILE* _fp;
+	uint16_t val;
+	char* exten;
+	int ret;
+	
+	if ((exten = strstr(path, extername1)) != NULL && exten[4] == '\0')
+    {
+    	if ((_fp = fopen(path, "rb")) == NULL) return NOFILE;
+    }
+	else if ((exten = strstr(path, extername2)) != NULL && exten[4] == '\0')
+    {
+    	if ((_fp = fopen(path, "rb")) == NULL) return NOFILE;
+    }
+	else // the file is not supported
+		return NOFILE;
+
+	ret = fread(&val, sizeof(uint16_t), 1, _fp);
+	if (ret == 0) {fclose(_fp); return NOFILE;}
+	fclose(_fp);
+	
+	*fp = fopen(path, "rb");
+	if (fp == NULL) return NOFILE;
+	
+	if (val == 0xFEFF) // UTF-16 BOM
+		return UTF16;
+	else
+		return UTF8_ACSII;
+}
+
+char* myfgets (char* line, int number, int fileType, FILE* fp) {
+	if (fileType == UTF8_ACSII) return cfgets(line, number, fp);
+	else if (fileType == UTF16) return wfgets(line, number, fp);
+}
+
+bool is_VstoneFrameFile(char* line, int number, int fileType, FILE* fp) {
+	if (myfgets(line, number, fileType, fp))
+	{
+		if (strncmp("_MOTION_FORMAT:", line, 15) != 0) {printf("This is not Vstone frame file.\n"); return false;}
+	}
+	else
+		return false;
+	
+	return true;
+}
+
+bool ServoFrameVstone::load(const char* filename, const char* framename) {
+    int i, j, fileType;
+	FILE *fp;
+	char path[256] = {'\0'};
+	char _line[600] = {'\0'};
+	long tmp_frame[30] = {0L};
+	char* pose_name_title = "_MOTION_INFO:";
+	char* pose_data_title = "_POSE:";
+	bool _handled = false, find_pose = false;
+	
+	if (filename == NULL || framename == NULL) return false;    
+
+	get_real_path(filename, path);
+	
+	fileType = getFileType(path, ".txt", ".TXT", &fp);
+	if (fileType == NOFILE) return false;
+
+	if (is_VstoneFrameFile(_line, sizeof(_line), fileType, fp) == false) {fclose(fp); return false;}
+
+	// find the pose name, Note: dont clear "SPACE" char
+	while(myfgets(_line, sizeof(_line), fileType, fp))
+	{
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
+
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if (strncmp(_line, pose_name_title, 13) == 0 && _line[13] == '[' && _line[14] == '[')
+		{
+			for (i=15, j=0; _line[i] != ']' || _line[i+1] != ']'; i++, j++)
+				if (framename[j] != _line[i]) break;
+			if (i != 15 && _line[i] == ']' && _line[i+1] == ']') {find_pose = true; break;}
+		}
+	}
+
+	if (find_pose == false) return false;
+
+	// get the frame data
+	while(myfgets(_line, sizeof(_line), fileType, fp))
+	{
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
+
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if (strstr(_line, pose_data_title) == NULL) continue;
+
+		// ignore frame rate
+		for (i=7; _line[i] != ']'; i++);
+
+		Vstone_frame_analysis(_line+i+5, tmp_frame, 30);
+
+		// get positions
+		for (i=0; i<30; i++)
+		{
+			if ((tmp_frame[i] & 0x8000) != 0) tmp_frame[i] = tmp_frame[i] - 65536;
+			positions[i] = map(tmp_frame[i], -32768, 32768, 708, 2708);
+		}
+		_handled = true;
+		break;
+	}
+	
+	fclose(fp);
+
+	//printf("Frame:\n");
+	for (i=0; i<30; i++)
+	{
+		printf("%ld ", positions[i]);
+		if (i !=0 && (i%12) == 0) printf("\n");
+	}
+	printf("\n");
+
+	return (_handled == true) ? true : false;
+}
+
+bool ServoFrameVstone::load(const String &s, const String &s1) {
+	load(s.c_str(), s1.c_str());
+}
+
+
+ServoOffsetVstone::ServoOffsetVstone() : ServoOffset() {}
+
+ServoOffsetVstone::ServoOffsetVstone(const char* dir, const char* offsetname) : ServoOffset() {
+	load(dir, offsetname);
+}
+
+void vstone_offset_analysis(char* ch, long* target, int servoNum) {
+	int i = 0, j = 0, k = 0;
+	char tmp_ch[10] = {'\0'};
+
+	for (;servoNum > 0; servoNum--)
+	{
+		for (; ch[i] != ',' && ch[i] != ']'; i++)
+			tmp_ch[j++] = ch[i];
+		tmp_ch[j] = '\0';
+		if (tmp_ch[0] == '+')
+			target[k++] = atoi(&tmp_ch[1]);
+		else if (tmp_ch[0] == '-')
+			target[k++] = -1*atoi(&tmp_ch[1]);
+		else
+			printf("error offset value\n");
+		if (ch[i] == ']') return;
+		j = 0;
+		i++;
+	}
+}
+
+bool ServoOffsetVstone::load(const char* dir, const char* offsetname) {
+    int i, j, fileType;
+	FILE *fp;
+	char path[256] = {'\0'};
+	char _line[600] = {'\0'};
+	long tmp_offset[45] = {0L};
+	char* offset_name_title = "DEFOFS:";
+	char* offset_data_title = "DEFOFS_VALUE:";
+	bool find_offset = false, _handled = false;
+	
+	if (dir == NULL || offsetname == NULL) return false;    
+
+	get_real_path(dir, path);
+	
+	fileType = getFileType(path, ".ini", ".INI", &fp);
+	if (fileType == NOFILE) return false;
+
+	while(myfgets(_line, sizeof(_line), fileType, fp))
+	{
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
+
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if (strncmp(_line, offset_name_title, 7) == 0 && _line[7] == '[' && _line[8] == '[')
+		{
+			for (i=9, j=0; _line[i] != ']' || _line[i+1] != ']'; i++, j++)
+				if (offsetname[j] != _line[i]) break;
+			if (_line[i] == ']' && _line[i+1] == ']') {find_offset = true; break;}
+		}
+	}
+	
+	if (find_offset == false) return false;
+	
+	// get the offset data
+	while(myfgets(_line, sizeof(_line), fileType, fp))
+	{
+		for (i=0; _line[i] != '\0' && _line[i] != '\n'; i++)
+			if (_line[i] == ' ') continue; else break;
+
+		if (_line[i] == '\0' || _line[i] == '\n') continue;
+
+		if (strstr(_line, offset_data_title) == NULL) continue;
+
+		vstone_offset_analysis(_line+14, tmp_offset, 30);
+		
+		// get offsets
+		for (i=0; i<30; i++)
+			offsets[i] = map(tmp_offset[i], -32768, 32768, 708, 2708) - 1708;
+		
+		_handled = true;
+		break;
+	}
+	
+	fclose(fp);
+
+	printf("Offset:\n");
+	for (i=0; i<30; i++)
+	{
+		printf("%ld ", offsets[i]);
+		if (i !=0 && (i%12) == 0) printf("\n");
+	}
+
+	return (_handled == true) ? true : false;
+}
+
+bool ServoOffsetVstone::load(const String &s1, const String &s2) {
+	load(s1.c_str(), s2.c_str());
+}
+
 /************************************ RTC *************************************/
 
-DMP_INLINE(unsigned long) interpolate(unsigned long cur, unsigned long target, unsigned long total, unsigned long t) {
+DMP_INLINE(unsigned long) interpolate(unsigned long cur, unsigned long target, long long total, long long t, long long acc_prev, long long acc_now) {
+	long long t1 = total - t;
+	long long Accfix;
 	if (total == 0L) return target;
 
-	return ((total-t)*cur + t*target)/total;
+	Accfix = (((t1*t1*t1) - (t1*total*total))*acc_prev) + (((t*t*t) - (t*total*total))*acc_now);
+	Accfix = Accfix/(6*total);
+	Accfix = Accfix >> 20;
+	return (((total-t)*cur + t*target)/total) + Accfix;
 }
 
 //volatile unsigned long __count = 0L;
@@ -2770,46 +3458,50 @@ static int timerrtc_isr_handler(int irq, void* data) {
 	io_outpb(0x70, 0x0C); // enable NMI and read RTC register C 
 	tmp = io_inpb(0x71);  // clear RTC interrupt state
 
-	if((tmp & 0x40) > 0)
+	if ((tmp & 0x40) > 0)
 	{
 		//__count++;
 		// ISR main function
 		now_time = millis();
-		for(i=0; i<MAX_SERVOS; i++)                       
+		for (i=0; i<MAX_SERVOS; i++)                       
 		{
-			if(sv86[i].state != SERVO_MOVING) continue;
+			if (sv86[i].state != SERVO_MOVING) continue;
 			t  = now_time - sv86[i].starttime;
 			tt = sv86[i].endtime - sv86[i].starttime;
-			if(t >= tt)
+			if (t >= tt)
 				time_over[i] = 1;
 			else
 			{
 				time_over[i] = 0;
-				sv86[i].curposition = interpolate(sv86[i].prevposition, sv86[i].targetposition, tt, t);
+				sv86[i].curposition = interpolate(sv86[i].prevposition, sv86[i].targetposition, tt, t, sv86[i].acc_prev_out, sv86[i].acc_now_in);
 			}
 		}
 		
-		for(i=0; i<MAX_SERVOS; i++)                       
+		for (i=0; i<MAX_SERVOS; i++)                       
 		{
-			if(sv86[i].state != SERVO_MOVING)
+			if (sv86[i].state != SERVO_MOVING)
 			{
-				if(sv86[i].state == SERVO_IDLE && sv86[i].mixoffset != 0L) // if the mixoffset != 0, do something
+				if (sv86[i].state == SERVO_IDLE && mixingSwitch == ON)
 				{
 					_write(i, (long)sv86[i].curposition + sv86[i].mixoffset);
-				}	
+				}
 				continue;
 			}
 			
-			if(time_over[i] == 1)
+			if (time_over[i] == 1)
 			{
 				sv86[i].curposition = sv86[i].targetposition;
 				sv86[i].state = SERVO_IDLE;
 			}
-			_write(i, (long)sv86[i].curposition + sv86[i].mixoffset);
+			
+			if(mixingSwitch == ON)
+				_write(i, (long)sv86[i].curposition + sv86[i].mixoffset);
+			else
+				_write(i, (long)sv86[i].curposition);
 		}
 	}
 	
-    if((tmp & 0x70) == 0) return ISR_NONE;
+    if ((tmp & 0x70) == 0) return ISR_NONE;
     //__count = micros() - __count;
     return ISR_HANDLED;
 }
@@ -2832,7 +3524,7 @@ DMP_INLINE(void) outpb_cmos(unsigned char reg, unsigned char data) {
 
 void RTC_initialize(long microseconds) {
     unsigned char tmp;
-    if(timerRTCInit == true) return;
+    if (timerRTCInit == true) return;
     timerRTCInit = true;
     RTC_setPeriod(microseconds);
     
@@ -2843,21 +3535,21 @@ void RTC_initialize(long microseconds) {
 void RTC_timer_start(long microseconds) {
     unsigned char tmp;
     
-    if(timerRTCInit == false) return;
+    if (timerRTCInit == false) return;
     
-    if(timerRTCEnable == false)
+    if (timerRTCEnable == false)
 	{
-		if(irq_Setting(RTCIRQ, IRQ_EDGE_TRIGGER) == false)
+		if (irq_Setting(RTCIRQ, IRQ_EDGE_TRIGGER) == false)
 	    {
 	        printf("MCM IRQ Setting fail\n"); return;
 	    }
-		if(irq_InstallISR(RTCIRQ, timerrtc_isr_handler, isrname_rtc) == false)
+		if (irq_InstallISR(RTCIRQ, timerrtc_isr_handler, isrname_rtc) == false)
 		{
 		    printf("irq_install fail\n"); return;
 		}
 	}
 	
-    if(microseconds > 0) RTC_setPeriod(microseconds);
+    if (microseconds > 0) RTC_setPeriod(microseconds);
     
 	tmp = inpb_cmos(0x0B);
     outpb_cmos(0x0B, tmp | 0x40);
@@ -2866,7 +3558,7 @@ void RTC_timer_start(long microseconds) {
 
 void RTC_timer_close() {
     unsigned char tmp;
-    if(timerRTCInit == false || timerRTCEnable == false) return;
+    if (timerRTCInit == false || timerRTCEnable == false) return;
     
 	tmp = inpb_cmos(0x0B);
     outpb_cmos(0x0B, tmp & ~(0x40));
@@ -2876,21 +3568,21 @@ void RTC_timer_close() {
 }
 
 void RTC_setPeriod(long microseconds) {
-	if(timerRTCInit == false || microseconds <= 0) return;
+	if (timerRTCInit == false || microseconds <= 0) return;
 	
-	if     (microseconds < 183L)    _freq = 3;
-	else if(microseconds < 366L)    _freq = 4;
-	else if(microseconds < 732L)    _freq = 5;
-	else if(microseconds < 1464L)   _freq = 6;
-	else if(microseconds < 2929L)   _freq = 7;
-	else if(microseconds < 5859L)   _freq = 8;
-	else if(microseconds < 11718L)  _freq = 9;
-	else if(microseconds < 23437L)  _freq = 10;
-	else if(microseconds < 46875L)  _freq = 11;
-	else if(microseconds < 93750L)  _freq = 12;
-	else if(microseconds < 187500L) _freq = 13;
-	else if(microseconds < 375000L) _freq = 14;
-	else if(microseconds < 500000L) _freq = 15;
-	else                            _freq = 15;
+	if     (microseconds < 183L)     _freq = 3;
+	else if (microseconds < 366L)    _freq = 4;
+	else if (microseconds < 732L)    _freq = 5;
+	else if (microseconds < 1464L)   _freq = 6;
+	else if (microseconds < 2929L)   _freq = 7;
+	else if (microseconds < 5859L)   _freq = 8;
+	else if (microseconds < 11718L)  _freq = 9;
+	else if (microseconds < 23437L)  _freq = 10;
+	else if (microseconds < 46875L)  _freq = 11;
+	else if (microseconds < 93750L)  _freq = 12;
+	else if (microseconds < 187500L) _freq = 13;
+	else if (microseconds < 375000L) _freq = 14;
+	else if (microseconds < 500000L) _freq = 15;
+	else                             _freq = 15;
 }
 

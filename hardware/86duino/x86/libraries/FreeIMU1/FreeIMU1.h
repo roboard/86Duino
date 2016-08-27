@@ -37,22 +37,31 @@ Modified 31 May 2016 by Johnson Hung
 #define FREEIMU_EEPROM_BASE         (0x0A)
 #define FREEIMU_EEPROM_SIGNATURE    (0x19)
 
+
+#ifdef __86DUINO_ONE
+	// IMU class:
+	//   0    for LSM330DLC
+	//   1    for RMG146
+	#define IMU_LSM330DLC   (0)
+	#define IMU_RMG146      (1)
+	#define DEFAULT_IMU     (IMU_LSM330DLC)
+	
+	#define FIMU1_ACC_ADDR   (0x30 >> 1)
+	#define FIMU1_GYRO_ADDR  (0xD4 >> 1)
+	
+	// LSM330DLC address
+	#define LSM330DLC_ACC_ADDR          (0x30 >> 1)
+	#define LSM330DLC_GYRO_ADDR         (0xD4 >> 1)
+
+	// RM-G146 address
+	#define RMG146_ACC_ADDR             (0x30 >> 1)
+	#define RMG146_GYRO_ADDR            (0xD0 >> 1)
+	#define RMG146_MAGN_ADDR            (0x3C >> 1)
+#else
+	#error FreeIMU1 library is only used on 86Duino ONE!
+#endif
+
 struct _imu_sensor_;
-// IMU class:
-//   0    for LSM330DLC
-//   1    for RMG146
-#define IMU_LSM330DLC   (0)
-#define IMU_RMG146      (1)
-#define DEFAULT_IMU     (IMU_LSM330DLC)
-
-// LSM330DLC address
-#define LSM330DLC_ACC_ADDR          (0x30 >> 1)
-#define LSM330DLC_GYRO_ADDR         (0xD4 >> 1)
-
-// RM-G146 address
-#define RMG146_ACC_ADDR             (0x30 >> 1)
-#define RMG146_GYRO_ADDR            (0xD0 >> 1)
-#define RMG146_MAGN_ADDR            (0x3C >> 1)
 
 //Magnetic declination angle for iCompass
 #define MAG_DEC 0

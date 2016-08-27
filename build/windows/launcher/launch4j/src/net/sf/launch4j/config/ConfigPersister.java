@@ -2,33 +2,33 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2007 Grzegorz Kowal
-
+	Copyright (c) 2004, 2015 Grzegorz Kowal
 	All rights reserved.
 
 	Redistribution and use in source and binary forms, with or without modification,
 	are permitted provided that the following conditions are met:
-
-	    * Redistributions of source code must retain the above copyright notice,
-	      this list of conditions and the following disclaimer.
-	    * Redistributions in binary form must reproduce the above copyright notice,
-	      this list of conditions and the following disclaimer in the documentation
-	      and/or other materials provided with the distribution.
-	    * Neither the name of the Launch4j nor the names of its contributors
-	      may be used to endorse or promote products derived from this software without
-	      specific prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-	A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-	CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-	LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	
+	1. Redistributions of source code must retain the above copyright notice,
+	   this list of conditions and the following disclaimer.
+	
+	2. Redistributions in binary form must reproduce the above copyright notice,
+	   this list of conditions and the following disclaimer in the documentation
+	   and/or other materials provided with the distribution.
+	
+	3. Neither the name of the copyright holder nor the names of its contributors
+	   may be used to endorse or promote products derived from this software without
+	   specific prior written permission.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+	FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+	AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*
@@ -39,12 +39,19 @@ package net.sf.launch4j.config;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSSerializer;
 
 import net.sf.launch4j.Util;
 
@@ -52,7 +59,7 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
- * @author Copyright (C) 2005 Grzegorz Kowal
+ * @author Copyright (C) 2014 Grzegorz Kowal
  */
 public class ConfigPersister {
 
@@ -116,26 +123,16 @@ public class ConfigPersister {
 	}
 
 	public void load(File f) throws ConfigPersisterException {
-		try {
-			FileReader r = new FileReader(f);
-			char[] buf = new char[(int) f.length()];
-			r.read(buf);
-	    	r.close();
-	    	// Convert 2.x config to 3.x
-	    	String s = String.valueOf(buf)
-	    			.replaceAll("<headerType>0<", "<headerType>gui<")
-	    			.replaceAll("<headerType>1<", "<headerType>console<")
-	    			.replaceAll("jarArgs>", "cmdLine>")
-	    			.replaceAll("<jarArgs[ ]*/>", "<cmdLine/>")
-	    			.replaceAll("args>", "opt>")
-	    			.replaceAll("<args[ ]*/>", "<opt/>")
-	    			.replaceAll("<dontUsePrivateJres>false</dontUsePrivateJres>",
-	    					"<jdkPreference>" + Jre.JDK_PREFERENCE_PREFER_JRE + "</jdkPreference>")
-	    			.replaceAll("<dontUsePrivateJres>true</dontUsePrivateJres>",
-	    					"<jdkPreference>" + Jre.JDK_PREFERENCE_JRE_ONLY + "</jdkPreference>")
-	    			.replaceAll("<initialHeapSize>0</initialHeapSize>", "")
-	    			.replaceAll("<maxHeapSize>0</maxHeapSize>", "");
-	    	_config = (Config) _xstream.fromXML(s);
+	    try {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document doc = builder.parse(f);
+
+			DOMImplementationLS domImplementation = (DOMImplementationLS) doc.getImplementation();
+		    LSSerializer lsSerializer = domImplementation.createLSSerializer();
+		    String configString = lsSerializer.writeToString(doc);
+
+	    	_config = (Config) _xstream.fromXML(convertToCurrent(configString));
 	    	setConfigPath(f);
 		} catch (Exception e) {
 			throw new ConfigPersisterException(e);
@@ -159,21 +156,24 @@ public class ConfigPersister {
 			_config.getJre().setPath(props.getProperty(Jre.PATH));
 			_config.getJre().setMinVersion(props.getProperty(Jre.MIN_VERSION));
 			_config.getJre().setMaxVersion(props.getProperty(Jre.MAX_VERSION));
+
 			String args = props.getProperty(Jre.ARGS);
+
 			if (args != null) {
-				List jreOptions = new ArrayList();
+				List<String> jreOptions = new ArrayList<String>();
 				jreOptions.add(args);
 				_config.getJre().setOptions(jreOptions);
 			}
+
 			_config.setCmdLine(props.getProperty(Config.JAR_ARGS));
 			_config.setChdir("true".equals(props.getProperty(Config.CHDIR))
 					? "." : null);
-			_config.setCustomProcName("true".equals(
-					props.getProperty("setProcName")));				// 1.x
 			_config.setStayAlive("true".equals(props.getProperty(Config.STAY_ALIVE)));
 			_config.setErrTitle(props.getProperty(Config.ERR_TITLE));
 			_config.setIcon(props.getFile(Config.ICON));
+
 			File splashFile = props.getFile(Splash.SPLASH_FILE);
+
 			if (splashFile != null) {
 				_config.setSplash(new Splash());
 				_config.getSplash().setFile(splashFile);
@@ -197,13 +197,35 @@ public class ConfigPersister {
 
 	public void save(File f) throws ConfigPersisterException {
 		try {
-			BufferedWriter w = new BufferedWriter(new FileWriter(f));
+			BufferedWriter w = new BufferedWriter(
+					new OutputStreamWriter(new FileOutputStream(f), "UTF-8"));
+			w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 	    	_xstream.toXML(_config, w);
 	    	w.close();
 	    	setConfigPath(f);
 		} catch (Exception e) {
 			throw new ConfigPersisterException(e);
 		}
+	}
+	
+	/**
+	 * Converts 2.x config to current format.
+	 */
+	private String convertToCurrent(String configString) {
+    	return configString
+    			.replaceAll("<headerType>0<", "<headerType>gui<")
+    			.replaceAll("<headerType>1<", "<headerType>console<")
+    			.replaceAll("jarArgs>", "cmdLine>")
+    			.replaceAll("<jarArgs[ ]*/>", "<cmdLine/>")
+    			.replaceAll("args>", "opt>")
+    			.replaceAll("<args[ ]*/>", "<opt/>")
+    			.replaceAll("<dontUsePrivateJres>false</dontUsePrivateJres>",
+    					"<jdkPreference>" + Jre.JDK_PREFERENCE_PREFER_JRE + "</jdkPreference>")
+    			.replaceAll("<dontUsePrivateJres>true</dontUsePrivateJres>",
+    					"<jdkPreference>" + Jre.JDK_PREFERENCE_JRE_ONLY + "</jdkPreference>")
+    			.replaceAll("<initialHeapSize>0</initialHeapSize>", "")
+    			.replaceAll("<maxHeapSize>0</maxHeapSize>", "")
+    			.replaceAll("<customProcName>.*</customProcName>", "");
 	}
 
 	private void setConfigPath(File configFile) {
@@ -228,16 +250,21 @@ public class ConfigPersister {
 		 */
 		public String getProperty(String key) {
 			String p = _properties.getProperty(key);
+
 			if (p == null) {
 				return null;
 			}
+
 			int x = p.indexOf('#');
+			
 			if (x == -1) {
 				return p;
 			}
+			
 			do {
 				x--;
 			} while (x > 0 && (p.charAt(x) == ' ' || p.charAt(x) == '\t'));
+			
 			return (x == 0) ? "" : p.substring(0, x + 1);
 		}
 

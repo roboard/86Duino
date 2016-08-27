@@ -2,7 +2,7 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2008 Grzegorz Kowal,
+	Copyright (c) 2004, 2015 Grzegorz Kowal,
 							 Ian Roberts (jdk preference patch)
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,6 +31,7 @@
 #ifndef _LAUNCH4J_HEAD__INCLUDED_
 #define _LAUNCH4J_HEAD__INCLUDED_
 
+#define _WIN32_WINNT 0x0501
 #define WIN32_LEAN_AND_MEAN		// VC - Exclude rarely-used stuff from Windows headers
 
 // Windows Header Files:
@@ -49,17 +50,24 @@
 #include <io.h>
 #include <process.h>
 
+#define LAUNCH4j "Launch4j"
+#define VERSION "3.8"
+
 #define NO_JAVA_FOUND 0
 #define FOUND_JRE 1
 #define FOUND_SDK 2
+#define FOUND_BUNDLED 4
 
 #define JRE_ONLY 0
 #define PREFER_JRE 1
 #define PREFER_JDK 2
 #define JDK_ONLY 3
 
-#define LAUNCH4J_TMP_DIR "\\launch4j-tmp\\"
-#define MANIFEST ".manifest"
+#define USE_64_BIT_RUNTIME 1
+#define USE_64_AND_32_BIT_RUNTIME 2
+#define USE_32_AND_64_BIT_RUNTIME 3
+#define USE_32_BIT_RUNTIME 4
+#define INIT_RUNTIME_BITS 9
 
 #define KEY_WOW64_64KEY 0x0100
 
@@ -78,12 +86,15 @@
 #define TRUE_STR "true"
 #define FALSE_STR "false"
 
-#define debug(args...) if (hLog != NULL) fprintf(hLog, ## args); 
+#define ERROR_FORMAT "Error:\t\t%s\n"
+#define debug(args...) if (hLog != NULL) fprintf(hLog, ## args);
 
 typedef void (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 
+BOOL initGlobals();
 FILE* openLogFile(const char* exePath, const int pathLen);
 void closeLogFile();
+BOOL initializeLogging(const char *lpCmdLine, const char* exePath, const int pathLen);
 void msgBox(const char* text);
 void signalError();
 BOOL loadString(const int resID, char* buffer);
@@ -91,23 +102,35 @@ BOOL loadBool(const int resID);
 int loadInt(const int resID);
 BOOL regQueryValue(const char* regPath, unsigned char* buffer,
 		unsigned long bufferLength);
-void regSearch(const HKEY hKey, const char* keyName, const int searchType);
+void regSearch(const char* keyName, const int searchType);
+BOOL isJavaHomeValid(const char* keyName, const int searchType);
+BOOL isLauncherPathValid(const char* path);
 void regSearchWow(const char* keyName, const int searchType);
 void regSearchJreSdk(const char* jreKeyName, const char* sdkKeyName,
 		const int jdkPreference);
 BOOL findJavaHome(char* path, const int jdkPreference);
 int getExePath(char* exePath);
 void appendPath(char* basepath, const char* path);
-void appendJavaw(char* jrePath);
-void appendAppClasspath(char* dst, const char* src, const char* classpath);
-BOOL isJrePathOk(const char* path);
+void appendLauncher(char* jrePath);
+void appendAppClasspath(char* dst, const char* src);
 BOOL expandVars(char *dst, const char *src, const char *exePath, const int pathLen);
 void appendHeapSizes(char *dst);
-void appendHeapSize(char *dst, const int absID, const int percentID,
-		const DWORD freeMemory, const char *option);
-int prepare(const char *lpCmdLine);
-void closeHandles();
+void appendHeapSize(char *dst, const int megabytesID, const int percentID,
+		const DWORDLONG availableMemory, const char *option);
+void setJvmOptions(char *jvmOptions, const char *exePath);
+BOOL createMutex();
+void setWorkingDirectory(const char *exePath, const int pathLen);
+BOOL bundledJreSearch(const char *exePath, const int pathLen);
+BOOL installedJreSearch();
+void createJreSearchError();
+BOOL jreSearch(const char *exePath, const int pathLen);
 BOOL appendToPathVar(const char* path);
-DWORD execute(const BOOL wait);
+BOOL appendJreBinToPathVar();
+void setEnvironmentVariables(const char *exePath, const int pathLen);
+void setMainClassAndClassPath(const char *exePath, const int pathLen);
+void setCommandLineArgs(const char *lpCmdLine);
+int prepare(const char *lpCmdLine);
+void closeProcessHandles();
+BOOL execute(const BOOL wait, DWORD *dwExitCode);
 
 #endif // _LAUNCH4J_HEAD__INCLUDED_

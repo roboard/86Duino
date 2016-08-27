@@ -1,3 +1,23 @@
+### CODING 300 - 2016.08.27 ###
+
+[ide]
+* Compatible with Arduino 1.6.11.
+* Modify UI/arduino-builder.exe to be in line with 86Duino style.
+
+[core]
+* Add the NOMICMAX define in Arduino.h.
+* GCC update to 6.1.0 and DJGPP 2.05.
+* Fix a bug for v86dude.exe. If the updating filename too long, the v86dude.exe will sometime crash.
+
+[libraries]
+* For Servo86, support the CubicSpline and CubicSpline(constrain) algorithm to draw the smoothing path when servos moving. 
+* For Servo86, support to import the Vstone frame files (including ASCII/UTF-8/UTF16 type).
+* Now the TwoWireLEGO class is only used on 86Duino Zero/One/EduCake.
+* Add the Adafruit_GFX and RGBmatrixPanel library to support Adafruit LED Matrix (https://www.adafruit.com/product/420)
+* Fix a marco conflict with C++ STL in Rosserial86 library for GCC 6.1.0.
+
+
+
 ### CODING 213 - 2016.06.17 ###
 
 [core]

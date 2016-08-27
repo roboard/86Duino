@@ -1,0 +1,15 @@
+contrib/PDCurses.34/djgpp/README
+contrib/PDCurses.34/HISTORY
+contrib/PDCurses.34/IMPLEMNT
+contrib/PDCurses.34/README
+gnudocs/PDCurses.34/PDCurses.txt
+include/curses.h
+include/panel.h
+include/term.h
+lib/libpanel.a
+lib/libpdcurses.a
+manifest/pdcur34a.dsm
+manifest/pdcur34a.mft
+manifest/pdcur34a.ver
+contrib/PDCurses.34
+gnudocs/PDCurses.34

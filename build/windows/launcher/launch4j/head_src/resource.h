@@ -2,7 +2,7 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2008 Grzegorz Kowal
+	Copyright (c) 2004, 2014 Grzegorz Kowal
 							 Ian Roberts (jdk preference patch)
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -63,6 +63,10 @@
 #define INITIAL_HEAP_PERCENT		26
 #define MAX_HEAP_SIZE				27
 #define MAX_HEAP_PERCENT			28
+#define BUNDLED_JRE_64_BIT			29
+#define RUNTIME_BITS				30
+#define RESTART_ON_CRASH			31
+#define BUNDLED_JRE_AS_FALLBACK		32
 
 #define STARTUP_ERR					101
 #define BUNDLED_JRE_ERR				102

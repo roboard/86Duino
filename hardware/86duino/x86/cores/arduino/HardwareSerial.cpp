@@ -70,7 +70,7 @@ void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
 		printf("ERROR: IO init fail.\n");
 		return;
 	}
-	sb_Write(0xc0, sb_Read(0xc0) & 0x7fffffffL | ((unsigned long)1L << 31));
+	sb_Write(0xc0, (sb_Read(0xc0) & 0x7fffffffL) | ((unsigned long)1L << 31));
 	io_Close();
 
 	if ((handle = com_Init(port)) == NULL) 

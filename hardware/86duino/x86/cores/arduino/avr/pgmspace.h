@@ -100,9 +100,20 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 #ifdef __cplusplus
 }
 #endif
-DMP_INLINE(void*) memmem_P(const void * s1, size_t len1, PGM_VOID_P s2, size_t len2) {
-	if(len2 == 0) return (void*)s1;
-	return (void*)strstr((const char*)s1, (const char*)s2);
+DMP_INLINE(void*) memmem_P(const void * buf, size_t buflen, PGM_VOID_P pattern, size_t len) {
+	char *bf = (char *)buf;
+	char *pt = (char *)pattern;
+	char *p = bf;
+	while (len <= (buflen - (p - bf)))
+	{
+		if ((p = (char*) memchr(p, (int)(*pt), buflen - (p - bf))) != NULL)
+		{
+			if (memcmp(p, pattern, len) == 0) return p;
+		}
+		else 
+			break;
+	}
+	return NULL;
 }
 
 DMP_INLINE(char*) strcasestr_P(const char *s1, PGM_P s2) {
@@ -116,7 +127,7 @@ DMP_INLINE(char*) strchrnul_P(PGM_P s1, int __val) {
 }
 
 DMP_INLINE(size_t) strnlen_P(PGM_P s1, size_t len) {
-    int i;
+    size_t i;
     for(i=0; i<len; i++)
     	if(*(s1 + i) == '\0') return strlen(s1);
     return len;

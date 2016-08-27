@@ -437,8 +437,7 @@ uint8_t lcdmemtest(void)
  * basic reads/writes work.
  */
 
-uint8_t
-lcdw1test(void)
+uint8_t lcdw1test(void)
 {
   uint8_t errors = 0;
   uint8_t rdata;
@@ -474,8 +473,7 @@ lcdw1test(void)
  * more tha once. Once by writing incrementing addresses and then decrementing addresses.
  */
 
-uint8_t
-lcdrwseltest()
+uint8_t lcdrwseltest()
 {
   uint8_t errors = 0;
   uint8_t rdata; // read data
@@ -998,8 +996,7 @@ void showGLCDconfig(void)
  * The format is PIN_Pb where P is the port A-Z 
  * and b is the bit number within the port 0-7
  */
-void
-_SerialPrintPINstr(uint8_t pin, uint8_t avrport, uint8_t avrbit)
+void _SerialPrintPINstr(uint8_t pin, uint8_t avrport, uint8_t avrbit)
 {
 
   /*
@@ -1045,8 +1042,7 @@ _SerialPrintPINstr(uint16_t pin)
  * i.e. return value is 1/10 the number of SetDot() calls
  * per second.
  */
-uint16_t
-getglcdspeed()
+uint16_t getglcdspeed()
 {
 uint16_t iter = 0;
 unsigned long startmillis;

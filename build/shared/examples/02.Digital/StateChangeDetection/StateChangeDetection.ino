@@ -21,7 +21,7 @@
 
 This example code is in the public domain.
 
- http://arduino.cc/en/Tutorial/ButtonStateChange
+ http://www.arduino.cc/en/Tutorial/ButtonStateChange
 
  */
 
@@ -58,8 +58,7 @@ void loop() {
       Serial.println("on");
       Serial.print("number of button pushes:  ");
       Serial.println(buttonPushCounter);
-    }
-    else {
+    } else {
       // if the current state is LOW then the button
       // wend from on to off:
       Serial.println("off");

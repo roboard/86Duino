@@ -5,9 +5,20 @@ menu.cpu=Processor
 ################################################################################
 
 86DuinoZERO.name=86Duino ZERO
+86DuinoZERO.upload.via_ssh=false
+
+86DuinoZERO.vid.0=0x0525
+86DuinoZERO.pid.0=0x0036
+86DuinoZERO.vid.1=0x0525
+86DuinoZERO.pid.1=0x8036
+86DuinoZERO.vid.2=0x0525
+86DuinoZERO.pid.2=0xa4a5
+86DuinoZERO.vid.3=0x0525
+86DuinoZERO.pid.3=0x00a5
+
 86DuinoZERO.upload.tool=86upload
 86DuinoZERO.upload.protocol=avr109
-86DuinoZERO.upload.maximum_size=2048000
+86DuinoZERO.upload.maximum_size=4194304
 86DuinoZERO.upload.speed=57600
 86DuinoZERO.upload.disable_flushing=true
 86DuinoZERO.upload.use_1200bps_touch=true
@@ -23,8 +34,10 @@ menu.cpu=Processor
 
 86DuinoZERO.build.mcu=atmega32u4
 86DuinoZERO.build.f_cpu=16000000L
-86DuinoZERO.build.vid=0x2341
+86DuinoZERO.build.vid=0x0525
 86DuinoZERO.build.pid=0x8036
+86DuinoZERO.build.usb_product="86Duino Zero"
+86DuinoZERO.build.board=86DuinoZero
 86DuinoZERO.build.core=arduino
 86DuinoZERO.build.variant=zero
 86DuinoZERO.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
@@ -32,9 +45,20 @@ menu.cpu=Processor
 ################################################################################
 
 86DuinoONE.name=86Duino ONE
+86DuinoONE.upload.via_ssh=false
+
+86DuinoONE.vid.0=0x0525
+86DuinoONE.pid.0=0x0036
+86DuinoONE.vid.1=0x0525
+86DuinoONE.pid.1=0x8036
+86DuinoONE.vid.2=0x0525
+86DuinoONE.pid.2=0xa4a5
+86DuinoONE.vid.3=0x0525
+86DuinoONE.pid.3=0x00a5
+
 86DuinoONE.upload.tool=86upload
 86DuinoONE.upload.protocol=avr109
-86DuinoONE.upload.maximum_size=2048000
+86DuinoONE.upload.maximum_size=4194304
 86DuinoONE.upload.speed=57600
 86DuinoONE.upload.disable_flushing=true
 86DuinoONE.upload.use_1200bps_touch=true
@@ -50,8 +74,10 @@ menu.cpu=Processor
 
 86DuinoONE.build.mcu=atmega32u4
 86DuinoONE.build.f_cpu=16000000L
-86DuinoONE.build.vid=0x2341
+86DuinoONE.build.vid=0x0525
 86DuinoONE.build.pid=0x8036
+86DuinoONE.build.usb_product="86Duino One"
+86DuinoONE.build.board=86DuinoOne
 86DuinoONE.build.core=arduino
 86DuinoONE.build.variant=one
 86DuinoONE.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
@@ -59,9 +85,20 @@ menu.cpu=Processor
 ################################################################################
 
 EduCake.name=86Duino EduCake
+EduCake.upload.via_ssh=false
+
+EduCake.vid.0=0x0525
+EduCake.pid.0=0x0036
+EduCake.vid.1=0x0525
+EduCake.pid.1=0x8036
+EduCake.vid.2=0x0525
+EduCake.pid.2=0xa4a5
+EduCake.vid.3=0x0525
+EduCake.pid.3=0x00a5
+
 EduCake.upload.tool=86upload
 EduCake.upload.protocol=avr109
-EduCake.upload.maximum_size=2048000
+EduCake.upload.maximum_size=4194304
 EduCake.upload.speed=57600
 EduCake.upload.disable_flushing=true
 EduCake.upload.use_1200bps_touch=true
@@ -77,8 +114,10 @@ EduCake.bootloader.lock_bits=0x2F
 
 EduCake.build.mcu=atmega32u4
 EduCake.build.f_cpu=16000000L
-EduCake.build.vid=0x2341
+EduCake.build.vid=0x0525
 EduCake.build.pid=0x8036
+EduCake.build.usb_product="86Duino EduCake"
+EduCake.build.board=86DuinoEduCake
 EduCake.build.core=arduino
 EduCake.build.variant=educake
 EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
@@ -86,9 +125,20 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 ################################################################################
 
 86DuinoPLC.name=86Duino PLC
+86DuinoPLC.upload.via_ssh=false
+
+86DuinoPLC.vid.0=0x0525
+86DuinoPLC.pid.0=0x0036
+86DuinoPLC.vid.1=0x0525
+86DuinoPLC.pid.1=0x8036
+86DuinoPLC.vid.2=0x0525
+86DuinoPLC.pid.2=0xa4a5
+86DuinoPLC.vid.3=0x0525
+86DuinoPLC.pid.3=0x00a5
+
 86DuinoPLC.upload.tool=86upload
 86DuinoPLC.upload.protocol=avr109
-86DuinoPLC.upload.maximum_size=2048000
+86DuinoPLC.upload.maximum_size=4194304
 86DuinoPLC.upload.speed=57600
 86DuinoPLC.upload.disable_flushing=true
 86DuinoPLC.upload.use_1200bps_touch=true
@@ -104,8 +154,10 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 
 86DuinoPLC.build.mcu=atmega32u4
 86DuinoPLC.build.f_cpu=16000000L
-86DuinoPLC.build.vid=0x2341
+86DuinoPLC.build.vid=0x0525
 86DuinoPLC.build.pid=0x8036
+86DuinoPLC.build.usb_product="86Duino PLC"
+86DuinoPLC.build.board=86DuinoPLC
 86DuinoPLC.build.core=arduino
 86DuinoPLC.build.variant=plc
 86DuinoPLC.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}

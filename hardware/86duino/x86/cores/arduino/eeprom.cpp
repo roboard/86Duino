@@ -135,7 +135,7 @@ DMPAPI(float) 	eeprom_read_float (const float *__p) {
  
 DMPAPI(void) 	eeprom_read_block (void *__dst, const void *__src, size_t __n) {
 	uint8_t* _dst = (uint8_t*) __dst;
-	for(int i=0; i<__n; i++) _dst[i] = read_cmos(*((uint8_t*)(&__src))+i);
+	for(size_t i=0; i<__n; i++) _dst[i] = read_cmos(*((uint8_t*)(&__src))+i);
 }
  
 DMPAPI(void) 	eeprom_write_byte (uint8_t *__p, uint8_t __value) {
@@ -167,7 +167,7 @@ DMPAPI(void) 	eeprom_write_float (float *__p, float __value) {
  
 DMPAPI(void) 	eeprom_write_block (const void *__src, void *__dst, size_t __n) {
 	uint8_t* _src = (uint8_t*) __src;
-	for(int i=0; i<__n; i++) write_cmos(*((uint8_t*)(&__dst))+i, _src[i]);
+	for(size_t i=0; i<__n; i++) write_cmos(*((uint8_t*)(&__dst))+i, _src[i]);
 }
  
 DMPAPI(void) 	eeprom_update_byte (uint8_t *__p, uint8_t __value) {

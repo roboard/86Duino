@@ -30,6 +30,7 @@ static volatile int use_pin_tone  = 255;
 static volatile int use_pin_times = 0;
 static int8_t toneBegin(uint8_t _pin)
 {
+	return -1;
 }
 
 /*
@@ -74,7 +75,7 @@ static void enable_MCINT(unsigned long used_int) {
 
 
 static bool toneInitInt = false;
-static char* name = "Tone";
+static const char* name = "Tone";
 void noTone(uint8_t _pin) {
 	if(_pin == PCSPEAKER) nosound();
 
@@ -125,7 +126,7 @@ bool timer1_pin32_isUsed = false;
 static bool init_mc_irq(void) {
 	if(toneInitInt == false)
 	{
-		if(irq_InstallISR(GetMCIRQ(), isr_handler, name) == false)
+		if(irq_InstallISR(GetMCIRQ(), isr_handler, (void*)name) == false)
 		{
 		    printf("irq_install fail\n"); return false;
 		}

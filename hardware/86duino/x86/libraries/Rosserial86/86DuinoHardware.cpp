@@ -24,6 +24,10 @@
 #ifndef ROS_86DUINO_HARDWARE_CPP
 #define ROS_86DUINO_HARDWARE_CPP
 
+#if defined(_86DUINO)
+	#define NOMINMAX 
+	#include <ESP8266.h>
+#endif
 #include <86DuinoConfig.h>
 #include <86DuinoHardware.h>
 

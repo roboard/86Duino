@@ -115,7 +115,7 @@ static int user_int(int irq, void* data) {
 }
 
 static uint8_t used_irq = 0xff;
-static char* name = "attachInt";
+static const char* name = "attachInt";
 static bool interrupt_init(void) {
 	if(used_irq != 0xff) return true;
 
@@ -180,7 +180,6 @@ static void mcmsif_close(void) {
 }
 
 void attachInterrupt(uint8_t interruptNum, void (*userCallBackFunc)(void), int mode) {
-	int i;
 	unsigned short crossbar_ioaddr;
 
 	if(interruptNum >= EXTERNAL_NUM_INTERRUPTS)

@@ -7,7 +7,7 @@
  modified 2 Apr 2012
  by Tom Igoe
 
- http://arduino.cc/en/Tutorial/StringAppendOperator
+ http://www.arduino.cc/en/Tutorial/StringAppendOperator
 
  This example code is in the public domain.
  */
@@ -18,7 +18,7 @@ void setup() {
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
-    ; // wait for serial port to connect. Needed for Leonardo only
+    ; // wait for serial port to connect. Needed for native USB port only
   }
 
   stringOne = String("Sensor ");

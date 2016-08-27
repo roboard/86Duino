@@ -5,11 +5,13 @@
    LICENSE and/or the terms of COPYING.DJ, all available at
    <http://www.delorie.com>.
 
-   Bug reports to <mailto:cbfalconer@worldnet.att.net>
+   Bug reports to <mailto:djgpp@delorie.com>
+
+   Revised 2015 for use in DJGPP libs by Andris Pavenis <andris.pavenis@iki.fi>
 */
 
-#ifndef malldbg_h
-#define malldbg_h
+#ifndef nmalloc_malldbg_h
+#define nmalloc_malldbg_h
 
 /* This is to be used in conjunction with a version of
    nmalloc.c compiled with:

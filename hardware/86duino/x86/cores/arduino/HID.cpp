@@ -329,6 +329,6 @@ void Keyboard_::releaseAll(void)
 size_t Keyboard_::write(uint8_t c)
 {	
 	uint8_t p = press(c);		// Keydown
-	uint8_t r = release(c);		// Keyup
+	            release(c);		// Keyup
 	return (p);					// just return the result of press() since release() almost always returns 1
 }

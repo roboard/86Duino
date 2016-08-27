@@ -3,7 +3,7 @@
 
  This example demonstrates the use of if() statements.
  It reads the state of a potentiometer (an analog input) and turns on an LED
- only if the LED goes above a certain threshold level. It prints the analog value
+ only if the potentiometer goes above a certain threshold level. It prints the analog value
  regardless of the level.
 
  The circuit:
@@ -21,7 +21,7 @@
 
 This example code is in the public domain.
 
-http://arduino.cc/en/Tutorial/IfStatement
+http://www.arduino.cc/en/Tutorial/IfStatement
 
  */
 
@@ -44,8 +44,7 @@ void loop() {
   // if the analog value is high enough, turn on the LED:
   if (analogValue > threshold) {
     digitalWrite(ledPin, HIGH);
-  }
-  else {
+  } else {
     digitalWrite(ledPin, LOW);
   }
 

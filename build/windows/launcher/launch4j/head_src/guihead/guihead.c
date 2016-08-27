@@ -2,7 +2,7 @@
 	Launch4j (http://launch4j.sourceforge.net/)
 	Cross-platform Java application wrapper for creating Windows native executables.
 
-	Copyright (c) 2004, 2007 Grzegorz Kowal
+	Copyright (c) 2004, 2015 Grzegorz Kowal
 							 Sylvain Mina (single instance patch)
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,7 +33,7 @@
 #include "guihead.h"
 
 extern FILE* hLog;
-extern PROCESS_INFORMATION pi;
+extern PROCESS_INFORMATION processInformation;
 
 HWND hWnd;
 DWORD dwExitCode = 0;
@@ -41,38 +41,53 @@ BOOL stayAlive = FALSE;
 BOOL splash = FALSE;
 BOOL splashTimeoutErr;
 BOOL waitForWindow;
+BOOL restartOnCrash = FALSE;
 int splashTimeout = DEFAULT_SPLASH_TIMEOUT;
 
 int APIENTRY WinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPSTR     lpCmdLine,
-                     int       nCmdShow) {
+                     int       nCmdShow)
+{
 	int result = prepare(lpCmdLine);
-	if (result == ERROR_ALREADY_EXISTS) {
+
+	if (result == ERROR_ALREADY_EXISTS)
+	{
 		HWND handle = getInstanceWindow();
 		ShowWindow(handle, SW_SHOW);
 		SetForegroundWindow(handle);
 		closeLogFile();
 		return 2;
 	}
-	if (result != TRUE) {
+
+	if (result != TRUE)
+	{
 		signalError();
 		return 1;
 	}
 
 	splash = loadBool(SHOW_SPLASH)
 			&& strstr(lpCmdLine, "--l4j-no-splash") == NULL;
-	stayAlive = loadBool(GUI_HEADER_STAYS_ALIVE)
-			&& strstr(lpCmdLine, "--l4j-dont-wait") == NULL;
-	if (splash || stayAlive) {
+	restartOnCrash = loadBool(RESTART_ON_CRASH);
+
+	// if we should restart on crash, we must also stay alive to check for crashes
+	stayAlive = restartOnCrash ||
+			  (loadBool(GUI_HEADER_STAYS_ALIVE)
+			&& strstr(lpCmdLine, "--l4j-dont-wait") == NULL);
+			
+	if (splash || stayAlive)
+	{
 		hWnd = CreateWindowEx(WS_EX_TOOLWINDOW, "STATIC", "",
 				WS_POPUP | SS_BITMAP,
 				0, 0, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
-		if (splash) {
+		if (splash)
+		{
 			char timeout[10] = {0};
-			if (loadString(SPLASH_TIMEOUT, timeout)) {
+			if (loadString(SPLASH_TIMEOUT, timeout))
+			{
 				splashTimeout = atoi(timeout);
-				if (splashTimeout <= 0 || splashTimeout > MAX_SPLASH_TIMEOUT) {
+				if (splashTimeout <= 0 || splashTimeout > MAX_SPLASH_TIMEOUT)
+				{
 					splashTimeout = DEFAULT_SPLASH_TIMEOUT;
 				}
 			}
@@ -85,7 +100,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 					0,								// desired width
 					0,								// desired height
 					LR_DEFAULTSIZE);
-			if (hImage == NULL) {
+			if (hImage == NULL)
+			{
 				signalError();
 				return 1;
 			}
@@ -98,41 +114,69 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			ShowWindow(hWnd, nCmdShow);
 			UpdateWindow (hWnd);
 		}
-		if (!SetTimer (hWnd, ID_TIMER, 1000 /* 1s */, TimerProc)) {
+	}
+
+	do
+	{
+		if (splash || stayAlive)
+		{
+			if (!SetTimer (hWnd, ID_TIMER, 1000 /* 1s */, TimerProc))
+			{
+				signalError();
+				return 1;
+			}
+		}
+
+		if (!execute(FALSE, &dwExitCode))
+		{
 			signalError();
 			return 1;
 		}
-	}
-	if (execute(FALSE) == -1) {
-		signalError();
-		return 1;
-	}
-	if (!(splash || stayAlive)) {
-		debug("Exit code:\t0\n");
-		closeHandles();
-		return 0;
-	}
 
-	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
+		if (!(splash || stayAlive))
+		{
+			debug("Exit code:\t0\n");
+			closeProcessHandles();
+			closeLogFile();
+			return 0;
+		}
+	
+		MSG msg;
+		while (GetMessage(&msg, NULL, 0, 0))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		
+		if (restartOnCrash && dwExitCode != 0)
+		{
+	  		debug("Exit code:\t%d, restarting the application!\n", dwExitCode);
+  		}
+
+  		closeProcessHandles();
+	} while (restartOnCrash && dwExitCode != 0);
+
 	debug("Exit code:\t%d\n", dwExitCode);
-	closeHandles();
+	closeLogFile();
 	return dwExitCode;
 }
 
-HWND getInstanceWindow() {
+HWND getInstanceWindow()
+{
 	char windowTitle[STR];
 	char instWindowTitle[STR] = {0};
-	if (loadString(INSTANCE_WINDOW_TITLE, instWindowTitle)) {
+	if (loadString(INSTANCE_WINDOW_TITLE, instWindowTitle))
+	{
 		HWND handle = FindWindowEx(NULL, NULL, NULL, NULL); 
-		while (handle != NULL) {
+		while (handle != NULL)
+		{
 			GetWindowText(handle, windowTitle, STR - 1);
-			if (strstr(windowTitle, instWindowTitle) != NULL) {
+			if (strstr(windowTitle, instWindowTitle) != NULL)
+			{
 				return handle;
-			} else {
+			}
+			else
+			{
 				handle = FindWindowEx(NULL, handle, NULL, NULL);
 			}
 		}
@@ -140,12 +184,15 @@ HWND getInstanceWindow() {
 	return NULL;   
 }
 
-BOOL CALLBACK enumwndfn(HWND hwnd, LPARAM lParam) {
+BOOL CALLBACK enumwndfn(HWND hwnd, LPARAM lParam)
+{
 	DWORD processId;
 	GetWindowThreadProcessId(hwnd, &processId);
-	if (pi.dwProcessId == processId) {
+	if (processInformation.dwProcessId == processId)
+	{
 		LONG styles = GetWindowLong(hwnd, GWL_STYLE);
-		if ((styles & WS_VISIBLE) != 0) {
+		if ((styles & WS_VISIBLE) != 0)
+		{
 			splash = FALSE;
 			ShowWindow(hWnd, SW_HIDE);
 			return FALSE;
@@ -158,27 +205,35 @@ VOID CALLBACK TimerProc(
 	HWND hwnd,			// handle of window for timer messages
 	UINT uMsg,			// WM_TIMER message
 	UINT idEvent,		// timer identifier
-	DWORD dwTime) {		// current system time
-	
-	if (splash) {
-		if (splashTimeout == 0) {
+	DWORD dwTime) 		// current system time
+{
+	if (splash)
+	{
+		if (splashTimeout == 0)
+		{
 			splash = FALSE;
 			ShowWindow(hWnd, SW_HIDE);
-			if (waitForWindow && splashTimeoutErr) {
+			if (waitForWindow && splashTimeoutErr)
+			{
 				KillTimer(hwnd, ID_TIMER);
 				signalError();
 				PostQuitMessage(0);
 			}
-		} else {
+		}
+		else
+		{
 			splashTimeout--;
-			if (waitForWindow) {
+			if (waitForWindow)
+			{
 				EnumWindows(enumwndfn, 0);
 			}
 		}
 	}
-	GetExitCodeProcess(pi.hProcess, &dwExitCode);
+
+	GetExitCodeProcess(processInformation.hProcess, &dwExitCode);
 	if (dwExitCode != STILL_ACTIVE
-			|| !(splash || stayAlive)) {
+			|| !(splash || stayAlive))
+	{
 		KillTimer(hWnd, ID_TIMER);
 		PostQuitMessage(0);
 	}

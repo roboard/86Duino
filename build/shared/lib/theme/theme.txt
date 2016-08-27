@@ -11,7 +11,7 @@
 # 字體顏色
 status.notice.fgcolor = #000066
 # 背景顏色
-status.notice.bgcolor = #62AAF8
+status.notice.bgcolor = #59AFD0
 # 發生錯誤時的字體顏色
 status.error.fgcolor = #CC0000
 # 發生錯誤時的背景顏色
@@ -33,7 +33,7 @@ status.font = SansSerif,plain,12
 # TAB 列的顏色
 #
 # 背景顏色
-header.bgcolor = #0088CC
+header.bgcolor = #083E88
 # user 滑鼠有選到 TAB 的字體顏色
 header.text.selected.color = #005B5B
 # user 滑鼠未選到 TAB 的字體顏色
@@ -50,9 +50,9 @@ header.text.font = SansSerif,plain,12
 console.font = Monospaced,plain,11
 console.font.macosx = Monaco,plain,10
 # 訊息框的背景顏色
-console.color = #111111
+console.color = #202020
 # 正確訊息輸出的字體顏色
-console.output.color = #AAAAAA
+console.output.color = #B0B0B0
 # 錯誤訊息輸出的字體顏色
 console.error.color = #E34C00
 
@@ -62,17 +62,26 @@ console.error.color = #E34C00
 # buttons.status.color = #ffffff
 
 # 最上排的按鈕背景顏色
-buttons.bgcolor = #003399
-buttons.status.font = SansSerif,plain,12
+buttons.bgcolor = #0065B3
+buttons.status.font = SansSerif,bold,12
 # 滑鼠碰到按鈕時的字體顏色
 buttons.status.color = #FFFF00
 
+# GUI - PLOTTING
+# color cycle created via colorbrewer2.org
+plotting.bgcolor = #ffffff
+plotting.color = #ffffff
+plotting.graphcolor.size = 4
+plotting.graphcolor.00 = #2c7bb6
+plotting.graphcolor.01 = #fdae61
+plotting.graphcolor.02 = #d7191c
+plotting.graphcolor.03 = #abd9e9
 
 # GUI - LINESTATUS
 # 最下面狀態列的字體顏色   
 linestatus.color = #00CCFF
 # 最下面狀態列的背景顏色
-linestatus.bgcolor = #004D99
+linestatus.bgcolor = #093F89
 
 # EDITOR - DETAILS
 # foreground and background colors
@@ -86,7 +95,7 @@ editor.bgcolor = #FFFFFF
 
 # highlight for the current line
 # editor.linehighlight.color=#e2e2e2
-editor.linehighlight.color=#e2e2e2
+editor.linehighlight.color=#d7e9ed
 # highlight for the current line
 editor.linehighlight=true
 
@@ -120,21 +129,31 @@ editor.brackethighlight.color = #006699
 
 # e.g abstract, final, private
 editor.keyword1.style = #cc6600,plain
+editor.data_type.style = #cc6600,plain
 
 # e.g. beginShape, point, line
 editor.keyword2.style = #cc6600,plain
+editor.function.style = #cc6600,plain
 
 # e.g. byte, char, short, color
 editor.keyword3.style = #cc6600,bold
+editor.reserved_word.style = #cc6600,bold
 
 
 # TEXT - LITERALS
 
 # constants: e.g. null, true, this, RGB, TWO_PI
-editor.literal1.style = #006699,plain
+editor.literal1.style = #006699,bold
 
 # p5 built in variables: e.g. mouseX, width, pixels
-editor.literal2.style = #006699,plain
+editor.literal2.style = #006699,bold
+
+editor.variable.style = #00979C,plain
+editor.reserved_word_2.style = #00979C,plain
+editor.literal_boolean.style = #00979C,plain
+editor.literal_char.style = #00979C,plain
+editor.literal_string_double_quote.style = #005C5F,plain
+editor.preprocessor.style = #5E6D03,plain
 
 # http://arduino.cc/
 editor.url.style = #0000ff,underlined

@@ -149,7 +149,7 @@ void currentSysexCallback(byte command, byte argc, byte* argv)
       r[5] = 0xF7;
       for(i=0; i<6; i++) Serial.write(r[i]);
     }
-    else if (pin < 11 && pin >= 8)
+    else if (pin < 13 && pin >= 8)
     {
       float data = (float)(val[pin - 8]);
       memcpy(&(r[3]), (unsigned char*)(&data), 4);
@@ -233,7 +233,7 @@ void setup()
 
 void loop()
 {
-  if(init_imu && (millis() - gyro_update_time > 33))
+  if(init_imu && (millis() - gyro_update_time > 28))
   {
     my3IMU.getQ(q, val);
     gyro_update_time = millis();

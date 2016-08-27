@@ -1676,24 +1676,24 @@ DMPAPI(unsigned long) mcssi_ReadCAPSTAT(int mc, int module) {
 
 DMPAPI(void) mcssi_SetRLDTRIG(int mc, int module, unsigned long mode) {
     unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
-	mc_outp(mc, reg, mc_inp(mc, reg) & 0xffcfffffL | mode);
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffcfffffL) | mode);
 }
 
 DMPAPI(void) mcssi_SetCAPMode(int mc, int module, unsigned long mode) {
     unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
-	mc_outp(mc, reg, mc_inp(mc, reg) & 0xfffcffffL | mode);
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfffcffffL) | mode);
 }
 
 DMPAPI(void) mcssi_SetCAPINT(int mc, int module, unsigned long number) {
     unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
     number = number & 0x1FL;
-	mc_outp(mc, reg, mc_inp(mc, reg) & 0xffff0effL | (number << 11));
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xffff0effL) | (number << 11));
 }
 
 DMPAPI(void) mcssi_SetCapInterval(int mc, int module, unsigned long number) {
     unsigned long reg = MCSIF_modOffset[module] + MCSIF_SSI_CAPCTRLREG;
     number = number & 0x1FFL;
-	mc_outp(mc, reg, mc_inp(mc, reg) & 0xfffffe00L | number);
+	mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfffffe00L) | number);
 }
 
 DMPAPI(unsigned long) mcssi_ReadCAPFIFO(int mc, int module, unsigned long* data) {

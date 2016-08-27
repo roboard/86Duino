@@ -109,7 +109,7 @@ static bool set_gpio_config_addr(unsigned short addr)
 	}
 	
 	if ((gpio_config_addr = sb_Read16(0x62) & 0xfffe) == 0x0000)
-	sb_Write16(0x62, sb_Read16(0x62) | (gpio_config_addr = GPIO_CONFIG_ADDR));
+		sb_Write16(0x62, sb_Read16(0x62) | (gpio_config_addr = addr));
 	sb_Write16(0x62, sb_Read16(0x62) | 0x0001);
 	
 	// io_outpdw(GPIO_CONFIG_ADDR + 0x00, io_inpdw(GPIO_CONFIG_ADDR + 0x00) | 0x00000004L);
@@ -125,10 +125,10 @@ static void set_pin_in(char port, char pin)
 	
 	// set data address
 	if ((usb_detect_data = io_inpw(gpio_config_addr + (4 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (4 + 4*port), (usb_detect_data = (GPIO_BASE_ADDR + port)));
+		io_outpw(gpio_config_addr + (4 + 4*port), (usb_detect_data = (GPIO_BASE_ADDR + port)));
 	// set direction address
 	if ((usb_detect_dir  = io_inpw(gpio_config_addr + (6 + 4*port))) == 0x0000)
-	io_outpw(gpio_config_addr + (6 + 4*port), (usb_detect_dir = (GPIO_BASE_ADDR + port + 10)));
+		io_outpw(gpio_config_addr + (6 + 4*port), (usb_detect_dir = (GPIO_BASE_ADDR + port + 10)));
 	
 	// set USB-Detect pin -> IN
 	io_outpb(usb_detect_dir, io_inpb(usb_detect_dir) & ~(1 << pin));
@@ -238,13 +238,9 @@ static void RX_LED_OFF(void)
 DMP_INLINE(DWORD) GrabPhysicalMEM(void *memory)
 {
 	#if defined DMP_DOS_WATCOM
-	{
 		return (DWORD)memory;
-	}
 	#elif defined DMP_DOS_BC
-	{
 		return ((DWORD)FP_SEG(memory) << 4) + (DWORD)FP_OFF(memory);
-	}
 	#endif
 }
 
@@ -1440,7 +1436,6 @@ DMPAPI(bool) usb_Init(void *vusb)
 	#if defined DMP_DOS_DJGPP
 	if (locked == false)
 	{
-		int i, str_size;
 		DPMI_LOCK_FUNC(SetEPnDLR);
 		DPMI_LOCK_FUNC(Get_Status); 
 		DPMI_LOCK_FUNC(Clear_Feature);  

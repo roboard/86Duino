@@ -150,7 +150,7 @@ DMP_INLINE(bool) vx86dx_IsTurboMode(int com)
 DMPAPI(int) vx86_uart_GetCS(int com)
 {
 	int cpuid = vx86_CpuID();
-	int cs;
+	int cs = 0;
 	
 	switch (cpuid)
 	{
@@ -253,7 +253,7 @@ DMPAPI(void) vx86_uart_SetCS(int com, int cs)
 		uart_baseAddr = sb_Read16(0x60) & 0xfffe;
 		sb_Write16(0x60, sb_Read16(0x60) | 0x0001);
 		
-		io_outpdw(uart_baseAddr + com*4, io_inpdw(uart_baseAddr + com*4) & 0xffbfffffL |
+		io_outpdw(uart_baseAddr + com*4, (io_inpdw(uart_baseAddr + com*4) & 0xffbfffffL) |
 		                                 ((unsigned long)cs  << 22));
 		}
 		break;
@@ -335,7 +335,7 @@ DMPAPI(void) vx86_uart_SetCS(int com, int cs)
 DMPAPI(int) vx86_uart_GetHCS(int com)
 {
 	int cpuid = vx86_CpuID();
-	int hcs;
+	int hcs = 0;
 	
 	switch (cpuid)
 	{
@@ -398,7 +398,7 @@ DMPAPI(void) vx86_uart_SetHCS(int com, int hcs)
 		unsigned short uart_baseAddr = sb_Read16(0x60) & 0xfffe;
 		sb_Write16(0x60, sb_Read16(0x60) | 0x0001);
 
-		io_outpdw(uart_baseAddr + com*4, io_inpdw(uart_baseAddr + com*4) & 0xffefffffL |
+		io_outpdw(uart_baseAddr + com*4, (io_inpdw(uart_baseAddr + com*4) & 0xffefffffL) |
 		                                 ((unsigned long)hcs  << 20));
 		}
 		break;
@@ -470,7 +470,7 @@ DMPAPI(void) vx86_uart_SetSBCLK(int sbclk)
 	case CPU_VORTEX86EX:
 	case CPU_VORTEX86DX2:
 	case CPU_VORTEX86DX3:
-		sb_Write(0xc0, sb_Read(0xc0) & 0x7fffffffL | ((unsigned long)sbclk << 31));
+		sb_Write(0xc0, (sb_Read(0xc0) & 0x7fffffffL) | ((unsigned long)sbclk << 31));
 		break;
 	default:
 		break;
@@ -673,7 +673,7 @@ DMPAPI(void) vx86_uart_Close(int com)
 DMPAPI(unsigned short) vx86_uart_GetBaseAddr(int com)
 {
 	int cpuid = vx86_CpuID();
-	unsigned short addr;
+	unsigned short addr = 0;
 	
 	if (cpuid == CPU_VORTEX86EX) {
 		unsigned long cfg_data;
@@ -791,7 +791,7 @@ static int IRQ_route[16]   = {0x00, 0x09, 0x03, 0x0A, 0x04, 0x05, 0x07, 0x06,
 DMPAPI(int) vx86_uart_GetIRQ(int com)
 {
 	int cpuid = vx86_CpuID();
-	int nIRQ;
+	int nIRQ = 0;
 	unsigned long uirt;
 	
 	if (cpuid == CPU_VORTEX86EX) {

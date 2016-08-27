@@ -2,8 +2,8 @@
 <html>
 	<head>
 		<title>Launch4j - Cross-platform Java executable wrapper</title>
-		<meta name="description" content="Cross-platform Java executable wrapper for creating lightweight Windows native EXEs. Provides better user experience.">
-		<meta name="keywords" content="java executable wrapper, java application wrapper, exe wrapper, jar wrapper, wrap, wraps, wrapping, free software, launch, launcher, linux, mac, windows, open source, ant, solaris, native splash screen, deploy, build tool">
+		<meta name="description" content="Cross-platform Java executable wrapper for creating lightweight Windows native EXEs. Provides advanced JRE search, application startup configuration and better user experience.">
+		<meta name="keywords" content="java executable wrapper, java application wrapper, exe wrapper, jar wrapper, wrap, wraps, wrapping, free software, launch, launcher, linux, mac, windows, open source, ant, native splash screen, deploy, build tool">
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<meta name="author" content="Grzegorz Kowal" >
 		<link rel="stylesheet" type="text/css" href="style.css">
@@ -11,7 +11,7 @@
 	<body>
 		<div id="container">
 			<div id="top">
-				<img style="width: 249px; height: 58px;" src="launch4j.gif" alt="launch4j"> <span class="version">3.0.2</span>
+				<img style="width: 249px; height: 58px;" src="launch4j.gif" alt="launch4j"> <span class="version">3.8</span>
 			</div>
 			<div id="leftnav">
 				<ul>
@@ -19,19 +19,15 @@
 					<li><a href="docs.html">Docs</a></li>
 					<li><a href="changelog.html">Changelog</a></li>
 					<li><a href="http://sourceforge.net/project/screenshots.php?group_id=95944">Screenshots</a></li>
-					<li><a href="http://sourceforge.net/projects/launch4j/files/launch4j-3/3.0.2">Download</a></li>
+					<li><a href="http://sourceforge.net/projects/launch4j/files/launch4j-3/3.8">Download</a></li>
 					<li><a href="http://sourceforge.net/projects/launch4j/support">Support</a></li>
 					<li><a href="http://sourceforge.net/projects/launch4j">Project summary</a></li>
 					<li><a href="http://sourceforge.net/tracker/?atid=613100&amp;group_id=95944">Bug tracker</a></li>
 					<li><a href="links.html">Links</a></li>
 				</ul>
-				<!--
-					*** Spanish docs are outdated ***
-					<ul style="margin-top: 20px; font-size: 75%">
-						<li><a href="index.html">English</a></li>
-						<li><a href="index_es.html">Español</a></li>
-					</ul>
-				-->
+				<br />
+				<a class="button" href="https://sourceforge.net/projects/launch4j/files/launch4j-3/3.8" rel="nofollow"><img alt="Downloads" src="https://img.shields.io/sourceforge/dm/launch4j.svg"></a>
+				<a class="button" href="https://sourceforge.net/p/launch4j/" rel="nofollow"><img alt="Download Launch4j" src="https://sourceforge.net/sflogo.php?type=10&group_id=95944"></a>
 			</div>
 			<div id="content">
 <a href="#Running_launch4j">Running launch4j</a><br>
@@ -65,30 +61,34 @@ all of the configuration parameters through the Ant task. All files
 may be absolute paths or relative to the configuration file path.
 
 <pre>
-&lt;!-- <strong>Bold</strong> elements are required --&gt;
+&lt;!--
+  <strong>Bold</strong> elements are required.
+  <span class="codeword"><u>Underlined</u></span> values are the default when the element is not specified.
+  %VAR% expands environment/special variables and registry keys.
+--&gt;
 <strong>&lt;launch4jConfig&gt;</strong>
   <strong>&lt;headerType&gt;</strong><span class="codeword">gui|console</span><strong>&lt;/headerType&gt;</strong>
   <strong>&lt;outfile&gt;</strong><span class="codeword">file.exe</span><strong><span class="codeword"></span>&lt;/outfile&gt;</strong>
   &lt;jar&gt;<span class="codeword">file</span><span class="codeword"></span>&lt;/jar&gt;
   &lt;dontWrapJar&gt;<span class="codeword">true|<u>false</u></span>&lt;/dontWrapJar&gt;
-  &lt;errTitle&gt;<span class="codeword">text</span>&lt;/errTitle&gt;
+  &lt;errTitle&gt;<span class="codeword">application name</span>&lt;/errTitle&gt;
   &lt;downloadUrl&gt;<span class="codeword"><u>http://java.com/download</u></span>&lt;/downloadUrl&gt;
   &lt;supportUrl&gt;<span class="codeword">url</span>&lt;/supportUrl&gt;
   &lt;cmdLine&gt;<span class="codeword">text</span>&lt;/cmdLine&gt;
   &lt;chdir&gt;<span class="codeword">path</span>&lt;/chdir&gt;
   &lt;priority&gt;<span class="codeword"><u>normal</u>|idle|high</span>&lt;/priority&gt;
-  &lt;customProcName&gt;<span class="codeword">true|<u>false</u></span>&lt;/customProcName&gt;
   &lt;stayAlive&gt;<span class="codeword">true|false</span>&lt;/stayAlive&gt;
+  &lt;restartOnCrash&gt;<span class="codeword">true|false</span>&lt;/restartOnCrash&gt;
   &lt;icon&gt;<span class="codeword">file</span>&lt;/icon&gt;
   &lt;obj&gt;<span class="codeword">header object file</span>&lt;/obj&gt;
   ...
   &lt;lib&gt;<span class="codeword">w32api lib</span>&lt;/lib&gt;
   ...
-  &lt;var&gt;<span class="codeword">var=text</span>&lt;/var&gt;
+  &lt;var&gt;<span class="codeword">var=text (%VAR%)</span>&lt;/var&gt;
   ...
   &lt;classPath&gt;
     <strong>&lt;mainClass&gt;</strong><span class="codeword">main class</span><strong>&lt;/mainClass&gt;</strong>
-    <strong>&lt;cp&gt;</strong><span class="codeword">classpath</span><strong>&lt;/cp&gt;</strong>
+    <strong>&lt;cp&gt;</strong><span class="codeword">classpath (%VAR%)</span><strong>&lt;/cp&gt;</strong>
     ...
   &lt;/classPath&gt;
   &lt;singleInstance&gt;
@@ -96,17 +96,20 @@ may be absolute paths or relative to the configuration file path.
     &lt;windowTitle&gt;<span class="codeword">text</span>&lt;/windowTitle&gt;
   &lt;/singleInstance&gt; 
   <strong>&lt;jre&gt;</strong>
-    &lt;!-- Specify one of the following or both --&gt;
-    <strong>&lt;path&gt;</strong><span class="codeword">bundled JRE path</span><strong>&lt;/path&gt;</strong>
+    &lt;!-- Specify <strong>path</strong> or <strong>minVersion</strong> or both. --&gt;
+    <strong>&lt;path&gt;</strong><span class="codeword">bundled JRE path (%VAR%)</span><strong>&lt;/path&gt;</strong>
+    &lt;bundledJre64Bit&gt;<span class="codeword">true|<u>false</u></span>&lt;/bundledJre64Bit&gt;
+    &lt;bundledJreAsFallback&gt;<span class="codeword">true|<u>false</u></span>&lt;/bundledJreAsFallback&gt;
     <strong>&lt;minVersion&gt;</strong><span class="codeword">x.x.x[_xx]</span><strong>&lt;/minVersion&gt;</strong>
     &lt;maxVersion&gt;<span class="codeword">x.x.x[_xx]</span>&lt;/maxVersion&gt;
     &lt;jdkPreference&gt;<span class="codeword">jreOnly|<u>preferJre</u>|preferJdk|jdkOnly</span>&lt;/jdkPreference&gt;
-    &lt;!-- Heap sizes in MB and % of free memory --&gt;
+    &lt;runtimeBits&gt;<span class="codeword">64|<u>64/32</u>|32/64|32</span>&lt;/runtimeBits&gt;
+    &lt;!-- Heap sizes in MB and % of available memory. --&gt;
     &lt;initialHeapSize&gt;<span class="codeword">MB</span>&lt;/initialHeapSize&gt;
     &lt;initialHeapPercent&gt;<span class="codeword">%</span>&lt;/initialHeapPercent&gt;
     &lt;maxHeapSize&gt;<span class="codeword">MB</span>&lt;/maxHeapSize&gt;
     &lt;maxHeapPercent&gt;<span class="codeword">%</span>&lt;/maxHeapPercent&gt;
-    &lt;opt&gt;<span class="codeword">text</span>&lt;/opt&gt;
+    &lt;opt&gt;<span class="codeword">text (%VAR%)</span>&lt;/opt&gt;
     ...
   <strong>&lt;/jre&gt;</strong>
   &lt;splash&gt;
@@ -132,6 +135,8 @@ may be absolute paths or relative to the configuration file path.
     <strong>&lt;bundledJreErr&gt;</strong>text<strong>&lt;/bundledJreErr&gt;</strong>
     <strong>&lt;jreVersionErr&gt;</strong>text<strong>&lt;/jreVersionErr&gt;</strong>
     <strong>&lt;launcherErr&gt;</strong>text<strong>&lt;/launcherErr&gt;</strong>
+    &lt;!-- Used by console header only. --&gt;
+    <strong>&lt;instanceAlreadyExistsMsg&gt;</strong>text<strong>&lt;/instanceAlreadyExistsMsg&gt;</strong>
   &lt;/messages&gt;
 <strong>&lt;/launch4jConfig&gt;</strong>
 </pre>
@@ -222,22 +227,16 @@ may be absolute paths or relative to the configuration file path.
 	</dd>
 </dl>
 <dl>
-	<dt>&lt;customProcName&gt;</dt>
-	<dd>Optional, defaults to false.
-		Set the process name as the executable filename and use Xp style manifests
-		(if any).
-		Creates a temporary file in launch4j-tmp directory inside the used JRE.
-		These files are deleted by any launch4j wrapped application, which sets
-		the process name and uses the same JRE. The removal takes place
-		when the application <strong>starts</strong>,
-		so at least one copy of this file will always be present.
-	</dd>
-</dl>
-<dl>
 	<dt>&lt;stayAlive&gt;</dt>
 	<dd>Optional, defaults to false in GUI header, always true in console header.
 		When enabled the launcher waits for the Java application
 		to finish and returns it's exit code.
+	</dd>
+</dl>
+<dl>
+	<dt>&lt;restartOnCrash&gt;</dt>
+	<dd>Optional, defaults to false.
+		When the application exits, any exit code other than 0 is considered a crash and the application will be started again.
 	</dd>
 </dl>
 <dl>
@@ -303,6 +302,27 @@ may be absolute paths or relative to the configuration file path.
 </blockquote>
 <blockquote>
 	<dl>
+		<dt>&lt;bundledJre64Bit&gt;</dt>
+		<dd>Optional, defaults to false which limits the calculated heap size to the 32-bit maximum.
+			Set to true in order to use the available memory without this limit. This option works 
+			in combination with the HeapSize and HeapPercent options only if the found JRE is a bundled one.
+			In the standard JRE search based on registry the wrapper detects the type of JRE itself
+			and uses the 32-bit heap limit when needed. 
+		</dd>
+	</dl>
+</blockquote>
+<blockquote>
+	<dl>
+		<dt>&lt;bundledJreAsFallback&gt;</dt>
+		<dd>Optional, defaults to false which treats the bundled JRE as the primary runtime.
+			When set to true, the bundled JRE will only be used in case the mix/max version search fails.
+			This can be used as a fallback option if the user does not have the required Java installed
+			and the bundled JRE	is provided on a CD or shared network location.
+		</dd>
+	</dl>
+</blockquote>
+<blockquote>
+	<dl>
 		<dt>&lt;jdkPreference&gt;</dt>
 		<dd>Optional, defaults to preferJre; Allows you to specify a preference
 			for a public JRE or a private JDK runtime. Valid values are:
@@ -320,18 +340,37 @@ may be absolute paths or relative to the configuration file path.
 				dontUsePrivateJres=false)</dd>
 			<dt>preferJdk</dt>
 			<dd>Prefer a JDK private runtime, but use a
-				public JRE if it is newer than the
-				JDK</dd>
+				public JRE if it is newer than the JDK
+			</dd>
 			<dt>jdkOnly</dt>
 			<dd>Always use a private JDK runtime (fails
-				if there is no JDK installed)</dd>
+				if there is no JDK installed)
+			</dd>
+		</dl>
+	</blockquote>
+	<dl>
+		<dt>&lt;runtimeBits&gt;</dt>
+		<dd>Optional, defaults to 64/32; Allows to select between 64-bit and 32-bit runtimes.
+			Valid values are:
+		</dd>
+	</dl>
+	<blockquote>
+		<dl>
+			<dt>64</dt>
+			<dd>Use only 64-bit runtimes</dd>
+			<dt>64/32</dt>
+			<dd>Use 64-bit runtimes if available, otherwise use 32-bit</dd>
+			<dt>32/64</dt>
+			<dd>Use 32-bit runtimes if available, otherwise use 64-bit</dd>
+			<dt>32</dt>
+			<dd>Use only 32-bit runtimes</dd>
 		</dl>
 	</blockquote>
 	<dl>
 		<dt>HeapSize, HeapPercent</dt>
 		<dd>If size and percent are specified, then the setting which yields
 			more memory will be chosen at runtime. In other words, setting both values
-			means: percent of free memory no less than size in MB.
+			means: percent of available memory no less than size in MB.
 		</dd>
 	</dl>
 	<blockquote>
@@ -341,7 +380,7 @@ may be absolute paths or relative to the configuration file path.
 		</dl>
 		<dl>
 			<dt>&lt;initialHeapPercent&gt;</dt>
-			<dd>Optional, initial heap size in % of free memory.</dd>
+			<dd>Optional, initial heap size in % of available memory.</dd>
 		</dl>
 		<dl>
 			<dt>&lt;maxHeapSize&gt;</dt>
@@ -349,7 +388,7 @@ may be absolute paths or relative to the configuration file path.
 		</dl>
 		<dl>
 			<dt>&lt;maxHeapPercent&gt;</dt>
-			<dd>Optional, max heap size in % of free memory.</dd>
+			<dd>Optional, max heap size in % of available memory.</dd>
 		</dl>	
 	</blockquote>
 	<dl>
@@ -529,19 +568,64 @@ expansion is supported, for example:
 -Xms16m
 </pre>
 
+<h2>Environemnt variables</h2>
+The following variables can be used in the configuration file (elements which contain %VAR%).
+They are substitued during runtime, so for example the EXEDIR is the directory where the user installed the wrapped application.
+<dl>
+	<dt class="option">%VAR%</dt>
+	<dd>
+		Any environment variable, for example %HOMEPATH%.
+	</dd>
+
+	<dt class="option">%EXEDIR%</dt>
+	<dd>
+		Wrapper directory path.
+	</dd>
+	
+	<dt class="option">%EXEFILE%</dt>
+	<dd>
+		Wrapper executable file path.
+	</dd>
+	
+	<dt class="option">%PWD%</dt>
+	<dd>
+		Current directory, after chdir was applied.
+	</dd>
+	
+	<dt class="option">%OLDPWD%</dt>
+	<dd>
+		Directory before chdir was applied.
+	</dd>
+	
+	<dt class="option">%JREHOMEDIR%</dt>
+	<dd>
+		Path to the JRE which was selected for executing the application. 
+	</dd>
+	
+	<dt class="option">%HKEY_...\...%</dt>
+	<dd>
+		Registry key value, e.g.<br />
+		%HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MemoryDiagnostic\LastScanTime%
+	</dd>
+</dl>
+
 <h2 id="Runtime_options">Runtime options</h2>
 <dl>
 	<dt class="option">--l4j-debug</dt>
 	<dd>
 		To make sure the output executable is configured correctly you can use the
 		debug launching mode to log various information to the launch4j.log file.
-	</dd>
-	
-	<dt class="option">--l4j-default-proc</dt>
-	<dd>
-		Use default process name.
+		Environment variable can also be used...<br />
+		SET Launch4j=debug
 	</dd>
 
+	<dt class="option">--l4j-debug-all</dt>
+	<dd>
+		Same as above, but additionally log loaded resources (options stored during wrapper creation).
+		Environment variable can also be used...<br />
+		SET Launch4j=debug-all
+	</dd>	
+	
 	<dt class="option">--l4j-dont-wait</dt>
 	<dd>
 		Disable the "stay alive" function.
@@ -559,6 +643,7 @@ expansion is supported, for example:
 </dl>
 
 <h2 id="Settings">Settings</h2>
+These settings are only used during building of the launcher or wrapper, not during their execution.
 <dl>
 	<dt>Alternate bin directory: launch4j.bindir</dt>
 	<dd>
@@ -573,11 +658,9 @@ expansion is supported, for example:
 			</div>
 			<div class="footer">
 			    All trademarks mentioned are properties of their respective owners.<br />
-            	Copyright &copy; 2005-2011 Grzegorz Kowal
-            	<p style="margin-top: 2em">
-            		<a href="http://sourceforge.net"><img style="width: 125px; height: 37px; border: none" src="http://sourceforge.net/sflogo.php?group_id=95944&amp;type=4" alt="sf.net"></a>
-            		<a href="http://www.nosoftwarepatents.com"><img style="width: 90px; height: 40px; border: none; margin-left: 5%" src="http://www.nosoftwarepatents.com/banners/90x40_3.jpg" alt=""></a>
-            		<a href="http://validator.w3.org/check?uri=referer"><img style="width: 88px; height: 31px; border: none; margin-left: 5%" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"></a>
+            	Copyright &copy; 2005-2015 Grzegorz Kowal
+            	<p style="margin-top: 0.5em">
+            	    <a href="https://sourceforge.net/p/launch4j/" rel="nofollow"><img alt="Download Launch4j Executable Wrapper" src="https://sourceforge.net/sflogo.php?type=16&group_id=95944"></a>
             	</p>
 			</div>
 		</div>

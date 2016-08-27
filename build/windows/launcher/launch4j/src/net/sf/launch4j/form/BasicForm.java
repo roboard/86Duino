@@ -32,8 +32,6 @@ public abstract class BasicForm extends JPanel
    protected final ButtonGroup _buttongroup1 = new ButtonGroup();
    protected final JRadioButton _idlePriorityRadio = new JRadioButton();
    protected final JRadioButton _highPriorityRadio = new JRadioButton();
-   protected final JCheckBox _customProcNameCheck = new JCheckBox();
-   protected final JCheckBox _stayAliveCheck = new JCheckBox();
    protected final JTextField _cmdLineField = new JTextField();
    protected final JTextField _chdirField = new JTextField();
    protected final JTextField _iconField = new JTextField();
@@ -48,6 +46,8 @@ public abstract class BasicForm extends JPanel
    protected final JTextField _supportUrlField = new JTextField();
    protected final JTextField _manifestField = new JTextField();
    protected final JButton _manifestButton = new JButton();
+   protected final JCheckBox _stayAliveCheck = new JCheckBox();
+   protected final JCheckBox _restartOnCrashCheck = new JCheckBox();
 
    /**
     * Default constructor
@@ -192,16 +192,6 @@ public abstract class BasicForm extends JPanel
       _buttongroup1.add(_highPriorityRadio);
       jpanel1.add(_highPriorityRadio,cc.xy(8,16));
 
-      _customProcNameCheck.setActionCommand("Custom process name");
-      _customProcNameCheck.setName("customProcNameCheck");
-      _customProcNameCheck.setText(Messages.getString("customProcName"));
-      jpanel1.add(_customProcNameCheck,cc.xywh(4,18,7,1));
-
-      _stayAliveCheck.setActionCommand("Stay alive after launching a GUI application");
-      _stayAliveCheck.setName("stayAliveCheck");
-      _stayAliveCheck.setText(Messages.getString("stayAlive"));
-      jpanel1.add(_stayAliveCheck,cc.xywh(4,20,7,1));
-
       _cmdLineField.setName("cmdLineField");
       _cmdLineField.setToolTipText(Messages.getString("cmdLineTip"));
       jpanel1.add(_cmdLineField,cc.xywh(4,14,7,1));
@@ -265,6 +255,17 @@ public abstract class BasicForm extends JPanel
       _manifestButton.setIcon(loadImage("images/open16.png"));
       _manifestButton.setName("manifestButton");
       jpanel1.add(_manifestButton,cc.xy(12,8));
+
+      _stayAliveCheck.setActionCommand("Stay alive after launching a GUI application");
+      _stayAliveCheck.setName("stayAliveCheck");
+      _stayAliveCheck.setText(Messages.getString("stayAlive"));
+      jpanel1.add(_stayAliveCheck,cc.xywh(4,18,7,1));
+
+      _restartOnCrashCheck.setActionCommand("Restart the application after a crash");
+      _restartOnCrashCheck.setName("restartOnCrashCheck");
+      _restartOnCrashCheck.setText(Messages.getString("restartOnCrash"));
+      _restartOnCrashCheck.setToolTipText(Messages.getString("restartOnCrashToolTip"));
+      jpanel1.add(_restartOnCrashCheck,cc.xywh(4,20,7,1));
 
       addFillComponents(jpanel1,new int[]{ 1,2,3,4,5,6,7,8,9,10,11,12,13 },new int[]{ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 });
       return jpanel1;

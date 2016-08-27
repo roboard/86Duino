@@ -1,3 +1,4 @@
+/* Copyright (C) 2015 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2013 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1998 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1995 DJ Delorie, see COPYING.DJ for details */
@@ -16,7 +17,7 @@
 
 /*
  * from: @(#)fdlibm.h 5.1 93/09/24
- * $Id: math.h,v 1.11 2013/11/16 21:48:24 juan.guerrero Exp $
+ * $Id: math.h,v 1.11.2.1 2015/07/19 11:29:21 juan.guerrero Exp $
  */
 
 #ifndef _MATH_H_
@@ -272,6 +273,7 @@ extern float frexpf __P((float, int *));
 extern float ldexpf __P((float, int));
 extern float logf __P((float));
 extern float log10f __P((float));
+extern float log2f __P((float));
 extern float modff __P((float, float *));
 
 extern float powf __P((float, float));
@@ -298,7 +300,6 @@ extern float nanf __P((void));
 extern float y0f __P((float));
 extern float y1f __P((float));
 extern float ynf __P((int, float));
-#define log2f(x) (logf (x) / (float) M_LOG2_E)
 
 extern float acoshf __P((float));
 extern float asinhf __P((float));

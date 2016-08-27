@@ -171,7 +171,6 @@ double cpuTemperature(void) {
 
 double cpuTemperature(uint8_t unit) {
 	unsigned long d;
-	unsigned long time;
 	double temperature;
 
     io_DisableINT();

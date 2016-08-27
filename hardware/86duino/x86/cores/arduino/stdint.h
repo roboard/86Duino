@@ -136,7 +136,8 @@ typedef uint32_t uintmax_t;
 #define WINT_MIN	(-2147483647-1)
 #endif
 
-#endif /* !__cplusplus || __STDC_LIMIT_MACROS */
+#endif
+*/
 
 #ifdef __cplusplus
 }

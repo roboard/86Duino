@@ -1,3 +1,5 @@
+/* Copyright (C) 2015 DJ Delorie, see COPYING.DJ for details */
+/* Copyright (C) 2012 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 2001 DJ Delorie, see COPYING.DJ for details */
 /* Copyright (C) 1999 DJ Delorie, see COPYING.DJ for details */
@@ -216,12 +218,14 @@ struct _dostime_t {
 struct _find_t {
   char reserved[21];
   unsigned char attrib;
-  unsigned short wr_time __attribute__((packed));
-  unsigned short wr_date __attribute__((packed));
-  unsigned long size __attribute__((packed));
+  unsigned short wr_time;
+  unsigned short wr_date;
+  unsigned long size;
   char name[256];
-};
+} __attribute__((packed));
 #define find_t _find_t
+/* make sure that structure packing is correct */
+typedef int _DJCHK_FIND_T[(sizeof(struct _find_t)==286)*3 - 1];
 
 struct _diskfree_t {
   unsigned short total_clusters;

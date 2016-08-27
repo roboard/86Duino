@@ -1,0 +1,67 @@
+#
+# DSM for FFTW-3.1.2 binaries.
+# Written by Juan Manuel Guerrero <juan.guerrero@gmx.de> 2006-10-18
+#
+
+dsm-file-version: 1.0
+dsm-name: fftw312b
+dsm-version: 0.4.0
+dsm-type: binaries
+
+dsm-author: Juan Manuel Guerrero
+dsm-author-email: juan.guerrero@gmx.de
+
+name: fftw
+version: 3.1
+manifest: fftw312b
+documentation-dsm: fftw312d
+sources-dsm: fftw312s
+short-description: Binaries for FFTW version 3.1.2
+long-description: FFTW is a free collection of fast C routines for\n\
+computing the Discrete Fourier Transform in one or more dimensions.\n\
+It includes complex, real, symmetric, and parallel transforms, and\n\
+can handle arbitrary array sizes efficiently.
+
+license: GNU GPL
+# author.
+author: Matteo Frigo
+# author.
+author: Steven G. Johnson
+maintainer: Matteo Frigo
+maintainer-email: fftw@fftw.org
+maintainer: Steven G. Johnson
+maintainer-email: fftw@fftw.org
+# For reporting bugs
+mailing-list: fftw@fftw.org
+# The home page of FFTW.
+web-site:http://www.fftw.org/
+# The ftp site of FFTW.
+ftp-site:ftp://ftp.fftw.org/
+# For discussing DJGPP- and DOS/Windows-specific aspects
+mailing-list: djgpp@delorie.com
+newsgroup: comp.os.msdos.djgpp
+
+porter: Juan Manuel Guerrero
+porter-email: juan.guerrero@gmx.de
+
+simtelnet-path: v2gnu/
+zip: fftw312b.zip
+
+changelog: contrib/fftw-3.1-2/ChangeLog
+
+pre-install-readme: contrib/fftw-3.1-2/djgpp/README
+
+requires: DPMI 0.9
+replaces: libfftw < 3.1.2
+
+# For reading the docs.
+depends-on: info-reader
+depends-on: man
+depends-on: less
+
+# This updates the info/DIR main menu
+builtin-post-install-script: command:\
+ install-info --info-dir=/dev/env/DJDIR/info --section="From fftwNNNb.zip"\
+ /dev/env/DJDIR/info/fftw3.info\
+ install-info --info-dir=/dev/env/DJDIR/info --section="From fftwNNNb.zip"\
+ /dev/env/DJDIR/info/fftw-faq.info

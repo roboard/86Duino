@@ -2,8 +2,8 @@
 <html>
 	<head>
 		<title>Launch4j - Cross-platform Java executable wrapper</title>
-		<meta name="description" content="Cross-platform Java executable wrapper for creating lightweight Windows native EXEs. Provides better user experience.">
-		<meta name="keywords" content="java executable wrapper, java application wrapper, exe wrapper, jar wrapper, wrap, wraps, wrapping, free software, launch, launcher, linux, mac, windows, open source, ant, solaris, native splash screen, deploy, build tool">
+		<meta name="description" content="Cross-platform Java executable wrapper for creating lightweight Windows native EXEs. Provides advanced JRE search, application startup configuration and better user experience.">
+		<meta name="keywords" content="java executable wrapper, java application wrapper, exe wrapper, jar wrapper, wrap, wraps, wrapping, free software, launch, launcher, linux, mac, windows, open source, ant, native splash screen, deploy, build tool">
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<meta name="author" content="Grzegorz Kowal" >
 		<link rel="stylesheet" type="text/css" href="style.css">
@@ -11,7 +11,7 @@
 	<body>
 		<div id="container">
 			<div id="top">
-				<img style="width: 249px; height: 58px;" src="launch4j.gif" alt="launch4j"> <span class="version">3.0.2</span>
+				<img style="width: 249px; height: 58px;" src="launch4j.gif" alt="launch4j"> <span class="version">3.8</span>
 			</div>
 			<div id="leftnav">
 				<ul>
@@ -19,22 +19,94 @@
 					<li><a href="docs.html">Docs</a></li>
 					<li><a href="changelog.html">Changelog</a></li>
 					<li><a href="http://sourceforge.net/project/screenshots.php?group_id=95944">Screenshots</a></li>
-					<li><a href="http://sourceforge.net/projects/launch4j/files/launch4j-3/3.0.2">Download</a></li>
+					<li><a href="http://sourceforge.net/projects/launch4j/files/launch4j-3/3.8">Download</a></li>
 					<li><a href="http://sourceforge.net/projects/launch4j/support">Support</a></li>
 					<li><a href="http://sourceforge.net/projects/launch4j">Project summary</a></li>
 					<li><a href="http://sourceforge.net/tracker/?atid=613100&amp;group_id=95944">Bug tracker</a></li>
 					<li><a href="links.html">Links</a></li>
 				</ul>
-				<!--
-					*** Spanish docs are outdated ***
-					<ul style="margin-top: 20px; font-size: 75%">
-						<li><a href="index.html">English</a></li>
-						<li><a href="index_es.html">Español</a></li>
-					</ul>
-				-->
+				<br />
+				<a class="button" href="https://sourceforge.net/projects/launch4j/files/launch4j-3/3.8" rel="nofollow"><img alt="Downloads" src="https://img.shields.io/sourceforge/dm/launch4j.svg"></a>
+				<a class="button" href="https://sourceforge.net/p/launch4j/" rel="nofollow"><img alt="Download Launch4j" src="https://sourceforge.net/sflogo.php?type=10&group_id=95944"></a>
 			</div>
 			<div id="content">
 <h2>Changelog</h2>
+
+<h4>Changes in version 3.8 (09-05-2015)</h4>
+<ul class="changes">
+	<li>FR #59 Mavenized launch4j (thanks to taxone, Paul Jungwirth, Lukasz Lenart).</li>
+	<li>Ticket #139 Sign4j compiles and works on Linux (Tim Angus).</li>
+</ul>
+
+<h4>Changes in version 3.7 (01-03-2015)</h4>
+<ul class="changes">
+	<li>Fixed false positive virus warnings that appeared in version 3.6.</li>
+</ul>
+
+<h4>Changes in version 3.6 (06-01-2015)</h4>
+<ul class="changes">
+	<li>FR #86 The 32/64 bit search is fully configurable (64, 64/32, 32/64, 32) - added option 32/64.</li>
+	<li>FR #70 Java search sequence - bundled JRE can be used before or after the min/max version search (bundledJreAsFallback).</li>
+	<li>Fixed: Crash when classpath contained wildcard patterns where the dependency was in the same directory as the launcher.</li>
+	<li>Fixed launch4j GUI application closing - the process was still running.</li>
+	<li style="text-decoration: line-through">Updated to Dev-Cpp 5.7.1, MinGW 4.8.1 (head_src and w32api files).</li>
+</ul>
+
+<h4>Changes in version 3.5 (09-10-2014)</h4>
+<ul class="changes">
+	<li>Ticket #75 Fixed exit value of -1 results in launch4j error.</li>
+	<li>Ticket #133, #134 Fixed runtimeBits JRE option.</li>
+	<li>FR #28, #72 Ability to restart the application based on exit code (Pascal Gruen, GK).</li>
+</ul>
+
+<h4>Changes in version 3.4 (21-04-2014)</h4>
+<ul class="changes">
+	<li>FR #61 Added a new special variable JREHOMEDIR (Stefan Knoefel).</li>
+	<li>Ticket #130 Removed ant from launch4j classpath to fix problems with other ant versions.</li>
+	<li>Updated JGoodies libraries.</li>
+	<li>Added logging based on launch4j environment variable for file association launch testing.</li>
+</ul>
+
+<h4>Changes in version 3.3 (02-04-2014)</h4>
+<ul class="changes">
+	<li>FR #60 Check the registry during JRE search, so that only valid runtimes are taken into account.</li>
+	<li>Ticket #128 Updated MAC OS X 10.8 windres to 2.24.51.20140326 - version info was compiled incorrectly (Code Buddy).</li>
+	<li>Added support for Japanese characters (Toshimm).</li>
+	<li>Ticket #82, #125 Take configuration encoding into account and save file with UTF-8 encoding.</li>
+</ul>
+
+<h4>Changes in version 3.2 (24-03-2014)</h4>
+<ul class="changes">
+	<li>Ticket #126, #127: Fixed crash when classpath was not defined.</li>
+	<li>Corrected problem with loading jvm options from ini file when bundled JRE is used.</li>
+	<li>FR #63, #80 Add possibility to configure 32/64 bit search.</li>
+	<li>Improved logging (--l4j-debug and --l4j-debug-all).</li>
+</ul>
+
+<h4>Changes in version 3.1.0-beta2 (20-08-2013)</h4>
+<ul class="changes">
+	<li>Removed the custom process name feature which was not compatible with newer Windows versions.</li>
+	<li>#121 Fixed heap calculation on systems with more than 4GB of memory.</li>
+	<li>#115 Added 64-bit bundled JRE option to control when the 32-bit maximum heap is applied.</li>
+	<li>Reduced the 32-bit max heap size to the safer 1GB.</li>
+	<li>Changes in --l4j-debug for better readability.</li>
+	<li>Fixed Can discard changes popup which appeared even if no changes were made.</li>
+	<li>Corrected permissions, owner and group in tgz packages.</li>
+	<li>#117 Fixed launch4j home dir search in case of jar and class files.</li>
+	<li>#111 Support paths with spaces in Linux systems.</li>
+	<li>#91 Linux launch4j starting script no longer changes the current directory.</li>
+	<li>#77 Allow line feeds in custom messages.</li>
+	<li>#57 Escape backslashes.</li>
+</ul>
+
+<h4>Changes in version 3.1.0-beta1 (02-12-2012)</h4>
+<ul class="changes">
+	<li>Migrated code to Java 1.6.</li>
+	<li>Updated binutils to 2.22</li>
+	<li>Added Max OS X x86 support (two versions).</li>
+	<li>Added feature to digitally sign executables - sign4j by the Bramfeld team, sponsored by Servoy.</li>
+	<li>FR #3569093 Support Windows Security Features of the Windows 8 certification kit (Luc Bruninx).</li>
+</ul>
 
 <h4>Changes in version 3.0.2 (02-01-2011)</h4>
 <ul class="changes">
@@ -352,11 +424,9 @@
 			</div>
 			<div class="footer">
 			    All trademarks mentioned are properties of their respective owners.<br />
-            	Copyright &copy; 2005-2011 Grzegorz Kowal
-            	<p style="margin-top: 2em">
-            		<a href="http://sourceforge.net"><img style="width: 125px; height: 37px; border: none" src="http://sourceforge.net/sflogo.php?group_id=95944&amp;type=4" alt="sf.net"></a>
-            		<a href="http://www.nosoftwarepatents.com"><img style="width: 90px; height: 40px; border: none; margin-left: 5%" src="http://www.nosoftwarepatents.com/banners/90x40_3.jpg" alt=""></a>
-            		<a href="http://validator.w3.org/check?uri=referer"><img style="width: 88px; height: 31px; border: none; margin-left: 5%" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"></a>
+            	Copyright &copy; 2005-2015 Grzegorz Kowal
+            	<p style="margin-top: 0.5em">
+            	    <a href="https://sourceforge.net/p/launch4j/" rel="nofollow"><img alt="Download Launch4j Executable Wrapper" src="https://sourceforge.net/sflogo.php?type=16&group_id=95944"></a>
             	</p>
 			</div>
 		</div>
