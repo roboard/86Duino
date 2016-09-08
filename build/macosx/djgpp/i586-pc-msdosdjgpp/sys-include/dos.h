@@ -179,7 +179,7 @@ void settime(struct time *);
 
 void getdfree(unsigned char _drive, struct dfree *_ptr);
 
-void delay(unsigned _msec);
+// void delay(unsigned _msec);
 
 void __maybe_fix_w2k_ntvdm_bug(void);
 
