@@ -1505,10 +1505,10 @@ DMPAPI(bool) usb_Init(void *vusb)
 	usb->EP[0].SetupPhysical = dma_addr;
 	usb->EP[0].InPhysical    = dma_addr + (size_temp += EP0_MAX_PACKET_SIZE);
 	usb->EP[0].OutPhysical   = dma_addr + (size_temp += EP0_MAX_PACKET_SIZE);
-	usb->EP[1].InPhysical    = dma_addr + (size_temp += EP1_MAX_PACKET_SIZE_IN);
-	usb->EP[2].InPhysical    = dma_addr + (size_temp += EP2_MAX_PACKET_SIZE_IN);
-	usb->EP[2].OutPhysical   = dma_addr + (size_temp += EP2_MAX_PACKET_SIZE_OUT);
-	usb->EP[3].InPhysical    = dma_addr + (size_temp += EP3_MAX_PACKET_SIZE_IN);
+	usb->EP[1].InPhysical    = dma_addr + (size_temp += EP0_MAX_PACKET_SIZE);
+	usb->EP[2].InPhysical    = dma_addr + (size_temp += EP1_MAX_PACKET_SIZE_IN);
+	usb->EP[2].OutPhysical   = dma_addr + (size_temp += EP2_MAX_PACKET_SIZE_IN);
+	usb->EP[3].InPhysical    = dma_addr + (size_temp += EP2_MAX_PACKET_SIZE_OUT);
 	
 	#else
 	usb->EP[0].SetupPhysical = GrabPhysicalMEM((void *)usb->EP[0].SetupBuf);

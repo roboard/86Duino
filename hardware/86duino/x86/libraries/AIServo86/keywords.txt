@@ -1,0 +1,51 @@
+#######################################
+# Syntax Coloring Map Servo
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+AIServo	KEYWORD1
+AIServoFrame	KEYWORD1
+AIServoOffset	KEYWORD1
+AIServoPort	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+attach	KEYWORD2
+detach	KEYWORD2
+write	KEYWORD2
+read	KEYWORD2
+attached	KEYWORD2
+setVelocity	KEYWORD2
+setPosition	KEYWORD2
+setOffset	KEYWORD2
+setRealTimeMixing	KEYWORD2
+getPosition	KEYWORD2
+run	KEYWORD2
+pause	KEYWORD2
+resume	KEYWORD2
+stop	KEYWORD2
+release	KEYWORD2
+isMoving	KEYWORD2
+setPositions	KEYWORD2
+load	KEYWORD2
+save	KEYWORD2
+playPositions	KEYWORD2
+setOffsets	KEYWORD2
+aiservoMultiRun	KEYWORD2
+aiservoMultiPause	KEYWORD2
+aiservoMultiResume	KEYWORD2
+aiservoMultiStop	KEYWORD2
+isAIServoMultiMoving	KEYWORD2
+aiservoMultiRealTimeMixing	KEYWORD2
+aiservoBeginSplineMotion	KEYWORD2
+aiservoEndSplineMotion	KEYWORD2
+aiEnableMixing	KEYWORD2
+aiDisableMixing	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################

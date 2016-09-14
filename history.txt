@@ -1,3 +1,13 @@
+### CODING 315 - 2016.09.14 ###
+
+[core]
+comment the delay() in dos.h in sys-include.
+
+[libraries]
+* Add the AIServo86 library for Serial AI Servo. (ex: Dynamixel AX-12, RX-28, MX-28, etc.)
+
+
+
 ### CODING 300 - 2016.08.27 ###
 
 [ide]
