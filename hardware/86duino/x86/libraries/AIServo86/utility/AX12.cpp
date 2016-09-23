@@ -102,12 +102,12 @@ static unsigned char calc_chksum(unsigned char *data, int len)
 	return chksum;
 }
 
-AX12Bus::AX12Bus()
+AIServoBus_ROBOTIS_AX12::AIServoBus_ROBOTIS_AX12()
 {
 	TX_DELAY = 400;
 }
 
-void AX12Bus::begin(HardwareSerial &ai_uart, unsigned long baud)
+void AIServoBus_ROBOTIS_AX12::begin(HardwareSerial &ai_uart, unsigned long baud)
 {
 	if(&ai_uart == HWSerial[4] || &ai_uart == HWSerial[6])
 	{
@@ -126,7 +126,7 @@ void AX12Bus::begin(HardwareSerial &ai_uart, unsigned long baud)
 	syncMsg[6] = 0x02;
 }
 
-void AX12Bus::update(bool enableMixing)
+void AIServoBus_ROBOTIS_AX12::update(bool enableMixing)
 {
 	int count = 0;
 	int totalMsgs;
@@ -165,7 +165,7 @@ void AX12Bus::update(bool enableMixing)
 	}
 }
 
-int AX12Bus::read_error()
+int AIServoBus_ROBOTIS_AX12::read_error()
 {
 	Time_Counter = 0;
 	while((uart->available() < 5) & (Time_Counter < TIME_OUT))
@@ -189,7 +189,7 @@ int AX12Bus::read_error()
 	return (-1);											 // No Ax Response
 }
 
-int AX12Bus::boost()
+int AIServoBus_ROBOTIS_AX12::boost()
 {
 	int res = 0;
 	AIServoList* tmp = aisHead;
@@ -202,7 +202,7 @@ int AX12Bus::boost()
 	return res;
 }
 
-int AX12Bus::reset(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::reset(unsigned char id)
 {
 	Checksum = (~(id + 2 + AX_RESET))&0xFF;
 	
@@ -217,7 +217,7 @@ int AX12Bus::reset(unsigned char id)
     return (read_error());
 }
 
-int AX12Bus::ping(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::ping(unsigned char id)
 {
 	Checksum = (~(id + AX_READ_DATA + AX_PING))&0xFF;
 	
@@ -232,7 +232,7 @@ int AX12Bus::ping(unsigned char id)
     return (read_error());
 }
 
-int AX12Bus::setID(unsigned char id, unsigned char newID)
+int AIServoBus_ROBOTIS_AX12::setID(unsigned char id, unsigned char newID)
 {
 	if(newID > 252)
 		return -1;
@@ -251,7 +251,7 @@ int AX12Bus::setID(unsigned char id, unsigned char newID)
     return (read_error());
 }
 
-int AX12Bus::setBaudrate(unsigned char id, unsigned long baud)
+int AIServoBus_ROBOTIS_AX12::setBaudrate(unsigned char id, unsigned long baud)
 {
 	unsigned char Baud_Rate = (2000000/baud) - 1;
     Checksum = (~(id + 4 + AX_WRITE_DATA + AX_BAUD_RATE + Baud_Rate))&0xFF;
@@ -269,7 +269,7 @@ int AX12Bus::setBaudrate(unsigned char id, unsigned long baud)
     return (read_error());
 }
 
-int AX12Bus::move(unsigned char id, int Position)
+int AIServoBus_ROBOTIS_AX12::move(unsigned char id, int Position)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -292,7 +292,7 @@ int AX12Bus::move(unsigned char id, int Position)
     return (read_error());
 }
 
-int AX12Bus::moveSpeed(unsigned char id, int Position, int Speed)
+int AIServoBus_ROBOTIS_AX12::moveSpeed(unsigned char id, int Position, int Speed)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -321,7 +321,7 @@ int AX12Bus::moveSpeed(unsigned char id, int Position, int Speed)
     return (read_error());
 }
 
-int AX12Bus::setEndless(unsigned char id, bool Status)
+int AIServoBus_ROBOTIS_AX12::setEndless(unsigned char id, bool Status)
 {
 	if(Status)
 	{	
@@ -361,7 +361,7 @@ int AX12Bus::setEndless(unsigned char id, bool Status)
 	}
 }
 
-int AX12Bus::turn(unsigned char id, bool SIDE, int Speed)
+int AIServoBus_ROBOTIS_AX12::turn(unsigned char id, bool SIDE, int Speed)
 {
 	if(Speed > 1023) Speed = 1023;
 	if(Speed < 0) Speed = 0;
@@ -407,7 +407,7 @@ int AX12Bus::turn(unsigned char id, bool SIDE, int Speed)
 	}
 }
 
-int AX12Bus::moveRW(unsigned char id, int Position)
+int AIServoBus_ROBOTIS_AX12::moveRW(unsigned char id, int Position)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -430,7 +430,7 @@ int AX12Bus::moveRW(unsigned char id, int Position)
     return (read_error());
 }
 
-int AX12Bus::moveSpeedRW(unsigned char id, int Position, int Speed)
+int AIServoBus_ROBOTIS_AX12::moveSpeedRW(unsigned char id, int Position, int Speed)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -459,7 +459,7 @@ int AX12Bus::moveSpeedRW(unsigned char id, int Position, int Speed)
     return (read_error()); 
 }
 
-void AX12Bus::action()
+void AIServoBus_ROBOTIS_AX12::action()
 {
     uart->write(AX_START);
     uart->write(AX_START);
@@ -470,7 +470,7 @@ void AX12Bus::action()
 	delayMicroseconds(TX_DELAY * 6);
 }
 
-int AX12Bus::torqueStatus(unsigned char id, bool Status)
+int AIServoBus_ROBOTIS_AX12::torqueStatus(unsigned char id, bool Status)
 {
     Checksum = (~(id + 4 + AX_WRITE_DATA + AX_TORQUE_ENABLE + Status))&0xFF;
 
@@ -487,7 +487,7 @@ int AX12Bus::torqueStatus(unsigned char id, bool Status)
     return (read_error());
 }
 
-int AX12Bus::ledStatus(unsigned char id, bool Status)
+int AIServoBus_ROBOTIS_AX12::ledStatus(unsigned char id, bool Status)
 {    
     Checksum = (~(id + 4 + AX_WRITE_DATA + AX_LED + Status))&0xFF;
 
@@ -504,7 +504,7 @@ int AX12Bus::ledStatus(unsigned char id, bool Status)
     return (read_error());
 }
 
-int AX12Bus::readTemperature(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::readTemperature(unsigned char id)
 {	
     Checksum = (~(id + 4 + AX_READ_DATA + AX_PRESENT_TEMPERATURE + AX_BYTE_READ))&0xFF;
     
@@ -542,7 +542,7 @@ int AX12Bus::readTemperature(unsigned char id)
 	return (Temperature_Byte);               // Returns the read temperature
 }
 
-int AX12Bus::readPosition(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::readPosition(unsigned char id)
 {	
     Checksum = (~(id + 4 + AX_READ_DATA + AX_PRESENT_POSITION_L + AX_BYTE_READ_POS))&0xFF;
   
@@ -584,7 +584,7 @@ int AX12Bus::readPosition(unsigned char id)
 	return (Position_Long_Byte);     // Returns the read position
 }
 
-int AX12Bus::readVoltage(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::readVoltage(unsigned char id)
 {    
     Checksum = (~(id + 4 + AX_READ_DATA + AX_PRESENT_VOLTAGE + AX_BYTE_READ))&0xFF;
     
@@ -622,7 +622,7 @@ int AX12Bus::readVoltage(unsigned char id)
 	return (Voltage_Byte);               // Returns the read Voltage
 }
 
-int AX12Bus::setVoltageLimit(unsigned char id, unsigned char DVoltage, unsigned char UVoltage)
+int AIServoBus_ROBOTIS_AX12::setVoltageLimit(unsigned char id, unsigned char DVoltage, unsigned char UVoltage)
 {
 	Checksum = (~(id + 5 + AX_WRITE_DATA + AX_DOWN_LIMIT_VOLTAGE + DVoltage + UVoltage))&0xFF;
 	
@@ -640,7 +640,7 @@ int AX12Bus::setVoltageLimit(unsigned char id, unsigned char DVoltage, unsigned 
     return (read_error());
 }
 
-int AX12Bus::setSpeed(unsigned char id, int Speed)
+int AIServoBus_ROBOTIS_AX12::setSpeed(unsigned char id, int Speed)
 {
 	if(Speed > 1023) Speed = 1023;
 	if(Speed < 0) Speed = 0;
@@ -663,7 +663,7 @@ int AX12Bus::setSpeed(unsigned char id, int Speed)
     return (read_error());
 }
 
-int AX12Bus::setAngleLimit(unsigned char id, int CWLimit, int CCWLimit)
+int AIServoBus_ROBOTIS_AX12::setAngleLimit(unsigned char id, int CWLimit, int CCWLimit)
 {
 	char CW_H, CW_L, CCW_H, CCW_L;
     CW_H = (CWLimit >> 8) & 0xFF;    
@@ -688,7 +688,7 @@ int AX12Bus::setAngleLimit(unsigned char id, int CWLimit, int CCWLimit)
     return (read_error()); 
 }
 
-int AX12Bus::setMaxTorque(unsigned char id, int MaxTorque)
+int AIServoBus_ROBOTIS_AX12::setMaxTorque(unsigned char id, int MaxTorque)
 {
     char MaxTorque_H, MaxTorque_L;
     MaxTorque_H = (MaxTorque >> 8) & 0xFF;
@@ -709,7 +709,7 @@ int AX12Bus::setMaxTorque(unsigned char id, int MaxTorque)
     return (read_error());
 }
 
-int AX12Bus::setSRL(unsigned char id, unsigned char SRL)
+int AIServoBus_ROBOTIS_AX12::setSRL(unsigned char id, unsigned char SRL)
 {
 	if (SRL > 2)
 		return -1;
@@ -728,9 +728,9 @@ int AX12Bus::setSRL(unsigned char id, unsigned char SRL)
     return (read_error());
 }
 
-int AX12Bus::setRDT(unsigned char id, unsigned char RDT)
+int AIServoBus_ROBOTIS_AX12::setRDT(unsigned char id, unsigned char RDT)
 {
-	Checksum = (~(id + 4 + AX_WRITE_DATA + AX_RETURN_DELAY_TIME + (RDT/2)))&0xFF;
+	Checksum = (~(id + 4 + AX_WRITE_DATA + AX_RETURN_DELAY_TIME + RDT))&0xFF;
 	
     uart->write(AX_START);
     uart->write(AX_START);
@@ -738,14 +738,14 @@ int AX12Bus::setRDT(unsigned char id, unsigned char RDT)
 	uart->write(4);
     uart->write(AX_WRITE_DATA);
     uart->write(AX_RETURN_DELAY_TIME);
-    uart->write((RDT/2));
+    uart->write(RDT);
     uart->write(Checksum);
 	delayMicroseconds(TX_DELAY * 8);
     
     return (read_error());
 }
 
-int AX12Bus::setLEDAlarm(unsigned char id, unsigned char LEDAlarm)
+int AIServoBus_ROBOTIS_AX12::setLEDAlarm(unsigned char id, unsigned char LEDAlarm)
 {    
 	Checksum = (~(id + 4 + AX_WRITE_DATA + AX_ALARM_LED + LEDAlarm))&0xFF;
 	
@@ -762,7 +762,7 @@ int AX12Bus::setLEDAlarm(unsigned char id, unsigned char LEDAlarm)
     return (read_error());
 }
 
-int AX12Bus::setShutdownAlarm(unsigned char id, unsigned char SALARM)
+int AIServoBus_ROBOTIS_AX12::setShutdownAlarm(unsigned char id, unsigned char SALARM)
 {    
 	Checksum = (~(id + 4 + AX_ALARM_SHUTDOWN + AX_WRITE_DATA + SALARM))&0xFF;
 	
@@ -779,7 +779,7 @@ int AX12Bus::setShutdownAlarm(unsigned char id, unsigned char SALARM)
     return (read_error());
 }
 
-int AX12Bus::setCMargin(unsigned char id, unsigned char CWCMargin, unsigned char CCWCMargin)
+int AIServoBus_ROBOTIS_AX12::setCMargin(unsigned char id, unsigned char CWCMargin, unsigned char CCWCMargin)
 {
 	Checksum = (~(id + 5 + AX_WRITE_DATA + AX_CW_COMPLIANCE_MARGIN + CWCMargin + CCWCMargin))&0xFF;
 	
@@ -797,7 +797,7 @@ int AX12Bus::setCMargin(unsigned char id, unsigned char CWCMargin, unsigned char
     return (read_error()); 
 }
 
-int AX12Bus::setCSlope(unsigned char id, unsigned char CWCSlope, unsigned char CCWCSlope)
+int AIServoBus_ROBOTIS_AX12::setCSlope(unsigned char id, unsigned char CWCSlope, unsigned char CCWCSlope)
 {
 	Checksum = (~(id + 5 + AX_WRITE_DATA + AX_CW_COMPLIANCE_SLOPE + CWCSlope + CCWCSlope))&0xFF;
 	
@@ -815,7 +815,7 @@ int AX12Bus::setCSlope(unsigned char id, unsigned char CWCSlope, unsigned char C
     return (read_error()); 
 }
 
-int AX12Bus::setPunch(unsigned char id, int Punch)
+int AIServoBus_ROBOTIS_AX12::setPunch(unsigned char id, int Punch)
 {
     char Punch_H, Punch_L;
     Punch_H = (Punch >> 8) & 0xFF;
@@ -836,7 +836,7 @@ int AX12Bus::setPunch(unsigned char id, int Punch)
     return (read_error());
 }
 
-int AX12Bus::moving(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::moving(unsigned char id)
 {	
     Checksum = (~(id + 4  + AX_READ_DATA + AX_MOVING + AX_BYTE_READ))&0xFF;
     
@@ -874,7 +874,7 @@ int AX12Bus::moving(unsigned char id)
 	return (Moving_Byte);
 }
 
-int AX12Bus::lockRegister(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::lockRegister(unsigned char id)
 {    
 	Checksum = (~(id + 4 + AX_WRITE_DATA + AX_LOCK + 1))&0xFF;
 	
@@ -891,7 +891,7 @@ int AX12Bus::lockRegister(unsigned char id)
     return (read_error());
 }
 
-int AX12Bus::RWStatus(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::RWStatus(unsigned char id)
 {	
     Checksum = (~(id + 4  + AX_READ_DATA + AX_REGISTERED_INSTRUCTION + AX_BYTE_READ))&0xFF;
     
@@ -929,7 +929,7 @@ int AX12Bus::RWStatus(unsigned char id)
 	return (RWS_Byte);
 }
 
-int AX12Bus::readRDT(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::readRDT(unsigned char id)
 {	
     Checksum = (~(id + 4  + AX_READ_DATA + AX_RETURN_DELAY_TIME + AX_BYTE_READ))&0xFF;
     
@@ -964,10 +964,10 @@ int AX12Bus::readRDT(unsigned char id)
 			RWS_Byte = uart->read();
 		}
     }
-	return (RWS_Byte * 2);
+	return (RWS_Byte);
 }
 
-int AX12Bus::readSpeed(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::readSpeed(unsigned char id)
 {	
     Checksum = (~(id + 4  + AX_READ_DATA + AX_PRESENT_SPEED_L + AX_BYTE_READ_POS))&0xFF;
 	
@@ -1009,7 +1009,7 @@ int AX12Bus::readSpeed(unsigned char id)
 	return (Speed_Long_Byte);
 }
 
-int AX12Bus::readLoad(unsigned char id)
+int AIServoBus_ROBOTIS_AX12::readLoad(unsigned char id)
 {	
     Checksum = (~(id + 4  + AX_READ_DATA + AX_PRESENT_LOAD_L + AX_BYTE_READ_POS))&0xFF;
 	

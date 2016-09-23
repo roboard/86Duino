@@ -510,8 +510,14 @@ void servoMultiRealTimeMixing(long* mixoffsets, Servo &s1=nullServo, Servo &s2=n
 void EnableMixing (void);
 void DisableMixing (void);
 
-#define CONSTRAINED_CUBIC    (30)
-#define NATURAL_CUBIC        (40)
+#ifndef CONSTRAINED_CUBIC
+	#define CONSTRAINED_CUBIC    (30)
+#endif
+
+#ifndef NATURAL_CUBIC
+	#define NATURAL_CUBIC        (40)
+#endif
+
 void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTime, int numFrames);
 void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameTime, int numFrames);
 void servoEndSplineMotion();

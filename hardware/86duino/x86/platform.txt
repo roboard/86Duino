@@ -8,7 +8,7 @@ name=Vortex86EX (32-bits) Boards
 
 compiler.warning_flags=-w
 compiler.warning_flags.none=-w
-compiler.warning_flags.default=
+compiler.warning_flags.default=-w
 compiler.warning_flags.more=-Wall
 compiler.warning_flags.all=-Wall -Wextra
 

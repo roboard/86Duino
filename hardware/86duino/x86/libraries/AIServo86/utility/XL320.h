@@ -29,9 +29,19 @@
 
 #include "AIServoBus.h"
 
-class XL320Bus : public AIServoBus {
+//XL-320 Colors
+#define XL_NONE_LED                 0
+#define XL_RED_LED                  1
+#define XL_GREEN_LED                2
+#define XL_YELLOW_LED               3
+#define XL_BLUE_LED                 4
+#define XL_PINK_LED                 5
+#define XL_BLUE_GREEN_LED           6
+#define XL_WHITE_LED                7
+
+class AIServoBus_ROBOTIS_XL320 : public AIServoBus {
 public:
-	XL320Bus();
+	AIServoBus_ROBOTIS_XL320();
 	
 	void update(bool enableMixing);
 	long long s2a() { return 292969; }
@@ -43,6 +53,7 @@ public:
 	int boost(void);
 	int reset(unsigned char id);
 	int ping(unsigned char id);
+	int reboot(unsigned char id);
 	int setID(unsigned char id, unsigned char newID);
 	int setBaudrate(unsigned char id, unsigned long baud);
 	int move(unsigned char id, int Position);
@@ -82,27 +93,17 @@ public:
 	int setPGain(unsigned char id, unsigned char P);
 private:
 	const int TIME_OUT = 5;
-	
-	unsigned char Checksum; 
-	unsigned char Direction_Pin;
 	unsigned char Time_Counter;
-	unsigned char Incoming_Byte;               
-	unsigned char Position_High_Byte;
-	unsigned char Position_Low_Byte;
-	unsigned char Speed_High_Byte;
-	unsigned char Speed_Low_Byte;
-	unsigned char Load_High_Byte;
-	unsigned char Load_Low_Byte;
+	unsigned char RWS_Byte;
+	unsigned char Voltage_Byte;
+	unsigned char Temperature_Byte;
+	unsigned char Moving_Byte;
+	unsigned short CRC;
 	
-	int Moving_Byte;
-	int RWS_Byte;
 	int Speed_Long_Byte;
 	int Load_Long_Byte;
 	int Position_Long_Byte;
-	int Temperature_Byte;
-	int Voltage_Byte;
-	int Error_Byte;
-	  
+
 	int read_error();
 };
 

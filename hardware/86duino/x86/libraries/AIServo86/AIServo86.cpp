@@ -812,7 +812,9 @@ bool AIServoFrame::load(const char* dir)
 	FILE *fp;
 	char path[256] = {'\0'};
 	char _line[256] = {'\0'};
-	long long tmp[MAXSERVOS] = {0L}, value;
+	long long value;
+	long long tmp[MAXSERVOS];
+	for (i=0; i<MAXSERVOS; i++) tmp[i] = -1000000;
 	
 	if (dir == NULL) return false;
 
@@ -845,7 +847,7 @@ bool AIServoFrame::load(const char* dir)
 
 bool AIServoFrame::load(const String &s)
 {
-	load(s.c_str());
+	return load(s.c_str());
 }
 
 void combine(char* result, int channel, long long value)
@@ -865,7 +867,6 @@ void combine(char* result, int channel, long long value)
 	tmp[i] = '\n';
 	
 	strncpy(result, tmp, 256);
-	//printf("%s\n", result);
 }
 
 bool AIServoFrame::save(const char* dir)
@@ -894,7 +895,7 @@ bool AIServoFrame::save(const char* dir)
 
 bool AIServoFrame::save(const String &s)
 {
-	save(s.c_str());
+	return save(s.c_str());
 }
 
 void AIServoFrame::playPositions(AIServo &s1, AIServo &s2, AIServo &s3, AIServo &s4,
@@ -1212,7 +1213,7 @@ bool AIServoOffset::load(const char* dir)
 
 bool AIServoOffset::load(const String &s)
 {
-	load(s.c_str());
+	return load(s.c_str());
 }
 
 bool AIServoOffset::save(const char* dir)
@@ -1241,7 +1242,141 @@ bool AIServoOffset::save(const char* dir)
 
 bool AIServoOffset::save(const String &s)
 {
-	save(s.c_str());
+	return save(s.c_str());
+}
+
+AIServoFrameRobotis::AIServoFrameRobotis() : AIServoFrame()
+{
+}
+
+AIServoFrameRobotis::AIServoFrameRobotis(const char* dir, const char* sname, int step) : AIServoFrame()
+{
+	load(dir, sname, step);
+}
+
+bool AIServoFrameRobotis::loadMtnx(const char* dir, const char* sname, int step)
+{
+	//TODO
+	return false;
+}
+
+bool AIServoFrameRobotis::loadMtn(const char* dir, const char* sname, int step)
+{
+	FILE *fp;
+	char path[256] = {'\0'};
+	char _line[256] = {'\0'};
+	int motor_type[26] = {0};
+	int tmp[26];
+	for(int i = 0; i < 26; i++) tmp[i] = -1;
+	
+	get_real_path(dir, path);
+	
+	if((fp = fopen(path, "r")) == NULL) return false;
+	
+	bool res = false;
+	while(fgets(_line, 256, fp))
+	{
+		if (strncmp(_line, "motor_type=", 11) == 0)
+		{
+			char* pch;
+			pch = strtok(_line + 11, " ");
+			for (int j = 0; j < 26; j++)
+			{
+				motor_type[j] = atoi(pch);
+				pch = strtok(NULL, " ");
+			}
+		}
+		if (strncmp(_line, "name=", 5) == 0)
+		{
+			if (memcmp(_line + 5, sname, sizeof(char)*strlen(sname)) == 0)
+			{
+				if(fgets(_line, 256, fp) == NULL) { fclose(fp); return false; }
+				if(fgets(_line, 256, fp) == NULL) { fclose(fp); return false; }
+				for (int i = 0; i <= step; i++)
+				{
+					if (fgets(_line, 256, fp) == NULL)
+					{
+						fclose(fp);
+						return false;
+					}
+				}
+				if (strncmp(_line, "step=", 5) == 0)
+				{
+					res = true;
+					char* pch;
+					pch = strtok(_line + 5, " ");
+					for (int j = 0; j < 26; j++)
+					{
+						tmp[j] = atoi(pch);
+						pch = strtok(NULL, " ");
+					}
+				}
+			}
+		}
+	}
+	
+	fclose(fp);
+	
+	if(res == false)
+		return res;
+	
+	for (int i = 0; i < 26; i++) 
+	{
+		double angle = -1;
+		
+		if(motor_type[i] == 1)
+			angle = (double)((double)tmp[i]*0.06103515625);
+		else if(motor_type[i] == 2)
+			angle = (double)((double)tmp[i]*0.087890625);
+		else
+			angle = (double)((double)tmp[i]*0.29296875);
+		
+		if(angle > 360) angle = 360;
+		if(angle < 0) angle = 0;
+		positions[i] = angle;
+	}
+
+	return true;
+}
+
+static char* extension(char* dir)
+{
+	char* pch = strtok(dir, ".");
+	char* res = pch;
+	while(pch != NULL)
+	{
+		res = pch;
+		pch = strtok(NULL, ".");
+	}
+	return res;
+}
+
+bool AIServoFrameRobotis::load(const char* dir, const char* sname, int step)
+{
+	if (dir == NULL) return false;
+	char* _dir = (char*)malloc(sizeof(char)*(strlen(dir)+1));
+	strcpy(_dir, dir);
+	char* ext = extension(_dir);
+	if(strncmp(ext, "mtn", 3) == 0)
+	{
+		if(strncmp(ext, "mtnx", 4) == 0)
+		{
+			free(_dir);
+			return loadMtnx(dir, sname, step);
+		}
+		else
+		{
+			free(_dir);
+			return loadMtn(dir, sname, step);
+		}
+	}
+	free(_dir);
+	return false;
+}
+
+bool AIServoFrameRobotis::load(const String &s, const String &s1, int step)
+{
+	return load(s.c_str(), s1.c_str(), step);
 }
 
 void aiEnableMixing (void) { enableMixing = true; }

@@ -1,10 +1,13 @@
-### CODING 315 - 2016.09.14 ###
+### CODING 315 - 2016.09.22 ###
 
 [core]
-comment the delay() in dos.h in sys-include.
+* comment the delay() in dos.h in sys-include.
+* The defalut warnning is "-w" in platform.txt.
 
 [libraries]
-* Add the AIServo86 library for Serial AI Servo. (ex: Dynamixel AX-12, RX-28, MX-28, etc.)
+* Add the AIServo86 library for Serial AI Servo. (ex: Dynamixel AX-12, RX-28, MX-28, XL-320 etc.)
+* Add bool return in load() to load offset or frame files by using Servo86 library.
+* Fix a memory alloc bug when using cubic spline funciton.
 
 
 

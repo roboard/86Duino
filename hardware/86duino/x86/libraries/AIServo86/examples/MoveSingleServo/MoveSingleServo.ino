@@ -6,7 +6,7 @@ AIServo myservo;
 void setup() 
 {
   bus.begin(Serial1, 3000000);
-  myservo.attach(bus, 1);             // attaches the servo on pin 21
+  myservo.attach(bus, 1);             // attaches the servo with ID 1
 } 
 
 void loop() 

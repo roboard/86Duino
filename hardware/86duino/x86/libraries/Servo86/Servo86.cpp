@@ -26,7 +26,6 @@
 #include "io.h"
 #include "irq.h"
 #include "pins_arduino.h"
-#include "Cubic.h"
 
 /* RTC */   
 #define RTCIRQ    (8)
@@ -1325,7 +1324,7 @@ bool ServoFrame::load(const char* dir) {
 }
 
 bool ServoFrame::load(const String &s) {
-	load(s.c_str());
+	return load(s.c_str());
 }
 
 void combine(char* result, int channel, long value) {
@@ -1524,11 +1523,170 @@ void ServoFrame::playPositions(int playtime, unsigned long long enabled_servos, 
 	              s41, s42, s43, s44, s45);
 	used_servos = 0x00001FFFFFFFFFFFLL;
 }
+/*============================================== End of Servo Frame ==============================================*/
+
+
+/*================================================= Cubic Spline =================================================*/
+
+static double** mallocMyDoubleMatrix(int m, int n) {
+	double **Array, *pData;
+	int i;
+	Array = (double**) malloc(m*sizeof(double *));
+	pData = (double*) malloc(m*n*sizeof(double));
+	for (i = 0; i < m; i++, pData += n)
+		Array[i] = pData;
+	return Array;
+}
+
+static void freeMyDoubleMatrix(double** m, double* n) {
+	free(n);
+	free(m);
+}
+
+static void servoComputeCubicSpline (double** points, double** acc, unsigned long size) {
+	int totalPoints = 0;
+	int totalLines = 0;
+
+	double* x_Array;
+	double* h_Array;
+	double* L_Array;
+	double* U_Array;
+	double* z_Array;
+	double* alpha_Array;
+	//double **result_Matrix;
+	int i, j;
+
+	if (points == NULL) return;
+	if (size == 1) {acc[0][0] = 0.0; acc[0][1] = 0.0; return;}
+	if (size == 2) {acc[0][0] = 0.0; acc[0][1] = 0.0; acc[1][0] = 0.0; acc[1][1] = 0.0; return;}
+	
+	totalPoints = size;
+	totalLines = totalPoints - 1L;
+	
+	h_Array = (double*) malloc(totalPoints*6*sizeof(double));
+	x_Array = h_Array + totalPoints;
+	alpha_Array = x_Array + totalPoints;
+	L_Array =  alpha_Array + totalPoints;
+	U_Array =  L_Array + totalPoints;
+	z_Array =  U_Array + totalPoints;
+	
+	for(i=0; i<totalLines; i++)
+		h_Array[i] = points[i+1][0] - points[i][0];
+
+	// initialize X (C0 ~ Cn)
+	for (i=0; i<totalPoints; i++)
+		x_Array[i] = 0.0;
+
+	//result_Matrix = mallocMyDoubleArray((int)totalLines, (int)totalPoints); // totalLines = totalPoints - 1
+
+	for (i=1; i<totalLines; i++)
+		alpha_Array[i] = (3*(points[i+1][1] - points[i][1])/h_Array[i]) - (3*(points[i][1] - points[i-1][1])/h_Array[i-1]);
+
+	for (i=0; i<totalPoints; i++)
+	{
+		if (i == 0 || i == totalLines)
+		{
+			L_Array[i] = 1.0; U_Array[0] = 0.0; z_Array[0] = 0.0;
+		}
+		else
+		{
+			L_Array[i] = 2*(points[i+1][0] - points[i-1][0]) - h_Array[i-1]*U_Array[i-1];
+			U_Array[i] = h_Array[i]/L_Array[i];
+			z_Array[i] = (alpha_Array[i] - h_Array[i-1]*z_Array[i-1])/L_Array[i];
+		}
+	}
+
+	for (i=totalLines-1; i>=0; i--)
+	{
+		x_Array[i] = z_Array[i] - U_Array[i]*x_Array[i+1];
+		//result_Matrix[i][1] = ((points[i+1][1] - points[i][1])/h_Array[i]) - (h_Array[i]*(x_Array[i+1] + 2*x_Array[i])/3); // caculate b
+		//result_Matrix[i][3] = (x_Array[i+1] - x_Array[i])/(3*h_Array[i]); // caculate d
+		acc[i][0] = acc[i][1] = 2*x_Array[i];
+	}
+	acc[totalLines][0] = 0; // the speed of last point is 0
+	acc[totalLines][1] = 0;
+	
+	//for (i=0; i<totalLines; i++) result_Matrix[i][0] = points[i][1]; // caculate a
+	//for (i=0; i<totalLines; i++) result_Matrix[i][2] = x_Array[i]; // caculate c
+
+	free(h_Array);
+}
+
+static void servoComputeConstrainedCubicSpline (double** points, double** acc, unsigned long size) {
+	int totalPoints = 0;
+	int totalLines = 0;
+
+	double* dx;
+	double* dy;
+	double* pointSpeed;
+	double* myc;
+	double* myd;
+	int i, j;
+
+	if (points == NULL) return;
+	if (size == 1) {acc[0][0] = 0.0; acc[0][1] = 0.0; return;}
+	if (size == 2) {acc[0][0] = 0.0; acc[0][1] = 0.0; acc[1][0] = 0.0; acc[1][1] = 0.0; return;}
+	
+	totalPoints = size;
+	totalLines = totalPoints - 1L;
+	
+	dx = (double*) malloc(totalPoints*5*sizeof(double));
+	dy = dx + totalPoints;
+	pointSpeed = dy + totalPoints;
+	myc = pointSpeed + totalPoints;
+	myd = myc + totalPoints;
+	
+	for (i=0; i<totalLines; i++)
+	{
+		dx[i] = points[i+1][0] - points[i][0];
+		if (dx[i] <= 20.0) dx[i] = 20.0;
+		dy[i] = points[i+1][1] - points[i][1];
+	}
+	
+	for (i=1; i<totalLines; i++)
+	{
+		long S = (long) (dy[i-1]*dy[i]);
+		if (S > 0L)
+			pointSpeed[i] = 2.0/((dx[i]/dy[i]) + (dx[i-1]/dy[i-1]));
+		else
+			pointSpeed[i] = 0.0;
+	}
+	
+	pointSpeed[0] = ((3.0*dy[0])/(2.0*dx[0])) - (pointSpeed[1]/2.0);
+	pointSpeed[totalLines] = ((3.0*dy[totalLines-1])/(2.0*dx[totalLines-1])) - (pointSpeed[totalLines-1]/2.0);
+	
+	for (i=1; i<=totalLines; i++)
+	{
+		double lacc = ((6.0*dy[i-1])/(dx[i-1]*dx[i-1])) - ((2.0*(pointSpeed[i] + 2.0*pointSpeed[i-1]))/dx[i-1]);
+		double racc = ((2.0*(2.0*pointSpeed[i] + pointSpeed[i-1]))/dx[i-1]) - ((6.0*dy[i-1])/(dx[i-1]*dx[i-1]));
+		
+		myd[i-1] = (racc - lacc)/(6.0*dx[i-1]);
+		myc[i-1] = ((points[i][0]*lacc) - (points[i-1][0]*racc))/(2.0*dx[i-1]);
+		
+		acc[i-1][1] = 2.0*myc[i-1] + 6.0*myd[i-1]*points[i-1][0];
+		acc[i][0] = 2.0*myc[i-1] + 6.0*myd[i-1]*points[i][0];
+	}
+
+	acc[0][0] = 0.0;
+	acc[i-1][1] = 0.0;
+	
+	/*
+	printf("d: ");
+	for (i=0; i<totalLines; i++)
+		printf("%f ", myd[i]);
+	printf("\n");
+	
+	printf("c: ");
+	for (i=0; i<totalLines; i++)
+		printf("%f ", myc[i]);
+	printf("\n");
+	*/
+	
+	free(dx);
+}
 
 void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTime, int numFrames) {
 	int i, j, k=0;
-	double **p;
-	double **_acc;
 	double ***acc;
 	double ***pp;
 	unsigned int servoNum = 0;
@@ -1543,8 +1701,7 @@ void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTi
 
 	for (i=0; i<servoNum; i++)
 	{
-		p = mallocMyDoubleMatrix(numFrames, 2); // {{x0, y0}, {x1, y1}, {x2, y2}, ...}
-		pp[i] = p;
+		pp[i] = mallocMyDoubleMatrix(numFrames, 2); // {{x0, y0}, {x1, y1}, {x2, y2}, ...}
 	}
 
 	for (i=0; i<45; i++)
@@ -1567,8 +1724,7 @@ void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTi
 	acc = (double***) malloc(k*sizeof(double**));
 	for (i=0; i<servoNum; i++)
 	{
-		_acc = mallocMyDoubleMatrix(numFrames, 2);
-		acc[i] = _acc;
+		acc[i] = mallocMyDoubleMatrix(numFrames, 2);
 	}
 	
 	if (mode == NATURAL_CUBIC)
@@ -1599,9 +1755,11 @@ void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTi
 		printf("\n");
 	}
 	*/
-	
-	freeMyDoubleMatrix(_acc, _acc[0]);
-	freeMyDoubleMatrix(p, p[0]);
+	for (i=0; i<servoNum; i++)
+	{
+		freeMyDoubleMatrix(acc[i], acc[i][0]);
+		freeMyDoubleMatrix(pp[i], pp[i][0]);
+	}
 	free(acc);
 	free(pp);
 }
@@ -1612,8 +1770,6 @@ void servoEndSplineMotion() {
 
 void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameTime, int numFrames) {
 	int i, j, k=0;
-	double **p;
-	double **_acc;
 	double ***acc;
 	double ***pp;
 	unsigned int servoNum = 0;
@@ -1629,8 +1785,7 @@ void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameT
 
 	for (i=0; i<servoNum; i++)
 	{
-		p = mallocMyDoubleMatrix(numFrames, 2); // {{x0, y0}, {x1, y1}, {x2, y2}, ...}
-		pp[i] = p;
+		pp[i] = mallocMyDoubleMatrix(numFrames, 2); // {{x0, y0}, {x1, y1}, {x2, y2}, ...}
 	}
 
 	for (i=0; i<45; i++)
@@ -1653,8 +1808,7 @@ void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameT
 	acc = (double***) malloc(k*sizeof(double**));
 	for (i=0; i<k; i++)
 	{
-		_acc = mallocMyDoubleMatrix(numFrames, 2);
-		acc[i] = _acc;
+		acc[i] = mallocMyDoubleMatrix(numFrames, 2);
 	}
 
 	if (mode == NATURAL_CUBIC)
@@ -1686,13 +1840,16 @@ void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameT
 	}
 	*/
 	
-	freeMyDoubleMatrix(_acc, _acc[0]);
-	freeMyDoubleMatrix(p, p[0]);
+	for (i=0; i<servoNum; i++)
+	{
+		freeMyDoubleMatrix(acc[i], acc[i][0]);
+		freeMyDoubleMatrix(pp[i], pp[i][0]);
+	}
 	free(acc);
 	free(pp);
 }
 
-/******************************* End of Servo Frame ***************************/
+/*============================================ End of Cubic Spline ===============================================*/
 
 
 /********************************* Servo Offset *******************************/
@@ -1781,7 +1938,7 @@ bool ServoOffset::load(const char* dir) {
 }
 
 bool ServoOffset::load(const String &s) {
-	load(s.c_str());
+	return load(s.c_str());
 }
 
 bool ServoOffset::save(const char* dir) {
@@ -2176,7 +2333,7 @@ bool ServoFrameInno::load(const char* dir) {
 }
 
 bool ServoFrameInno::load(const String &s) {
-	load(s.c_str());
+	return load(s.c_str());
 }
 
 ServoOffsetInno::ServoOffsetInno() : ServoOffset() {
@@ -2322,7 +2479,7 @@ bool ServoOffsetInno::load(const char* dir) {
 }
 
 bool ServoOffsetInno::load(const String &s) {
-	load(s.c_str());
+	return load(s.c_str());
 }
 
 /*
@@ -2589,7 +2746,7 @@ bool ServoFrameKondo::load(const char* dir, const char* fname) {
 } 
 
 bool ServoFrameKondo::load(const String &s, const String &s1) {
-	load(s.c_str(), s1.c_str());
+	return load(s.c_str(), s1.c_str());
 }
 
 
@@ -2702,7 +2859,7 @@ bool ServoOffsetKondo::load(const char* dir) {
 }
 
 bool ServoOffsetKondo::load(const String &s) {
-	load(s.c_str());
+	return load(s.c_str());
 }
 
 
@@ -2862,7 +3019,7 @@ bool ServoFramePololu::load(const char* dir, const char* sname, const char* fnam
 }
 
 bool ServoFramePololu::load(const String &s, const String &s1, const String &s2) {
-	load(s.c_str(), s1.c_str(), s2.c_str());
+	return load(s.c_str(), s1.c_str(), s2.c_str());
 }
 
 /*
@@ -3335,7 +3492,7 @@ bool ServoFrameVstone::load(const char* filename, const char* framename) {
 }
 
 bool ServoFrameVstone::load(const String &s, const String &s1) {
-	load(s.c_str(), s1.c_str());
+	return load(s.c_str(), s1.c_str());
 }
 
 
@@ -3433,7 +3590,7 @@ bool ServoOffsetVstone::load(const char* dir, const char* offsetname) {
 }
 
 bool ServoOffsetVstone::load(const String &s1, const String &s2) {
-	load(s1.c_str(), s2.c_str());
+	return load(s1.c_str(), s2.c_str());
 }
 
 /************************************ RTC *************************************/

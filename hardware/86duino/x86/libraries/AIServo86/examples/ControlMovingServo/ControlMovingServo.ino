@@ -8,7 +8,7 @@ unsigned char ServoID = 17;
 void setup() 
 {
   bus.begin(Serial1, 1000000);  // set used port and its baudrate
-  myservo.attach(bus, ServoID); // attaches the servo on pin 21
+  myservo.attach(bus, ServoID); // attaches the servo with ID 17
   myservo.setPosition(150);     // set servo to HOME position
   myservo.run();                // servo runs to HOME position
   delay(1000);                  // wait 1s

@@ -95,12 +95,12 @@ static unsigned char calc_chksum(unsigned char *data, int len)
 	return chksum;
 }
 
-RX28Bus::RX28Bus()
+AIServoBus_ROBOTIS_RX28::AIServoBus_ROBOTIS_RX28()
 {
 	TX_DELAY = 400;
 }
 
-void RX28Bus::begin(HardwareSerial &ai_uart, unsigned long baud)
+void AIServoBus_ROBOTIS_RX28::begin(HardwareSerial &ai_uart, unsigned long baud)
 {
 	if(&ai_uart != HWSerial[4])
 	{
@@ -119,7 +119,7 @@ void RX28Bus::begin(HardwareSerial &ai_uart, unsigned long baud)
 	syncMsg[6] = 0x02;
 }
 
-void RX28Bus::update(bool enableMixing)
+void AIServoBus_ROBOTIS_RX28::update(bool enableMixing)
 {
 	int count = 0;
 	int totalMsgs;
@@ -158,7 +158,7 @@ void RX28Bus::update(bool enableMixing)
 	}
 }
 
-int RX28Bus::read_error()
+int AIServoBus_ROBOTIS_RX28::read_error()
 {
 	Time_Counter = 0;
 	while((uart->available() < 5) & (Time_Counter < TIME_OUT))
@@ -182,7 +182,7 @@ int RX28Bus::read_error()
 	return (-1);											 // No RX Response
 }
 
-int RX28Bus::boost()
+int AIServoBus_ROBOTIS_RX28::boost()
 {
 	int res = 0;
 	AIServoList* tmp = aisHead;
@@ -195,7 +195,7 @@ int RX28Bus::boost()
 	return res;
 }
 
-int RX28Bus::reset(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::reset(unsigned char id)
 {
 	Checksum = (~(id + 2 + RX_RESET))&0xFF;
 	
@@ -210,7 +210,7 @@ int RX28Bus::reset(unsigned char id)
     return (read_error());
 }
 
-int RX28Bus::ping(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::ping(unsigned char id)
 {
 	Checksum = (~(id + RX_READ_DATA + RX_PING))&0xFF;
 	
@@ -225,7 +225,7 @@ int RX28Bus::ping(unsigned char id)
     return (read_error());
 }
 
-int RX28Bus::setID(unsigned char id, unsigned char newID)
+int AIServoBus_ROBOTIS_RX28::setID(unsigned char id, unsigned char newID)
 {
 	if(newID > 252)
 		return -1;
@@ -244,7 +244,7 @@ int RX28Bus::setID(unsigned char id, unsigned char newID)
     return (read_error());
 }
 
-int RX28Bus::setBaudrate(unsigned char id, unsigned long baud)
+int AIServoBus_ROBOTIS_RX28::setBaudrate(unsigned char id, unsigned long baud)
 {
 	unsigned char Baud_Rate = (2000000/baud) - 1;
     Checksum = (~(id + 4 + RX_WRITE_DATA + RX_BAUD_RATE + Baud_Rate))&0xFF;
@@ -262,7 +262,7 @@ int RX28Bus::setBaudrate(unsigned char id, unsigned long baud)
     return (read_error());
 }
 
-int RX28Bus::move(unsigned char id, int Position)
+int AIServoBus_ROBOTIS_RX28::move(unsigned char id, int Position)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -285,7 +285,7 @@ int RX28Bus::move(unsigned char id, int Position)
     return (read_error());
 }
 
-int RX28Bus::moveSpeed(unsigned char id, int Position, int Speed)
+int AIServoBus_ROBOTIS_RX28::moveSpeed(unsigned char id, int Position, int Speed)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -314,7 +314,7 @@ int RX28Bus::moveSpeed(unsigned char id, int Position, int Speed)
     return (read_error());
 }
 
-int RX28Bus::setEndless(unsigned char id, bool Status)
+int AIServoBus_ROBOTIS_RX28::setEndless(unsigned char id, bool Status)
 {
 	if(Status)
 	{	
@@ -354,7 +354,7 @@ int RX28Bus::setEndless(unsigned char id, bool Status)
 	}
 }
 
-int RX28Bus::turn(unsigned char id, bool SIDE, int Speed)
+int AIServoBus_ROBOTIS_RX28::turn(unsigned char id, bool SIDE, int Speed)
 {
 	if(Speed > 1023) Speed = 1023;
 	if(Speed < 0) Speed = 0;
@@ -400,7 +400,7 @@ int RX28Bus::turn(unsigned char id, bool SIDE, int Speed)
 	}
 }
 
-int RX28Bus::moveRW(unsigned char id, int Position)
+int AIServoBus_ROBOTIS_RX28::moveRW(unsigned char id, int Position)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -423,7 +423,7 @@ int RX28Bus::moveRW(unsigned char id, int Position)
     return (read_error());
 }
 
-int RX28Bus::moveSpeedRW(unsigned char id, int Position, int Speed)
+int AIServoBus_ROBOTIS_RX28::moveSpeedRW(unsigned char id, int Position, int Speed)
 {
 	if(Position > 1023) Position = 1023;
 	if(Position < 0) Position = 0;
@@ -452,7 +452,7 @@ int RX28Bus::moveSpeedRW(unsigned char id, int Position, int Speed)
     return (read_error()); 
 }
 
-void RX28Bus::action()
+void AIServoBus_ROBOTIS_RX28::action()
 {
     uart->write(RX_START);
     uart->write(RX_START);
@@ -463,7 +463,7 @@ void RX28Bus::action()
 	delayMicroseconds(TX_DELAY * 6);
 }
 
-int RX28Bus::torqueStatus(unsigned char id, bool Status)
+int AIServoBus_ROBOTIS_RX28::torqueStatus(unsigned char id, bool Status)
 {
     Checksum = (~(id + 4 + RX_WRITE_DATA + RX_TORQUE_ENABLE + Status))&0xFF;
 
@@ -480,7 +480,7 @@ int RX28Bus::torqueStatus(unsigned char id, bool Status)
     return (read_error());
 }
 
-int RX28Bus::ledStatus(unsigned char id, bool Status)
+int AIServoBus_ROBOTIS_RX28::ledStatus(unsigned char id, bool Status)
 {    
     Checksum = (~(id + 4 + RX_WRITE_DATA + RX_LED + Status))&0xFF;
 
@@ -497,7 +497,7 @@ int RX28Bus::ledStatus(unsigned char id, bool Status)
     return (read_error());
 }
 
-int RX28Bus::readTemperature(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::readTemperature(unsigned char id)
 {	
     Checksum = (~(id + 4 + RX_READ_DATA + RX_PRESENT_TEMPERATURE + RX_BYTE_READ))&0xFF;
     
@@ -535,7 +535,7 @@ int RX28Bus::readTemperature(unsigned char id)
 	return (Temperature_Byte);               // Returns the read temperature
 }
 
-int RX28Bus::readPosition(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::readPosition(unsigned char id)
 {	
     Checksum = (~(id + 4 + RX_READ_DATA + RX_PRESENT_POSITION_L + RX_BYTE_READ_POS))&0xFF;
   
@@ -577,7 +577,7 @@ int RX28Bus::readPosition(unsigned char id)
 	return (Position_Long_Byte);     // Returns the read position
 }
 
-int RX28Bus::readVoltage(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::readVoltage(unsigned char id)
 {    
     Checksum = (~(id + 4 + RX_READ_DATA + RX_PRESENT_VOLTAGE + RX_BYTE_READ))&0xFF;
     
@@ -615,7 +615,7 @@ int RX28Bus::readVoltage(unsigned char id)
 	return (Voltage_Byte);               // Returns the read Voltage
 }
 
-int RX28Bus::setVoltageLimit(unsigned char id, unsigned char DVoltage, unsigned char UVoltage)
+int AIServoBus_ROBOTIS_RX28::setVoltageLimit(unsigned char id, unsigned char DVoltage, unsigned char UVoltage)
 {
 	Checksum = (~(id + 5 + RX_WRITE_DATA + RX_DOWN_LIMIT_VOLTAGE + DVoltage + UVoltage))&0xFF;
 	
@@ -633,7 +633,7 @@ int RX28Bus::setVoltageLimit(unsigned char id, unsigned char DVoltage, unsigned 
     return (read_error());
 }
 
-int RX28Bus::setSpeed(unsigned char id, int Speed)
+int AIServoBus_ROBOTIS_RX28::setSpeed(unsigned char id, int Speed)
 {
 	if(Speed > 1023) Speed = 1023;
 	if(Speed < 0) Speed = 0;
@@ -656,7 +656,7 @@ int RX28Bus::setSpeed(unsigned char id, int Speed)
     return (read_error());
 }
 
-int RX28Bus::setAngleLimit(unsigned char id, int CWLimit, int CCWLimit)
+int AIServoBus_ROBOTIS_RX28::setAngleLimit(unsigned char id, int CWLimit, int CCWLimit)
 {
 	char CW_H, CW_L, CCW_H, CCW_L;
     CW_H = (CWLimit >> 8) & 0xFF;    
@@ -681,7 +681,7 @@ int RX28Bus::setAngleLimit(unsigned char id, int CWLimit, int CCWLimit)
     return (read_error()); 
 }
 
-int RX28Bus::setMaxTorque(unsigned char id, int MaxTorque)
+int AIServoBus_ROBOTIS_RX28::setMaxTorque(unsigned char id, int MaxTorque)
 {
     char MaxTorque_H, MaxTorque_L;
     MaxTorque_H = (MaxTorque >> 8) & 0xFF;
@@ -702,7 +702,7 @@ int RX28Bus::setMaxTorque(unsigned char id, int MaxTorque)
     return (read_error());
 }
 
-int RX28Bus::setSRL(unsigned char id, unsigned char SRL)
+int AIServoBus_ROBOTIS_RX28::setSRL(unsigned char id, unsigned char SRL)
 {
 	if (SRL > 2)
 		return -1;
@@ -721,9 +721,9 @@ int RX28Bus::setSRL(unsigned char id, unsigned char SRL)
     return (read_error());
 }
 
-int RX28Bus::setRDT(unsigned char id, unsigned char RDT)
+int AIServoBus_ROBOTIS_RX28::setRDT(unsigned char id, unsigned char RDT)
 {
-	Checksum = (~(id + 4 + RX_WRITE_DATA + RX_RETURN_DELAY_TIME + (RDT/2)))&0xFF;
+	Checksum = (~(id + 4 + RX_WRITE_DATA + RX_RETURN_DELAY_TIME + RDT))&0xFF;
 	
     uart->write(RX_START);
     uart->write(RX_START);
@@ -731,14 +731,14 @@ int RX28Bus::setRDT(unsigned char id, unsigned char RDT)
 	uart->write(4);
     uart->write(RX_WRITE_DATA);
     uart->write(RX_RETURN_DELAY_TIME);
-    uart->write((RDT/2));
+    uart->write(RDT);
     uart->write(Checksum);
 	delayMicroseconds(TX_DELAY * 8);
     
     return (read_error());
 }
 
-int RX28Bus::setLEDAlarm(unsigned char id, unsigned char LEDAlarm)
+int AIServoBus_ROBOTIS_RX28::setLEDAlarm(unsigned char id, unsigned char LEDAlarm)
 {    
 	Checksum = (~(id + 4 + RX_WRITE_DATA + RX_ALARM_LED + LEDAlarm))&0xFF;
 	
@@ -755,7 +755,7 @@ int RX28Bus::setLEDAlarm(unsigned char id, unsigned char LEDAlarm)
     return (read_error());
 }
 
-int RX28Bus::setShutdownAlarm(unsigned char id, unsigned char SALARM)
+int AIServoBus_ROBOTIS_RX28::setShutdownAlarm(unsigned char id, unsigned char SALARM)
 {    
 	Checksum = (~(id + 4 + RX_ALARM_SHUTDOWN + RX_WRITE_DATA + SALARM))&0xFF;
 	
@@ -772,7 +772,7 @@ int RX28Bus::setShutdownAlarm(unsigned char id, unsigned char SALARM)
     return (read_error());
 }
 
-int RX28Bus::setCMargin(unsigned char id, unsigned char CWCMargin, unsigned char CCWCMargin)
+int AIServoBus_ROBOTIS_RX28::setCMargin(unsigned char id, unsigned char CWCMargin, unsigned char CCWCMargin)
 {
 	Checksum = (~(id + 5 + RX_WRITE_DATA + RX_CW_COMPLIANCE_MARGIN + CWCMargin + CCWCMargin))&0xFF;
 	
@@ -790,7 +790,7 @@ int RX28Bus::setCMargin(unsigned char id, unsigned char CWCMargin, unsigned char
     return (read_error()); 
 }
 
-int RX28Bus::setCSlope(unsigned char id, unsigned char CWCSlope, unsigned char CCWCSlope)
+int AIServoBus_ROBOTIS_RX28::setCSlope(unsigned char id, unsigned char CWCSlope, unsigned char CCWCSlope)
 {
 	Checksum = (~(id + 5 + RX_WRITE_DATA + RX_CW_COMPLIANCE_SLOPE + CWCSlope + CCWCSlope))&0xFF;
 	
@@ -808,7 +808,7 @@ int RX28Bus::setCSlope(unsigned char id, unsigned char CWCSlope, unsigned char C
     return (read_error()); 
 }
 
-int RX28Bus::setPunch(unsigned char id, int Punch)
+int AIServoBus_ROBOTIS_RX28::setPunch(unsigned char id, int Punch)
 {
     char Punch_H, Punch_L;
     Punch_H = (Punch >> 8) & 0xFF;
@@ -829,7 +829,7 @@ int RX28Bus::setPunch(unsigned char id, int Punch)
     return (read_error());
 }
 
-int RX28Bus::moving(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::moving(unsigned char id)
 {	
     Checksum = (~(id + 4  + RX_READ_DATA + RX_MOVING + RX_BYTE_READ))&0xFF;
     
@@ -867,7 +867,7 @@ int RX28Bus::moving(unsigned char id)
 	return (Moving_Byte);
 }
 
-int RX28Bus::lockRegister(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::lockRegister(unsigned char id)
 {    
 	Checksum = (~(id + 4 + RX_WRITE_DATA + RX_LOCK + 1))&0xFF;
 	
@@ -884,7 +884,7 @@ int RX28Bus::lockRegister(unsigned char id)
     return (read_error());
 }
 
-int RX28Bus::RWStatus(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::RWStatus(unsigned char id)
 {	
     Checksum = (~(id + 4  + RX_READ_DATA + RX_REGISTERED_INSTRUCTION + RX_BYTE_READ))&0xFF;
     
@@ -922,7 +922,7 @@ int RX28Bus::RWStatus(unsigned char id)
 	return (RWS_Byte);
 }
 
-int RX28Bus::readRDT(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::readRDT(unsigned char id)
 {	
     Checksum = (~(id + 4  + RX_READ_DATA + RX_RETURN_DELAY_TIME + RX_BYTE_READ))&0xFF;
     
@@ -957,10 +957,10 @@ int RX28Bus::readRDT(unsigned char id)
 			RWS_Byte = uart->read();
 		}
     }
-	return (RWS_Byte * 2);
+	return (RWS_Byte);
 }
 
-int RX28Bus::readSpeed(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::readSpeed(unsigned char id)
 {	
     Checksum = (~(id + 4  + RX_READ_DATA + RX_PRESENT_SPEED_L + RX_BYTE_READ_POS))&0xFF;
 	
@@ -1002,7 +1002,7 @@ int RX28Bus::readSpeed(unsigned char id)
 	return (Speed_Long_Byte);
 }
 
-int RX28Bus::readLoad(unsigned char id)
+int AIServoBus_ROBOTIS_RX28::readLoad(unsigned char id)
 {	
     Checksum = (~(id + 4  + RX_READ_DATA + RX_PRESENT_LOAD_L + RX_BYTE_READ_POS))&0xFF;
 	

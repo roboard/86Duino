@@ -29,9 +29,9 @@
 
 #include "AIServoBus.h"
 
-class AX12Bus : public AIServoBus {
+class AIServoBus_ROBOTIS_AX12 : public AIServoBus {
 public:
-	AX12Bus();
+	AIServoBus_ROBOTIS_AX12();
 	
 	void update(bool enableMixing);
 	long long s2a() { return 292969; }

@@ -6,11 +6,7 @@
 #include "utility/RX28.h"
 #include "utility/XL320.h"
 
-#define ROBOTISAX12  AX12Bus
-#define ROBOTISRX28  RX28Bus
-#define ROBOTISMX28  MX28Bus
-#define ROBOTISXL320 XL320Bus
-#define AIServoPort(vendor, servo) vendor##servo
+#define AIServoPort(vendor, servo) AIServoBus_##vendor##_##servo
 
 class AIServo {
 public:
@@ -52,8 +48,7 @@ private:
 
 extern AIServo nullAIServo;
 
-class AIServoFrame
-{
+class AIServoFrame {
 public:
 	double positions[64];
 	unsigned long playtime[64];
@@ -221,8 +216,7 @@ private:
 	unsigned long long used_servos;
 };
 
-class AIServoOffset
-{
+class AIServoOffset {
 public:
 	double offsets[64];
 	
@@ -255,6 +249,28 @@ public:
 		for(int i = 0; i < 64; i++)
 			this->offsets[i] = s.offsets[i];
 	}
+};
+
+class AIServoFrameRobotis : public AIServoFrame {
+public:
+	AIServoFrameRobotis();
+    AIServoFrameRobotis(const char* dir, const char* sname, int step);
+    
+    bool load(const char* dir, const char* sname=NULL, int step=0);
+	bool load(const String &dir, const String &sname=NULL, int step=0);
+
+	AIServoFrameRobotis & operator = (const AIServoFrame &s)
+	{
+		for(int i = 0; i < 26; i++) positions[i] = s.positions[i];
+	}
+	
+	AIServoFrameRobotis & operator = (const AIServoFrameRobotis &s)
+	{
+		for(int i = 0; i < 26; i++) positions[i] = s.positions[i];
+	}
+private:
+	bool loadMtn(const char* dir, const char* sname=NULL, int step=0);
+	bool loadMtnx(const char* dir, const char* sname=NULL, int step=0);
 };
 
 void aiservoMultiRun(AIServo &s1=nullAIServo, AIServo &s2=nullAIServo, AIServo &s3=nullAIServo, AIServo &s4=nullAIServo,
@@ -362,8 +378,14 @@ void aiservoMultiRealTimeMixing(double* mixoffsets, AIServo &s1=nullAIServo, AIS
 void aiEnableMixing (void);
 void aiDisableMixing (void);
 
-#define CONSTRAINED_CUBIC    (30)
-#define NATURAL_CUBIC        (40)
+#ifndef CONSTRAINED_CUBIC
+	#define CONSTRAINED_CUBIC    (30)
+#endif
+
+#ifndef NATURAL_CUBIC
+	#define NATURAL_CUBIC        (40)
+#endif
+
 void aiservoBeginSplineMotion(int mode, AIServoFrame *Frames, unsigned long *frameTime, int numFrames);
 void aiservoBeginSplineMotion(int mode, AIServoFrame **Frames, unsigned long *frameTime, int numFrames);
 void aiservoEndSplineMotion();
