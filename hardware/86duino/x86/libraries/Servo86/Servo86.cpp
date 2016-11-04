@@ -513,12 +513,12 @@ static void sendPWM(uint8_t pin, unsigned int val) {
     
     crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
     
-	if (pin <= 9)
-		io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-	else if (pin > 28)
-    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-	else
-		io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
+	// if (pin <= 9)
+		// io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
+	// else if (pin > 28)
+    	// io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
+	// else
+		// io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
     
     // Init H/W PWM
     if (mc_md_inuse[pin] == 0)
@@ -821,18 +821,6 @@ void Servo::run(void) {
 	
 	// 3. set new position to the servo
 	sv86[servoIndex].targetposition = target_position + pos_offset;
-	
-	if (sv86[servoIndex].curposition == sv86[servoIndex].targetposition) // if target is equal to current, do nothing.
-	{
-		if (sv86[servoIndex].state == SERVO_MOVING) // if servo is moving and get the same target position, we need to update the endtime value
-		{
-            sv86[servoIndex].starttime = millis();
-			sv86[servoIndex].endtime = sv86[servoIndex].starttime + total_time;
-		}
-		// if sv86[servoIndex].state is IDLE, do nothing.
-		io_RestoreINT();
-		return;
-	}
 	
 	if (speed_us > 0 && speed_us != FULL_SPEED && total_time == 0L) // transform speed to time
 	{

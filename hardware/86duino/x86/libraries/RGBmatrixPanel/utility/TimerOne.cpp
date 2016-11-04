@@ -170,12 +170,12 @@ void TimerOne::setPwmDuty(char pin, int duty) {
 	{
 		pwmInit(mcn, mdn);
 		
-		if (pin <= 9)
-			io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-		else if (pin > 28)
-	    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-		else
-			io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
+		// if (pin <= 9)
+			// io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
+		// else if (pin > 28)
+	    	// io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
+		// else
+			// io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
     }
     
     _duty[pin] = _period*duty/1024.0;

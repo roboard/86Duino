@@ -323,7 +323,7 @@ void TwoWire::onRequest( void (*function)(void) )
 
 
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 // Initialize Class Variables //////////////////////////////////////////////////
 
 uint8_t TwoWireLEGO::rxBuffer[BUFFER_LENGTH];

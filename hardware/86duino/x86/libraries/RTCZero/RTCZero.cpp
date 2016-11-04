@@ -16,8 +16,13 @@
   Modified 19 February 2016 by Android Lin for 86Duino.
 */
 
+#include "Arduino.h"
+
 #include "RTCZero.h"
-#include <dos.h>
+
+#include <time.h>
+#include <sys/time.h>
+// #include <dos.h>
 #include "io.h"
 #include "irq.h"
 

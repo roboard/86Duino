@@ -36,8 +36,11 @@ https://github.com/BlueVia/Official-Arduino
 
 
 #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) 
-#define __TXPIN__ 3
-#define __RXPIN__ 42
+	#define __TXPIN__ 3
+	#define __RXPIN__ 42
+#elif defined (__86DUINO_AI)
+	#define __TXPIN__ 3
+	#define __RXPIN__ 4
 #endif
 
 #define __XON__ 0x11
@@ -66,7 +69,7 @@ typedef struct _DELAY_TABLE
 //
 #define __PARAGRAPHGUARD__ 50
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) 
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
 // time unit is microseconds
 static const DELAY_TABLE table[] = 
 {
@@ -222,7 +225,7 @@ void GSM3SoftSerial::setRX()
 	pinMode(__RXPIN__, INPUT);
 	digitalWrite(__RXPIN__, HIGH);
 		
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) 
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) 
 	for(i=0; i<EXTERNAL_NUM_INTERRUPTS; i++)
 		if(INTPINSMAP[i] == __RXPIN__) break;
 	if(i == EXTERNAL_NUM_INTERRUPTS) i = 0;

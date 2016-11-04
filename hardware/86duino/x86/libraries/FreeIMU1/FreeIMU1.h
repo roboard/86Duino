@@ -38,11 +38,15 @@ Modified 31 May 2016 by Johnson Hung
 #define FREEIMU_EEPROM_SIGNATURE    (0x19)
 
 
-#ifdef __86DUINO_ONE
+#if defined (__86DUINO_ONE) || defined (__86DUINO_AI)
 	// IMU class:
 	//   0    for LSM330DLC
 	//   1    for RMG146
-	#define IMU_LSM330DLC   (0)
+    #if defined (__86DUINO_ONE)
+        #define IMU_LSM330DLC   (0)
+    #else
+        #define IMU_LSM330DLC   (3)
+    #endif
 	#define IMU_RMG146      (1)
 	#define DEFAULT_IMU     (IMU_LSM330DLC)
 	
@@ -58,7 +62,7 @@ Modified 31 May 2016 by Johnson Hung
 	#define RMG146_GYRO_ADDR            (0xD0 >> 1)
 	#define RMG146_MAGN_ADDR            (0x3C >> 1)
 #else
-	#error FreeIMU1 library is only used on 86Duino ONE!
+	#error FreeIMU1 library is only used on 86Duino ONE and AI!
 #endif
 
 struct _imu_sensor_;

@@ -23,8 +23,6 @@
 #define RTC_ZERO_H
 
 #include <inttypes.h>
-#include <time.h>
-#include <sys/time.h>
 
 typedef void(*voidFuncPtr)(void);
 

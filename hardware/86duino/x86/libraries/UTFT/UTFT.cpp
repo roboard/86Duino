@@ -55,6 +55,8 @@
     #include "hardware/HW_Cake.h"
 #elif defined __86DUINO_ZERO
     #include "hardware/HW_Zero.h"
+#elif defined __86DUINO_AI
+    #include "hardware/HW_AI.h"
 #else
     #include "hardware/HW_PLC.h"
 #endif
@@ -1391,7 +1393,7 @@ void UTFT::LCD_Writ_Bus(char VH,char VL, byte mode)
 		digitalWrite_f(__p2, HIGH);
 		break;
 	case 8:
-		#if defined __86DUINO_ONE
+		#if defined (__86DUINO_ONE)
 			if(UseVirtualPort == 1)
 				virtual_port_output_value(0, (unsigned char)VH);
 			else
@@ -1403,7 +1405,7 @@ void UTFT::LCD_Writ_Bus(char VH,char VL, byte mode)
 		digitalWrite_f(__p2, LOW);
 		digitalWrite_f(__p2, HIGH);
 		
-		#if defined __86DUINO_ONE
+		#if defined (__86DUINO_ONE)
 			if(UseVirtualPort == 1)
 				virtual_port_output_value(0, (unsigned char)VL);
 			else
@@ -1416,7 +1418,7 @@ void UTFT::LCD_Writ_Bus(char VH,char VL, byte mode)
 		digitalWrite_f(__p2, HIGH);
 		break;
 	case 16:
-		#if defined __86DUINO_ONE
+		#if defined (__86DUINO_ONE)
 			if(UseVirtualPort == 1)
 			{
 				virtual_port_output_value(1, (unsigned char)VH);
@@ -1427,7 +1429,7 @@ void UTFT::LCD_Writ_Bus(char VH,char VL, byte mode)
 				port_output_value(4, (unsigned char)VH);
 				port_output_value(3, (unsigned char)VL);
 			}
-		#elif defined __86DUINO_EDUCAKE
+		#elif defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 	        virtual_port_output_value(1, (unsigned char)VH);
 	        virtual_port_output_value(0, (unsigned char)VL);
 		#endif
@@ -1455,7 +1457,7 @@ void UTFT::_set_direction_registers(byte mode)
 {
 	if (mode != LATCHED_16)
 	{
-		#if defined __86DUINO_ONE
+		#if defined (__86DUINO_ONE)
 			if(UseVirtualPort == 1)
 			{
 			    // use virtual port 0
@@ -1480,7 +1482,7 @@ void UTFT::_set_direction_registers(byte mode)
 				port_output_dir(4, 0xff);
 				if (mode == 16) port_output_dir(3, 0xff);
 			}
-		#elif defined __86DUINO_EDUCAKE
+		#elif defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 	        // use virtual port 0
 			for(int i=0; i<8; i++)
 			{
@@ -1516,7 +1518,7 @@ void UTFT::_fast_fill_16(int ch, int cl, long pix)
 {
 	long blocks;
 
-	#if defined __86DUINO_ONE
+	#if defined (__86DUINO_ONE)
 		if(UseVirtualPort == 1)
 		{
 		    virtual_port_output_value(1, (unsigned char)ch);
@@ -1527,7 +1529,7 @@ void UTFT::_fast_fill_16(int ch, int cl, long pix)
 		    port_output_value(4, (unsigned char)ch);
 		    port_output_value(3, (unsigned char)cl);
 		}
-	#elif defined __86DUINO_EDUCAKE
+	#elif defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 	    virtual_port_output_value(1, (unsigned char)ch);
 	    virtual_port_output_value(0, (unsigned char)cl);
 	#endif // no include Zero
@@ -1564,7 +1566,7 @@ void UTFT::_fast_fill_8(int ch, long pix)
 {
 	long blocks;
 
-	#if defined __86DUINO_ONE
+	#if defined (__86DUINO_ONE)
 		if(UseVirtualPort == 1)
 	    	virtual_port_output_value(0, (unsigned char)ch);
 	    else
@@ -1655,7 +1657,7 @@ void UTFT::virtual_port_output_value(int port, unsigned char value) {
 		}
 	}
 
-	#if defined __86DUINO_EDUCAKE || defined __86DUINO_ONE
+	#if defined (__86DUINO_EDUCAKE) || defined (__86DUINO_ONE) || defined (__86DUINO_AI)
 	    if(port == 1)
 		{
 			for(int i=8; i<16; i++)

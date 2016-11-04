@@ -149,7 +149,7 @@ extern volatile irparams_t irparams;
 #define PANASONIC_BITS 48
 #define JVC_BITS 16
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
 #define BLINKLED       13
 #endif
 

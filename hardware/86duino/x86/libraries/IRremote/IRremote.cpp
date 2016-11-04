@@ -163,12 +163,12 @@ void IRsend::enableIROut(int khz) {
 		mcpwm_SetSamplCycle(mcs, mds, 1999L);   // sample cycle: 20ms
 		
 		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-		if (iroutpin <= 9)
-			io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
-		else if (iroutpin > 28)
-	    	io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
-		else
-			io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
+		// if (iroutpin <= 9)
+			// io_outpb(crossbar_ioaddr + 2, 0x01); // GPIO port2: 0A, 0B, 0C, 3A
+		// else if (iroutpin > 28)
+	    	// io_outpb(crossbar_ioaddr, 0x03); // GPIO port0: 2A, 2B, 2C, 3C
+		// else
+			// io_outpb(crossbar_ioaddr + 3, 0x02); // GPIO port3: 1A, 1B, 1C, 3B
     }
     io_RestoreINT();
 	    

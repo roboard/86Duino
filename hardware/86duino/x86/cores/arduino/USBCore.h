@@ -32,7 +32,7 @@
 
 #define DMP_86DUINO_RESET_ACTIVE
 
-#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO)
+#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO) || defined (__86DUINO_AI)
 	#define DMP_86DUINO_LED_ACTIVE
 #endif
 

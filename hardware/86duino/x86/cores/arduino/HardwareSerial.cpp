@@ -31,12 +31,25 @@
 
 #include "HardwareSerial.h"
 
-#define  COM1_TX    (0x9A)
-#define  COM1_RX    (0x9B)
-#define  COM2_TX    (0x9E)
-#define  COM2_RX    (0x9F)
-#define  COM3_TX    (0x9C)
-#define  COM3_RX    (0x9D)
+#if defined (__86DUINO_AI)
+
+	#define  COM1_TX    (0x9C)
+	#define  COM1_RX    (0x9D)
+	#define  COM2_TX    (0x9E)
+	#define  COM2_RX    (0x9F)
+	#define  COM3_TX    (0x98)
+	#define  COM3_RX    (0x99)
+
+#else
+	
+	#define  COM1_TX    (0x9A)
+	#define  COM1_RX    (0x9B)
+	#define  COM2_TX    (0x9E)
+	#define  COM2_RX    (0x9F)
+	#define  COM3_TX    (0x9C)
+	#define  COM3_RX    (0x9D)
+
+#endif
 
 // Public Methods //////////////////////////////////////////////////////////////
 HardwareSerial::HardwareSerial(int com_port, unsigned long com_baudrate, unsigned char com_format, unsigned long com_rxtimeout, unsigned long com_txtimeout) {
@@ -117,7 +130,7 @@ void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
 	com_SetTimeOut(handle, rxtimeout, txtimeout);
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
 	
-	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
+	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 	if(port == COM1 || port == COM2 || port == COM3)
 		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 

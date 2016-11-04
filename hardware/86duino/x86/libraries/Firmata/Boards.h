@@ -696,6 +696,20 @@ writePort(port, value, bitmask):  Write an 8 bit port.
 #define PIN_TO_PWM(p)           (p)
 #define PIN_TO_SERVO(p)         (p)
 
+#elif defined (__86DUINO_AI)
+#define TOTAL_ANALOG_PINS       2
+#define TOTAL_PINS              40
+#define VERSION_BLINK_PIN 		13
+#define IS_PIN_DIGITAL(p)  		((p) >= 0 && (p) < 38)
+#define IS_PIN_ANALOG(p)        ((p) == 38 || (p) == 39)
+#define IS_PIN_PWM(p)          	(((0x00000001 << (p)) & 0x0080E38FL))
+#define IS_PIN_SERVO(p)         IS_PIN_DIGITAL(p)
+#define IS_PIN_I2C(p)           ((p) == 40 || (p) == 41)
+#define PIN_TO_DIGITAL(p)       (p)
+#define PIN_TO_ANALOG(p)        (p-38)
+#define PIN_TO_PWM(p)           (p)
+#define PIN_TO_SERVO(p)         (p)
+
 #else
 #error "Please edit Boards.h with a hardware abstraction for this board"
 #endif

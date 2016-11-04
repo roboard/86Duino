@@ -18,7 +18,7 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  
  Contact: savageelectronics@gmail.com 
- Web:     http://savageelectrtonics.blogspot.com/
+ Web:     http://savageelectronics.blogspot.com/
  Autor:   Josue Alejandro Savage
  
  Modified by Sayter <sayter@dmp.com.tw> on 13/09/16

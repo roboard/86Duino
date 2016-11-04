@@ -57,7 +57,7 @@ class TwoWire : public Stream
     using Print::write;
 };
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 class TwoWireLEGO : public Stream
 {
   private:

@@ -80,11 +80,11 @@ bool init() {
 		gpioBase = GPIOCTRLBASE;
 	}
 	
-	// Enable GPIO 0 ~ 7 
-	io_outpdw(gpioBase, 0x00ff);
+	// Enable GPIO 0 ~ 9 
+	io_outpdw(gpioBase, 0x03ff);
 	
 	// set GPIO Port 0~7 dircetion & data Address
-	for(i=0;i<8;i++)
+	for(i=0;i<10;i++)
 		io_outpdw(gpioBase + (i+1)*4,((GPIODIRBASE + i*4)<<16) + GPIODATABASE + i*4);
 
 	setPinStatus();

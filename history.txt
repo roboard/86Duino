@@ -1,13 +1,18 @@
-### CODING 315 - 2016.09.22 ###
+### CODING 315 - 2016.11.04 ###
 
 [core]
-* comment the delay() in dos.h in sys-include.
 * The defalut warnning is "-w" in platform.txt.
+* Add the define of 86Duino AI board in USBCore.h
 
 [libraries]
 * Add the AIServo86 library for Serial AI Servo. (ex: Dynamixel AX-12, RX-28, MX-28, XL-320 etc.)
-* Add bool return in load() to load offset or frame files by using Servo86 library.
+* Add bool return in load() to load offset or frame files by using Servo86 library and update run() to wait specified time when getting the same target at IDLE state.
 * Fix a memory alloc bug when using cubic spline funciton.
+* Support new 86Duino AI board in FreeIMU1 library.
+* Support new 86Duino AI board in Firmata library.
+* Support new 86Duino AI board in Wire library.
+* Fix a bug and support new 86Duino AI board in Encoder library.
+
 
 
 

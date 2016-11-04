@@ -633,16 +633,17 @@ unsigned long Encoder::readNanoseconds() {
 }
 
 static bool interrupt_init(int mc) {
-	if(used_irq != 0xff) return true;
-    
-    if(irq_InstallISR(GetMCIRQ(), user_int, (void*)name) == false)
-	{
-	    printf("irq_install fail\n"); return false;
+	if(used_irq == 0xff)
+    {
+		used_irq = GetMCIRQ();
+		if(irq_InstallISR(used_irq, user_int, (void*)name) == false)
+		{
+			printf("irq_install fail\n"); return false;
+		}
 	}
 	
 	// enable mcm general interrupt function
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	used_irq = GetMCIRQ();
 	return true;
 }
 
@@ -963,7 +964,7 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
 	mcsif_Enable(mcn, mdn);
 }
 
-#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC)
+#if defined (__86DUINO_ONE) || defined (__86DUINO_ZERO) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
 	Encoder Enc0(0);
 	Encoder Enc1(1);
 	Encoder Enc2(2);

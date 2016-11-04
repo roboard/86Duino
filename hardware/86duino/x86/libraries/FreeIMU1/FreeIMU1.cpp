@@ -54,7 +54,8 @@ struct _imu_sensor_ {
 struct _imu_sensor_ Sensors[] = {
     {NULL, LSM330DLC_ACC_ADDR, LSM330DLC_GYRO_ADDR,             0xFF, lsm330dlc_init, lsm330dlc_getraw, lsm330dlc_raw2value, lsm330dlc_close,  1, -1, -1,  1, -1, -1,  1,  1,  1},
     {NULL,    RMG146_ACC_ADDR,    RMG146_GYRO_ADDR, RMG146_MAGN_ADDR,    rmg146_init,    rmg146_getraw,    rmg146_raw2value,    rmg146_close,  1,  1,  1,  1,  1,  1,  1,  1,  1},
-    {NULL,    RMG146_ACC_ADDR,    RMG146_GYRO_ADDR,             0xFF,    rmg146_init,    rmg146_getraw,    rmg146_raw2value,    rmg146_close,  1,  1,  1,  1,  1,  1,  1,  1,  1}
+    {NULL,    RMG146_ACC_ADDR,    RMG146_GYRO_ADDR,             0xFF,    rmg146_init,    rmg146_getraw,    rmg146_raw2value,    rmg146_close,  1,  1,  1,  1,  1,  1,  1,  1,  1},
+    {NULL, LSM330DLC_ACC_ADDR, LSM330DLC_GYRO_ADDR,             0xFF, lsm330dlc_init, lsm330dlc_getraw, lsm330dlc_raw2value, lsm330dlc_close,  1,  1,  1,  1,  1,  1,  1,  1,  1}
 };
 
 #define GRAVITY (9.80665)
