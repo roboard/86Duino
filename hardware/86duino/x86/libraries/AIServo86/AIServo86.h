@@ -386,6 +386,10 @@ void aiDisableMixing (void);
 	#define NATURAL_CUBIC        (40)
 #endif
 
+#ifndef CATMULLROM_CUBIC
+	#define CATMULLROM_CUBIC        (50)
+#endif
+
 void aiservoBeginSplineMotion(int mode, AIServoFrame *Frames, unsigned long *frameTime, int numFrames);
 void aiservoBeginSplineMotion(int mode, AIServoFrame **Frames, unsigned long *frameTime, int numFrames);
 void aiservoEndSplineMotion();

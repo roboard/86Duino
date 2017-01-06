@@ -1673,13 +1673,42 @@ static void servoComputeConstrainedCubicSpline (double** points, double** acc, u
 	free(dx);
 }
 
+static void servoComputeCatmullRomCubicSpline (double** points, double** acc, unsigned long size)
+{
+	if (points == NULL || acc == NULL) return;
+	
+	for (int i = 0; i < size; i++)
+	{			
+		acc[i][0] = 0.0;
+		acc[i][1] = 0.0;
+	}
+	
+	if (size < 4) return;
+	
+	int totalPoints = size;
+	int totalLines = totalPoints - 1L;
+	double tou = 0.5;
+	
+	for (int i = 1; i < totalLines - 1; i++)
+	{
+		double period = points[i+1][0] - points[i][0];
+		if (period < 20) period = 20;
+		double c2 = (2.0*tou*points[i-1][1] + (tou-3.0)*points[i][1] + (3.0-2.0*tou)*points[i+1][1] - tou*points[i+2][1])/(period*period);
+		double c3 = (-1.0*tou*points[i-1][1] + (2.0-tou)*points[i][1] + (tou-2.0)*points[i+1][1] + tou*points[i+2][1])/(period*period);
+		
+		acc[i][1] = 2.0*c2;
+		acc[i+1][0] = 2.0*c2 + 6.0*c3;
+	}
+}
+
 void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTime, int numFrames) {
 	int i, j, k=0;
 	double ***acc;
 	double ***pp;
 	unsigned int servoNum = 0;
 	
-	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1) return;
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULLROM_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1)
+		return;
 
 	// Caculate moter number, suppose that user don't add motor quantity during playing frames
 	for (i=0; i<45; i++)
@@ -1725,7 +1754,12 @@ void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTi
 		for (i=0; i<servoNum; i++)
 			servoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
-
+	else if (mode == CATMULLROM_CUBIC)
+	{
+		for (i = 0; i < servoNum; i++)
+			servoComputeCatmullRomCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
+	
 	for (i=0; i<numFrames; i++)
 	{
 		for (j=0; j<k; j++)
@@ -1762,7 +1796,8 @@ void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameT
 	double ***pp;
 	unsigned int servoNum = 0;
 	
-	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1) return;
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULLROM_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1)
+		return;
 	for (i=0; i<numFrames; i++) if (Frames[i] == NULL) return;
 
 	// Caculate moter number, suppose that user don't add motor quantity during playing frames
@@ -1809,7 +1844,12 @@ void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameT
 		for (i=0; i<servoNum; i++)
 			servoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
-
+	else if (mode == CATMULLROM_CUBIC)
+	{
+		for (i = 0; i < servoNum; i++)
+			servoComputeCatmullRomCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
+	
 	for (i=0; i<numFrames; i++)
 	{
 		for (j=0; j<k; j++)

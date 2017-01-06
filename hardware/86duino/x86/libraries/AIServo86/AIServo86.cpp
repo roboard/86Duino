@@ -291,15 +291,6 @@ void AIServo::run()
 		cs->acc_now_out = this->acc_out;
 		this->acc_in = 0;
 		this->acc_out = 0;
-	
-		if (cs->curposition == cs->targetposition) // if target is equal to current, do nothing.
-		{
-			if (cs->state == AISERVO_IDLE) // if servo is moving and get the same target position, we need to update the endtime value
-			{
-				io_RestoreINT();
-				return;
-			}
-		}
 	}
 	else // pause
 	{
@@ -1527,6 +1518,34 @@ static void AIservoComputeConstrainedCubicSpline (double** points, double** acc,
 	free(myd);
 }
 
+static void AIservoComputeCatmullRomCubicSpline (double** points, double** acc, unsigned long size)
+{
+	if (points == NULL || acc == NULL) return;
+	
+	for (int i = 0; i < size; i++)
+	{			
+		acc[i][0] = 0.0;
+		acc[i][1] = 0.0;
+	}
+	
+	if (size < 4) return;
+	
+	int totalPoints = size;
+	int totalLines = totalPoints - 1L;
+	double tou = 0.5;
+	
+	for (int i = 1; i < totalLines - 1; i++)
+	{
+		double period = points[i+1][0] - points[i][0];
+		if (period < 20) period = 20;
+		double c2 = (2.0*tou*points[i-1][1] + (tou-3.0)*points[i][1] + (3.0-2.0*tou)*points[i+1][1] - tou*points[i+2][1])/(period*period);
+		double c3 = (-1.0*tou*points[i-1][1] + (2.0-tou)*points[i][1] + (tou-2.0)*points[i+1][1] + tou*points[i+2][1])/(period*period);
+		
+		acc[i][1] = 2.0*c2;
+		acc[i+1][0] = 2.0*c2 + 6.0*c3;
+	}
+}
+
 void aiservoBeginSplineMotion(int mode, AIServoFrame *Frames, unsigned long *frameTime, int numFrames)
 {
 	int i, j;
@@ -1534,7 +1553,8 @@ void aiservoBeginSplineMotion(int mode, AIServoFrame *Frames, unsigned long *fra
 	double ***pp;
 	unsigned int servoNum = 0;
 	
-	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1) return;
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULLROM_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1)
+		return;
 
 	// Caculate moter number, suppose that user don't add motor quantity during playing frames
 	for (i = 0; i < MAXSERVOS; i++)
@@ -1573,6 +1593,11 @@ void aiservoBeginSplineMotion(int mode, AIServoFrame *Frames, unsigned long *fra
 		for (i = 0; i < servoNum; i++)
 			AIservoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
+	else if (mode == CATMULLROM_CUBIC)
+	{
+		for (i = 0; i < servoNum; i++)
+			AIservoComputeCatmullRomCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
 
 	for (i = 0; i < numFrames; i++)
 	{
@@ -1599,7 +1624,8 @@ void aiservoBeginSplineMotion(int mode, AIServoFrame **Frames, unsigned long *fr
 	double ***pp;
 	unsigned int servoNum = 0;
 	
-	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1) return;
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULLROM_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1)
+		return;
 	for (i=0; i<numFrames; i++) if (Frames[i] == NULL) return;
 
 	// Caculate moter number, suppose that user don't add motor quantity during playing frames
@@ -1638,6 +1664,11 @@ void aiservoBeginSplineMotion(int mode, AIServoFrame **Frames, unsigned long *fr
 	{
 		for (i = 0; i < servoNum; i++)
 			AIservoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+	}
+	else if (mode == CATMULLROM_CUBIC)
+	{
+		for (i = 0; i < servoNum; i++)
+			AIservoComputeCatmullRomCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
 
 	for (i = 0; i < numFrames; i++)

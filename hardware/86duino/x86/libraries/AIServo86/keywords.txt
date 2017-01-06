@@ -10,6 +10,7 @@ AIServo	KEYWORD1
 AIServoFrame	KEYWORD1
 AIServoOffset	KEYWORD1
 AIServoPort	KEYWORD1
+AIServoFrameRobotis	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)

@@ -518,6 +518,10 @@ void DisableMixing (void);
 	#define NATURAL_CUBIC        (40)
 #endif
 
+#ifndef CATMULLROM_CUBIC
+	#define CATMULLROM_CUBIC        (50)
+#endif
+
 void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTime, int numFrames);
 void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameTime, int numFrames);
 void servoEndSplineMotion();

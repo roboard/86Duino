@@ -560,12 +560,12 @@ void FreeIMU1::getQ(double * q, double * val) {
 void FreeIMU1::getQ(float * q, float * val) {
     int i;
     double dQ[4];
-    double dVal[10];
+    double dVal[12];
     getQ(dQ, dVal);
 
     for (i = 0; i < 4; i++)
         q[i] = (float)dQ[i];
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 12; i++)
         val[i] = (float)dVal[i];
 }
 
@@ -741,14 +741,14 @@ void FreeIMU1::getEuler360degAttitude(float * angles, float * q, float * val) {
     int i;
     double dAngles[3];
     double dQ[4];
-    double dVal[10];
+    double dVal[12];
 
     getEuler360degAttitude(dAngles, dQ, dVal);
     for (i = 0; i < 3; i++)
         angles[i] = (float)dAngles[i];
     for (i = 0; i < 4; i++)
         q[i] = (float)dQ[i];
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 12; i++)
         val[i] = (float)dVal[i];
 }
 
@@ -997,12 +997,12 @@ void FreeIMU1::getQ_simple(double * q, double * val) {
 void FreeIMU1::getQ_simple(float * q, float * val) {
     int i;
     double dQ[4];
-    double dVal[10];
+    double dVal[12];
 
     getQ_simple(dQ, dVal);
     for (i = 0; i < 4; i++)
         q[i] = (float)dQ[i];
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 12; i++)
         val[i] = (float)dVal[i];
 }
 
