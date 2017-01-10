@@ -386,8 +386,10 @@ void aiDisableMixing (void);
 	#define NATURAL_CUBIC        (40)
 #endif
 
-#ifndef CATMULLROM_CUBIC
-	#define CATMULLROM_CUBIC        (50)
+#ifndef CATMULL_ROM
+	#define CATMULL_ROM          (50)
+	// The parameter tou is known as "tension" and it affects how sharply the curve bends at the (interpolated) control points
+	#define CATMULL_ROM_TOU      (0.5)
 #endif
 
 void aiservoBeginSplineMotion(int mode, AIServoFrame *Frames, unsigned long *frameTime, int numFrames);

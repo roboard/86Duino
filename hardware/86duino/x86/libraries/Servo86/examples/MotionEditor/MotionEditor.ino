@@ -16,7 +16,7 @@ Servo servos[45];
 ServoFrame myframe;
 ServoFrameKondo mykondo;
 unsigned char pin_uesd[45] = {0};
-double val[9];
+double val[12];
 double q[4];
 FreeIMU1 my3IMU = FreeIMU1();
 bool init_imu = false;
@@ -163,13 +163,22 @@ void currentSysexCallback(byte command, byte argc, byte* argv)
       r[8] = 0xF7;
       for(i=0; i<9; i++) Serial.write(r[i]);
     }
+    else if (pin < 58 && pin >= 13)
+    {
+      pinMode(pin - 13, INPUT);
+      int gpioValue = digitalRead(pin - 13);
+      r[3] = gpioValue & 0x7F;
+      r[4] = (gpioValue >> 7) & 0x7F;
+      r[5] = 0xF7;
+      for(i=0; i<6; i++) Serial.write(r[i]);
+    }
   }
   else if(command == I2C_CONFIG)
   {
     unsigned int module = argv[0];
     int ret = 0;
     delay(5);
-    if(module == 1) // LSM330DLC
+    if(module == 1) // LSM330DLC of 86Duino One
     {
       ret = my3IMU.initEX(0);
       if(ret == 0)
@@ -180,6 +189,14 @@ void currentSysexCallback(byte command, byte argc, byte* argv)
     else if(module == 2) // RM-G146
     {
       ret = my3IMU.initEX(2);
+      if(ret == 0)
+        init_imu = true;
+      else
+        init_imu = false;
+    }
+    else if(module == 3) // LSM330DLC of 86Duino AI
+    {
+      ret = my3IMU.initEX(3);
       if(ret == 0)
         init_imu = true;
       else
@@ -217,6 +234,11 @@ void currentSysexCallback(byte command, byte argc, byte* argv)
       r[23] = 0xF7;
       for(i=0; i<24; i++) Serial.write(r[i]);
     }
+  }
+  else if(command == DIGITAL_MESSAGE)
+  {
+    pinMode(argv[0], OUTPUT);
+    digitalWrite(argv[0], argv[1]);
   }
 }
 

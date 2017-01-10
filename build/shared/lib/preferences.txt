@@ -123,6 +123,8 @@ editor.keys.alternative_cut_copy_paste.macosx = false
 # false if shift-backspace just means backspace
 editor.keys.shift_backspace_is_delete = true
 
+compiler.warning_level=none
+
 # if set to true, home/end keys will go to the start/end of current line
 editor.keys.home_and_end_beginning_end_of_doc = false
 

@@ -18,8 +18,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __ESP8266_H__
-#define __ESP8266_H__
+#ifndef __ESP82664ROS_H__
+#define __ESP82664ROS_H__
 
 #include <queue>
 #include "Arduino.h"
@@ -35,9 +35,9 @@
 /**
  * Provide an easy-to-use way to manipulate ESP8266. 
  */
-class ESP8266 {
+class ESP82664ros {
  public:
-	ESP8266(void);
+	ESP82664ros(void);
 	std::queue<unsigned char> wifi_data;
 #ifdef ESP8266_USE_SOFTWARE_SERIAL
     /*
@@ -49,7 +49,7 @@ class ESP8266 {
      * @warning parameter baud depends on the AT firmware. 9600 is an common value. 
      */
 	SoftwareSerial *m_puart; /* The UART to communicate with ESP8266 */
-    ESP8266(SoftwareSerial &uart, uint32_t baud = 115200);
+    ESP82664ros(SoftwareSerial &uart, uint32_t baud = 115200);
 #else /* HardwareSerial */
     /*
      * Constuctor. 
@@ -60,7 +60,7 @@ class ESP8266 {
      * @warning parameter baud depends on the AT firmware. 9600 is an common value. 
      */
 	HardwareSerial *m_puart; /* The UART to communicate with ESP8266 */
-    ESP8266(HardwareSerial &uart, uint32_t baud = 115200);
+    ESP82664ros(HardwareSerial &uart, uint32_t baud = 115200);
 #endif
     
     void init(HardwareSerial &uart, uint32_t baud = 115200);
@@ -465,5 +465,5 @@ class ESP8266 {
      */
 };
 
-#endif /* #ifndef __ESP8266_H__ */
+#endif /* #ifndef __ESP82664ROS_H__ */
 

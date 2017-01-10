@@ -1673,7 +1673,7 @@ static void servoComputeConstrainedCubicSpline (double** points, double** acc, u
 	free(dx);
 }
 
-static void servoComputeCatmullRomCubicSpline (double** points, double** acc, unsigned long size)
+static void servoComputeCatmullRomSpline (double** points, double** acc, unsigned long size)
 {
 	if (points == NULL || acc == NULL) return;
 	
@@ -1683,19 +1683,65 @@ static void servoComputeCatmullRomCubicSpline (double** points, double** acc, un
 		acc[i][1] = 0.0;
 	}
 	
-	if (size < 4) return;
+	if (size < 2) return;
 	
 	int totalPoints = size;
 	int totalLines = totalPoints - 1L;
-	double tou = 0.5;
 	
-	for (int i = 1; i < totalLines - 1; i++)
+	for (int i = 0; i < totalLines; i++)
 	{
 		double period = points[i+1][0] - points[i][0];
 		if (period < 20) period = 20;
-		double c2 = (2.0*tou*points[i-1][1] + (tou-3.0)*points[i][1] + (3.0-2.0*tou)*points[i+1][1] - tou*points[i+2][1])/(period*period);
-		double c3 = (-1.0*tou*points[i-1][1] + (2.0-tou)*points[i][1] + (tou-2.0)*points[i+1][1] + tou*points[i+2][1])/(period*period);
 		
+		double a0, a1, a2, a3, b0, b1, b2, b3, c2, c3;
+		
+		if (i == 0 && i == totalLines - 1)
+		{
+			a0 = 2.0*CATMULL_ROM_TOU*(2*points[i][1]-points[i+1][1]);
+			a1 = (CATMULL_ROM_TOU-3.0)*points[i][1];
+			a2 = (3.0-2.0*CATMULL_ROM_TOU)*points[i+1][1];
+			a3 = -1.0*CATMULL_ROM_TOU*(2*points[i+1][1]-points[i][1]);
+			b0 = -1.0*CATMULL_ROM_TOU*(2*points[i][1]-points[i+1][1]);
+			b1 = (2.0-CATMULL_ROM_TOU)*points[i][1];
+			b2 = (CATMULL_ROM_TOU-2.0)*points[i+1][1];
+			b3 = CATMULL_ROM_TOU*(2*points[i+1][1]-points[i][1]);
+		}
+		else if (i == 0)
+		{
+			a0 = 2.0*CATMULL_ROM_TOU*(2*points[i][1]-points[i+1][1]);
+			a1 = (CATMULL_ROM_TOU-3.0)*points[i][1];
+			a2 = (3.0-2.0*CATMULL_ROM_TOU)*points[i+1][1];
+			a3 = -1.0*CATMULL_ROM_TOU*points[i+2][1];
+			b0 = -1.0*CATMULL_ROM_TOU*(2*points[i][1]-points[i+1][1]);
+			b1 = (2.0-CATMULL_ROM_TOU)*points[i][1];
+			b2 = (CATMULL_ROM_TOU-2.0)*points[i+1][1];
+			b3 = CATMULL_ROM_TOU*points[i+2][1];
+		}
+		else if (i == totalLines - 1)
+		{
+			a0 = 2.0*CATMULL_ROM_TOU*points[i-1][1];
+			a1 = (CATMULL_ROM_TOU-3.0)*points[i][1];
+			a2 = (3.0-2.0*CATMULL_ROM_TOU)*points[i+1][1];
+			a3 = -1.0*CATMULL_ROM_TOU*(2*points[i+1][1]-points[i][1]);
+			b0 = -1.0*CATMULL_ROM_TOU*points[i-1][1];
+			b1 = (2.0-CATMULL_ROM_TOU)*points[i][1];
+			b2 = (CATMULL_ROM_TOU-2.0)*points[i+1][1];
+			b3 = CATMULL_ROM_TOU*(2*points[i+1][1]-points[i][1]);
+		}
+		else
+		{
+			a0 = 2.0*CATMULL_ROM_TOU*points[i-1][1];
+			a1 = (CATMULL_ROM_TOU-3.0)*points[i][1];
+			a2 = (3.0-2.0*CATMULL_ROM_TOU)*points[i+1][1];
+			a3 = -1.0*CATMULL_ROM_TOU*points[i+2][1];
+			b0 = -1.0*CATMULL_ROM_TOU*points[i-1][1];
+			b1 = (2.0-CATMULL_ROM_TOU)*points[i][1];
+			b2 = (CATMULL_ROM_TOU-2.0)*points[i+1][1];
+			b3 = CATMULL_ROM_TOU*points[i+2][1];
+		}
+		
+		c2 = (a0 + a1 + a2 + a3)/(period*period);
+		c3 = (b0 + b1 + b2 + b3)/(period*period);
 		acc[i][1] = 2.0*c2;
 		acc[i+1][0] = 2.0*c2 + 6.0*c3;
 	}
@@ -1707,7 +1753,7 @@ void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTi
 	double ***pp;
 	unsigned int servoNum = 0;
 	
-	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULLROM_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1)
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULL_ROM) || Frames == NULL || frameTime == NULL || numFrames <= 1)
 		return;
 
 	// Caculate moter number, suppose that user don't add motor quantity during playing frames
@@ -1754,10 +1800,10 @@ void servoBeginSplineMotion(int mode, ServoFrame *Frames, unsigned long *frameTi
 		for (i=0; i<servoNum; i++)
 			servoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
-	else if (mode == CATMULLROM_CUBIC)
+	else if (mode == CATMULL_ROM)
 	{
 		for (i = 0; i < servoNum; i++)
-			servoComputeCatmullRomCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+			servoComputeCatmullRomSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
 	
 	for (i=0; i<numFrames; i++)
@@ -1796,7 +1842,7 @@ void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameT
 	double ***pp;
 	unsigned int servoNum = 0;
 	
-	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULLROM_CUBIC) || Frames == NULL || frameTime == NULL || numFrames <= 1)
+	if ((mode != CONSTRAINED_CUBIC && mode != NATURAL_CUBIC && mode != CATMULL_ROM) || Frames == NULL || frameTime == NULL || numFrames <= 1)
 		return;
 	for (i=0; i<numFrames; i++) if (Frames[i] == NULL) return;
 
@@ -1844,10 +1890,10 @@ void servoBeginSplineMotion(int mode, ServoFrame **Frames, unsigned long *frameT
 		for (i=0; i<servoNum; i++)
 			servoComputeConstrainedCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
-	else if (mode == CATMULLROM_CUBIC)
+	else if (mode == CATMULL_ROM)
 	{
 		for (i = 0; i < servoNum; i++)
-			servoComputeCatmullRomCubicSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
+			servoComputeCatmullRomSpline(pp[i], acc[i], numFrames); // Caculate the cubic splines for all servos
 	}
 	
 	for (i=0; i<numFrames; i++)

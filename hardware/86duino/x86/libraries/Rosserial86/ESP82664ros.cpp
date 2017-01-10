@@ -23,7 +23,7 @@
  */
 #define NOMINMAX 
  
-#include "ESP8266.h"
+#include "ESP82664ros.h"
 
 #define LOG_OUTPUT_DEBUG            (1)
 #define LOG_OUTPUT_DEBUG_PREFIX     (1)
@@ -46,36 +46,36 @@
         }\
     } while(0)
 
-ESP8266::ESP8266(void)
+ESP82664ros::ESP82664ros(void)
 {
 }
 #ifdef ESP8266_USE_SOFTWARE_SERIAL
-ESP8266::ESP8266(SoftwareSerial &uart, uint32_t baud): m_puart(&uart)
+ESP82664ros::ESP82664ros(SoftwareSerial &uart, uint32_t baud): m_puart(&uart)
 {
     m_puart->begin(baud);
     rx_empty();
 }
 #else
-ESP8266::ESP8266(HardwareSerial &uart, uint32_t baud): m_puart(&uart)
+ESP82664ros::ESP82664ros(HardwareSerial &uart, uint32_t baud): m_puart(&uart)
 {
     m_puart->begin(baud);
     rx_empty();
 }
 #endif
 
-void ESP8266::init(HardwareSerial &uart, uint32_t baud)
+void ESP82664ros::init(HardwareSerial &uart, uint32_t baud)
 {
 	m_puart = &uart;
 	m_puart->begin(baud);
     rx_empty();
 }
 
-bool ESP8266::kick(void)
+bool ESP82664ros::kick(void)
 {
     return eAT();
 }
 
-bool ESP8266::restart(void)
+bool ESP82664ros::restart(void)
 {
     unsigned long start;
     if (eATRST()) {
@@ -92,14 +92,14 @@ bool ESP8266::restart(void)
     return false;
 }
 
-String ESP8266::getVersion(void)
+String ESP82664ros::getVersion(void)
 {
     String version;
     eATGMR(version);
     return version;
 }
 
-bool ESP8266::setOprToStation(void)
+bool ESP82664ros::setOprToStation(void)
 {
     uint8_t mode;
     if (!qATCWMODE(&mode)) {
@@ -116,7 +116,7 @@ bool ESP8266::setOprToStation(void)
     }
 }
 
-bool ESP8266::setOprToSoftAP(void)
+bool ESP82664ros::setOprToSoftAP(void)
 {
     uint8_t mode;
     if (!qATCWMODE(&mode)) {
@@ -133,7 +133,7 @@ bool ESP8266::setOprToSoftAP(void)
     }
 }
 
-bool ESP8266::setOprToStationSoftAP(void)
+bool ESP82664ros::setOprToStationSoftAP(void)
 {
     uint8_t mode;
     if (!qATCWMODE(&mode)) {
@@ -150,105 +150,105 @@ bool ESP8266::setOprToStationSoftAP(void)
     }
 }
 
-String ESP8266::getAPList(void)
+String ESP82664ros::getAPList(void)
 {
     String list;
     eATCWLAP(list);
     return list;
 }
 
-bool ESP8266::joinAP(String ssid, String pwd)
+bool ESP82664ros::joinAP(String ssid, String pwd)
 {
     return sATCWJAP(ssid, pwd);
 }
 
-bool ESP8266::leaveAP(void)
+bool ESP82664ros::leaveAP(void)
 {
     return eATCWQAP();
 }
 
-bool ESP8266::setSoftAPParam(String ssid, String pwd, uint8_t chl, uint8_t ecn)
+bool ESP82664ros::setSoftAPParam(String ssid, String pwd, uint8_t chl, uint8_t ecn)
 {
     return sATCWSAP(ssid, pwd, chl, ecn);
 }
 
-String ESP8266::getJoinedDeviceIP(void)
+String ESP82664ros::getJoinedDeviceIP(void)
 {
     String list;
     eATCWLIF(list);
     return list;
 }
 
-String ESP8266::getIPStatus(void)
+String ESP82664ros::getIPStatus(void)
 {
     String list;
     eATCIPSTATUS(list);
     return list;
 }
 
-String ESP8266::getLocalIP(void)
+String ESP82664ros::getLocalIP(void)
 {
     String list;
     eATCIFSR(list);
     return list;
 }
 
-bool ESP8266::enableMUX(void)
+bool ESP82664ros::enableMUX(void)
 {
     return sATCIPMUX(1);
 }
 
-bool ESP8266::disableMUX(void)
+bool ESP82664ros::disableMUX(void)
 {
     return sATCIPMUX(0);
 }
 
-bool ESP8266::createTCP(String addr, uint32_t port)
+bool ESP82664ros::createTCP(String addr, uint32_t port)
 {
     return sATCIPSTARTSingle("TCP", addr, port);
 }
 
-bool ESP8266::releaseTCP(void)
+bool ESP82664ros::releaseTCP(void)
 {
     return eATCIPCLOSESingle();
 }
 
-bool ESP8266::registerUDP(String addr, uint32_t port)
+bool ESP82664ros::registerUDP(String addr, uint32_t port)
 {
     return sATCIPSTARTSingle("UDP", addr, port);
 }
 
-bool ESP8266::unregisterUDP(void)
+bool ESP82664ros::unregisterUDP(void)
 {
     return eATCIPCLOSESingle();
 }
 
-bool ESP8266::createTCP(uint8_t mux_id, String addr, uint32_t port)
+bool ESP82664ros::createTCP(uint8_t mux_id, String addr, uint32_t port)
 {
     return sATCIPSTARTMultiple(mux_id, "TCP", addr, port);
 }
 
-bool ESP8266::releaseTCP(uint8_t mux_id)
+bool ESP82664ros::releaseTCP(uint8_t mux_id)
 {
     return sATCIPCLOSEMulitple(mux_id);
 }
 
-bool ESP8266::registerUDP(uint8_t mux_id, String addr, uint32_t port)
+bool ESP82664ros::registerUDP(uint8_t mux_id, String addr, uint32_t port)
 {
     return sATCIPSTARTMultiple(mux_id, "UDP", addr, port);
 }
 
-bool ESP8266::unregisterUDP(uint8_t mux_id)
+bool ESP82664ros::unregisterUDP(uint8_t mux_id)
 {
     return sATCIPCLOSEMulitple(mux_id);
 }
 
-bool ESP8266::setTCPServerTimeout(uint32_t timeout)
+bool ESP82664ros::setTCPServerTimeout(uint32_t timeout)
 {
     return sATCIPSTO(timeout);
 }
 
-bool ESP8266::startTCPServer(uint32_t port)
+bool ESP82664ros::startTCPServer(uint32_t port)
 {
     if (sATCIPSERVER(1, port)) {
         return true;
@@ -256,39 +256,39 @@ bool ESP8266::startTCPServer(uint32_t port)
     return false;
 }
 
-bool ESP8266::stopTCPServer(void)
+bool ESP82664ros::stopTCPServer(void)
 {
     sATCIPSERVER(0);
     restart();
     return false;
 }
 
-bool ESP8266::startServer(uint32_t port)
+bool ESP82664ros::startServer(uint32_t port)
 {
     return startTCPServer(port);
 }
 
-bool ESP8266::stopServer(void)
+bool ESP82664ros::stopServer(void)
 {
     return stopTCPServer();
 }
 
-bool ESP8266::send(const uint8_t *buffer, uint32_t len)
+bool ESP82664ros::send(const uint8_t *buffer, uint32_t len)
 {
     return sATCIPSENDSingle(buffer, len);
 }
 
-bool ESP8266::send(uint8_t mux_id, const uint8_t *buffer, uint32_t len)
+bool ESP82664ros::send(uint8_t mux_id, const uint8_t *buffer, uint32_t len)
 {
     return sATCIPSENDMultiple(mux_id, buffer, len);
 }
 
-uint32_t ESP8266::recv(uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
+uint32_t ESP82664ros::recv(uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
 {
     return recvPkg(buffer, buffer_size, NULL, timeout, NULL);
 }
 
-uint32_t ESP8266::recv(uint8_t mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
+uint32_t ESP82664ros::recv(uint8_t mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
 {
     uint8_t id;
     uint32_t ret;
@@ -299,12 +299,12 @@ uint32_t ESP8266::recv(uint8_t mux_id, uint8_t *buffer, uint32_t buffer_size, ui
     return 0;
 }
 
-uint32_t ESP8266::recv(uint8_t *coming_mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
+uint32_t ESP82664ros::recv(uint8_t *coming_mux_id, uint8_t *buffer, uint32_t buffer_size, uint32_t timeout)
 {
     return recvPkg(buffer, buffer_size, NULL, timeout, coming_mux_id);
 }
 
-bool ESP8266::disableEcho()
+bool ESP82664ros::disableEcho()
 {
     String data;
     rx_empty();
@@ -321,7 +321,7 @@ bool ESP8266::disableEcho()
 /* +IPD,<id>,<len>:<data> */
 /* +IPD,<len>:<data> */
 
-uint32_t ESP8266::recvPkg(uint8_t *buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, uint8_t *coming_mux_id)
+uint32_t ESP82664ros::recvPkg(uint8_t *buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, uint8_t *coming_mux_id)
 {
     String data;
     unsigned char a;
@@ -397,7 +397,7 @@ uint32_t ESP8266::recvPkg(uint8_t *buffer, uint32_t buffer_size, uint32_t *data_
     return 0;
 }
 
-void ESP8266::recvQ(uint32_t timeout)
+void ESP82664ros::recvQ(uint32_t timeout)
 {
     String data;
     unsigned char a;
@@ -461,7 +461,7 @@ void ESP8266::recvQ(uint32_t timeout)
     return ;
 }
 
-void ESP8266::recvQ(String data)
+void ESP82664ros::recvQ(String data)
 {
     int32_t index_PIPDcomma = -1;
     int32_t index_colon = -1; /* : */
@@ -497,14 +497,14 @@ void ESP8266::recvQ(String data)
     return ;
 }
 
-void ESP8266::rx_empty(void) 
+void ESP82664ros::rx_empty(void) 
 {
     while(m_puart->available() > 0) {
         wifi_data.push( m_puart->read() );
     }
 }
 
-String ESP8266::recvString(String target, uint32_t timeout)
+String ESP82664ros::recvString(String target, uint32_t timeout)
 {
     String data;
     char a;
@@ -523,7 +523,7 @@ String ESP8266::recvString(String target, uint32_t timeout)
     return data;
 }
 
-String ESP8266::recvString(String target1, String target2, uint32_t timeout)
+String ESP82664ros::recvString(String target1, String target2, uint32_t timeout)
 {
     String data;
     char a;
@@ -544,7 +544,7 @@ String ESP8266::recvString(String target1, String target2, uint32_t timeout)
     return data;
 }
 
-String ESP8266::recvString(String target1, String target2, String target3, uint32_t timeout)
+String ESP82664ros::recvString(String target1, String target2, String target3, uint32_t timeout)
 {
     String data;
     char a;
@@ -567,7 +567,7 @@ String ESP8266::recvString(String target1, String target2, String target3, uint3
     return data;
 }
 
-bool ESP8266::recvFind(String target, uint32_t timeout)
+bool ESP82664ros::recvFind(String target, uint32_t timeout)
 {
     String data_tmp;
     data_tmp = recvString(target, timeout);
@@ -577,7 +577,7 @@ bool ESP8266::recvFind(String target, uint32_t timeout)
     return false;
 }
 
-bool ESP8266::recvFindAndFilter(String target, String begin, String end, String &data, uint32_t timeout)
+bool ESP82664ros::recvFindAndFilter(String target, String begin, String end, String &data, uint32_t timeout)
 {
     String data_tmp;
     data_tmp = recvString(target, timeout);
@@ -594,28 +594,28 @@ bool ESP8266::recvFindAndFilter(String target, String begin, String end, String 
     return false;
 }
 
-bool ESP8266::eAT(void)
+bool ESP82664ros::eAT(void)
 {
     rx_empty();
     m_puart->println("AT");
     return recvFind("OK");
 }
 
-bool ESP8266::eATRST(void) 
+bool ESP82664ros::eATRST(void) 
 {
     rx_empty();
     m_puart->println("AT+RST");
     return recvFind("OK");
 }
 
-bool ESP8266::eATGMR(String &version)
+bool ESP82664ros::eATGMR(String &version)
 {
     rx_empty();
     m_puart->println("AT+GMR");
     return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", version); 
 }
 
-bool ESP8266::qATCWMODE(uint8_t *mode) 
+bool ESP82664ros::qATCWMODE(uint8_t *mode) 
 {
     String str_mode;
     bool ret;
@@ -633,7 +633,7 @@ bool ESP8266::qATCWMODE(uint8_t *mode)
     }
 }
 
-bool ESP8266::sATCWMODE(uint8_t mode)
+bool ESP82664ros::sATCWMODE(uint8_t mode)
 {
     String data;
     rx_empty();
@@ -647,7 +647,7 @@ bool ESP8266::sATCWMODE(uint8_t mode)
     return false;
 }
 
-bool ESP8266::sATCWJAP(String ssid, String pwd)
+bool ESP82664ros::sATCWJAP(String ssid, String pwd)
 {
     String data;
     rx_empty();
@@ -664,7 +664,7 @@ bool ESP8266::sATCWJAP(String ssid, String pwd)
     return false;
 }
 
-bool ESP8266::eATCWLAP(String &list)
+bool ESP82664ros::eATCWLAP(String &list)
 {
     String data;
     rx_empty();
@@ -672,7 +672,7 @@ bool ESP8266::eATCWLAP(String &list)
     return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", list, 10000);
 }
 
-bool ESP8266::eATCWQAP(void)
+bool ESP82664ros::eATCWQAP(void)
 {
     String data;
     rx_empty();
@@ -680,7 +680,7 @@ bool ESP8266::eATCWQAP(void)
     return recvFind("OK");
 }
 
-bool ESP8266::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn)
+bool ESP82664ros::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn)
 {
     String data;
     rx_empty();
@@ -700,14 +700,14 @@ bool ESP8266::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn)
     return false;
 }
 
-bool ESP8266::eATCWLIF(String &list)
+bool ESP82664ros::eATCWLIF(String &list)
 {
     String data;
     rx_empty();
     m_puart->println("AT+CWLIF");
     return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", list);
 }
-bool ESP8266::eATCIPSTATUS(String &list)
+bool ESP82664ros::eATCIPSTATUS(String &list)
 {
     String data;
     delay(100);
@@ -715,7 +715,7 @@ bool ESP8266::eATCIPSTATUS(String &list)
     m_puart->println("AT+CIPSTATUS");
     return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", list);
 }
-bool ESP8266::sATCIPSTARTSingle(String type, String addr, uint32_t port)
+bool ESP82664ros::sATCIPSTARTSingle(String type, String addr, uint32_t port)
 {
     String data;
     rx_empty();
@@ -732,7 +732,7 @@ bool ESP8266::sATCIPSTARTSingle(String type, String addr, uint32_t port)
     }
     return false;
 }
-bool ESP8266::sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint32_t port)
+bool ESP82664ros::sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint32_t port)
 {
     String data;
     rx_empty();
@@ -751,7 +751,7 @@ bool ESP8266::sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint
     }
     return false;
 }
-bool ESP8266::sATCIPSENDSingle(const uint8_t *buffer, uint32_t len)
+bool ESP82664ros::sATCIPSENDSingle(const uint8_t *buffer, uint32_t len)
 {
     rx_empty();
     m_puart->print("AT+CIPSEND=");
@@ -765,7 +765,7 @@ bool ESP8266::sATCIPSENDSingle(const uint8_t *buffer, uint32_t len)
     }
     return false;
 }
-bool ESP8266::sATCIPSENDMultiple(uint8_t mux_id, const uint8_t *buffer, uint32_t len)
+bool ESP82664ros::sATCIPSENDMultiple(uint8_t mux_id, const uint8_t *buffer, uint32_t len)
 {
     rx_empty();
     m_puart->print("AT+CIPSEND=");
@@ -781,7 +781,7 @@ bool ESP8266::sATCIPSENDMultiple(uint8_t mux_id, const uint8_t *buffer, uint32_t
     }
     return false;
 }
-bool ESP8266::sATCIPCLOSEMulitple(uint8_t mux_id)
+bool ESP82664ros::sATCIPCLOSEMulitple(uint8_t mux_id)
 {
     String data;
     rx_empty();
@@ -794,19 +794,19 @@ bool ESP8266::sATCIPCLOSEMulitple(uint8_t mux_id)
     }
     return false;
 }
-bool ESP8266::eATCIPCLOSESingle(void)
+bool ESP82664ros::eATCIPCLOSESingle(void)
 {
     rx_empty();
     m_puart->println("AT+CIPCLOSE");
     return recvFind("OK", 5000);
 }
-bool ESP8266::eATCIFSR(String &list)
+bool ESP82664ros::eATCIFSR(String &list)
 {
     rx_empty();
     m_puart->println("AT+CIFSR");
     return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", list);
 }
-bool ESP8266::sATCIPMUX(uint8_t mode)
+bool ESP82664ros::sATCIPMUX(uint8_t mode)
 {
     String data;
     rx_empty();
@@ -819,7 +819,7 @@ bool ESP8266::sATCIPMUX(uint8_t mode)
     }
     return false;
 }
-bool ESP8266::sATCIPSERVER(uint8_t mode, uint32_t port)
+bool ESP82664ros::sATCIPSERVER(uint8_t mode, uint32_t port)
 {
     String data;
     if (mode) {
@@ -838,7 +838,7 @@ bool ESP8266::sATCIPSERVER(uint8_t mode, uint32_t port)
         return recvFind("\r\r\n");
     }
 }
-bool ESP8266::sATCIPSTO(uint32_t timeout)
+bool ESP82664ros::sATCIPSTO(uint32_t timeout)
 {
     rx_empty();
     m_puart->print("AT+CIPSTO=");
