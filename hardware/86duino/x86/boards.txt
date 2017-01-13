@@ -164,40 +164,40 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 
 ################################################################################
 
-86DuinoAI.name=86Duino AI
-86DuinoAI.upload.via_ssh=false
+# 86DuinoAI.name=86Duino AI
+# 86DuinoAI.upload.via_ssh=false
 
-86DuinoAI.vid.0=0x0525
-86DuinoAI.pid.0=0x0036
-86DuinoAI.vid.1=0x0525
-86DuinoAI.pid.1=0x8036
-86DuinoAI.vid.2=0x0525
-86DuinoAI.pid.2=0xa4a5
-86DuinoAI.vid.3=0x0525
-86DuinoAI.pid.3=0x00a5
+# 86DuinoAI.vid.0=0x0525
+# 86DuinoAI.pid.0=0x0036
+# 86DuinoAI.vid.1=0x0525
+# 86DuinoAI.pid.1=0x8036
+# 86DuinoAI.vid.2=0x0525
+# 86DuinoAI.pid.2=0xa4a5
+# 86DuinoAI.vid.3=0x0525
+# 86DuinoAI.pid.3=0x00a5
 
-86DuinoAI.upload.tool=86upload
-86DuinoAI.upload.protocol=avr109
-86DuinoAI.upload.maximum_size=4194304
-86DuinoAI.upload.speed=57600
-86DuinoAI.upload.disable_flushing=true
-86DuinoAI.upload.use_1200bps_touch=true
-86DuinoAI.upload.wait_for_upload_port=true
+# 86DuinoAI.upload.tool=86upload
+# 86DuinoAI.upload.protocol=avr109
+# 86DuinoAI.upload.maximum_size=4194304
+# 86DuinoAI.upload.speed=57600
+# 86DuinoAI.upload.disable_flushing=true
+# 86DuinoAI.upload.use_1200bps_touch=true
+# 86DuinoAI.upload.wait_for_upload_port=true
 
-86DuinoAI.bootloader.tool=86upload
-86DuinoAI.bootloader.low_fuses=0xff
-86DuinoAI.bootloader.high_fuses=0xd8
-86DuinoAI.bootloader.extended_fuses=0xcb
-86DuinoAI.bootloader.file=v86boot.exe
-86DuinoAI.bootloader.unlock_bits=0x3F
-86DuinoAI.bootloader.lock_bits=0x2F
+# 86DuinoAI.bootloader.tool=86upload
+# 86DuinoAI.bootloader.low_fuses=0xff
+# 86DuinoAI.bootloader.high_fuses=0xd8
+# 86DuinoAI.bootloader.extended_fuses=0xcb
+# 86DuinoAI.bootloader.file=v86boot.exe
+# 86DuinoAI.bootloader.unlock_bits=0x3F
+# 86DuinoAI.bootloader.lock_bits=0x2F
 
-86DuinoAI.build.mcu=atmega32u4
-86DuinoAI.build.f_cpu=16000000L
-86DuinoAI.build.vid=0x0525
-86DuinoAI.build.pid=0x8036
-86DuinoAI.build.usb_product="86Duino AI"
-86DuinoAI.build.board=86DuinoAI
-86DuinoAI.build.core=arduino
-86DuinoAI.build.variant=ai
-86DuinoAI.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+# 86DuinoAI.build.mcu=atmega32u4
+# 86DuinoAI.build.f_cpu=16000000L
+# 86DuinoAI.build.vid=0x0525
+# 86DuinoAI.build.pid=0x8036
+# 86DuinoAI.build.usb_product="86Duino AI"
+# 86DuinoAI.build.board=86DuinoAI
+# 86DuinoAI.build.core=arduino
+# 86DuinoAI.build.variant=ai
+# 86DuinoAI.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}

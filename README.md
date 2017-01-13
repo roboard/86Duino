@@ -1,7 +1,7 @@
 86Duino
 ---------
 
-_VERSION_: Coding 300
+_VERSION_: Coding 315
 
 This is the IDE of the open-source 86Duino electronic platforms, which is 
 compatible to Arduino 1.6.11. The binaries of this IDE for Windows, Linux, 

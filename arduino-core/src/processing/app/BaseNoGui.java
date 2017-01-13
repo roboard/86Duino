@@ -44,7 +44,7 @@ public class BaseNoGui {
   /** Version string to be used for build */
   public static final int REVISION = 10611;
   /** Extended version string displayed on GUI */
-  public static final String VERSION_NAME = "Coding_300";
+  public static final String VERSION_NAME = "Coding_315";
   public static final String VERSION_NAME_LONG;
 
   // Current directory to use for relative paths specified on the

@@ -59,7 +59,7 @@ Device_Descriptor desc_Device =
 	0x01,									// iManufacturer
 	0x02,									// iProduct
 	0x03,									// iSerialNumber
-	0x01,									// bNumConfigurations
+	0x01 									// bNumConfigurations
 };
 
 
@@ -78,7 +78,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x01,								// bConfigurationValue
 		0x04,								// iConfiguration
 		DSC_CONFIG_ATR_BASE,				// bmAttributes
-		DSC_MAXPOWER(500),					// bMaxPower // 2014.06.11 modified: 100 -> 500
+		DSC_MAXPOWER(500)					// bMaxPower // 2014.06.11 modified: 100 -> 500
 	},
 	
 	// Interface Association Descriptor // 2014.06.11 modified: new
@@ -90,7 +90,7 @@ Configuration_Desc_Set desc_Config_Set =
 	    0x02,                               // bFunctionClass (CDC_COMMUNICATION_INTERFACE_CLASS)
 	    0x02,                               // bFuntionSubClass (CDC_ABSTRACT_CONTROL_MODEL)
 	    0x01,                               // bFunctionProtocol
-	    0x00,                               // iFunction
+	    0x00                               // iFunction
 	},
 	
 	// Communication Interface Class Descriptor
@@ -103,7 +103,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x02,								// bInterfaceClass
 		0x02,								// bInterfaceSubClass
 		0x01,								// bInterfaceProtocol (AT command)
-		0x05,								// iInterface
+		0x05								// iInterface
 	},
 	
 	// Header Functional Descriptor
@@ -111,7 +111,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x05,								// bLength
 		DSC_TYPE_CS_INTERFACE,				// bDescriptorType
 		DSC_SUBTYPE_CS_HEADER,				// bDescriptorSubtype
-		0x0110,								// bcdCDC
+		0x0110								// bcdCDC
 	},
 	
 	// Call Management Functional Descriptor
@@ -120,7 +120,7 @@ Configuration_Desc_Set desc_Config_Set =
 		DSC_TYPE_CS_INTERFACE,				// bDescriptorType
 		DSC_SUBTYPE_CS_CALL_MANAGE,			// bDescriptorSubtype
 		0x00,								// bmCapabilities
-		0x01,								// bDataInterface
+		0x01								// bDataInterface
 	},
 	
 	// Abstract Control Management Functional Descriptor
@@ -128,7 +128,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x04,								// bLength
 		DSC_TYPE_CS_INTERFACE,				// bDescriptorType
 		DSC_SUBTYPE_CS_ABST_CONTROL,		// bDescriptorSubtype
-		0x06,								// bmCapabilities
+		0x06								// bmCapabilities
 	},
 	
 	// Union Functional Descriptor
@@ -137,7 +137,7 @@ Configuration_Desc_Set desc_Config_Set =
 		DSC_TYPE_CS_INTERFACE,				// bDescriptorType
 		DSC_SUBTYPE_CS_UNION,				// bDescriptorSubtype
 		0x00,								// bMasterInterface
-		0x01,								// bSlaveInterface0
+		0x01								// bSlaveInterface0
 	},
 	
 	// Endpoint Descriptor (Interrupt, EP1_IN)
@@ -147,7 +147,7 @@ Configuration_Desc_Set desc_Config_Set =
 		EP1_IN, 							// bEndpointAddress
 		DSC_EP_INTERRUPT, 					// bmAttributes
 		EP1_MAX_PACKET_SIZE_IN, 			// wMaxPacketSize
-		0xFF, 								// bInterval
+		0xFF 								// bInterval
 	},
 	
 	// Data Interface Class Descriptor
@@ -160,7 +160,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x0A,								// bInterfaceClass
 		0x00,								// bInterfaceSubClass
 		0x00,								// bInterfaceProtocol
-		0x06,								// iInterface
+		0x06								// iInterface
 	},
 	
 	// Endpoint Descriptor (Bulk, EP2_IN)
@@ -170,7 +170,7 @@ Configuration_Desc_Set desc_Config_Set =
 		EP2_IN, 							// bEndpointAddress
 		DSC_EP_BULK, 						// bmAttributes
 		EP2_MAX_PACKET_SIZE_IN, 			// wMaxPacketSize
-		0x00, 								// bInterval
+		0x00 								// bInterval
 	},
 	
 	// Endpoint Descriptor (Interrupt, EP2_OUT)
@@ -180,7 +180,7 @@ Configuration_Desc_Set desc_Config_Set =
 		EP2_OUT, 							// bEndpointAddress
 		DSC_EP_BULK, 						// bmAttributes
 		EP2_MAX_PACKET_SIZE_OUT, 			// wMaxPacketSize
-		0x00, 								// bInterval
+		0x00 								// bInterval
 	},
 	
 	// HID Interface Class Descriptor
@@ -193,7 +193,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x03,								// bInterfaceClass
 		0x00,								// bInterfaceSubClass
 		0x00,								// bInterfaceProtocol
-		0x00,								// iInterface
+		0x00								// iInterface
 	},
 	
 	// HID Descriptor
@@ -204,7 +204,7 @@ Configuration_Desc_Set desc_Config_Set =
 		0x21,                               // bCountryCode (USA)
 		0x01,                               // bNumDescriptors
 		0x22,                               // bDescriptorType
-		0x0065,                             // bDescriptorLength
+		0x0065                              // bDescriptorLength
 	},
 	
 	// Endpoint Descriptor (Interrupt, EP3_IN)
@@ -214,7 +214,7 @@ Configuration_Desc_Set desc_Config_Set =
 		EP3_IN, 							// bEndpointAddress
 		DSC_EP_INTERRUPT, 					// bmAttributes
 		EP3_MAX_PACKET_SIZE_OUT, 			// wMaxPacketSize
-		0x01, 								// bInterval (1ms)
+		0x01 								// bInterval (1ms)
 	},
 	
 };
@@ -257,7 +257,7 @@ String_Descriptor StringDescTable[] =
 		'I',
 		'N',
 		'C',
-		'.',
+		'.'
 	},
 	
 	// iProductStr -> Index 2
@@ -317,7 +317,7 @@ String_Descriptor StringDescTable[] =
 		't',
 		'i',
 		'o',
-		'n',
+		'n'
 	},
 	
 	// iCommInterfaceStr -> Index 5
@@ -337,7 +337,7 @@ String_Descriptor StringDescTable[] =
 		'c',
 		'e',
 		' ',
-		'0',
+		'0'
 	},
 	
 	// iDataInterfaceStr -> Index 6
@@ -357,7 +357,7 @@ String_Descriptor StringDescTable[] =
 		'c',
 		'e',
 		' ',
-		'1',
+		'1'
 	}
 };
 
@@ -365,7 +365,7 @@ String_Descriptor StringDescTable[] =
 //       HID Report Descriptors
 // -----------------------------------
 const char hidReportDescriptor[101] = {
-	
+
 	//	Mouse
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)	// 54
     0x09, 0x02,                    // USAGE (Mouse)
@@ -424,5 +424,6 @@ const char hidReportDescriptor[101] = {
 	0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
     0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
     0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
-    0xc0,                          // END_COLLECTION
+    0xc0                           // END_COLLECTION
 };
+

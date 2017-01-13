@@ -42,10 +42,10 @@ build.extra_flags=
 # --------------------
 
 ## Compile c files
-recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} -DARDUINO={runtime.ide.version} -D_86DUINO=300 "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}"
+recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} -DARDUINO={runtime.ide.version} -D_86DUINO=315 "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}"
 
 ## Compile c++ files
-recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} -DARDUINO={runtime.ide.version} -D_86DUINO=300 "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}"
+recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} -DARDUINO={runtime.ide.version} -D_86DUINO=315 "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}"
 
 ## Create archives
 recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" {compiler.ar.flags} "{build.path}/libcore.a" "{object_file}" 
