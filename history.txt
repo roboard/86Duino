@@ -1,17 +1,19 @@
-### CODING 315 - 2017.01.13 ###
+### CODING 315 - 2017.01.20 ###
 
 [core]
 * The defalut warnning is "-w" in platform.txt.
-* Add the define of prototype of 86Duino AI board in USBCore.h.
+* Add the define of prototype of 86Duino AI board in cores, ex: pin define etc.
 
 [libraries]
 * Add the AIServo86 library for Serial AI Servo. (ex: Dynamixel AX-12, RX-28, MX-28, XL-320 etc.)
-* Add bool return in load() to load offset or frame files by using Servo86 library and update run() to wait specified time when getting the same target at IDLE state.
-* Fix a memory alloc bug when using cubic spline funciton.
-* Fix a bug and support the prototype of 86Duino AI board in FreeIMU1 library.
+* Add bool return in load() to load offset or frame files by using Servo86 library and
+  update run() to wait specified time when getting the same target at IDLE state.
+* Add the new CATMULL-ROM SPLINE algorithm in Servo86 library.
+* Fix a memory alloc bug when using cubic spline funciton in Servo86 library.
+* Fix a bug for internal array size and support the prototype of 86Duino AI board in FreeIMU1 library.
 * Support the prototype of 86Duino AI board in Firmata library.
 * Support the prototype of 86Duino AI board in Wire library.
-* Fix a bug and support the prototype of 86Duino AI board in Encoder library.
+* Fix a bug for attachInterrupt() and support the prototype of 86Duino AI board in Encoder library.
 
 
 
@@ -39,7 +41,8 @@
 ### CODING 213 - 2016.06.17 ###
 
 [core]
-* Updated the implementation of marco of F(string_literal) in WString.h and the implementation of print(const __FlashStringHelper *ifsh).
+* Updated the implementation of marco of F(string_literal) in WString.h and 
+  the implementation of print(const __FlashStringHelper *ifsh).
 * Add the uintptr_t define in stdint.h.
 
 [libraries]
@@ -55,7 +58,8 @@
 ### CODING 212 - 2016.03.28 ###
 
 [core]
-* Support the new 86Duino PLC board. (Use the new pinmap method in Arduino.h, HardwareSerial.cpp, HardwareSerial.h, WInterrupts.cpp, tone.cpp, wiring.cpp, wiring_analog.cpp, wiring_digital.cpp, wiring_pulse.cpp, wiring_shift.cpp)
+* Support the new 86Duino PLC board. (Use the new pinmap method in Arduino.h, HardwareSerial.cpp, HardwareSerial.h,
+  WInterrupts.cpp, tone.cpp, wiring.cpp, wiring_analog.cpp, wiring_digital.cpp, wiring_pulse.cpp, wiring_shift.cpp)
 * The IPADDR_NONE is changed to INADDR_NONE for compatibility, same change in dns.cpp for Ethernet library.
 * Fixed: the strlen() in findUntil() will crash if it get the NULL character pointer.
 * Fixed: the analogRead() will return the value of another pin when the CPU runs on 500MHz.
@@ -63,7 +67,8 @@
 [libraries]
 * Fixed: a bug for adjusting the frequency in Audio library.
 * Update: Firmata version from 2.3.6 to 2.5.2.
-* Use new pin mapping method in some libraries: AFMotor, Servo, Servo86, Encoder, GSM, IRRemote, softwareSerial, TimerOne, Tlc5940, UTFT, UTOUCH
+* Use new pin mapping method in some libraries: AFMotor, Servo, Servo86, Encoder, GSM, IRRemote, softwareSerial,
+  TimerOne, Tlc5940, UTFT, UTOUCH
 * Add RTCZero library.
 * Fixed: sometimes lost data via ESP8266 module using rosserial86 library.
 * Fixed: the servoMultiRun() in playPositions() should use 45 parameters to know which servo should be moved.
@@ -79,10 +84,12 @@
 * Add dtostrf.c and dtostrf.h in core/arduino/avr directory.
 * Add itoa.c and itoa.h in cores/arduino directory.
 * Add "include "iota.h"" in Arduino.h.
-* Add reconnect function in USBcore.cpp, that will force send HIGH and LOW on the USB device's ON/OFF pin to be sure the PC recognizes 86Duino again when we use soft-boot method to reboot 86Duino.
+* Add reconnect function in USBcore.cpp, that will force send HIGH and LOW on the USB device's ON/OFF pin
+  to be sure the PC recognizes 86Duino again when we use soft-boot method to reboot 86Duino.
 * Add reset event in USBCore.cpp to re-handshake with PC.
 * Fixed: add "USBDEV = NULL" for Serial.end() in CDC.cpp.
-* Add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" in analogWrite() to avoid invalid behavior for reloading new duty.
+* Add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" in analogWrite()
+  to avoid invalid behavior for reloading new duty.
 * Add wdt.cpp in core\arduino directory and add wdt functions in Arduino.h.
 * Add wdt.h file in core\arduino\avr directory for Arduino compatibility.
 * Add wdt_init() in wiring.cpp.
@@ -92,12 +99,14 @@
 
 [libraries]
 * SPI lib is updated to new version of Arduino.
-* TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);" to avoid invalid behavior for reloading new period.
+* TimerOne lib add "if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);"
+  to avoid invalid behavior for reloading new period.
 * Fixed: in Servo86 library, re-calculate the endtime when getting the same target position during servo moving.
 * Add TimerWDT library (use the internal watchdog to be a timer like TimerOne).
 * Modify the Wire library to add WireLEGO class, you are able to use LEGO sensor (ex: ultrasonic sensor) on 86Duino.
 * For EEPROM lib, use the I/O functions for more platforms.
-* For RF12 lib, use eeprom functions (CMOS mode) in cores to access RF12 config data and then remove the private EEPROM lib.
+* For RF12 lib, use eeprom functions (CMOS mode) in cores to access RF12 config data and
+  then remove the private EEPROM lib.
 * For Rosserial86 lib, now support ESP8266 WiFi module.
 * Update the FreeIMU1 library to version 2.0.1.
  
@@ -124,7 +133,8 @@
 [libraries]
 * Modified the buffer size from 32 to 128 in the Firmata library.
 * Fixed a bug in EthernetClient library: a initial value issue.
-* Added the Servo86 Library for controlling RC Servo robot. You can also edit/record/play the motions of robot via 86ME (86Duino Motion Editor).
+* Added the Servo86 Library for controlling RC Servo robot. You can also edit/record/play the motions of robot
+  via 86ME (86Duino Motion Editor).
   (86ME tutorial: http://www.86duino.com/index.php?p=11544)
 
 
