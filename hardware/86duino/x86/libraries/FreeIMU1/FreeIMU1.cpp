@@ -174,7 +174,7 @@ int FreeIMU1::initEX(int imu) {
 }
 
 int FreeIMU1::initEX(int imu, bool fastmode) {
-    return initEX(imu, false, DEFULT_MARG);
+    return initEX(imu, fastmode, DEFULT_MARG);
 }
 
 int FreeIMU1::initEX(int imu, int acc_addr, int gyro_addr, bool fastmode) {
@@ -396,36 +396,47 @@ void FreeIMU1::getValues(float * values) {
 */
 void FreeIMU1::zeroGyro() {
     const int totSamples = nsamples;
-    int raw[11];
+    int i, raw[11];
     double values[11]; 
     double tmpOffsets[] = {0,0,0};
+    unsigned long pre, now;
 
-    for (int i = 0; i < totSamples; i++){
+    i = 0;
+    pre = millis();
+    do {
+        
         getRawValues(raw);
         tmpOffsets[0] += raw[3];
         tmpOffsets[1] += raw[4];
         tmpOffsets[2] += raw[5];
-    }
+        i++;
+        
+    } while (i < totSamples && (millis() - pre < 15UL));
 
-    gyro_off_x = tmpOffsets[0] / totSamples;
-    gyro_off_y = tmpOffsets[1] / totSamples;
-    gyro_off_z = tmpOffsets[2] / totSamples;
+    gyro_off_x = tmpOffsets[0] / i;
+    gyro_off_y = tmpOffsets[1] / i;
+    gyro_off_z = tmpOffsets[2] / i;
 
-    delay(5);
+    // delay(5);
 }
 
 void FreeIMU1::initGyros() {
     //Code modified from Ardupilot library
     //
     Vector3f last_average[INS_MAX_INSTANCES], best_avg[INS_MAX_INSTANCES], gyro_offset[INS_MAX_INSTANCES];
+    Vector3f last_average2[INS_MAX_INSTANCES], gyro_avg2[INS_MAX_INSTANCES], gyro_diff2[INS_MAX_INSTANCES];
+    Vector3f total_average[INS_MAX_INSTANCES];
     double best_diff[INS_MAX_INSTANCES];
     bool converged[INS_MAX_INSTANCES];
+    int src[6] = {0, 0, 0, 0, 0, 0};
+    double dst[6];
 
     // remove existing gyro offsets
     for (uint8_t k=0; k<num_gyros; k++) {
         gyro_offset[k] = Vector3f(0,0,0);
         best_diff[k] = 0;
         last_average[k].zero();
+        total_average[k].zero();
         converged[k] = false;
     }
 
@@ -437,7 +448,7 @@ void FreeIMU1::initGyros() {
 
     // we try to get a good calibration estimate for up to 10 seconds
     // if the gyros are stable, we should get it in 1 second
-    for (int16_t j = 0; j <= 30 && num_converged < num_gyros; j++) {
+    for (int16_t j = 0; j <= 40 && num_converged < num_gyros; j++) {
         Vector3f gyro_sum[INS_MAX_INSTANCES], gyro_avg[INS_MAX_INSTANCES], gyro_diff[INS_MAX_INSTANCES];
         double diff_norm[INS_MAX_INSTANCES];
 
@@ -449,15 +460,41 @@ void FreeIMU1::initGyros() {
         for (uint8_t k=0; k<num_gyros; k++) {
             gyro_diff[k] = last_average[k] - gyro_avg[k];
             diff_norm[k] = gyro_diff[k].length();
+            
+            src[3] = last_average[k].x;
+            src[4] = last_average[k].y;
+            src[5] = last_average[k].z;
+            sensor->raw2value(sensor->handler, src, dst);
+            last_average2[k].x = dst[3];
+            last_average2[k].y = dst[4];
+            last_average2[k].z = dst[5];
+            
+            src[3] = gyro_avg[k].x;
+            src[4] = gyro_avg[k].y;
+            src[5] = gyro_avg[k].z;
+            sensor->raw2value(sensor->handler, src, dst);
+            gyro_avg2[k].x = dst[3];
+            gyro_avg2[k].y = dst[4];
+            gyro_avg2[k].z = dst[5];
+            
+            gyro_diff2[k] = last_average2[k] - gyro_avg2[k];
+            
         }
-
+        
         for (uint8_t k=0; k<num_gyros; k++) {
             if (converged[k]) continue;
+        #if 1
+            if (gyro_diff2[k].length() < 0.1) {
+                last_average[k] = (gyro_avg[k] * 0.5f) + (last_average[k] * 0.5f);
+                gyro_offset[k] = last_average[k];            
+                converged[k] = true;
+                num_converged++;
+            }
+        #else
             if (j == 0) {
                 best_diff[k] = diff_norm[k];
                 best_avg[k] = gyro_avg[k];
-            } else if (gyro_diff[k].length() < ToRad(0.05f)) {
-                // we want the average to be within 0.1 bit, which is 0.04 degrees/s
+            } else if (gyro_diff2[k].length() < 0.1) {
                 last_average[k] = (gyro_avg[k] * 0.5f) + (last_average[k] * 0.5f);
                 gyro_offset[k] = last_average[k];            
                 converged[k] = true;
@@ -466,8 +503,11 @@ void FreeIMU1::initGyros() {
                 best_diff[k] = diff_norm[k];
                 best_avg[k] = (gyro_avg[k] * 0.5f) + (last_average[k] * 0.5f);
             }
+        #endif
             last_average[k] = gyro_avg[k];
+            total_average[k] = (total_average[k] * j + gyro_avg[k]) / (j + 1);
         }
+        
     }
 
     delay(5);
@@ -484,7 +524,11 @@ void FreeIMU1::initGyros() {
     // found so far
     for (uint8_t k=0; k<num_gyros; k++) {
         if (!converged[k]) {
+        #if 1
+            gyro_offset[k] = total_average[k];
+        #else
             gyro_offset[k] = best_avg[k];
+        #endif
         }
     }
 

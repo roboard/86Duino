@@ -13,6 +13,8 @@
 #define REFRESH_INTERVAL    20000     // minumim time to refresh servos in microseconds 
 #define INVALID_SERVO         255     // flag indicating an invalid servo index
 
+#define MAX_SERVOS             45
+
 typedef struct  {
   uint8_t nbr        :6 ;             // a pin number from 0 to 63
   uint8_t isActive   :1 ;             // true if this channel is enabled, pin not pulsed if false 

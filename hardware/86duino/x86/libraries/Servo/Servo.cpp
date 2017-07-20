@@ -32,7 +32,6 @@ typedef struct {
   long value;
 } irqservo_t;
 
-#define MAX_SERVOS        (45)
 #define usToTicks(_us)    ((_us)*SYSCLK)     // converts microseconds to tick
 #define ticksToUs(_ticks) (( (unsigned)_ticks * 8)/ clockCyclesPerMicrosecond() ) // converts from ticks back to microseconds
 #define ENDPIN    (999)

@@ -191,17 +191,27 @@ public class PdePreprocessor {
   // Write the pde program to the cpp file
   protected void writeProgram(PrintStream out, String program, List<String> prototypes) {
     int prototypeInsertionPoint = firstStatement(program);
+	int temp;
 
-    out.print(program.substring(0, prototypeInsertionPoint));
-    out.print("#include \"Arduino.h\"\n");
+	if (program.substring(0, prototypeInsertionPoint).indexOf("#if") == -1)
+		out.print(program.substring(0, prototypeInsertionPoint));
+	else
+	{
+		temp = program.substring(0, prototypeInsertionPoint).indexOf("#if");
+		prototypeInsertionPoint = temp - 1;
+		out.print(program.substring(0, prototypeInsertionPoint));
+	}
+	
+	out.print("#include \"Arduino.h\"\n");
 
-    // print user defined prototypes
-    for (int i = 0; i < prototypes.size(); i++) {
-      out.print(prototypes.get(i) + "\n");
-    }
-    String[] lines = program.substring(0, prototypeInsertionPoint).split("\n", -1);
-    out.println("#line " + (lines.length - 1));
-    out.print(program.substring(prototypeInsertionPoint));
+	// print user defined prototypes
+	for (int i = 0; i < prototypes.size(); i++) {
+	  out.print(prototypes.get(i) + "\n");
+	}
+	
+	String[] lines = program.substring(0, prototypeInsertionPoint).split("\n", -1);
+	out.println("#line " + (lines.length - 1));
+	out.print(program.substring(prototypeInsertionPoint));
   }
 
 
