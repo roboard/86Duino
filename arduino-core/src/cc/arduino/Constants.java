@@ -78,12 +78,18 @@ public class Constants {
     }
 
     String externalLibraryIndexUrl = System.getProperty("LIBRARY_INDEX_URL");
-    if (externalLibraryIndexUrl != null && !"".equals(externalLibraryIndexUrl)) {
+    if (externalLibraryIndexUrl != null && !externalLibraryIndexUrl.isEmpty()) {
       LIBRARY_INDEX_URL = externalLibraryIndexUrl;
+      String externalLibraryIndexUrlGz = System.getProperty("LIBRARY_INDEX_URL_GZ");
+      if (externalLibraryIndexUrlGz != null && !externalLibraryIndexUrlGz.isEmpty()) {
+        LIBRARY_INDEX_URL_GZ = externalLibraryIndexUrlGz;
+      } else {
+        LIBRARY_INDEX_URL_GZ = "";
+      }
     } else {
       LIBRARY_INDEX_URL = "https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/library_86Duino_index.json";
+      LIBRARY_INDEX_URL_GZ = "https://github.com/acen2009/86Duino_Supports/releases/download/Library_86Duino_package/library_86Duino_index.json.gz";
     }
-    LIBRARY_INDEX_URL_GZ = "https://github.com/acen2009/86Duino_Supports/releases/download/Library_86Duino_package/library_86Duino_index.json.gz";
   }
 
 }

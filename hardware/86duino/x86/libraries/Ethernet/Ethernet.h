@@ -11,9 +11,9 @@
 #include "Dhcp.h"
 
 class EthernetClass {
-private:
-	DhcpClass* _dhcp;
 public:
+    DhcpClass* _dhcp;
+    
 	static uint8_t MAC_address[6];
 	
     uint8_t *localMAC();

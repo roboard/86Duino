@@ -1,4 +1,8 @@
 /* Script for ld -Ur: link w/out relocation, do create constructors */
+/* Copyright (C) 2014-2016 Free Software Foundation, Inc.
+   Copying and distribution of this script, with or without modification,
+   are permitted in any medium without royalty provided the copyright
+   notice and this notice are preserved.  */
 OUTPUT_FORMAT("coff-go32")
 SECTIONS
 {
@@ -14,7 +18,7 @@ SECTIONS
     *(.data)
     /* Ugly workaround to prevent entire .bss to have attribute CONTENT */
     /* for C++ executables. */
-    *()
+    *(.bss.*)
   }
   .ctor : {
     *(SORT(.ctors.*))

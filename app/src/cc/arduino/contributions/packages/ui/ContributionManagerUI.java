@@ -108,17 +108,13 @@ public class ContributionManagerUI extends InstallerJDialog {
     // Enable categories combo only if there are two or more choices
     Collection<String> categories = BaseNoGui.indexer.getCategories();
     for (String s : categories) {
-	  if (s.equals("86Duino"))
+      if (s.equals("86Duino"))
         categoryChooser.addItem(new DropdownCoreOfCategoryItem(s));
     }
-    categories = BaseNoGui.indexer.getCategories();
-    for (String s : categories) {
-      if (!s.equals("86Duino"))
-        categoryChooser.addItem(new DropdownCoreOfCategoryItem(s));
-    }
+    
     categoryChooser.addItem(new DropdownUpdatableCoresItem());
     categoryChooser.addItem(new DropdownAllCoresItem());
-
+    
     if (previouslySelectedCategory != null) {
       categoryChooser.setSelectedItem(previouslySelectedCategory);
     } else {

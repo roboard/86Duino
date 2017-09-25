@@ -162,8 +162,10 @@ public class SerialBoardsLister extends TimerTask {
           boardPort.setBoardName(boardName);
         }
       } else {
-        if (parts[1] != "0000") {
+        if (!parts[1].equals("0000")) {
           boardPort.setVIDPID(parts[1], parts[2]);
+          // ask Cloud API to match the board with known VID/PID pair
+          platform.getBoardWithMatchingVidPidFromCloud(parts[1], parts[2]);
         } else {
           boardPort.setVIDPID("0000", "0000");
           boardPort.setISerial("");

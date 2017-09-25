@@ -83,6 +83,11 @@ int Serial_::read(void)
 	}	
 }
 
+int Serial_::availableForWrite(void)
+{
+	if(USBDEV == NULL) return 0;
+	return usb_QueryTxQueue(USBDEV);
+}
 
 void Serial_::flush(void)
 {

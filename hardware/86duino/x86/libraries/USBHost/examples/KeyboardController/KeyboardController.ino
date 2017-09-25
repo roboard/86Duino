@@ -15,6 +15,7 @@
 
 // Require keyboard control library
 #include <KeyboardController.h>
+#include <Ethernet.h>
 
 // Initialize USB Controller
 USBHost usb;

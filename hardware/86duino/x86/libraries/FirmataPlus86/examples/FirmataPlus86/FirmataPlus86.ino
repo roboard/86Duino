@@ -1033,6 +1033,7 @@ void disableI2CPins() {
 
 void systemResetCallback()
 {
+  if (isResetting) return;
   isResetting = true;
 
   // initialize a defalt state

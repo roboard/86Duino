@@ -45,7 +45,11 @@ DMPAPI(void) pinMode(uint8_t pin, uint8_t mode) {
 	{ 
 	    io_outpb(CROSSBARBASE + 0x30 + crossbar_bit, PULL_UP);
 	    io_outpb(GPIODIRBASE + 4*(crossbar_bit/8), io_inpb(GPIODIRBASE + 4*(crossbar_bit/8))&~(1<<(crossbar_bit%8)));
-	}     
+	}
+    else if (mode == INPUT_NOCHANGE)
+	{
+        // do nothing
+    }
 	else
 	    io_outpb(GPIODIRBASE + 4*(crossbar_bit/8), io_inpb(GPIODIRBASE + 4*(crossbar_bit/8))|(1<<(crossbar_bit%8)));      
 

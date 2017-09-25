@@ -14,6 +14,7 @@
 #define OUTPUT         (0x01)
 #define INPUT_PULLUP   (0x02)
 #define INPUT_PULLDOWN (0x03)
+#define INPUT_NOCHANGE (0x04)
 
 // for 86Duino
 #define SB_CROSSBASE  (0x64)

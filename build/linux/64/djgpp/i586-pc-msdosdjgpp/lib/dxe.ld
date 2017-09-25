@@ -28,7 +28,8 @@ SECTIONS {
     ___EH_FRAME_END__ = . ;
     LONG(0);
     *(.gnu.linkonce.d*)
-    *(.bss)
+    *(.bss .bss.* .gnu.linkonce.b.*)
     *(COMMON)
   }
+  /DISCARD/ : { *(gnu.lto_*) }
 }

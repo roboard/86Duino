@@ -67,8 +67,8 @@ public class BuiltInCoreIsNewerCheck implements Runnable {
     if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86EX")>=0) {
 		return;
 	}
-
-	if (PreferencesData.getInteger("builtin_platform_is_newer", -1) >= BaseNoGui.REVISION) {
+    
+    if (PreferencesData.getInteger("builtin_platform_is_newer", -1) >= BaseNoGui.REVISION) {
       return;
     }
 

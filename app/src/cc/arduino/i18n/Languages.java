@@ -53,7 +53,6 @@ public class Languages {
       new Language(tr("Canadian French"), "Canadienne-français", "fr_CA"),
       new Language(tr("Catalan"), "Català", "ca"),
       new Language(tr("Chinese (China)"), "简体中文", "zh_CN"),
-      // new Language(tr("Chinese (Taiwan) (Big5)"), "繁體中文", "zh_TW.Big5"),
       new Language(tr("Chinese (Taiwan)"), "繁體中文", "zh_TW"),
       new Language(tr("Croatian"), "Hrvatski", "hr_HR"),
       new Language(tr("Czech (Czech Republic)"), "český (Czech Republic)", "cs_CZ"),

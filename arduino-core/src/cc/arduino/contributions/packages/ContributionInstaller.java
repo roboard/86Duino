@@ -288,12 +288,11 @@ public class ContributionInstaller {
 
     Set<String> packageIndexURLs = new HashSet<>();
     String additionalURLs = PreferencesData.get(Constants.PREF_BOARDS_MANAGER_ADDITIONAL_URLS, "");
-
-	if (!"".equals(additionalURLs)) {
+    if (!"".equals(additionalURLs)) {
       additionalURLs = additionalURLs + ",https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/package_86Duino_index.json"; // for 86Duino
 	  packageIndexURLs.addAll(Arrays.asList(additionalURLs.split(",")));
     }
-	else
+    else
       packageIndexURLs.addAll(Arrays.asList("https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/package_86Duino_index.json")); // for 86Duino
 
     for (String packageIndexURL : packageIndexURLs) {

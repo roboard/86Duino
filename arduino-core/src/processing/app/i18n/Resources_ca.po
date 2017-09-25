@@ -13,6 +13,10 @@
 # Translators:
 # Translators:
 # Translators:
+# Translators:
+# Translators:
+# Translators:
+# Enric Verdaguer <verdaga@hotmail.com>, 2016
 # Francesc Famadas <kiski97@gmail.com>, 2015
 # Marc GB <marc.giralt.butjosa@gmail.com>, 2016
 # Marc Palacín <marc.palacin.marfil@gmail.com>, 2016
@@ -26,7 +30,7 @@ msgstr ""
 "Project-Id-Version: Arduino IDE 1.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-03-29 10:24-0400\n"
-"PO-Revision-Date: 2016-08-16 11:24+0000\n"
+"PO-Revision-Date: 2017-05-30 15:31+0000\n"
 "Last-Translator: Cristian Maglie <c.maglie@arduino.cc>\n"
 "Language-Team: Catalan (http://www.transifex.com/mbanzi/arduino-ide-15/language/ca/)\n"
 "MIME-Version: 1.0\n"
@@ -96,11 +100,6 @@ msgid ""
 "save, your changes will be lost."
 msgstr "<html> <head> <style type=\"text/css\">b { font: 13pt \"Lucida Grande\" }p { font: 11pt \"Lucida Grande\"; margin-top: 8px }</style> </head><b>Vols desar els canvis en aquest programari<BR> abans de tancar?</b><p>Si no es desen, els canvis es perdran."
 
-#: Sketch.java:398
-#, java-format
-msgid "A file named \"{0}\" already exists in \"{1}\""
-msgstr "El fitxer anomenat \"{0}\" ja existeix en \"{1}\""
-
 #: Editor.java:2169
 #, java-format
 msgid "A folder named \"{0}\" already exists. Can't open sketch."
@@ -153,6 +152,10 @@ msgstr "URLs addicionals de Gestor de plaques:"
 #: ../../../../../app/src/processing/app/Preferences.java:161
 msgid "Afrikaans"
 msgstr "Afrikaans"
+
+#: ../../../../../app/src/cc/arduino/view/preferences/Preferences.java:248
+msgid "Aggressively cache compiled core"
+msgstr ""
 
 #: ../../../processing/app/Preferences.java:96
 msgid "Albanian"
@@ -346,7 +349,7 @@ msgstr "Tarja"
 
 #: ../../../../../app//src/processing/app/Editor.java:2824
 msgid "Board Info"
-msgstr ""
+msgstr "Informació de la placa"
 
 #: ../../../../../app/src/processing/app/Editor.java:2545
 #: ../../../../../app/src/processing/app/Editor.java:2641
@@ -423,14 +426,20 @@ msgstr "Carrega Bootloader"
 msgid "Burning bootloader to I/O Board (this may take a minute)..."
 msgstr "La carrega del bootloader a la I/O placa (pot durar uns minuts)..."
 
-#: ../../../cc/arduino/contributions/DownloadableContributionsDownloader.java:77
-msgid "CRC doesn't match. File is corrupted."
-msgstr "No coincideix el CRC. Fitxer corromput."
+#: ../../../../../arduino-core/src/cc/arduino/contributions/DownloadableContributionsDownloader.java:91
+msgid ""
+"CRC doesn't match, file is corrupted. It may be a temporary problem, please "
+"retry later."
+msgstr ""
 
 #: ../../../processing/app/Base.java:379
 #, java-format
 msgid "Can only pass one of: {0}"
 msgstr "Només es pot passar un de: {0}"
+
+#: ../../../../../app/src/cc/arduino/view/preferences/Preferences.java:254
+msgid "Can't enable external editor"
+msgstr ""
 
 #: ../../../processing/app/BaseNoGui.java:504
 #: ../../../processing/app/BaseNoGui.java:549
@@ -445,10 +454,6 @@ msgstr "Francès Canadenc"
 #: Editor.java:2064 Editor.java:2145 Editor.java:2465
 msgid "Cancel"
 msgstr "Cancel·la"
-
-#: Sketch.java:455
-msgid "Cannot Rename"
-msgstr "No es pot reanomenar"
 
 #: ../../../processing/app/Base.java:465
 msgid "Cannot specify any sketch files"
@@ -477,6 +482,10 @@ msgstr "Xinès (Taiwan)"
 #: ../../../processing/app/Preferences.java:143
 msgid "Chinese (Taiwan) (Big5)"
 msgstr "Xinès (Taiwan) (Big5)"
+
+#: ../../../../../app/src/processing/app/AbstractTextMonitor.java:80
+msgid "Clear output"
+msgstr ""
 
 #: ../../../../../app/src/cc/arduino/view/preferences/AdditionalBoardsManagerURLTextArea.java:98
 msgid "Click for a list of unofficial boards support URLs"
@@ -531,6 +540,11 @@ msgstr "No es pot afegir \"{0}\" al skecth."
 msgid "Could not copy to a proper location."
 msgstr "No s'ha pogut copiar en una ubicació adequada."
 
+#: ../../../../../arduino-core/src/processing/app/Sketch.java:342
+#, java-format
+msgid "Could not create directory \"{0}\""
+msgstr ""
+
 #: Editor.java:2179
 msgid "Could not create the sketch folder."
 msgstr "No s'ha pogut crear el directori del sketch."
@@ -548,11 +562,6 @@ msgstr "No es pot esborrar \"{0}\"."
 #, java-format
 msgid "Could not delete the existing ''{0}'' file."
 msgstr "No es pot esborrar el fitxer \"{0}\" existent."
-
-#: Base.java:2533 Base.java:2556
-#, java-format
-msgid "Could not delete {0}"
-msgstr "No es pot esborrar {0}"
 
 #: ../../../processing/app/debug/TargetPlatform.java:74
 #, java-format
@@ -609,23 +618,6 @@ msgstr "No es poden llegir les preferències inicials.\nNecessites tornar a inst
 #, java-format
 msgid "Could not remove old version of {0}"
 msgstr "No es pot esborrar l'anterior versió de {0}"
-
-#: Sketch.java:483 Sketch.java:528
-#, java-format
-msgid "Could not rename \"{0}\" to \"{1}\""
-msgstr "No es pot reanomenar \"{0}\" per \"{1}\""
-
-#: Sketch.java:475
-msgid "Could not rename the sketch. (0)"
-msgstr "No es pot reanomenar el sketch. (0)"
-
-#: Sketch.java:496
-msgid "Could not rename the sketch. (1)"
-msgstr "No es pot reanomenar el sketch. (1)"
-
-#: Sketch.java:503
-msgid "Could not rename the sketch. (2)"
-msgstr "No es pot reanomenar el sketch. (2)"
 
 #: Base.java:2492
 #, java-format
@@ -915,11 +907,6 @@ msgstr "Error durant l’enregistrament  del bootloader: no es troba el paràmet
 msgid "Error while compiling: missing '{0}' configuration parameter"
 msgstr "Error durant la pujada: no es troba el paràmetre de configuració {0}"
 
-#: SketchCode.java:83
-#, java-format
-msgid "Error while loading code {0}"
-msgstr "Error durant la carrega de codi {0}"
-
 #: Editor.java:2567
 msgid "Error while printing."
 msgstr "Error durant la impressió."
@@ -960,8 +947,14 @@ msgstr "Estònia (Estònia)"
 msgid "Examples"
 msgstr "Exemples"
 
-#: ../../../../../app/src/processing/app/Base.java:1267
-msgid "Examples from Built-in Libraries"
+#: ../../../../../app/src/processing/app/Base.java:1185
+msgid "Examples for any board"
+msgstr ""
+
+#: ../../../../../app/src/processing/app/Base.java:1205
+#: ../../../../../app/src/processing/app/Base.java:1216
+#, java-format
+msgid "Examples for {0}"
 msgstr ""
 
 #: ../../../../../app/src/processing/app/Base.java:1244
@@ -970,13 +963,7 @@ msgstr "Exemples de les Llibreries Personalitzades"
 
 #: ../../../../../app/src/processing/app/Base.java:1329
 msgid "Examples from Other Libraries"
-msgstr ""
-
-#: ../../../../../app/src/processing/app/Base.java:1287
-#: ../../../../../app/src/processing/app/Base.java:1298
-#, java-format
-msgid "Examples from {0} Libraries"
-msgstr ""
+msgstr "Exemples d'altres biblioteques"
 
 #: ../../../../../app/src/processing/app/Editor.java:753
 msgid "Export canceled, changes must first be saved."
@@ -990,6 +977,15 @@ msgstr "Exporta el Binari compilat"
 #, java-format
 msgid "Failed to open sketch: \"{0}\""
 msgstr "No s´ha pogut obrir el sketch: \"{0}\""
+
+#: ../../../../../arduino-core/src/processing/app/SketchFile.java:183
+#, java-format
+msgid "Failed to rename \"{0}\" to \"{1}\""
+msgstr ""
+
+#: ../../../../../arduino-core/src/processing/app/Sketch.java:298
+msgid "Failed to rename sketch folder"
+msgstr ""
 
 #: Editor.java:491
 msgid "File"
@@ -1082,7 +1078,7 @@ msgstr "Alemany"
 
 #: ../../../../../app//src/processing/app/Editor.java:817
 msgid "Get Board Info"
-msgstr ""
+msgstr "Informació de la placa"
 
 #: Editor.java:1054
 msgid "Getting Started"
@@ -1354,7 +1350,7 @@ msgstr "Escolliu un nom per un nou fitxer:"
 
 #: ../../../../../app//src/processing/app/Editor.java:2809
 msgid "Native serial port, can't obtain info"
-msgstr ""
+msgstr "No es pot obtenir informació del port sèrie natiu"
 
 #: ../../../processing/app/Preferences.java:149
 msgid "Nepali"
@@ -1366,7 +1362,7 @@ msgstr "Xarxa"
 
 #: ../../../../../app//src/processing/app/Editor.java:2804
 msgid "Network port, can't obtain info"
-msgstr ""
+msgstr "No es pot obtenir informació del port de xarxa"
 
 #: ../../../../../app/src/processing/app/Editor.java:65
 msgid "Network ports"
@@ -1557,7 +1553,7 @@ msgstr "Si us plau importa la llibreria Wire de Sketch > Menú Importació Llibr
 
 #: ../../../../../app//src/processing/app/Editor.java:2799
 msgid "Please select a port to obtain board info"
-msgstr ""
+msgstr "Seleccioneu un port per obtenir la informació de la placa"
 
 #: ../../../cc/arduino/packages/uploaders/SerialUploader.java:217
 #: ../../../cc/arduino/packages/uploaders/SerialUploader.java:262
@@ -1836,6 +1832,13 @@ msgstr "Monitor sèrie"
 msgid "Serial Plotter"
 msgstr "Plotter sèrie"
 
+#: ../../../../../app/src/processing/app/Editor.java:2325
+#, java-format
+msgid ""
+"Serial monitor is not supported on network ports such as {0} for the {1} in "
+"this release"
+msgstr ""
+
 #: ../../../../../app/src/processing/app/Editor.java:2516
 msgid "Serial monitor not available while plotter is open"
 msgstr "El monitor sèrie no es troba disponible mentre el plotter està obert"
@@ -1939,7 +1942,7 @@ msgstr "Ubicació del llibre de programari no definida"
 #: ../../../../../arduino-core//src/cc/arduino/contributions/packages/ContributionsIndexer.java:96
 #, java-format
 msgid "Skipping contributed index file {0}, parsing error occured:"
-msgstr ""
+msgstr "Saltant l'índex de l'arxiu aportat {0}, ha ocorregut un error:"
 
 #: ../../../../../app/src/processing/app/Preferences.java:185
 msgid "Slovak"
@@ -1962,10 +1965,10 @@ msgid ""
 "need to re-save this sketch to another location."
 msgstr "Alguns arxius estan marcats \"read-only\", haurà de\ndesar el sketch a una altre localització."
 
-#: Sketch.java:457
+#: ../../../../../arduino-core/src/processing/app/Sketch.java:246
 #, java-format
-msgid "Sorry, a sketch (or folder) named \"{0}\" already exists."
-msgstr "Ho sentim, un sketch (o carpeta) anomenat \"{0}\" ja existeix."
+msgid "Sorry, the folder \"{0}\" already exists."
+msgstr ""
 
 #: Preferences.java:115
 msgid "Spanish"
@@ -2034,6 +2037,10 @@ msgstr "La classe Server ha estat reanomenada EthernetServer."
 msgid "The Udp class has been renamed EthernetUdp."
 msgstr "La classe Udp ha estat reanomenada a EthernetUdp."
 
+#: ../../../../../arduino-core/src/processing/app/BaseNoGui.java:177
+msgid "The current selected board needs the core '{0}' that is not installed."
+msgstr ""
+
 #: Editor.java:2147
 #, java-format
 msgid ""
@@ -2050,12 +2057,9 @@ msgid ""
 "(ASCII only and no spaces, and it cannot start with a number)"
 msgstr "La Llibreria \"{0}\" no pot ser utilitzada.\nNoms de Llibreries només poden contenir nombres i lletres senzilles.\n(només ASCII i sense espais, tampoc pot començar amb un nombre)."
 
-#: Sketch.java:374
-msgid ""
-"The main file can't use an extension.\n"
-"(It may be time for your to graduate to a\n"
-"\"real\" programming environment)"
-msgstr "El fitxer principal no pot utilitzar una extensió.\n(Potser es moment de que es graduï en un\nentorn de programació \"real\")"
+#: ../../../../../app/src/processing/app/SketchController.java:170
+msgid "The main file cannot use an extension"
+msgstr ""
 
 #: Sketch.java:356
 msgid "The name cannot start with a period."
@@ -2077,6 +2081,11 @@ msgid ""
 "To get rid of this message, remove the sketch from\n"
 "{1}"
 msgstr "El sketch \"{0}\" no pot ser utilitzat.\nEls noms dels sketch han de contenir només caràcters bàsics i nombres\n(Només ASCII sense espais, i no pot començar amb un nombre).\nPer desfer-se d’aquest missatge, elimina el sketch de {1}"
+
+#: ../../../../../arduino-core/src/processing/app/Sketch.java:272
+#, java-format
+msgid "The sketch already contains a file named \"{0}\""
+msgstr ""
 
 #: Sketch.java:1755
 msgid ""
@@ -2106,13 +2115,6 @@ msgid ""
 "The specified sketchbook folder contains your copy of the IDE.\n"
 "Please choose a different folder for your sketchbook."
 msgstr "La carpeta del bloc d'esbossos especificada conté la teva còpia de l'IDE.\nSisplau escull una carpeta diferent per al teu bloc d'esbossos."
-
-#: Sketch.java:1075
-msgid ""
-"This file has already been copied to the\n"
-"location from which where you're trying to add it.\n"
-"I ain't not doin nuthin'."
-msgstr "Aquest arxiu ja s'ha copiat a\nla localització de on vosté està intentant afegir-lo.\n-."
 
 #: ../../../../../app/src/cc/arduino/contributions/libraries/ui/LibraryManagerUI.java:257
 msgid ""
@@ -2224,7 +2226,7 @@ msgstr "Tipus {0} no controlat en la clau de context {1}"
 
 #: ../../../../../app//src/processing/app/Editor.java:2818
 msgid "Unknown board"
-msgstr ""
+msgstr "Placa desconeguda"
 
 #: ../../../../../arduino-core/src/cc/arduino/Compiler.java:86
 #, java-format
@@ -2280,7 +2282,7 @@ msgstr "Carregar utilitzant un Programador"
 
 #: ../../../../../app//src/processing/app/Editor.java:2814
 msgid "Upload any sketch to obtain it"
-msgstr ""
+msgstr "Pujar qualsevol esbós per a obtindre'l"
 
 #: Editor.java:2403 Editor.java:2439
 msgid "Upload canceled."
@@ -2457,29 +2459,9 @@ msgstr "Microcontrolador trobat incorrecte. Ha seleccionat la placa adequada del
 msgid "Yes"
 msgstr "Sí"
 
-#: Sketch.java:1074
-msgid "You can't fool me"
-msgstr "A mi no em pots enganyar"
-
-#: Sketch.java:411
-msgid "You can't have a .cpp file with the same name as the sketch."
-msgstr "No pot tenir un fitxer .cpp amb el mateix nom que el sketch."
-
 #: ../../../../../app/src/processing/app/Base.java:2312
 msgid "You can't import a folder that contains your sketchbook"
 msgstr "No pots importar una carpeta que conté el teu bloc d'esbossos"
-
-#: Sketch.java:421
-msgid ""
-"You can't rename the sketch to \"{0}\"\n"
-"because the sketch already has a .cpp file with that name."
-msgstr "No pot reanomenar el sketch a \"{0}\"\nper què el sketch ja té un fitxer .cpp amb el mateix nom."
-
-#: ../../../../../app/src/processing/app/Sketch.java:659
-msgid ""
-"You can't save the sketch as \"{0}\"\n"
-"because the sketch already has a file with that name."
-msgstr "No pots desar l'esbós com \"{0}\"\nja que l'esbós ja té un fitxer amb aquest nom."
 
 #: Sketch.java:883
 msgid ""
@@ -2490,6 +2472,12 @@ msgstr "No pot desar el sketch en una carpeta\ndins del mateix. Això seria un p
 #: Base.java:1888
 msgid "You forgot your sketchbook"
 msgstr "Ha oblidat el seu sketchbook"
+
+#: ../../../../../app/src/cc/arduino/view/preferences/Preferences.java:252
+msgid ""
+"You have unsaved changes!\n"
+"You must save all your sketches to enable this option."
+msgstr ""
 
 #: ../../../processing/app/AbstractMonitor.java:92
 msgid ""
@@ -2598,10 +2586,6 @@ msgstr "Compliació "
 #: ../../../processing/app/NetworkMonitor.java:111
 msgid "connected!"
 msgstr "Connectat!"
-
-#: Sketch.java:540
-msgid "createNewFile() returned false"
-msgstr "createNewFile() ha retornat false"
 
 #: ../../../../../app/src/processing/app/Editor.java:1352
 msgid "http://www.arduino.cc/"
@@ -2740,3 +2724,8 @@ msgstr "{0}: Tarja desconeguda"
 #, java-format
 msgid "{0}: Unknown package"
 msgstr "{0}: Paquet desconegut"
+
+#: ../../../../../arduino-core/src/processing/app/Platform.java:223
+#, java-format
+msgid "{0}Install this package{1} to use your {2} board"
+msgstr ""

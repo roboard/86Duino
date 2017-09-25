@@ -15,9 +15,14 @@
 //******************************************************************************
 //* Includes
 //******************************************************************************
-
+#define NOMINMAX
 #include "FirmataPlus86.h"
 #include "HardwareSerial.h"
+#include <Ethernet.h>
+#include "utility/EthernetStream.h"
+#include <WiFi.h>
+#include "utility/WiFiStream.h"
+#include "utility/ESP8266Stream.h"
 
 extern "C" {
 #include <string.h>
@@ -108,8 +113,123 @@ void FirmataClass::begin(Stream &s)
   FirmataStream = &s;
   // do not call blinkVersion() here because some hardware such as the
   // Ethernet shield use pin 13
+  // printVersion();
+  // printFirmwareVersion();
+}
+
+void FirmataClass::beginBlueTooth(HardwareSerial &s, unsigned long speed)
+{
+  #if defined (__86DUINO_ZERO)
+  if (s == Serial1)
+    s.begin(speed);
+  else
+  {
+    Serial.println("Serial port setting error\n");
+    return;
+  }
+  #elif defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+  if (s == Serial1 || s == Serial2 || s == Serial3)
+    s.begin(speed);
+  else
+  {
+    Serial.println("Serial port setting error\n");
+    return;
+  }
+  #elif defined (__86DUINO_PLC)
+  return;
+  #endif
+
+  FirmataStream = &s;
   printVersion();
   printFirmwareVersion();
+}
+
+
+#define MAC_ADDRESS 0xDE,0xAD,0xBE,0xEF,0xFE,0xED
+byte mac[] = { MAC_ADDRESS };
+EthernetStream ethernet;
+
+// Static IP
+void FirmataClass::beginEthernet(char* prjname, int server_port, IPAddress _ip, IPAddress subnet, IPAddress dnsserver, IPAddress gateway)
+{
+    int i;
+    IPAddress _ipb;
+    unsigned char section[4];
+    
+    FirmataStream = &ethernet;
+    
+    for (i=0; i<4; i++) section[i] = 255 - subnet[i];
+    for (i=0; i<4; i++) _ipb[i] = (section[i] == 0) ? (dnsserver[i]) : section[i];
+    Serial.print("Broadcast IP: ");
+    Serial.println(_ipb);
+    
+    ethernet.begin(prjname, mac, _ip, _ipb, server_port);
+    Serial.print("Static IP: ");
+    Serial.println(ethernet.localIP());
+}
+
+// DHCP
+void FirmataClass::beginEthernet(char* prjname, int server_port)
+{
+    int i;
+    
+    FirmataStream = &ethernet;
+    
+    Serial.println("Requesting IP from DHCP ...");
+    ethernet.begin(prjname, mac, server_port);
+    Serial.print("IP: ");
+    Serial.println(ethernet.localIP());
+}
+
+WiFiStream stream;
+byte wep_index = 0;
+int wifiConnectionAttemptCounter = 0;
+int wifiStatus = WL_IDLE_STATUS;
+#define WIFI_MAX_CONN_ATTEMPTS      3
+void FirmataClass::beginWiFiShield(char* prjName, int server_port, char* ssid, char* password, bool wep, IPAddress _ip)
+{
+    IPAddress ip(0, 0, 0, 0);
+    
+    if (ip != _ip)
+    {
+        stream.config( _ip );
+    }
+
+    if (wep == true)
+    {
+        while (wifiStatus != WL_CONNECTED) {
+            Serial.print( "Attempting to connect to WEP SSID: " );
+            Serial.println(ssid);
+            if (password == NULL)
+                wifiStatus = stream.begin( prjName, ssid, server_port );
+            else
+                wifiStatus = stream.begin( prjName, ssid, wep_index, password, server_port );
+            delay(5000); // TODO - determine minimum delay
+            if (++wifiConnectionAttemptCounter > WIFI_MAX_CONN_ATTEMPTS) break;
+        }
+    }
+    else
+    {
+        while (wifiStatus != WL_CONNECTED) {
+            Serial.print( "Attempting to connect to WPA SSID: " );
+            Serial.println(ssid);
+            if (password == NULL)
+                wifiStatus = stream.begin(prjName, ssid, server_port);
+            else
+                wifiStatus = stream.begin(prjName, ssid, password, server_port);
+            delay(5000); // TODO - determine minimum delay
+            if (++wifiConnectionAttemptCounter > WIFI_MAX_CONN_ATTEMPTS) break;
+        }
+    }
+    
+    FirmataStream = &stream;
+}
+
+ESP8266Stream ESPstream;
+void FirmataClass::beginESP8266(char* prjname, int server_port, HardwareSerial &s, int baudrate, int ch_pd, char* ssid, char* password, bool wep)
+{
+    ESPstream.init(prjname, server_port, s, baudrate, ch_pd, ssid, password);
+    FirmataStream = &ESPstream;
 }
 
 /**
@@ -486,6 +606,11 @@ void FirmataClass::sendString(const char *string)
 void FirmataClass::write(byte c)
 {
   FirmataStream->write(c);
+}
+
+void FirmataClass::write(const uint8_t* c, size_t size)
+{
+  FirmataStream->write(c, size);
 }
 
 /**

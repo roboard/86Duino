@@ -1,7 +1,7 @@
 This is doc/gccinstall.info, produced by makeinfo version 4.13 from
-../../gnu/gcc-6.10/gcc/doc/install.texi.
+../../gnu/gcc-6.40/gcc/doc/install.texi.
 
-Copyright (C) 1988-2016 Free Software Foundation, Inc.
+Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -20,7 +20,7 @@ is included in the section entitled "GNU Free Documentation License".
 software.  Copies published by the Free Software Foundation raise
 funds for GNU development.
 
-   Copyright (C) 1988-2016 Free Software Foundation, Inc.
+   Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -843,6 +843,12 @@ option.
      More documentation about multiarch can be found at
      `https://wiki.debian.org/Multiarch'.
 
+`--enable-sjlj-exceptions'
+     Force use of the `setjmp'/`longjmp'-based scheme for exceptions.
+     `configure' ordinarily picks the correct value based on the
+     platform.  Only use this option if you are sure you need a
+     different setting.
+
 `--enable-vtable-verify'
      Specify whether to enable or disable the vtable verification
      feature.  Enabling this feature causes libstdc++ to be built with
@@ -1028,7 +1034,7 @@ option.
      ARC, ARM, i386, M68k, PowerPC, and SPARC.  It is mandatory for
      ARC.  The `--with-cpu-32' and `--with-cpu-64' options specify
      separate default CPUs for 32-bit and 64-bit modes; these options
-     are only supported for i386, x86-64 and PowerPC.
+     are only supported for i386, x86-64, PowerPC, and SPARC.
 
 `--with-schedule=CPU'
 `--with-arch=CPU'
@@ -1896,6 +1902,31 @@ The following options only apply to building cross compilers.
      possibly `objdump'.  Otherwise, GCC may use an inconsistent set of
      tools.
 
+Overriding `configure' test results
+...................................
+
+Sometimes, it might be necessary to override the result of some
+`configure' test, for example in order to ease porting to a new system
+or work around a bug in a test.  The toplevel `configure' script
+provides three variables for this:
+
+`build_configargs'
+     The contents of this variable is passed to all build `configure'
+     scripts.
+
+`host_configargs'
+     The contents of this variable is passed to all host `configure'
+     scripts.
+
+`target_configargs'
+     The contents of this variable is passed to all target `configure'
+     scripts.
+
+
+   In order to avoid shell and `make' quoting issues for complex
+overrides, you can pass a setting for `CONFIG_SITE' and set variables
+in the site file.
+
 Java-Specific Options
 ---------------------
 
@@ -2014,12 +2045,6 @@ General Options
 `--with-libiconv-prefix=DIR'
      Search for libiconv in `DIR/include' and `DIR/lib'.
 
-`--enable-sjlj-exceptions'
-     Force use of the `setjmp'/`longjmp'-based scheme for exceptions.
-     `configure' ordinarily picks the correct value based on the
-     platform.  Only use this option if you are sure you need a
-     different setting.
-
 `--with-system-zlib'
      Use installed `zlib' rather than that included with GCC.
 
@@ -2129,31 +2154,6 @@ AWT-Specific Options
 `--disable-libarttest'
      Do not try to compile and run a test libart program.
 
-
-Overriding `configure' test results
-...................................
-
-Sometimes, it might be necessary to override the result of some
-`configure' test, for example in order to ease porting to a new system
-or work around a bug in a test.  The toplevel `configure' script
-provides three variables for this:
-
-`build_configargs'
-     The contents of this variable is passed to all build `configure'
-     scripts.
-
-`host_configargs'
-     The contents of this variable is passed to all host `configure'
-     scripts.
-
-`target_configargs'
-     The contents of this variable is passed to all target `configure'
-     scripts.
-
-
-   In order to avoid shell and `make' quoting issues for complex
-overrides, you can pass a setting for `CONFIG_SITE' and set variables
-in the site file.
 
 
 File: gccinstall.info,  Node: Building,  Next: Testing,  Prev: Configuration,  Up: Installing GCC
@@ -3744,9 +3744,9 @@ cross-compilation target only.
 *-*-solaris2*
 =============
 
-Support for Solaris 9 has been removed in GCC 4.10.  Support for Solaris
-8 has been removed in GCC 4.8.  Support for Solaris 7 has been removed
-in GCC 4.6.
+Support for Solaris 9 has been removed in GCC 5.  Support for Solaris 8
+has been removed in GCC 4.8.  Support for Solaris 7 has been removed in
+GCC 4.6.
 
    Sun does not ship a C compiler with Solaris 2 before Solaris 10,
 though you can download the Sun Studio compilers for free.  In Solaris
@@ -3806,11 +3806,14 @@ with Solaris `ld'.  To use the LTO linker plugin
 (`-fuse-linker-plugin') with GNU `ld', GNU binutils _must_ be
 configured with `--enable-largefile'.
 
-   To enable symbol versioning in `libstdc++' with Solaris `ld', you
-need to have any version of GNU `c++filt', which is part of GNU
+   To enable symbol versioning in `libstdc++' with the Solaris linker,
+you need to have any version of GNU `c++filt', which is part of GNU
 binutils.  `libstdc++' symbol versioning will be disabled if no
-appropriate version is found.  Solaris `c++filt' from the Solaris Studio
-compilers does _not_ work.
+appropriate version is found.  Solaris `c++filt' from the Solaris
+Studio compilers does _not_ work.
+
+   GNU `make' version 3.81 or later is required to build libjava with
+the Solaris linker.
 
    Sun bug 4927647 sometimes causes random spurious testsuite failures
 related to missing diagnostic output.  This bug doesn't affect GCC
@@ -4781,7 +4784,7 @@ Concept Index
 * Menu:
 
 * Binaries:                              Binaries.           (line    6)
-* build_configargs:                      Configuration.      (line 1739)
+* build_configargs:                      Configuration.      (line 1511)
 * Configuration:                         Configuration.      (line    6)
 * configurations supported by GCC:       Configurations.     (line    6)
 * Downloading GCC:                       Downloading the source.
@@ -4791,7 +4794,7 @@ Concept Index
 * FDL, GNU Free Documentation License:   GNU Free Documentation License.
                                                              (line    6)
 * Host specific installation:            Specific.           (line    6)
-* host_configargs:                       Configuration.      (line 1743)
+* host_configargs:                       Configuration.      (line 1515)
 * Installing GCC: Binaries:              Binaries.           (line    6)
 * Installing GCC: Building:              Building.           (line    6)
 * Installing GCC: Configuration:         Configuration.      (line    6)
@@ -4801,7 +4804,7 @@ Concept Index
 * Specific installation notes:           Specific.           (line    6)
 * Target specific installation:          Specific.           (line    6)
 * Target specific installation notes:    Specific.           (line    6)
-* target_configargs:                     Configuration.      (line 1747)
+* target_configargs:                     Configuration.      (line 1519)
 * Testing:                               Testing.            (line    6)
 * Testsuite:                             Testing.            (line    6)
 
@@ -4816,97 +4819,97 @@ Node: Configuration16721
 Ref: with-gnu-as32172
 Ref: with-as33070
 Ref: with-gnu-ld34483
-Ref: WithAixSoname52376
-Ref: AixLdCommand53037
-Node: Building93452
-Node: Testing109361
-Node: Final install117233
-Node: Binaries122547
-Node: Specific123605
-Ref: aarch64-x-x124115
-Ref: alpha-x-x125547
-Ref: alpha-dec-osf51126036
-Ref: amd64-x-solaris210126561
-Ref: arc-x-elf32126664
-Ref: arc-linux-uclibc126840
-Ref: arm-x-eabi126981
-Ref: avr127398
-Ref: bfin128038
-Ref: cr16128280
-Ref: cris128695
-Ref: dos129511
-Ref: epiphany-x-elf129834
-Ref: x-x-freebsd129939
-Ref: ft32-x-elf131776
-Ref: h8300-hms131874
-Ref: hppa-hp-hpux132226
-Ref: hppa-hp-hpux10134597
-Ref: hppa-hp-hpux11135010
-Ref: x-x-linux-gnu140669
-Ref: ix86-x-linux140862
-Ref: ix86-x-solaris210141175
-Ref: ia64-x-linux142634
-Ref: ia64-x-hpux143404
-Ref: x-ibm-aix143959
-Ref: TransferAixShobj147621
-Ref: iq2000-x-elf151432
-Ref: lm32-x-elf151572
-Ref: lm32-x-uclinux151676
-Ref: m32c-x-elf151804
-Ref: m32r-x-elf151906
-Ref: m68k-x-x152008
-Ref: m68k-x-uclinux153046
-Ref: mep-x-elf153292
-Ref: microblaze-x-elf153402
-Ref: mips-x-x153521
-Ref: mips-sgi-irix5155917
-Ref: mips-sgi-irix6155997
-Ref: moxie-x-elf156184
-Ref: msp430-x-elf156231
-Ref: nds32le-x-elf156334
-Ref: nds32be-x-elf156406
-Ref: nvptx-x-none156475
-Ref: powerpc-x-x157002
-Ref: powerpc-x-darwin157207
-Ref: powerpc-x-elf157701
-Ref: powerpc-x-linux-gnu157786
-Ref: powerpc-x-netbsd157881
-Ref: powerpc-x-eabisim157969
-Ref: powerpc-x-eabi158095
-Ref: powerpcle-x-elf158171
-Ref: powerpcle-x-eabisim158263
-Ref: powerpcle-x-eabi158396
-Ref: rl78-x-elf158479
-Ref: rx-x-elf158585
-Ref: s390-x-linux158784
-Ref: s390x-x-linux158856
-Ref: s390x-ibm-tpf158943
-Ref: x-x-solaris2159074
-Ref: sparc-x-x162997
-Ref: sparc-sun-solaris2163499
-Ref: sparc-sun-solaris210164639
-Ref: sparc-x-linux165015
-Ref: sparc64-x-solaris2165240
-Ref: sparcv9-x-solaris2165573
-Ref: c6x-x-x165660
-Ref: tilegx-*-linux165751
-Ref: tilegxbe-*-linux165893
-Ref: tilepro-*-linux166036
-Ref: visium-x-elf166157
-Ref: x-x-vxworks166265
-Ref: x86-64-x-x167787
-Ref: x86-64-x-solaris210168115
-Ref: xtensa-x-elf168779
-Ref: xtensa-x-linux169450
-Ref: windows169791
-Ref: x-x-cygwin171728
-Ref: x-x-interix172281
-Ref: x-x-mingw32172590
-Ref: older172816
-Ref: elf174933
-Node: Old175191
-Node: Configurations178328
-Node: GNU Free Documentation License181869
-Node: Concept Index207016
+Ref: WithAixSoname52635
+Ref: AixLdCommand53296
+Node: Building93460
+Node: Testing109369
+Node: Final install117241
+Node: Binaries122555
+Node: Specific123613
+Ref: aarch64-x-x124123
+Ref: alpha-x-x125555
+Ref: alpha-dec-osf51126044
+Ref: amd64-x-solaris210126569
+Ref: arc-x-elf32126672
+Ref: arc-linux-uclibc126848
+Ref: arm-x-eabi126989
+Ref: avr127406
+Ref: bfin128046
+Ref: cr16128288
+Ref: cris128703
+Ref: dos129519
+Ref: epiphany-x-elf129842
+Ref: x-x-freebsd129947
+Ref: ft32-x-elf131784
+Ref: h8300-hms131882
+Ref: hppa-hp-hpux132234
+Ref: hppa-hp-hpux10134605
+Ref: hppa-hp-hpux11135018
+Ref: x-x-linux-gnu140677
+Ref: ix86-x-linux140870
+Ref: ix86-x-solaris210141183
+Ref: ia64-x-linux142642
+Ref: ia64-x-hpux143412
+Ref: x-ibm-aix143967
+Ref: TransferAixShobj147629
+Ref: iq2000-x-elf151440
+Ref: lm32-x-elf151580
+Ref: lm32-x-uclinux151684
+Ref: m32c-x-elf151812
+Ref: m32r-x-elf151914
+Ref: m68k-x-x152016
+Ref: m68k-x-uclinux153054
+Ref: mep-x-elf153300
+Ref: microblaze-x-elf153410
+Ref: mips-x-x153529
+Ref: mips-sgi-irix5155925
+Ref: mips-sgi-irix6156005
+Ref: moxie-x-elf156192
+Ref: msp430-x-elf156239
+Ref: nds32le-x-elf156342
+Ref: nds32be-x-elf156414
+Ref: nvptx-x-none156483
+Ref: powerpc-x-x157010
+Ref: powerpc-x-darwin157215
+Ref: powerpc-x-elf157709
+Ref: powerpc-x-linux-gnu157794
+Ref: powerpc-x-netbsd157889
+Ref: powerpc-x-eabisim157977
+Ref: powerpc-x-eabi158103
+Ref: powerpcle-x-elf158179
+Ref: powerpcle-x-eabisim158271
+Ref: powerpcle-x-eabi158404
+Ref: rl78-x-elf158487
+Ref: rx-x-elf158593
+Ref: s390-x-linux158792
+Ref: s390x-x-linux158864
+Ref: s390x-ibm-tpf158951
+Ref: x-x-solaris2159082
+Ref: sparc-x-x163099
+Ref: sparc-sun-solaris2163601
+Ref: sparc-sun-solaris210164741
+Ref: sparc-x-linux165117
+Ref: sparc64-x-solaris2165342
+Ref: sparcv9-x-solaris2165675
+Ref: c6x-x-x165762
+Ref: tilegx-*-linux165853
+Ref: tilegxbe-*-linux165995
+Ref: tilepro-*-linux166138
+Ref: visium-x-elf166259
+Ref: x-x-vxworks166367
+Ref: x86-64-x-x167889
+Ref: x86-64-x-solaris210168217
+Ref: xtensa-x-elf168881
+Ref: xtensa-x-linux169552
+Ref: windows169893
+Ref: x-x-cygwin171830
+Ref: x-x-interix172383
+Ref: x-x-mingw32172692
+Ref: older172918
+Ref: elf175035
+Node: Old175293
+Node: Configurations178430
+Node: GNU Free Documentation License181971
+Node: Concept Index207118
 
 End Tag Table

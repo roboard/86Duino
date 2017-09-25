@@ -192,6 +192,12 @@ int HardwareSerial::read(void) {
 	}
 }
 
+int HardwareSerial::availableForWrite(void)
+{
+    if(handle == NULL) return 0;
+    return com_QueryTxQueue(handle);
+}
+
 void HardwareSerial::flush() {
     if(handle == NULL) return;
 	com_FlushTxQueue(handle);

@@ -66,11 +66,11 @@ public class UpdateCheck implements Runnable {
   public void run() {
     //System.out.println("checking for updates...");
 
-	// For 86Duino, not check Arduino IDE version
+    // For 86Duino, not check Arduino IDE version
     if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86EX")>=0) {
 		return;
 	}
-
+    
     // generate a random id in case none exists yet
     Random r = new Random();
     long id = r.nextLong();

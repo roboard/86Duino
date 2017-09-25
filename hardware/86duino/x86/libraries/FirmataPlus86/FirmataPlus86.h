@@ -17,6 +17,7 @@
 #define Firmata_Plus_h
 
 #include "Boards.h"  /* Hardware Abstraction Layer + Wiring/Arduino */
+#include "IPAddress.h"
 
 /* Version numbers for the protocol.  The protocol is still changing, so these
  * version numbers are important.
@@ -146,9 +147,16 @@ class FirmataClass
   public:
     FirmataClass();
     /* Arduino constructors */
+    // Serial interface
     void begin();
     void begin(long);
     void begin(Stream &s);
+    // Other interface
+    void beginEthernet(char* prjname, int server_port);
+    void beginEthernet(char* prjname, int server_port, IPAddress localIP, IPAddress subnet, IPAddress dnsserver, IPAddress gateway);
+    void beginBlueTooth(HardwareSerial &s, unsigned long);
+    void beginWiFiShield(char* prjname, int server_port, char* ssid, char* password, bool wep, IPAddress ip);
+    void beginESP8266(char* prjname, int server_port, HardwareSerial &s, int baudrate, int ch_pd, char* ssid, char* password, bool wep=false);
     /* querying functions */
     void printVersion(void);
     void blinkVersion(void);
@@ -169,6 +177,7 @@ class FirmataClass
     void sendString(byte command, const char *string);
     void sendSysex(byte command, byte bytec, byte *bytev);
     void write(byte c);
+    void write(const uint8_t* c, size_t size);
     /* attach & detach callback functions to messages */
     void attach(byte command, callbackFunction newFunction);
     void attach(byte command, systemResetCallbackFunction newFunction);
