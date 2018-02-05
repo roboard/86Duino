@@ -411,7 +411,7 @@ public class SerialUploader extends Uploader {
     cmd = StringReplacer.formatAndSplit(pattern, prefs, true);
     return executeUploadCommand(cmd);
   }
-  
+
   public boolean burn86Bootloader() throws Exception {
     // FIXME: Preferences should be reorganized
     TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform();

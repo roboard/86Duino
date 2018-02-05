@@ -41,7 +41,7 @@ import static processing.app.helpers.filefilters.OnlyDirs.ONLY_DIRS;
 public class BaseNoGui {
 
   /** Version string to be used for build */
-  public static final int REVISION = 10803;
+  public static final int REVISION = 10805;
   /** Extended version string displayed on GUI */
   public static final String VERSION_NAME = "Coding_316";
   public static final String VERSION_NAME_LONG;
@@ -873,10 +873,6 @@ public class BaseNoGui {
     char c[] = origName.toCharArray();
     StringBuffer buffer = new StringBuffer();
 
-    // can't lead with a digit, so start with an underscore
-    if ((c[0] >= '0') && (c[0] <= '9')) {
-      buffer.append('_');
-    }
     for (int i = 0; i < c.length; i++) {
       if (((c[i] >= '0') && (c[i] <= '9')) ||
           ((c[i] >= 'a') && (c[i] <= 'z')) ||

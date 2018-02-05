@@ -98,7 +98,7 @@ public abstract class Uploader implements MessageConsumer {
   public abstract boolean burnBootloader() throws Exception;
 
   public abstract boolean burn86Bootloader() throws Exception;
-  
+
   public boolean requiresAuthorization() {
     return false;
   }

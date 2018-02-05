@@ -262,7 +262,7 @@ public class Compiler implements MessageConsumer {
     cmd.add("-warnings=" + PreferencesData.get("compiler.warning_level"));
 
 	/*
-	if (PreferencesData.getBoolean("compiler.cache_core") == true && buildCache != null) {
+    if (PreferencesData.getBoolean("compiler.cache_core") == true && buildCache != null) {
       cmd.add("-build-cache");
       cmd.add(buildCache.getAbsolutePath());
     }

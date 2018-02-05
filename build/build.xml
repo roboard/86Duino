@@ -188,8 +188,8 @@
     <antcall target="assemble-libraries" />
 
     <!-- Add WiFi101 updater tool -->
-    <!--
-	<antcall target="unzip">
+	<!--
+    <antcall target="unzip">
       <param name="archive_file" value="shared/WiFi101-Updater-ArduinoIDE-Plugin-0.9.1.zip" />
       <param name="archive_url" value="https://github.com/arduino-libraries/WiFi101-FirmwareUpdater-Plugin/releases/download/v0.9.1/WiFi101-Updater-ArduinoIDE-Plugin-0.9.1.zip" />
       <param name="final_folder" value="${target.path}/tools/WiFi101" />
@@ -221,7 +221,7 @@
 
       <!-- Fix wrong permissions from zip file root folder -->
 	  <!--
-	  <chmod perm="755" dir="${target.path}/reference/Galileo_help_files" />
+      <chmod perm="755" dir="${target.path}/reference/Galileo_help_files" />
       <chmod perm="755" dir="${target.path}/reference/Edison_help_files" />
 	  -->
   </target>
@@ -234,9 +234,9 @@
 
     <download-library name="Firmata" version="2.5.6"/>
     <download-library name="Bridge" version="1.6.3"/>
-    <download-library name="Robot_Control" version="1.0.3"/>
-    <download-library name="Robot_Motor" version="1.0.2"/>
-    <download-library name="RobotIRremote" version="1.0.2"/>
+    <download-library name="Robot_Control" version="1.0.4"/>
+    <download-library name="Robot_Motor" version="1.0.3"/>
+    <download-library name="RobotIRremote" version="2.0.0"/>
     <download-library name="SpacebrewYun" version="1.0.1"/>
     <download-library name="Temboo" version="1.2.1"/>
     <download-library name="Esplora" version="1.0.4"/>
@@ -244,7 +244,7 @@
     <download-library name="Keyboard" version="1.0.1"/>
     <download-library name="SD" version="1.1.1"/>
     <download-library name="Servo" version="1.1.2"/>
-    <download-library name="LiquidCrystal" version="1.0.6"/>
+    <download-library name="LiquidCrystal" version="1.0.7"/>
     <download-library githubuser="Adafruit" name="Adafruit_CircuitPlayground" version="1.6.8" foldername="Adafruit_Circuit_Playground"/>
   </target>
 
@@ -411,10 +411,8 @@
       <classpath refid="runtime.jars"/>
 
       <option value="-Dapple.awt.application.name=86Duino"/>
-      <option value="-Dapple.laf.useScreenMenuBar=true"/>
       <option value="-Dcom.apple.macos.use-file-dialog-packages=true"/>
       <option value="-Dcom.apple.smallTabs=true"/>
-      <option value="-Dcom.apple.macos.useScreenMenuBar=true"/>
       <option value="-DAPP_DIR=$APP_ROOT/Contents/Java"/>
       <option value="-Djava.ext.dirs=$JVM_RUNTIME/Contents/Home/lib/ext/:$JVM_RUNTIME/Contents/Home/jre/lib/ext/"/>
 
@@ -527,6 +525,7 @@
       <fileset dir="${staging_folder}/work/${staging_hardware_folder}/tools" includes="**/bin/*"/>
       <fileset dir="${staging_folder}/work/${staging_hardware_folder}/tools" includes="**/libexec/gcc/avr/4.8.1/*"/>
     </chmod>
+
     <chmod perm="-x">
       <fileset dir="${staging_folder}/work/${staging_hardware_folder}/tools" includes="**/bin/avrdude_bin" />
     </chmod>
@@ -669,6 +668,7 @@
     <chmod perm="ugo+x">
         <fileset dir="linux/work" includes="86duino" />
         <fileset dir="linux/work" includes="**/*.sh" />
+        <fileset dir="linux/work/lib" includes="**/*desktop*" />
     </chmod>
   </target>
 
@@ -871,11 +871,11 @@
       <param name="final_folder" value="${staging_folder}/arduino-builder-${platform}/arduino-builder" />
       <param name="dest_folder" value="${staging_folder}/arduino-builder-${platform}" />
     </antcall>
-    <!--
+	<!--
     <copy file="${staging_folder}/arduino-builder-${platform}/arduino-builder" tofile="${staging_folder}/work/${staging_hardware_folder}/../arduino-builder" />
     <chmod perm="755" file="${staging_folder}/work/${staging_hardware_folder}/../arduino-builder" />
-    -->
-    <move file="${staging_folder}/arduino-builder-${platform}/tools" tofile="${staging_folder}/work/${staging_hardware_folder}/../tools-builder"/>
+	-->
+	<move file="${staging_folder}/arduino-builder-${platform}/tools" tofile="${staging_folder}/work/${staging_hardware_folder}/../tools-builder"/>
     <copy todir="${staging_folder}/work/${staging_hardware_folder}" overwrite="true">
       <fileset dir="${staging_folder}/arduino-builder-${platform}/hardware" includes="*.txt"/>
     </copy>
@@ -1113,6 +1113,7 @@
       <param name="final_folder" value="${staging_folder}/arduino-builder-windows/arduino-builder.exe" />
       <param name="dest_folder" value="${staging_folder}/arduino-builder-windows" />
     </antcall>
+
     <copy file="${staging_folder}/arduino-builder.exe" tofile="windows/work/arduino-builder.exe" />
 	<chmod perm="755" file="windows/work/arduino-builder.exe" />
 

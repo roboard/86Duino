@@ -1,12 +1,31 @@
-ARDUINO 1.8.4
+ARDUINO 1.8.5 2017.09.29
+
+(bugfix service release)
+
+[ide]
+* Added workaround for menu visualization bug in MacOSX 10.13 beta. Thanks @puybaret
+* Fixed bug for negative-font-size.
+* New/Rename tabs now allows names starting with a number.
+
+ARDUINO 1.8.4 2017.08.23
 
 [ide]
 * IDE Toolbar can now go full width on 4K display.
 * Environment variable LIBRARY_INDEX_URL is now correctly parsed (LIBRARY_INDEX_URL_GZ can also be optinally specified). Thanks @xardael
 * Added per-board generic option in config file boards.txt for disabling control of dtr+rts. Thanks @d-a-v
+* CLI: fixed missing "runtime.platform.path" when running without the `--board` option
+* Linux: fixed desktop icon not launching the IDE in certain Window Managers (thanks @herrold)
+* Allow setting low values for console size (correctly applies console.lines=x in preferences.txt)
+* Make Preference window fit 600px height displays
+* Fix error when renaming an unsaved, newly added file. Thanks @matthijskooijman
+* Added the ability to increase/decrease font size via keyboard + mouse shortcuts (Ctrl + MouseWheel)
+* Sketch names starting with a digit are now allowed
+* Serial monitor is opened on a default position if the multi-monitor setup change (this should fix cases
+  when the serial monitor is opened outside of the visibile space)
 
 [libraries]
 * Fixed wrong folder name for "Adafruit Circuit Playground" library, now it can be updated cleanly.
+* Fixed wrong include for "RobotIRRemote", now it should not interfere anymore with the real IRRemote.
 
 ARDUINO 1.8.3 2017.05.31
 

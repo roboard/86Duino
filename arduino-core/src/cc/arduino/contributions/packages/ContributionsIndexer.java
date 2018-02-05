@@ -69,7 +69,7 @@ public class ContributionsIndexer {
   private final File builtInHardwareFolder;
   private final Platform platform;
   private final SignatureVerifier signatureVerifier;
-  private ContributionsIndex index;
+  private final ContributionsIndex index;
   private ContributionsIndex index86; // for 86Duino
 
   public ContributionsIndexer(File preferencesFolder, File builtInHardwareFolder, Platform platform, SignatureVerifier signatureVerifier) {

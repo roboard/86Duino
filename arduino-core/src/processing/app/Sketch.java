@@ -375,12 +375,4 @@ public class Sketch {
   void delete() {
     FileUtils.recursiveDelete(folder);
   }
-  
-  public int indexOfFile(SketchFile who) {
-    for (SketchFile file : files) {
-      if (file == who)
-        return files.indexOf(file);
-    }
-    return -1;
-  }
 }

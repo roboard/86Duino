@@ -49,7 +49,7 @@ public class SketchFile {
    * Text of the program text for this tab
    */
   private String program;
-  
+
   /**
    * The sketch this file belongs to.
    */
@@ -59,7 +59,7 @@ public class SketchFile {
    * Is this the primary file in the sketch?
    */
   private boolean primary;
-  
+
   /**
    * where this code starts relative to the concat'd code
    */
@@ -187,7 +187,7 @@ public class SketchFile {
   public void renameTo(String newName) throws IOException {
     File newFile = new File(file.getParentFile(), newName);
     sketch.checkNewFilename(newFile);
-    if (file.renameTo(newFile)) {
+    if (!file.exists() || file.renameTo(newFile)) {
       renamedTo(newFile);
     } else {
       String msg = I18n.format(tr("Failed to rename \"{0}\" to \"{1}\""), file.getName(), newName);
@@ -254,7 +254,7 @@ public class SketchFile {
       return storage.isModified();
     return false;
   }
-  
+
   public void setPreprocOffset(int preprocOffset) {
     this.preprocOffset = preprocOffset;
   }
@@ -262,7 +262,7 @@ public class SketchFile {
   public void addPreprocOffset(int extra) {
     preprocOffset += extra;
   }
-  
+
   @Override
   public boolean equals(Object o) {
     return (o instanceof SketchFile) && file.equals(((SketchFile) o).file);
@@ -277,7 +277,7 @@ public class SketchFile {
     String text = BaseNoGui.loadFile(file);
 
     program = text; // for 86Duino
-    
+
     if (text == null) {
       throw new IOException();
     }

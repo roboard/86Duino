@@ -295,6 +295,7 @@ public class ContributionInstaller {
     else
       packageIndexURLs.addAll(Arrays.asList("https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/package_86Duino_index.json")); // for 86Duino
 
+
     for (String packageIndexURL : packageIndexURLs) {
       try {
         downloadIndexAndSignature(progress, downloadedPackageIndexFilesAccumulator, packageIndexURL, progressListener);
