@@ -1,21 +1,23 @@
-### CODING 316 - 2017.09.23 ###
+### CODING 316 - 2018.02.05 ###
 
 [IDE]
 * Fix a compiling error for FirmataPlus.ino.
   (modify the writeProgram() in arduino-core\src\processing\app\preproc\PdePreprocessor.java)
-* Compatible for Arduino IDE 1.8.3 (from 1.6.11 to 1.8.3)
+* Compatible for Arduino IDE 1.8.5 (from 1.6.11 to 1.8.5)
+* Update the Logo picture for 1.8.5.
+
+[core]
+* GCC update to 6.4.0.
 
 [libraries]
 * Move MAX_SERVOS define from Servo.cpp to Servo.h.
 * Support the Dynamixel MX-64 servo on AIServo86 library.
 * Update FreeIMU1 : speed up initialization.
-* Add the FirmataPlus86 library (support Arduino WiFi shield, ESP8266, Ethernet, Serial).
+* Add the FirmataPlus86 library (support Arduino WiFi shield, ESP8266, Ethernet, USB Serial).
   You can use the Scratch2.0 including 86Duino block to build your program.
-* Remove the board limit in FreeIMU1 library.
 * Fix a bug for detach() and add the error message in load() in Servo86 library.
 * Add the "INPUT_NOCHANGE" setting in the wiring_digital.cpp and pins_arduino.h.
 * Move the "DhcpClass* _dhcp" form private to public for the Ethernet.h.
-* In the lib_link_para.txt, add the "\n" in the end of parameter.
 
 
 

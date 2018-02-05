@@ -58,6 +58,12 @@ public:
 
   // get DCHP IP
   IPAddress localIP();
+  
+  // get Gateway IP
+  IPAddress gatewayIP();
+  
+  // get DCHP IP
+  IPAddress subnetMask();
 
 
   bool maintain();

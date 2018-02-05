@@ -84,6 +84,7 @@ FirmataClass::FirmataClass()
 void FirmataClass::begin(void)
 {
   begin(57600);
+  connectMethod = USBSERIAL_ACTIVE;
 }
 
 /**
@@ -100,6 +101,7 @@ void FirmataClass::begin(long speed)
   blinkVersion();
   printVersion();         // send the protocol version
   printFirmwareVersion(); // send the firmware name and version
+  connectMethod = USBSERIAL_ACTIVE;
 }
 
 /**
@@ -115,6 +117,7 @@ void FirmataClass::begin(Stream &s)
   // Ethernet shield use pin 13
   // printVersion();
   // printFirmwareVersion();
+  connectMethod = HARDWARESERIAL_ACTIVE;
 }
 
 void FirmataClass::beginBlueTooth(HardwareSerial &s, unsigned long speed)
@@ -142,12 +145,13 @@ void FirmataClass::beginBlueTooth(HardwareSerial &s, unsigned long speed)
   FirmataStream = &s;
   printVersion();
   printFirmwareVersion();
+  connectMethod = HARDWARESERIAL_ACTIVE;
 }
 
 
 #define MAC_ADDRESS 0xDE,0xAD,0xBE,0xEF,0xFE,0xED
 byte mac[] = { MAC_ADDRESS };
-EthernetStream ethernet;
+EthernetStream ether_stream;
 
 // Static IP
 void FirmataClass::beginEthernet(char* prjname, int server_port, IPAddress _ip, IPAddress subnet, IPAddress dnsserver, IPAddress gateway)
@@ -156,16 +160,18 @@ void FirmataClass::beginEthernet(char* prjname, int server_port, IPAddress _ip, 
     IPAddress _ipb;
     unsigned char section[4];
     
-    FirmataStream = &ethernet;
+    FirmataStream = &ether_stream;
     
     for (i=0; i<4; i++) section[i] = 255 - subnet[i];
     for (i=0; i<4; i++) _ipb[i] = (section[i] == 0) ? (dnsserver[i]) : section[i];
     Serial.print("Broadcast IP: ");
     Serial.println(_ipb);
     
-    ethernet.begin(prjname, mac, _ip, _ipb, server_port);
+    ether_stream.begin(prjname, mac, _ip, _ipb, server_port);
     Serial.print("Static IP: ");
-    Serial.println(ethernet.localIP());
+    Serial.println(ether_stream.localIP());
+    
+    connectMethod = Ethernet_ACTIVE;
 }
 
 // DHCP
@@ -173,15 +179,17 @@ void FirmataClass::beginEthernet(char* prjname, int server_port)
 {
     int i;
     
-    FirmataStream = &ethernet;
+    FirmataStream = &ether_stream;
     
     Serial.println("Requesting IP from DHCP ...");
-    ethernet.begin(prjname, mac, server_port);
+    ether_stream.begin(prjname, mac, server_port);
     Serial.print("IP: ");
-    Serial.println(ethernet.localIP());
+    Serial.println(ether_stream.localIP());
+    
+    connectMethod = Ethernet_ACTIVE;
 }
 
-WiFiStream stream;
+WiFiStream wifi_stream;
 byte wep_index = 0;
 int wifiConnectionAttemptCounter = 0;
 int wifiStatus = WL_IDLE_STATUS;
@@ -192,7 +200,7 @@ void FirmataClass::beginWiFiShield(char* prjName, int server_port, char* ssid, c
     
     if (ip != _ip)
     {
-        stream.config( _ip );
+        wifi_stream.config( _ip );
     }
 
     if (wep == true)
@@ -201,9 +209,9 @@ void FirmataClass::beginWiFiShield(char* prjName, int server_port, char* ssid, c
             Serial.print( "Attempting to connect to WEP SSID: " );
             Serial.println(ssid);
             if (password == NULL)
-                wifiStatus = stream.begin( prjName, ssid, server_port );
+                wifiStatus = wifi_stream.begin( prjName, ssid, server_port );
             else
-                wifiStatus = stream.begin( prjName, ssid, wep_index, password, server_port );
+                wifiStatus = wifi_stream.begin( prjName, ssid, wep_index, password, server_port );
             delay(5000); // TODO - determine minimum delay
             if (++wifiConnectionAttemptCounter > WIFI_MAX_CONN_ATTEMPTS) break;
         }
@@ -214,22 +222,31 @@ void FirmataClass::beginWiFiShield(char* prjName, int server_port, char* ssid, c
             Serial.print( "Attempting to connect to WPA SSID: " );
             Serial.println(ssid);
             if (password == NULL)
-                wifiStatus = stream.begin(prjName, ssid, server_port);
+                wifiStatus = wifi_stream.begin(prjName, ssid, server_port);
             else
-                wifiStatus = stream.begin(prjName, ssid, password, server_port);
+                wifiStatus = wifi_stream.begin(prjName, ssid, password, server_port);
             delay(5000); // TODO - determine minimum delay
             if (++wifiConnectionAttemptCounter > WIFI_MAX_CONN_ATTEMPTS) break;
         }
     }
     
-    FirmataStream = &stream;
+    FirmataStream = &wifi_stream;
+    connectMethod = WIFISHIELD_ACTIVE;
 }
 
-ESP8266Stream ESPstream;
+ESP8266Stream ESP_stream;
 void FirmataClass::beginESP8266(char* prjname, int server_port, HardwareSerial &s, int baudrate, int ch_pd, char* ssid, char* password, bool wep)
 {
-    ESPstream.init(prjname, server_port, s, baudrate, ch_pd, ssid, password);
-    FirmataStream = &ESPstream;
+    ESP_stream.init(prjname, server_port, s, baudrate, ch_pd, ssid, password);
+    FirmataStream = &ESP_stream;
+    connectMethod = ESP8266_ACTIVE;
+}
+
+void FirmataClass::beginESP8266_AP(char* prjname, int server_port, HardwareSerial &s, int baudrate, int ch_pd, char* ssid, char* password, uint8_t chl, uint8_t ecn)
+{
+    ESP_stream.initAP(prjname, server_port, s, baudrate, ch_pd, ssid, password, chl, ecn);
+    FirmataStream = &ESP_stream;
+    connectMethod = ESP8266_ACTIVE;
 }
 
 /**
@@ -347,6 +364,11 @@ void FirmataClass::setFirmwareNameAndVersion(const char *name, byte major, byte 
 int FirmataClass::available(void)
 {
   return FirmataStream->available();
+}
+
+int FirmataClass::read(void)
+{
+  return FirmataStream->read(); // this is 'int' to handle -1 when no data
 }
 
 /**
@@ -791,6 +813,53 @@ void FirmataClass::strobeBlinkPin(byte pin, int count, int onInterval, int offIn
   }
 }
 
+IPAddress FirmataClass::getLocalIP()
+{
+  int* _ESP_LOCALIP; 
+  
+  if (connectMethod == WIFISHIELD_ACTIVE)
+    return wifi_stream.localIP();
+  else if (connectMethod == ESP8266_ACTIVE)
+  {
+    _ESP_LOCALIP = ESP_stream.localIP();
+    IPAddress myIP(_ESP_LOCALIP[0], _ESP_LOCALIP[1], _ESP_LOCALIP[2], _ESP_LOCALIP[3]);
+    return myIP;
+  }
+  else if (connectMethod == Ethernet_ACTIVE)
+    return ether_stream.localIP();
+}
+
+IPAddress FirmataClass::getGatewayIP()
+{
+  int* _ESP_GATEWAYIP;
+  
+  if (connectMethod == WIFISHIELD_ACTIVE)
+    return wifi_stream.gatewayIP();
+  else if (connectMethod == ESP8266_ACTIVE)
+  {
+    _ESP_GATEWAYIP = ESP_stream.gatewayIP();
+    IPAddress myIP(_ESP_GATEWAYIP[0], _ESP_GATEWAYIP[1], _ESP_GATEWAYIP[2], _ESP_GATEWAYIP[3]);
+    return myIP;
+  }
+  else if (connectMethod == Ethernet_ACTIVE)
+    return ether_stream.gatewayIP();
+}
+
+IPAddress FirmataClass::getSubnetMask()
+{
+  int* _ESP_SUBNETIP;
+  
+  if (connectMethod == WIFISHIELD_ACTIVE)
+    return wifi_stream.subnetMask();
+  else if (connectMethod == ESP8266_ACTIVE)
+  {
+    _ESP_SUBNETIP = ESP_stream.subnetMask();
+    IPAddress myIP(_ESP_SUBNETIP[0], _ESP_SUBNETIP[1], _ESP_SUBNETIP[2], _ESP_SUBNETIP[3]);
+    return myIP;
+  }
+  else if (connectMethod == Ethernet_ACTIVE)
+    return ether_stream.subnetMask();
+}
 
 // make one instance for the user to use
 FirmataClass Firmata;

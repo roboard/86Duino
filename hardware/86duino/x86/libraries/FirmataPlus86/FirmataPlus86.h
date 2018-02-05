@@ -68,7 +68,11 @@
 /* 0x00-0x0F reserved for user-defined commands */
 #define SERIAL_MESSAGE          0x51 // communicate with serial devices, including other boards
 #define KEEP_ALIVE              0x50
-#define TONE_DATA               0x5F // request a tone be played
+#define CHECK_86DUINO_ACTIVE    0x52
+#define _86DUINO_RESPONSE       0x53
+#define S4A_COMMAND             0x54
+#define S4A_RESPONE             0x55
+#define TONE_PLAY               0x5F // request a tone be played
 #define SONAR_CONFIG            0x60 // configure a sonar distance sensor for operation
 #define SONAR_DATA              0x61 // Data returned from sonar distance sensor
 #define ENCODER_CONFIG          0x62
@@ -130,6 +134,12 @@
 #define PIN_MODE_IGNORE         0x7F // pin configured to be ignored by digitalWrite and capabilityResponse
 #define TOTAL_PIN_MODES         15
 
+// connect methods
+#define USBSERIAL_ACTIVE        0x01
+#define HARDWARESERIAL_ACTIVE   0x02
+#define Ethernet_ACTIVE         0x03
+#define WIFISHIELD_ACTIVE       0x04
+#define ESP8266_ACTIVE          0x05
 
 
 extern "C" {
@@ -157,6 +167,7 @@ class FirmataClass
     void beginBlueTooth(HardwareSerial &s, unsigned long);
     void beginWiFiShield(char* prjname, int server_port, char* ssid, char* password, bool wep, IPAddress ip);
     void beginESP8266(char* prjname, int server_port, HardwareSerial &s, int baudrate, int ch_pd, char* ssid, char* password, bool wep=false);
+    void beginESP8266_AP(char* prjname, int server_port, HardwareSerial &s, int baudrate, int ch_pd, char* ssid, char* password, uint8_t chl, uint8_t ecn);
     /* querying functions */
     void printVersion(void);
     void blinkVersion(void);
@@ -178,12 +189,18 @@ class FirmataClass
     void sendSysex(byte command, byte bytec, byte *bytev);
     void write(byte c);
     void write(const uint8_t* c, size_t size);
+    int read();
     /* attach & detach callback functions to messages */
     void attach(byte command, callbackFunction newFunction);
     void attach(byte command, systemResetCallbackFunction newFunction);
     void attach(byte command, stringCallbackFunction newFunction);
     void attach(byte command, sysexCallbackFunction newFunction);
     void detach(byte command);
+    
+    IPAddress getLocalIP();
+    IPAddress getSubnetMask();
+    IPAddress getGatewayIP();
+    IPAddress getDNSServerIP();
 
     /* access pin state and config */
     byte getPinMode(byte pin);
@@ -231,6 +248,8 @@ class FirmataClass
     void processSysexMessage(void);
     void systemReset(void);
     void strobeBlinkPin(byte pin, int count, int onInterval, int offInterval);
+    
+    int connectMethod;
 };
 
 extern FirmataClass Firmata;

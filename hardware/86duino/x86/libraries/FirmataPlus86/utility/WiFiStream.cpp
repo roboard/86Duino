@@ -72,6 +72,16 @@ IPAddress WiFiStream::localIP()
     return WiFi.localIP();
 }
 
+IPAddress WiFiStream::gatewayIP()
+{
+    return WiFi.gatewayIP();
+}
+
+IPAddress WiFiStream::subnetMask()
+{
+    return WiFi.subnetMask();
+}
+
 bool WiFiStream::maintain()
 {
     if( connect_client() ) return true;
@@ -123,7 +133,7 @@ int WiFiStream::begin(char* prjname, char *ssid, uint16_t port)
     _server.begin();
 
     wUdp.begin(4530); // 4530 is dummy port
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
@@ -147,7 +157,7 @@ int WiFiStream::begin(char* prjname, char *ssid, uint8_t key_idx, const char *ke
     _server.begin();
 
     wUdp.begin(4530); // 4530 is dummy port
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
@@ -170,7 +180,7 @@ int WiFiStream::begin(char* prjname, char *ssid, const char *passphrase, uint16_
     _server.begin();
 
     wUdp.begin(4530); // 4530 is dummy port
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
@@ -198,7 +208,7 @@ int WiFiStream::begin(char* prjname, char *ssid, IPAddress local_ip, uint16_t po
     _server.begin();
 
     wUdp.begin(4530); // 4530 is dummy port
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
@@ -224,7 +234,7 @@ int WiFiStream::begin(char* prjname, char *ssid, IPAddress local_ip, uint8_t key
     _server.begin();
 
     wUdp.begin(4530); // 4530 is dummy port
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
@@ -249,7 +259,7 @@ int WiFiStream::begin(char* prjname, char *ssid, IPAddress local_ip, const char 
     _server.begin();
 
     wUdp.begin(4530); // 4530 is dummy port
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);

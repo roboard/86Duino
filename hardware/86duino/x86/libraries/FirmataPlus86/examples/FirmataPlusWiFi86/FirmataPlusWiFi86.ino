@@ -40,10 +40,12 @@
  * TODO: use Program Control to load stored profiles from EEPROM
  */
 
-#include <Servo86.h>
-#include <FreeIMU1.h>
-#include <Wire.h>
 #include <FirmataPlus86.h>
+#include <Servo86.h>
+#if defined __86DUINO_ONE || defined __86DUINO_AI
+    #include <FreeIMU1.h>
+#endif
+#include <Wire.h>
 #include <NewPing.h>
 #include <Stepper.h>
 #include <Encoder.h>
@@ -100,6 +102,8 @@ int imu_data_type = 0;
 
 bool one_servo_is_moving = false;
 int one_servo_used_pin;
+
+bool checkActiveStart = false;
 
 /* analog inputs */
 int analogInputsToReport = 0; // bitwise array to store pin reporting
@@ -208,7 +212,9 @@ byte sonarMSB, sonarLSB ;
 
 Stepper *stepper = NULL;
 
+#if defined __86DUINO_ONE || defined __86DUINO_AI
 FreeIMU1 my3IMU = FreeIMU1();
+#endif
 
 #ifdef FIRMATA_SERIAL_FEATURE
 SerialFirmata serialFeature;
@@ -578,8 +584,8 @@ void sysexCallback(byte command, byte argc, byte *argv)
   unsigned long msec;
   unsigned long velocity;
 
-  byte sendBuff[1024];
-  int i, sendBuffSize;
+  byte sendBuff[512];
+  int i;
 
   switch (command) {
     case I2C_REQUEST:
@@ -777,17 +783,21 @@ void sysexCallback(byte command, byte argc, byte *argv)
       break;
     case PIN_STATE_QUERY:
       if (argc > 0) {
+        for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+        
         byte pin = argv[0];
-        Firmata.write(START_SYSEX);
-        Firmata.write(PIN_STATE_RESPONSE);
-        Firmata.write(pin);
+        sendBuff[0] = START_SYSEX;
+        sendBuff[1] = PIN_STATE_RESPONSE;
+        sendBuff[2] = pin;
+        i = 3;
         if (pin < TOTAL_PINS) {
-          Firmata.write(Firmata.getPinMode(pin));
-          Firmata.write((byte)Firmata.getPinState(pin) & 0x7F);
-          if (Firmata.getPinState(pin) & 0xFF80) Firmata.write((byte)(Firmata.getPinState(pin) >> 7) & 0x7F);
-          if (Firmata.getPinState(pin) & 0xC000) Firmata.write((byte)(Firmata.getPinState(pin) >> 14) & 0x7F);
+          sendBuff[i++] = Firmata.getPinMode(pin);
+          sendBuff[i++] = (byte)Firmata.getPinState(pin) & 0x7F;
+          if (Firmata.getPinState(pin) & 0xFF80) sendBuff[i++] = (byte)(Firmata.getPinState(pin) >> 7) & 0x7F;
+          if (Firmata.getPinState(pin) & 0xC000) sendBuff[i++] = (byte)(Firmata.getPinState(pin) >> 14) & 0x7F;
         }
-        Firmata.write(END_SYSEX);
+        sendBuff[i++] = END_SYSEX;
+        Firmata.write((const uint8_t*)sendBuff, i);
       }
       break;
     case ANALOG_MAPPING_QUERY:
@@ -846,7 +856,7 @@ void sysexCallback(byte command, byte argc, byte *argv)
 #endif
       break;
 
-    case TONE_DATA:
+    case TONE_PLAY:
       byte toneCommand, pin;
       int frequency, duration;
 
@@ -1021,6 +1031,9 @@ void sysexCallback(byte command, byte argc, byte *argv)
     case ENABLE_IMU:
       enableIMUWaiting = true;
       imu_waiting_id = (int)argv[0] | ((int)argv[1] << 7);
+      break;
+    case CHECK_86DUINO_ACTIVE:
+      checkActiveStart = true;
       break;
   }
 }
@@ -1232,8 +1245,9 @@ void setup()
 void loop()
 {
   byte pin, analogPin;
-  int pingResult = 0;
+  int i, pingResult = 0;
   float ypr[3]; // yaw pitch roll
+  byte sendBuff[512];
 
   /* DIGITALREAD - as fast as possible, check for changes and output them to the
    * FTDI buffer using Serial.print()  */
@@ -1266,13 +1280,16 @@ void loop()
         sonarLSB = pingResult & 0x7f ;
         sonarMSB = pingResult >> 7 & 0x7f ;
 
-        printf("sonarPinNumbers[currentSonar]=%d\n", sonarPinNumbers[currentSonar]);
-        Firmata.write(START_SYSEX);
-        Firmata.write(SONAR_DATA) ;
-        Firmata.write(sonarPinNumbers[currentSonar]) ;
-        Firmata.write(sonarLSB) ;
-        Firmata.write(sonarMSB) ;
-        Firmata.write(END_SYSEX);
+        for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+        // printf("sonarPinNumbers[currentSonar]=%d\n", sonarPinNumbers[currentSonar]);
+        sendBuff[0] = START_SYSEX;
+        sendBuff[1] = SONAR_DATA;
+        sendBuff[2] = sonarPinNumbers[currentSonar];
+        sendBuff[3] = sonarLSB;
+        sendBuff[4] = sonarMSB;
+        sendBuff[5] = END_SYSEX;
+        
+        Firmata.write((const uint8_t*)sendBuff, 6);
       }
     }
 
@@ -1295,6 +1312,7 @@ void loop()
     // if encoder was installed, return its data
     if ( encoderPresent == true)
     {
+      for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
       
       if (encoderModule == 0)
           encoderPostion = Enc0.read();
@@ -1311,28 +1329,32 @@ void loop()
       encoderHMSB = (unsigned char) ((encoderPostion >> 24) & 0xFFL);
       encoderLastB = ((encoderLSB & 0x80) >> 7) | ((encoderMSB & 0x80) >> 6) | ((encoderHLSB & 0x80) >> 5) | ((encoderHMSB & 0x80) >> 4);
 
-      Firmata.write(START_SYSEX);
-      Firmata.write(ENCODER_DATA);
-      Firmata.write(encoderModule);
-      Firmata.write(encoderLSB & 0x7F);
-      Firmata.write(encoderMSB & 0x7F);
-      Firmata.write(encoderHLSB & 0x7F);
-      Firmata.write(encoderHMSB & 0x7F);
-      Firmata.write(encoderLastB);
-      Firmata.write(END_SYSEX);
+      sendBuff[0] = START_SYSEX;
+      sendBuff[1] = ENCODER_DATA;
+      sendBuff[2] = encoderModule;
+      sendBuff[3] = encoderLSB & 0x7F;
+      sendBuff[4] = encoderMSB & 0x7F;
+      sendBuff[5] = encoderHLSB & 0x7F;
+      sendBuff[6] = encoderHMSB & 0x7F;
+      sendBuff[7] = encoderLastB;
+      sendBuff[8] = END_SYSEX;
+      
+      Firmata.write((const uint8_t*)sendBuff, 9);
     }
     if( keepAliveInterval ) {
-       currentMillis = millis();
-       if (currentMillis - previousKeepAliveMillis > keepAliveInterval*1000) {
-         systemResetCallback();
-         
-         wdt_enable(WDTO_15MS);
-         // systemResetCallback();
-         while(1)
-            ;
+      currentMillis = millis();
+      if (currentMillis - previousKeepAliveMillis > keepAliveInterval*1000) {
+        systemResetCallback();
+        
+        wdt_enable(WDTO_15MS);
+        // systemResetCallback();
+        while(1)
+           ;
       }
     }
     if(imu_data_start_sampling) {
+    #if defined __86DUINO_ONE || defined __86DUINO_AI
+      for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
       
       my3IMU.getYawPitchRoll(ypr);
       char* pitch_data_p = (char*) &ypr[1];
@@ -1351,44 +1373,65 @@ void loop()
       data_5byte[1][3] = ((roll_data_p[3] & 0x0F) << 3) | ((roll_data_p[2] & 0xE0) >> 5);
       data_5byte[1][4] = (roll_data_p[3] & 0xF0) >> 4;
       
-      Firmata.write(START_SYSEX);
-      Firmata.write(IMU_RESPONSE);
-      Firmata.write(data_5byte[0][0]);
-      Firmata.write(data_5byte[0][1]);
-      Firmata.write(data_5byte[0][2]);
-      Firmata.write(data_5byte[0][3]);
-      Firmata.write(data_5byte[0][4]);
-      Firmata.write(data_5byte[1][0]);
-      Firmata.write(data_5byte[1][1]);
-      Firmata.write(data_5byte[1][2]);
-      Firmata.write(data_5byte[1][3]);
-      Firmata.write(data_5byte[1][4]);
-      Firmata.write(END_SYSEX);
+      sendBuff[0] = START_SYSEX;
+      sendBuff[1] = IMU_RESPONSE;
+      sendBuff[2] = data_5byte[0][0];
+      sendBuff[3] = data_5byte[0][1];
+      sendBuff[4] = data_5byte[0][2];
+      sendBuff[5] = data_5byte[0][3];
+      sendBuff[6] = data_5byte[0][4];
+      sendBuff[7] = data_5byte[1][0];
+      sendBuff[8] = data_5byte[1][1];
+      sendBuff[9] = data_5byte[1][2];
+      sendBuff[10] = data_5byte[1][3];
+      sendBuff[11] = data_5byte[1][4];
+      sendBuff[12] = END_SYSEX;
+      
+      Firmata.write((const uint8_t*)sendBuff, 13);
+    #endif
     }
     
     if (one_servo_is_moving && servos[servoPinMap[one_servo_used_pin]].isMoving() == false) {
-        Firmata.write(START_SYSEX);
-        Firmata.write(MOVE_ONE_SERVO) ;
-        Firmata.write(99) ;
-        Firmata.write(END_SYSEX);
+        for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+        
+        sendBuff[0] = START_SYSEX;
+        sendBuff[1] = MOVE_ONE_SERVO;
+        sendBuff[2] = 99;
+        sendBuff[3] = END_SYSEX;
+        Firmata.write((const uint8_t*)sendBuff, 4);
         
         one_servo_is_moving = false;
     }
     
     if (enableIMUWaiting) {
-        Wire.begin();
-        delay(5);
-        my3IMU.init(); // the parameter enable or disable fast mode
-        delay(5);
+        for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+        #if defined __86DUINO_ONE || defined __86DUINO_AI
+            Wire.begin();
+            delay(5);
+            my3IMU.init(); // the parameter enable or disable fast mode
+            delay(5);
+        #endif
         
-        Firmata.write(START_SYSEX);
-        Firmata.write(ENABLE_IMU) ;
-        Firmata.write(imu_waiting_id & 0x7F) ;
-        Firmata.write((imu_waiting_id >> 7) & 0x7F) ;
-        Firmata.write(99) ;
-        Firmata.write(END_SYSEX);
+        sendBuff[0] = START_SYSEX;
+        sendBuff[1] = ENABLE_IMU;
+        sendBuff[2] = imu_waiting_id & 0x7F;
+        sendBuff[3] = (imu_waiting_id >> 7) & 0x7F;
+        sendBuff[4] = 99;
+        sendBuff[5] = END_SYSEX;
+        
+        Firmata.write((const uint8_t*)sendBuff, 6);
+        
         enableIMUWaiting = false;
         imu_data_start_sampling = true;
+    }
+    
+    if (checkActiveStart == true)
+    {
+        Firmata.write(START_SYSEX);
+        Firmata.write(_86DUINO_RESPONSE) ;
+        Firmata.write(0x5A)  ;
+        Firmata.write(END_SYSEX);
+        checkActiveStart = false;
     }
     
   }

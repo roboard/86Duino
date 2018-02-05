@@ -1,46 +1,32 @@
-
-/*
- * Firmata is a generic protocol for communicating with microcontrollers
- * from software on a host computer. It is intended to work with
- * any host computer software package.
- *
- * To download a host software package, please clink on the following link
- * to open the download page in your default browser.ser
- *
- * http://firmata.org/wiki/Download
- */
-
-/*
- Copyright (C) 2006-2008 Hans-Christoph Steiner.  All rights reserved.
- Copyright (C) 2010-2011 Paul Stoffregen.  All rights reserved.
- Copyright (C) 2009 Shigeru Kobayashi.  All rights reserved.
- Copyright (C) 2009-2011 Jeff Hoefs.  All rights reserved.
- Copyright (C) 2013-2016 Alan Yorinks. All rights reserved.
-
-
- This library is free software; you can redistribute it and/or
- modify it under the terms of the GNU Lesser General Public
- License as published by the Free Software Foundation; either
- version 2.1 of the License, or (at your option) any later version.
-
- See file LICENSE.txt for further informations on licensing terms.
-
- formatted using the GNU C formatting and indenting
- */
- 
- /* This sketch provides additional functionality to StandardFirmata. 
-    It provides support for:
-    Tone
-    Stepper
-    NewPing
-    Encoder - Note that the encoder works for an Arduino UNO and does not function
-              with a Leonardo. It may not work for others boards as well.
-
-/*
- * TODO: use Program Control to load stored profiles from EEPROM
- */
-
 #include <FirmataPlus86.h>
+
+#define CONNECT_86DUINO_METHOD 0 // 0: USB Serial 1: BlueTooth 2: Arduino WiFi Shield 3: Ethernet 4: ESP8266 WiFi 5: ESP8266 AP
+
+char* projectName = "Hello, 86Duino";
+char* _ssid = "your_ssid";
+char* _password = "your_password"; // If it is ESP8266 AP mode, the password can not be shorter that 8 chars.
+#define BT_ESP8266_Serial         Serial1
+#define BT_ESP8266_Serial_Baud    9600
+
+#if CONNECT_86DUINO_METHOD == 2 // Arduino WiFi Shield
+    bool _wep = false;
+    IPAddress _ip(0, 0, 0, 0);
+#elif CONNECT_86DUINO_METHOD == 3 // Ethernet
+    #define ETHERNET_DHCP
+    #ifndef ETHERNET_DHCP
+        IPAddress localIP(192, 168, 4, 100);
+        IPAddress subnet(255, 255, 240, 0);
+        IPAddress dnsserver(192, 168, 1, 1);
+        IPAddress gateway(192, 168, 1, 1);
+    #endif
+#elif CONNECT_86DUINO_METHOD == 4 || CONNECT_86DUINO_METHOD == 5 // ESP8266
+    int ch_pd_pin = 10;
+    uint8_t _chl = 11; // channel ID (only for ESP8266 AP mode)
+    uint8_t _ecn = 4; // encryption method (only for ESP8266 AP mode)
+#endif
+//////////////////////////////////////////////////////////////////////////////////
+
+
 #include <Servo86.h>
 #if defined __86DUINO_ONE || defined __86DUINO_AI
     #include <FreeIMU1.h>
@@ -51,40 +37,8 @@
 #include <Encoder.h>
 #include <avr/wdt.h>
 
-//#define SERIAL_DEBUG
-#include "utility/firmataDebug.h"
-
-char* projectName = "Hello, 86Duino";
-
-#define DHCP
-#ifndef DHCP
-    IPAddress localIP(192, 168, 4, 100);
-    IPAddress subnet(255, 255, 240, 0);
-    IPAddress dnsserver(192, 168, 1, 1);
-    IPAddress gateway(192, 168, 1, 1);
-#endif
-
-
-/*==============================================================================
- * Ethernet Settings
- *============================================================================*/
-
-#define MAX_QUERIES 8
-
-#define I2C_WRITE                   B00000000
-#define I2C_READ                    B00001000
-#define I2C_READ_CONTINUOUSLY       B00010000
-#define I2C_STOP_READING            B00011000
-#define I2C_READ_WRITE_MODE_MASK    B00011000
-#define I2C_10BIT_ADDRESS_MODE_MASK B00100000
-#define I2C_END_TX_MASK             B01000000
-#define I2C_STOP_TX                 1
-#define I2C_RESTART_TX              0
-#define I2C_MAX_QUERIES             8
-#define I2C_REGISTER_NOT_SPECIFIED  -1
-
 // the minimum interval for sampling analog input
-#define MINIMUM_SAMPLING_INTERVAL 10
+#define MINIMUM_SAMPLING_INTERVAL 1
 
 #define REGISTER_NOT_SPECIFIED -1
 
@@ -105,7 +59,6 @@ char* projectName = "Hello, 86Duino";
 /*==============================================================================
  * GLOBAL VARIABLES
  *============================================================================*/
-
 bool imu_data_start_sampling = false;
 bool enableIMUWaiting = false;
 int imu_data_type = 0;
@@ -134,22 +87,17 @@ unsigned int samplingInterval = 19; // how often to run the main loop (in ms)
 unsigned long previousKeepAliveMillis = 0;
 unsigned int keepAliveInterval = 0;
 
-/* i2c data */
-struct i2c_device_info {
-  byte addr;
-  int reg;
-  byte bytes;
-  byte stopTX;
+typedef enum { 
+  input, servomotor, pwm, digital } 
+pinType;
+
+typedef struct pin {
+  pinType type;       //Type of pin
+  int state;         //State of an output
+  //byte value;       //Value of an input. Not used by now. TODO
 };
 
-/* for i2c read continuous more */
-i2c_device_info query[I2C_MAX_QUERIES];
-
-byte i2cRxData[64];
-boolean isI2CEnabled = false;
-signed char queryIndex = -1;
-// default delay time between i2c read request and Wire.requestFrom()
-unsigned int i2cReadDelayTime = 0;
+pin arduinoPins[14];  //Array of struct holding 0-13 pins information
 
 boolean isResetting = false;
 
@@ -226,6 +174,9 @@ FreeIMU1 my3IMU = FreeIMU1();
 SerialFirmata serialFeature;
 #endif
 
+int update_active_time = 0;
+int python_helper_init_process = 0;
+
 /*==============================================================================
  * FUNCTIONS
  *============================================================================*/
@@ -266,43 +217,6 @@ void detachServo(byte pin)
   }
 
   servoPinMap[pin] = 255;
-}
-
-void readAndReportData(byte address, int theRegister, byte numBytes, byte stopTX) {
-  // allow I2C requests that don't require a register read
-  // for example, some devices using an interrupt pin to signify new data available
-  // do not always require the register read so upon interrupt you call Wire.requestFrom()
-  if (theRegister != I2C_REGISTER_NOT_SPECIFIED) {
-    Wire.beginTransmission(address);
-    wireWrite((byte)theRegister);
-    Wire.endTransmission(stopTX); // default = true
-    // do not set a value of 0
-    if (i2cReadDelayTime > 0) {
-      // delay is necessary for some devices such as WiiNunchuck
-      delayMicroseconds(i2cReadDelayTime);
-    }
-  } else {
-    theRegister = 0;  // fill the register with a dummy value
-  }
-
-  Wire.requestFrom(address, numBytes);  // all bytes are returned in requestFrom
-
-  // check to be sure correct number of bytes were returned by slave
-  if (numBytes < Wire.available()) {
-    Firmata.sendString("I2C: Too many bytes received");
-  } else if (numBytes > Wire.available()) {
-    Firmata.sendString("I2C: Too few bytes received");
-  }
-
-  i2cRxData[0] = address;
-  i2cRxData[1] = theRegister;
-
-  for (int i = 0; i < numBytes && Wire.available(); i++) {
-    i2cRxData[2 + i] = wireRead();
-  }
-
-  // send slave address, register and received bytes
-  Firmata.sendSysex(SYSEX_I2C_REPLY, numBytes + 2, i2cRxData);
 }
 
 void outputPort(byte portNumber, byte portValue, byte forceSend)
@@ -351,12 +265,7 @@ void setPinModeCallback(byte pin, int mode)
   if (Firmata.getPinMode(pin) == PIN_MODE_IGNORE)
     return;
 
-  if (Firmata.getPinMode(pin) == PIN_MODE_I2C && isI2CEnabled && mode != PIN_MODE_I2C) {
-    // disable i2c so pins can be used for other functions
-    // the following if statements should reconfigure the pins properly
-    disableI2CPins();
-  }
-  if (IS_PIN_DIGITAL(pin) && mode != PIN_MODE_SERVO) {
+    if (IS_PIN_DIGITAL(pin) && mode != PIN_MODE_SERVO) {
     if (servoPinMap[pin] < MAX_SERVOS && servos[servoPinMap[pin]].attached()) {
       detachServo(pin);
     }
@@ -424,13 +333,6 @@ void setPinModeCallback(byte pin, int mode)
           // by Servo library
           attachServo(pin, -1, -1);
         }
-      }
-      break;
-    case PIN_MODE_I2C:
-      if (IS_PIN_I2C(pin)) {
-        // mark the pin as i2c
-        // the user must call I2C_CONFIG to enable I2C for a device
-        Firmata.setPinMode(pin, PIN_MODE_I2C);
       }
       break;
     case PIN_MODE_SERIAL:
@@ -590,264 +492,128 @@ void sysexCallback(byte command, byte argc, byte *argv)
   unsigned long msec;
   unsigned long velocity;
 
+  byte sendBuff[512], s4apin;
+  int i, newVal;
+  
   switch (command) {
-    case I2C_REQUEST:
-      mode = argv[1] & I2C_READ_WRITE_MODE_MASK;
-      if (argv[1] & I2C_10BIT_ADDRESS_MODE_MASK) {
-        Firmata.sendString("10-bit addressing not supported");
-        return;
-      }
-      else {
-        slaveAddress = argv[0];
-      }
-
-
-      // need to invert the logic here since 0 will be default for client
-      // libraries that have not updated to add support for restart tx
-      if (argv[1] & I2C_END_TX_MASK) {
-        stopTX = I2C_RESTART_TX;
-      }
-      else {
-        stopTX = I2C_STOP_TX; // default
-      }
-
-      switch (mode) {
-        case I2C_WRITE:
-          Wire.beginTransmission(slaveAddress);
-          for (byte i = 2; i < argc; i += 2) {
-            data = argv[i] + (argv[i + 1] << 7);
-            wireWrite(data);
-          }
-          Wire.endTransmission();
-          delayMicroseconds(70);
-          break;
-        case I2C_READ:
-          if (argc == 6) {
-            // a slave register is specified
-            slaveRegister = argv[2] + (argv[3] << 7);
-            data = argv[4] + (argv[5] << 7);  // bytes to read
-            //readAndReportData(slaveAddress, (int)slaveRegister, data);
-          }
-          else {
-            // a slave register is NOT specified
-            slaveRegister = I2C_REGISTER_NOT_SPECIFIED;
-            data = argv[2] + (argv[3] << 7);  // bytes to read
-            //readAndReportData(slaveAddress, (int)REGISTER_NOT_SPECIFIED, data);
-          }
-          readAndReportData(slaveAddress, (int)slaveRegister, data, stopTX);
-          break;
-        case I2C_READ_CONTINUOUSLY:
-          if ((queryIndex + 1) >= I2C_MAX_QUERIES) {
-            // too many queries, just ignore
-            Firmata.sendString("too many queries");
-            break;
-          }
-          if (argc == 6) {
-            // a slave register is specified
-            slaveRegister = argv[2] + (argv[3] << 7);
-            data = argv[4] + (argv[5] << 7);  // bytes to read
-          }
-          else {
-            // a slave register is NOT specified
-            slaveRegister = (int)I2C_REGISTER_NOT_SPECIFIED;
-            data = argv[2] + (argv[3] << 7);  // bytes to read
-          }
-          queryIndex++;
-          query[queryIndex].addr = slaveAddress;
-          query[queryIndex].reg = slaveRegister;
-          query[queryIndex].bytes = data;
-          query[queryIndex].stopTX = stopTX;
-          break;
-        case I2C_STOP_READING:
-          byte queryIndexToSkip;
-          // if read continuous mode is enabled for only 1 i2c device, disable
-          // read continuous reporting for that device
-          if (queryIndex <= 0) {
-            queryIndex = -1;
-          } else {
-            queryIndexToSkip = 0;
-            // if read continuous mode is enabled for multiple devices,
-            // determine which device to stop reading and remove it's data from
-            // the array, shifiting other array data to fill the space
-            for (byte i = 0; i < queryIndex + 1; i++) {
-              if (query[i].addr == slaveAddress) {
-                queryIndexToSkip = i;
-                break;
-              }
-            }
-
-            for (byte i = queryIndexToSkip; i < queryIndex + 1; i++) {
-              if (i < I2C_MAX_QUERIES) {
-                query[i].addr = query[i + 1].addr;
-                query[i].reg = query[i + 1].reg;
-                query[i].bytes = query[i + 1].bytes;
-                query[i].stopTX = query[i + 1].stopTX;
-              }
-            }
-            queryIndex--;
-          }
-          break;
-        default:
-          break;
-      }
-      break;
-    case I2C_CONFIG:
-      delayTime = (argv[0] + (argv[1] << 7));
-
-      if (delayTime > 0) {
-        i2cReadDelayTime = delayTime;
-      }
-
-      if (!isI2CEnabled) {
-        enableI2CPins();
-      }
-
-      break;
-    case SERVO_CONFIG:
-      if (argc > 4) {
-        // these vars are here for clarity, they'll optimized away by the compiler
-        byte pin = argv[0];
-        int minPulse = argv[1] + (argv[2] << 7);
-        int maxPulse = argv[3] + (argv[4] << 7);
-
-        if (IS_PIN_DIGITAL(pin)) {
-          if (servoPinMap[pin] < MAX_SERVOS && servos[servoPinMap[pin]].attached()) {
-            detachServo(pin);
-          }
-          attachServo(pin, minPulse, maxPulse);
-          setPinModeCallback(pin, PIN_MODE_SERVO);
+    
+    case S4A_COMMAND:
+        s4apin = argv[0];
+        newVal = argv[1] + (argv[2] << 7);
+        if(arduinoPins[s4apin].state != newVal)
+        {
+            arduinoPins[s4apin].state = newVal;
+            updateActuator(s4apin);
         }
-      }
-      break;
-    case KEEP_ALIVE:
-      keepAliveInterval = argv[0] + (argv[1] << 7);
-      previousKeepAliveMillis = millis();
-      break;      
-    case SAMPLING_INTERVAL:
-      if (argc > 1) {
-        samplingInterval = argv[0] + (argv[1] << 7);
-        if (samplingInterval < MINIMUM_SAMPLING_INTERVAL) {
-          samplingInterval = MINIMUM_SAMPLING_INTERVAL;
-        }
-        /* calculate number of loops per ping */
-        numLoops = INTER_PING_INTERVAL / samplingInterval ;
-        //numLoops = 1 ;
-      }
-      else {
-        //Firmata.sendString("Not enough data");
-      }
-      break;
-    case EXTENDED_ANALOG:
-      if (argc > 1) {
-        int val = argv[1];
-        if (argc > 2) val |= (argv[2] << 7);
-        if (argc > 3) val |= (argv[3] << 14);
-        analogWriteCallback(argv[0], val);
-      }
-      break;
+        break;
     case CAPABILITY_QUERY:
-      Firmata.write(START_SYSEX);
-      Firmata.write(CAPABILITY_RESPONSE);
+      for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+      
+      sendBuff[0] = START_SYSEX;
+      sendBuff[1] = CAPABILITY_RESPONSE;
+      i = 2;
       for (byte pin = 0; pin < TOTAL_PINS; pin++) {
         if (IS_PIN_DIGITAL(pin)) {
-          Firmata.write((byte)INPUT);
-          Firmata.write(1);
-          Firmata.write((byte)PIN_MODE_PULLUP);
-          Firmata.write(1);
-          Firmata.write((byte)OUTPUT);
-          Firmata.write(1);
+          sendBuff[i++] = ((byte)INPUT);
+          sendBuff[i++] = 1;
+          sendBuff[i++] = ((byte)PIN_MODE_PULLUP);
+          sendBuff[i++] = 1;
+          sendBuff[i++] = ((byte)OUTPUT);
+          sendBuff[i++] = 1;
         }
         if (IS_PIN_ANALOG(pin)) {
-          Firmata.write(PIN_MODE_ANALOG);
-          Firmata.write(10); // 10 = 10-bit resolution
+          sendBuff[i++] = PIN_MODE_ANALOG;
+          sendBuff[i++] = 10; // 10 = 10-bit resolution
         }
         if (IS_PIN_PWM(pin)) {
-          Firmata.write(PIN_MODE_PWM);
-          Firmata.write(DEFAULT_PWM_RESOLUTION);
+          sendBuff[i++] = PIN_MODE_PWM;
+          sendBuff[i++] = DEFAULT_PWM_RESOLUTION;
         }
         if (IS_PIN_DIGITAL(pin)) {
-          Firmata.write(PIN_MODE_SERVO);
-          Firmata.write(14);
+          sendBuff[i++] = PIN_MODE_SERVO;
+          sendBuff[i++] = 14;
         }
         if (IS_PIN_I2C(pin)) {
-          Firmata.write(PIN_MODE_I2C);
-          Firmata.write(1);  // TODO: could assign a number to map to SCL or SDA
+          sendBuff[i++] = PIN_MODE_I2C;
+          sendBuff[i++] = 1;  // TODO: could assign a number to map to SCL or SDA
         }
 #ifdef FIRMATA_SERIAL_FEATURE
         serialFeature.handleCapability(pin);
 #endif
-        Firmata.write(127);
+        sendBuff[i++] = 127;
       }
-      Firmata.write(END_SYSEX);
+      sendBuff[i++] = END_SYSEX;
+      Firmata.write((const uint8_t*)sendBuff, i);
       break;
     case PIN_STATE_QUERY:
       if (argc > 0) {
+        for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+        
         byte pin = argv[0];
-        Firmata.write(START_SYSEX);
-        Firmata.write(PIN_STATE_RESPONSE);
-        Firmata.write(pin);
+        sendBuff[0] = START_SYSEX;
+        sendBuff[1] = PIN_STATE_RESPONSE;
+        sendBuff[2] = pin;
+        i = 3;
         if (pin < TOTAL_PINS) {
-          Firmata.write(Firmata.getPinMode(pin));
-          Firmata.write((byte)Firmata.getPinState(pin) & 0x7F);
-          if (Firmata.getPinState(pin) & 0xFF80) Firmata.write((byte)(Firmata.getPinState(pin) >> 7) & 0x7F);
-          if (Firmata.getPinState(pin) & 0xC000) Firmata.write((byte)(Firmata.getPinState(pin) >> 14) & 0x7F);
+          sendBuff[i++] = Firmata.getPinMode(pin);
+          sendBuff[i++] = (byte)Firmata.getPinState(pin) & 0x7F;
+          if (Firmata.getPinState(pin) & 0xFF80) sendBuff[i++] = (byte)(Firmata.getPinState(pin) >> 7) & 0x7F;
+          if (Firmata.getPinState(pin) & 0xC000) sendBuff[i++] = (byte)(Firmata.getPinState(pin) >> 14) & 0x7F;
         }
-        Firmata.write(END_SYSEX);
+        sendBuff[i++] = END_SYSEX;
+        Firmata.write((const uint8_t*)sendBuff, i);
       }
       break;
     case ANALOG_MAPPING_QUERY:
-      Firmata.write(START_SYSEX);
-      Firmata.write(ANALOG_MAPPING_RESPONSE);
+      for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+      sendBuff[0] = START_SYSEX;
+      sendBuff[1] = ANALOG_MAPPING_RESPONSE;
+      i = 2;
       for (byte pin = 0; pin < TOTAL_PINS; pin++) {
-        Firmata.write(IS_PIN_ANALOG(pin) ? PIN_TO_ANALOG(pin) : 127);
+        sendBuff[i++] = (IS_PIN_ANALOG(pin) ? PIN_TO_ANALOG(pin) : 127);
       }
-      Firmata.write(END_SYSEX);
+      sendBuff[i++] = END_SYSEX;
+      Firmata.write((const uint8_t*)sendBuff, i);
       break;
-  case ENCODER_CONFIG:
-    // instantiate an encoder object with user's
-    // requested pin designators
-    encoderPresent = ((argv[0] == 0) ? false : true);
-    encoderModule = argv[1] ; // for 86Duino, it is the "number of module"
     
-    if (pre_encoderPresent == true && encoderPresent == false)
-    {
-        if      (encoderModule == 0) Enc0.end();
-        else if (encoderModule == 1) Enc1.end();
-        else if (encoderModule == 2) Enc2.end();
-        else if (encoderModule == 3) Enc3.end();
-        break;    
-    }
-    else if (pre_encoderPresent == true && encoderPresent == true)
-    {
-        encoderMode = argv[2] ; // for 86Duino, it is "encoder mode"
-        if      (encoderModule == 0) {Enc0.end(); Enc0.begin(encoderMode);}
-        else if (encoderModule == 1) {Enc1.end(); Enc1.begin(encoderMode);}
-        else if (encoderModule == 2) {Enc2.end(); Enc2.begin(encoderMode);}
-        else if (encoderModule == 3) {Enc3.end(); Enc3.begin(encoderMode);}
-        break;   
-    }
-    else if (pre_encoderPresent == false && encoderPresent == true)
-    {
-        encoderMode = argv[2] ; // for 86Duino, it is "encoder mode"
-        if      (encoderModule == 0) Enc0.begin(encoderMode);
-        else if (encoderModule == 1) Enc1.begin(encoderMode);
-        else if (encoderModule == 2) Enc2.begin(encoderMode);
-        else if (encoderModule == 3) Enc3.begin(encoderMode);
-        break;
-    }
-    pre_encoderPresent = encoderPresent;
-    // static AdaEncoder encoder = 
-      // AdaEncoder('a', encoderModule, encoderMode) ;
-    //thisEncoder = &encoder ;
-    // encoderPresent = true ;
-    break ; 
-
-  case SERIAL_MESSAGE:
-#ifdef FIRMATA_SERIAL_FEATURE
-      serialFeature.handleSysex(command, argc, argv);
-#endif
-      break;
-
+    case ENCODER_CONFIG:
+      // instantiate an encoder object with user's
+      // requested pin designators
+      encoderPresent = ((argv[0] == 0) ? false : true);
+      encoderModule = argv[1] ; // for 86Duino, it is the "number of module"
+      
+      if (pre_encoderPresent == true && encoderPresent == false)
+      {
+          if      (encoderModule == 0) Enc0.end();
+          else if (encoderModule == 1) Enc1.end();
+          else if (encoderModule == 2) Enc2.end();
+          else if (encoderModule == 3) Enc3.end();
+          break;    
+      }
+      else if (pre_encoderPresent == true && encoderPresent == true)
+      {
+          encoderMode = argv[2] ; // for 86Duino, it is "encoder mode"
+          if      (encoderModule == 0) {Enc0.end(); Enc0.begin(encoderMode);}
+          else if (encoderModule == 1) {Enc1.end(); Enc1.begin(encoderMode);}
+          else if (encoderModule == 2) {Enc2.end(); Enc2.begin(encoderMode);}
+          else if (encoderModule == 3) {Enc3.end(); Enc3.begin(encoderMode);}
+          break;   
+      }
+      else if (pre_encoderPresent == false && encoderPresent == true)
+      {
+          encoderMode = argv[2] ; // for 86Duino, it is "encoder mode"
+          if      (encoderModule == 0) Enc0.begin(encoderMode);
+          else if (encoderModule == 1) Enc1.begin(encoderMode);
+          else if (encoderModule == 2) Enc2.begin(encoderMode);
+          else if (encoderModule == 3) Enc3.begin(encoderMode);
+          break;
+      }
+      pre_encoderPresent = encoderPresent;
+      // static AdaEncoder encoder = 
+        // AdaEncoder('a', encoderModule, encoderMode) ;
+      //thisEncoder = &encoder ;
+      // encoderPresent = true ;
+      break ;
     case TONE_PLAY:
       byte toneCommand, pin;
       int frequency, duration;
@@ -863,37 +629,6 @@ void sysexCallback(byte command, byte argc, byte *argv)
       }
       else if (toneCommand == TONE_NO_TONE) {
         noTone(pin);
-      }
-      break ;
-
-      // arg0 = trigger pin
-      // arg1 = echo pin
-      // arg2 = ping interval in milliseconds if 0, then set to 33
-      // arg3 = maxdistance lsb
-      // arg4 = maxdistance msb
-    case SONAR_CONFIG :
-      int max_distance ;
-      if ( numActiveSonars < MAX_SONARS)
-      {
-        sonarTriggerPin = argv[0] ;
-        sonarEchoPin = argv[1] ;
-        // set interval to a minium of 33 ms.
-        if ( argv[2] >= 33 ) {
-          pingInterval = argv[2] ;
-        }
-        else {
-          pingInterval = 33 ;
-        }
-        max_distance = argv[3] + (argv[4] << 7 ) ;
-        sonarPinNumbers[numActiveSonars] = sonarTriggerPin ;
-
-        setPinModeCallback(sonarTriggerPin, PIN_MODE_SONAR);
-        setPinModeCallback(sonarEchoPin, PIN_MODE_SONAR);
-        sonars[numActiveSonars] = new NewPing(sonarTriggerPin, sonarEchoPin, max_distance) ;
-        numActiveSonars++ ;
-      }
-      else {
-        Firmata.sendString("PING_CONFIG Error: Exceeded number of supported ping devices");
       }
       break ;
 
@@ -1030,32 +765,6 @@ void sysexCallback(byte command, byte argc, byte *argv)
   }
 }
 
-void enableI2CPins()
-{
-  byte i;
-  // is there a faster way to do this? would probaby require importing
-  // Arduino.h to get SCL and SDA pins
-  for (i = 0; i < TOTAL_PINS; i++) {
-    if (IS_PIN_I2C(i)) {
-      // mark pins as i2c so they are ignore in non i2c data requests
-      setPinModeCallback(i, PIN_MODE_I2C);
-    }
-  }
-
-  isI2CEnabled = true;
-
-  // is there enough time before the first I2C request to call this here?
-  Wire.begin();
-}
-
-/* disable the i2c pins so they can be used for other functions */
-void disableI2CPins() {
-  isI2CEnabled = false;
-  // disable read continuous mode for all devices
-  queryIndex = -1;
-  // uncomment the following if or when the end() method is added to Wire library
-  // Wire.end();
-}
 
 /*==============================================================================
  * SETUP()
@@ -1072,9 +781,6 @@ void systemResetCallback()
   serialFeature.reset();
 #endif
 
-  if (isI2CEnabled) {
-    disableI2CPins();
-  }
   for (byte i = 0; i < TOTAL_PORTS; i++) {
     reportPINs[i] = false;    // by default, reporting off
     portConfigInputs[i] = 0;  // until activated
@@ -1119,6 +825,7 @@ void systemResetCallback()
       pre_encoderPresent = encoderPresent = false;
   }
 
+  resetPins();
   // by default, do not report any analog inputs
   analogInputsToReport = 0;
 
@@ -1143,21 +850,157 @@ void systemResetCallback()
 
 }
 
+void configurePins()
+{
+  arduinoPins[0].type=input;
+  arduinoPins[1].type=input;
+  arduinoPins[2].type=input;
+  arduinoPins[3].type=input;
+  arduinoPins[4].type=servomotor;
+  arduinoPins[5].type=pwm;
+  arduinoPins[6].type=pwm;
+  arduinoPins[7].type=servomotor;
+  arduinoPins[8].type=servomotor;
+  arduinoPins[9].type=pwm;
+  arduinoPins[10].type=digital;
+  arduinoPins[11].type=digital;
+  arduinoPins[12].type=digital;
+  arduinoPins[13].type=digital;
+}
+
+void resetPins() {
+  for (byte index=0; index <=13; index++) 
+  {
+    if (arduinoPins[index].type!=input)
+    {
+      pinMode(index, OUTPUT);
+      if (arduinoPins[index].type==servomotor)
+      {
+        arduinoPins[index].state = 255;
+        servo (index, 255);
+      }
+      else
+      {
+        arduinoPins[index].state=0;
+        digitalWrite(index,LOW);
+      }
+    }
+  }
+}
+
+void sendSensorValues()
+{
+  unsigned int sensorValues[6], readings[5];
+  byte sensorIndex;
+
+  for (sensorIndex = 0; sensorIndex < 6; sensorIndex++) //for analog sensors, calculate the median of 5 sensor readings in order to avoid variability and power surges
+  {
+    for (byte p = 0; p < 5; p++)
+      readings[p] = analogRead(sensorIndex);
+    insertionSort(readings, 5); //sort readings
+    sensorValues[sensorIndex] = readings[2]; //select median reading
+  }
+
+  //send analog sensor values
+  for (sensorIndex = 0; sensorIndex < 6; sensorIndex++)
+    ScratchBoardSensorReport(sensorIndex, sensorValues[sensorIndex]);
+
+  //send digital sensor values
+  ScratchBoardSensorReport(6, digitalRead(2)?1023:0);
+  ScratchBoardSensorReport(7, digitalRead(3)?1023:0);
+}
+
+void insertionSort(unsigned int* array, unsigned int n)
+{
+  for (int i = 1; i < n; i++)
+    for (int j = i; (j > 0) && ( array[j] < array[j-1] ); j--)
+      swap( array, j, j-1 );
+}
+
+void swap(unsigned int* array, unsigned int a, unsigned int b)
+{
+  unsigned int temp = array[a];
+  array[a] = array[b];
+  array[b] = temp;
+}
+
+void ScratchBoardSensorReport(byte sensor, int value) //PicoBoard protocol, 2 bytes per sensor
+{
+  byte sendBuff[6];
+  int i;
+  for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+  
+  sendBuff[0] = START_SYSEX;
+  sendBuff[1] = S4A_RESPONE;
+  sendBuff[2] = sensor & 0x7F;
+  sendBuff[3] = value & 0x7F;
+  sendBuff[4] = value >> 7;
+  sendBuff[5] = END_SYSEX;
+  
+  Firmata.write((const uint8_t*)sendBuff, 6);
+}
+
+void reset() //with xbee module, we need to simulate the setup execution that occurs when a usb connection is opened or closed without this module
+{
+  resetPins();        // reset pins
+}
+
+void updateActuator(byte pinNumber)
+{
+  if (arduinoPins[pinNumber].type==digital) digitalWrite(pinNumber, arduinoPins[pinNumber].state);
+  else if (arduinoPins[pinNumber].type==pwm) analogWrite(pinNumber, arduinoPins[pinNumber].state);
+}
+
+void sendUpdateServomotors()
+{
+  for (byte p = 0; p < 10; p++)
+    if (arduinoPins[p].type == servomotor) servo(p, arduinoPins[p].state);
+}
+
+void servo (byte pinNumber, byte angle)
+{
+  if (angle >= 0 && angle <= 180)
+    pulse(pinNumber, (angle * 10) + 600);
+  else
+    digitalWrite(pinNumber, LOW);
+}
+
+void pulse (byte pinNumber, unsigned int pulseWidth)
+{
+  digitalWrite(pinNumber, HIGH);
+  delayMicroseconds(pulseWidth);
+  digitalWrite(pinNumber, LOW);
+}
+
+unsigned long sensorvalue_update_starttime = 0L;
+unsigned long sensorvalue_update_timeout; 
 void setup()
 {
-  Serial.begin(9600);
-  Serial.println("setup()");
-  
-  // start up Network Firmata:
-  #ifdef DHCP
-    // DHCP
-    Firmata.beginEthernet(projectName, 2000);
-  #else
-    // Static IP
-    Firmata.beginEthernet(projectName, 2000, localIP, subnet, dnsserver, gateway);
+  #if CONNECT_86DUINO_METHOD == 0
+    Firmata.begin(57600);
+    sensorvalue_update_timeout = 10L;
+  #elif CONNECT_86DUINO_METHOD == 1
+    Firmata.beginBlueTooth(BT_ESP8266_Serial, BT_ESP8266_Serial_Baud);
+    sensorvalue_update_timeout = 500L;
+  #elif CONNECT_86DUINO_METHOD == 2
+    Firmata.beginWiFiShield(projectName, 2000, _ssid, _password, _wep, _ip);
+    sensorvalue_update_timeout = 5000L;
+  #elif CONNECT_86DUINO_METHOD == 3
+    #ifdef ETHERNET_DHCP
+      Firmata.beginEthernet(projectName, 2000);
+    #else
+      Firmata.beginEthernet(projectName, 2000, localIP, subnet, dnsserver, gateway);
+    #endif
+    sensorvalue_update_timeout = 100L;
+  #elif CONNECT_86DUINO_METHOD == 4
+      Firmata.beginESP8266(projectName, 2000, BT_ESP8266_Serial, BT_ESP8266_Serial_Baud, ch_pd_pin, _ssid, _password);
+      sensorvalue_update_timeout = 5000L;
+  #elif CONNECT_86DUINO_METHOD == 5
+      Firmata.beginESP8266_AP(projectName, 2000, BT_ESP8266_Serial, BT_ESP8266_Serial_Baud, ch_pd_pin, _ssid, _password, _chl, _ecn);
+      sensorvalue_update_timeout = 5000L;
   #endif
-  Serial.println("firmata setup done");
   
+  configurePins();
   Firmata.setFirmwareVersion(FIRMATA_FIRMWARE_MAJOR_VERSION, FIRMATA_FIRMWARE_MINOR_VERSION);
 
   Firmata.attach(ANALOG_MESSAGE, analogWriteCallback);
@@ -1168,8 +1011,35 @@ void setup()
   Firmata.attach(SET_DIGITAL_PIN_VALUE, setPinValueCallback);
   Firmata.attach(START_SYSEX, sysexCallback);
   Firmata.attach(SYSTEM_RESET, systemResetCallback);
-
+  
+  #if CONNECT_86DUINO_METHOD == 2
+    pinMode(PIN_TO_DIGITAL(4), OUTPUT);    // switch off SD card bypassing Firmata
+    digitalWrite(PIN_TO_DIGITAL(4), HIGH); // SS is active low;
+  #endif
+  
   systemResetCallback();  // reset to default config
+
+  resetPins();
+}
+
+void check_localIP()
+{
+    static bool serial_monitor_open = false;
+    if (Serial && serial_monitor_open == false)
+    {
+        serial_monitor_open = true;
+        Serial.print("IP : ");
+        Serial.println(Firmata.getLocalIP());
+        Serial.print("Gateway : ");
+        Serial.println(Firmata.getGatewayIP());
+        Serial.print("SubnetMask : ");
+        Serial.println(Firmata.getSubnetMask());
+    }
+    
+    if (!Serial && serial_monitor_open == true)
+    {
+        serial_monitor_open = false;
+    }
 }
 
 /*==============================================================================
@@ -1178,9 +1048,14 @@ void setup()
 void loop()
 {
   byte pin, analogPin;
-  int pingResult = 0;
+  int i, pingResult = 0;
   float ypr[3]; // yaw pitch roll
+  byte sendBuff[512];
 
+  #if CONNECT_86DUINO_METHOD == 2 || CONNECT_86DUINO_METHOD == 3 || CONNECT_86DUINO_METHOD == 4 || CONNECT_86DUINO_METHOD == 5
+    check_localIP();
+  #endif
+  
   /* DIGITALREAD - as fast as possible, check for changes and output them to the
    * FTDI buffer using Serial.print()  */
   checkDigitalInputs();
@@ -1189,58 +1064,41 @@ void loop()
    * checking digital inputs.  */
   while (Firmata.available())
     Firmata.processInput();
-
+  
   // TODO - ensure that Stream buffer doesn't go over 60 bytes
 
   currentMillis = millis();
   if (currentMillis - previousMillis > samplingInterval) {
     previousMillis += samplingInterval;
 
-    if ( pingLoopCounter++ > numLoops)
-    {
-      pingLoopCounter = 0 ;
-      if (numActiveSonars)
-      {
-        unsigned int uS = sonars[nextSonar]->ping();
-        // Convert ping time to distance in cm and print
-        pingResult = uS / US_ROUNDTRIP_CM ;
-        currentSonar = nextSonar ;
-        if ( nextSonar++ >= numActiveSonars - 1)
-        {
-          nextSonar = 0 ;
-        }
-        sonarLSB = pingResult & 0x7f ;
-        sonarMSB = pingResult >> 7 & 0x7f ;
-
-        printf("sonarPinNumbers[currentSonar]=%d\n", sonarPinNumbers[currentSonar]);
-        Firmata.write(START_SYSEX);
-        Firmata.write(SONAR_DATA) ;
-        Firmata.write(sonarPinNumbers[currentSonar]) ;
-        Firmata.write(sonarLSB) ;
-        Firmata.write(sonarMSB) ;
-        Firmata.write(END_SYSEX);
-      }
-    }
-
-
     // ANALOGREAD - do all analogReads() at the configured sampling interval 
-    for (pin = 0; pin < TOTAL_PINS; pin++) {
-      if (IS_PIN_ANALOG(pin) && Firmata.getPinMode(pin) == PIN_MODE_ANALOG) {
-        analogPin = PIN_TO_ANALOG(pin);
-        if (analogInputsToReport & (1 << analogPin)) {
-          Firmata.sendAnalog(analogPin, analogRead(analogPin));
+//    for (pin = 0; pin < 6; pin++) {
+//        Firmata.sendAnalog(pin, analogRead(pin));
+//    }
+#if CONNECT_86DUINO_METHOD == 0 || CONNECT_86DUINO_METHOD == 1
+    if ((millis() - update_active_time) > 2000) // python helper has closed
+#else
+    if ((millis() - update_active_time) > 4000) // python helper has closed
+#endif
+    {
+        python_helper_init_process = 0;
+        sensorvalue_update_starttime = millis();
+    }
+    
+    if (python_helper_init_process == 1)
+    {
+        sendUpdateServomotors();
+        if ((millis() - sensorvalue_update_starttime) > sensorvalue_update_timeout)
+        {
+            sendSensorValues();
+            sensorvalue_update_starttime = millis();
         }
-      }
     }
-    // report i2c data for all device with read continuous mode enabled
-    if (queryIndex > -1) {
-      for (byte i = 0; i < queryIndex + 1; i++) {
-        readAndReportData(query[i].addr, query[i].reg, query[i].bytes, query[i].stopTX);
-      }
-    }
+    
     // if encoder was installed, return its data
     if ( encoderPresent == true)
     {
+      for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
       
       if (encoderModule == 0)
           encoderPostion = Enc0.read();
@@ -1257,15 +1115,17 @@ void loop()
       encoderHMSB = (unsigned char) ((encoderPostion >> 24) & 0xFFL);
       encoderLastB = ((encoderLSB & 0x80) >> 7) | ((encoderMSB & 0x80) >> 6) | ((encoderHLSB & 0x80) >> 5) | ((encoderHMSB & 0x80) >> 4);
 
-      Firmata.write(START_SYSEX);
-      Firmata.write(ENCODER_DATA);
-      Firmata.write(encoderModule);
-      Firmata.write(encoderLSB & 0x7F);
-      Firmata.write(encoderMSB & 0x7F);
-      Firmata.write(encoderHLSB & 0x7F);
-      Firmata.write(encoderHMSB & 0x7F);
-      Firmata.write(encoderLastB);
-      Firmata.write(END_SYSEX);
+      sendBuff[0] = START_SYSEX;
+      sendBuff[1] = ENCODER_DATA;
+      sendBuff[2] = encoderModule;
+      sendBuff[3] = encoderLSB & 0x7F;
+      sendBuff[4] = encoderMSB & 0x7F;
+      sendBuff[5] = encoderHLSB & 0x7F;
+      sendBuff[6] = encoderHMSB & 0x7F;
+      sendBuff[7] = encoderLastB;
+      sendBuff[8] = END_SYSEX;
+      
+      Firmata.write((const uint8_t*)sendBuff, 9);
     }
     if( keepAliveInterval ) {
       currentMillis = millis();
@@ -1278,8 +1138,11 @@ void loop()
            ;
       }
     }
+    
     if(imu_data_start_sampling) {
     #if defined __86DUINO_ONE || defined __86DUINO_AI
+      for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+      
       my3IMU.getYawPitchRoll(ypr);
       char* pitch_data_p = (char*) &ypr[1];
       char* roll_data_p = (char*) &ypr[2];
@@ -1296,33 +1159,27 @@ void loop()
       data_5byte[1][2] = ((roll_data_p[2] & 0x1F) << 2) | ((roll_data_p[1] & 0xC0) >> 6);
       data_5byte[1][3] = ((roll_data_p[3] & 0x0F) << 3) | ((roll_data_p[2] & 0xE0) >> 5);
       data_5byte[1][4] = (roll_data_p[3] & 0xF0) >> 4;
+
+      sendBuff[0] = START_SYSEX;
+      sendBuff[1] = IMU_RESPONSE;
+      sendBuff[2] = data_5byte[0][0];
+      sendBuff[3] = data_5byte[0][1];
+      sendBuff[4] = data_5byte[0][2];
+      sendBuff[5] = data_5byte[0][3];
+      sendBuff[6] = data_5byte[0][4];
+      sendBuff[7] = data_5byte[1][0];
+      sendBuff[8] = data_5byte[1][1];
+      sendBuff[9] = data_5byte[1][2];
+      sendBuff[10] = data_5byte[1][3];
+      sendBuff[11] = data_5byte[1][4];
+      sendBuff[12] = END_SYSEX;
       
-      Firmata.write(START_SYSEX);
-      Firmata.write(IMU_RESPONSE);
-      Firmata.write(data_5byte[0][0]);
-      Firmata.write(data_5byte[0][1]);
-      Firmata.write(data_5byte[0][2]);
-      Firmata.write(data_5byte[0][3]);
-      Firmata.write(data_5byte[0][4]);
-      Firmata.write(data_5byte[1][0]);
-      Firmata.write(data_5byte[1][1]);
-      Firmata.write(data_5byte[1][2]);
-      Firmata.write(data_5byte[1][3]);
-      Firmata.write(data_5byte[1][4]);
-      Firmata.write(END_SYSEX);
+      Firmata.write((const uint8_t*)sendBuff, 13);
     #endif
     }
     
-    if (one_servo_is_moving && servos[servoPinMap[one_servo_used_pin]].isMoving() == false) {
-        Firmata.write(START_SYSEX);
-        Firmata.write(MOVE_ONE_SERVO) ;
-        Firmata.write(99) ;
-        Firmata.write(END_SYSEX);
-        
-        one_servo_is_moving = false;
-    }
-    
     if (enableIMUWaiting) {
+        for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
         #if defined __86DUINO_ONE || defined __86DUINO_AI
             Wire.begin();
             delay(5);
@@ -1330,23 +1187,32 @@ void loop()
             delay(5);
         #endif
         
-        Firmata.write(START_SYSEX);
-        Firmata.write(ENABLE_IMU) ;
-        Firmata.write(imu_waiting_id & 0x7F) ;
-        Firmata.write((imu_waiting_id >> 7) & 0x7F) ;
-        Firmata.write(99) ;
-        Firmata.write(END_SYSEX);
+        sendBuff[0] = START_SYSEX;
+        sendBuff[1] = ENABLE_IMU;
+        sendBuff[2] = imu_waiting_id & 0x7F;
+        sendBuff[3] = (imu_waiting_id >> 7) & 0x7F;
+        sendBuff[4] = 99;
+        sendBuff[5] = END_SYSEX;
+        
+        Firmata.write((const uint8_t*)sendBuff, 6);
+        
         enableIMUWaiting = false;
         imu_data_start_sampling = true;
     }
     
     if (checkActiveStart == true)
     {
-        Firmata.write(START_SYSEX);
-        Firmata.write(_86DUINO_RESPONSE) ;
-        Firmata.write(0x5A)  ;
-        Firmata.write(END_SYSEX);
+        for (i=0; i<sizeof(sendBuff); i++) sendBuff[i] = 0;
+        python_helper_init_process = 1;
+        sendBuff[0] = START_SYSEX;
+        sendBuff[1] = _86DUINO_RESPONSE;
+        sendBuff[2] = 0x5A;
+        sendBuff[3] = END_SYSEX;
+        
+        Firmata.write((const uint8_t*)sendBuff, 4);
+        
         checkActiveStart = false;
+        update_active_time = millis();
     }
     
   }
@@ -1363,6 +1229,5 @@ void printData(char * id,  long data)
   Firmata.sendString(id) ;
   Firmata.sendString(myArray);
 }
-
 
 

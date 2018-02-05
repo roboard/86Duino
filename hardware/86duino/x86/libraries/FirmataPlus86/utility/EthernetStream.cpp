@@ -86,7 +86,7 @@ int EthernetStream::begin(char* prjname, uint8_t *mac_address, uint16_t port)
     broadcastIP = _ipb;
     
     Udp.begin(localPort);
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
@@ -104,7 +104,7 @@ void EthernetStream::begin(char* prjname, uint8_t *mac_address, IPAddress local_
     broadcastIP = _ipb;
     
     Udp.begin(localPort);
-    broadcastInterval = 5000;
+    broadcastInterval = 4000;
     broadcastStartTime = millis();
     projectName = prjname;
     pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
@@ -115,17 +115,25 @@ IPAddress EthernetStream::localIP()
     return Ethernet.localIP();
 }
 
+IPAddress EthernetStream::gatewayIP()
+{
+    return Ethernet.gatewayIP();
+}
+
+IPAddress EthernetStream::subnetMask()
+{
+    return Ethernet.subnetMask();
+}
+
 int EthernetStream::connect_client() 
 {
     if (ethernetActive == false) return 0;
     
-    if (!(client && client.connected())) {
-        EthernetClient newClient = server->available();
-        if (!newClient)
-            return 0;
+    EthernetClient newClient = server->available();
+    if (!newClient)
+        return 0;
 
-        client = newClient;
-    }
+    client = newClient;
     return 1;
 }
 
@@ -145,14 +153,14 @@ int EthernetStream::available()
         }
         else
             pkgOK = makeBroadcastPkg(broadcastPkg, sizeof(broadcastPkg), projectName);
+        return 0;
     }
-    
-    return connect_client() ? client.available() : 0;
+    return client.available();
 }
 
 int EthernetStream::read()
 {
-    return connect_client() ? client.read() : 0;
+    return client ? client.read() : 0;
 }
 
 void EthernetStream::flush() {
@@ -163,6 +171,6 @@ int EthernetStream::peek() {
     return client ? client.peek(): 0;
 }
 
-size_t EthernetStream::write(uint8_t outcomingByte) {  
-    if(connect_client()) client.write(outcomingByte);
+size_t EthernetStream::write(uint8_t outcomingByte) {
+    if(client) client.write(outcomingByte);
 }

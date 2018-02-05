@@ -222,6 +222,8 @@ struct pinsconfig {
 	#define CRBTABLE_SIZE              (0xC0)
 
     #define ENCSSI_MODE_AVAILABLE
+    
+    #define CRB_DEBUGMODE
 
 	static const uint8_t SS   = 10;
 	static const uint8_t MOSI = 11;

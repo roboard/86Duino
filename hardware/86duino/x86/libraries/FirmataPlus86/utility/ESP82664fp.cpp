@@ -190,6 +190,21 @@ bool ESP82664fp::getLocalIP(int* list, int size)
     return eATCIFSR(list, size);
 }
 
+bool ESP82664fp::getGatewayAndSubnetMask(int* gateway, int gsize, int* subnetmask, int ssize)
+{
+    uint8_t mode;
+    char str_mode[10];
+    if (!qATCWMODE(&mode, str_mode, sizeof(str_mode))) {
+        return false;
+    }
+    
+    if (mode == 1) // STA mode
+        return eATCIPSTA(gateway, gsize, subnetmask, ssize);
+    else if (mode == 2) // AP mode
+        return eATCIPAP(gateway, gsize, subnetmask, ssize);
+    return false;
+}
+
 bool ESP82664fp::enableMUX(void)
 {
     return sATCIPMUX(1);
@@ -428,13 +443,13 @@ int ESP82664fp::pushData_now()
     return -1;
 }
 
-int ESP82664fp::checkString(char* c, int c_size, char* ch)
+int ESP82664fp::checkString(char* c, int c_size, int startpoint, char* ch)
 {
     int i, j;
     
     if (c == NULL || ch == NULL) return -1;
     
-    for (i=0; i<c_size; i++)
+    for (i=startpoint; i<c_size; i++)
     {
         if (ch[0] == c[i])
         {
@@ -453,7 +468,7 @@ int ESP82664fp::Sentence(char* ret, int size) {
     char head[6] = "+IPD,";
     
     // find the head
-    headi = checkString(ret, size, head);
+    headi = checkString(ret, size, 0, head);
     if (headi == -1) return 1;
         
     for (i=headi+5; i<size && ret[i] != ':'; i++)
@@ -528,14 +543,20 @@ bool ESP82664fp::rx_parser(char* ret, int ret_size)
     }
     else if (r == 1)
     {
-        if (strstr(ret, "0,CONNECT") != NULL)
+        if ((tmp = strstr(ret, "0,CONNECT")) != NULL)
+        {
             clientConnected = true;
-        if (strstr(ret, "0,CLOSED") != NULL)
+            for (i=0; i<9; i++) *(tmp+i) = 'A'; // "0,CONNECT" is replayed by dummy char 'A'
+        }
+        if ((tmp = strstr(ret, "0,CLOSED")) != NULL)
+        {
             clientConnected = false;
+            for (i=0; i<8; i++) *(tmp+i) = 'A'; // "0,CLOSED" is replayed by dummy char 'A'
+        }
         if ((tmp = strstr(ret, "2,CONNECT")) != NULL)
         {
             sATCIPCLOSEMulitple(2);
-            for (i=0; i<9; i++) *(ret+i) = 'A'; // "2,CONNECT" is replayed by dummy char 'A'
+            for (i=0; i<9; i++) *(tmp+i) = 'A'; // "2,CONNECT" is replayed by dummy char 'A'
         }
     }
     else if (r == 2)
@@ -582,7 +603,7 @@ char* ESP82664fp::recvString(char* target, uint32_t timeout)
             PushQueue(q, c[j]);
         }
         
-        index = checkString(c, j, target); // -1: not found; >=0: found
+        index = checkString(c, j, 0, target); // -1: not found; >=0: found
         
         if (index >= 0)
             return target;
@@ -609,14 +630,14 @@ char* ESP82664fp::recvString(char* target1, char* target2, uint32_t timeout)
             PushQueue(q, c[j]);
         }
         
-        index = checkString(c, j, target1); // -1: not found; >=0: found
+        index = checkString(c, j, 0, target1); // -1: not found; >=0: found
         if (index >= 0)
         {
             target = target1;
             break;
         }
         
-        index = checkString(c, j, target2); // -1: not found; >=0: found
+        index = checkString(c, j, 0, target2); // -1: not found; >=0: found
         if (index >= 0)
         {
             target = target2;
@@ -645,21 +666,21 @@ char* ESP82664fp::recvString(char* target1, char* target2, char* target3, uint32
             PushQueue(q, c[j]);
         }
         
-        index = checkString(c, j, target1); // -1: not found; >=0: found
+        index = checkString(c, j, 0, target1); // -1: not found; >=0: found
         if (index >= 0)
         {
             target = target1;
             break;
         }
         
-        index = checkString(c, j, target2); // -1: not found; >=0: found
+        index = checkString(c, j, 0, target2); // -1: not found; >=0: found
         if (index >= 0)
         {
             target = target2;
             break;
         }
         
-        index = checkString(c, j, target3); // -1: not found; >=0: found
+        index = checkString(c, j, 0, target3); // -1: not found; >=0: found
         if (index >= 0)
         {
             target = target3;
@@ -685,7 +706,7 @@ void ESP82664fp::subString(char* c, int32_t index1, int32_t index2, char* data, 
     for (i=0; i<datasize; i++) data[i] = '\0';
     for (i=index1, j=0; i<index2; i++, j++)
         data[j] = c[i];
-
+    
     return;
 }
 
@@ -710,19 +731,19 @@ bool ESP82664fp::recvFindAndFilter(char* target, char* begin, char* end, char* d
         
         if (status == 0)
         {
-            index = checkString(c, j, target); // -1: not found; >=0: found
+            index = checkString(c, j, 0, target); // -1: not found; >=0: found
             if (index >= 0)
                 status = 1;
         }
         else if (status == 1)
         {
-            index1 = checkString(c, j, begin); // -1: not found; >=0: found
+            index1 = checkString(c, j, 0, begin); // -1: not found; >=0: found
             if (index >= 0)
                 status = 2;
         }
         else if (status == 2)
         {
-            index2 = checkString(c, j, end); // -1: not found; >=0: found
+            index2 = checkString(c, j, index1, end); // -1: not found; >=0: found
             if (index >= 0)
                 status = 3;
         }
@@ -989,9 +1010,19 @@ bool ESP82664fp::eATCIFSR(int* list, int size)
 {
     char ip[64];
     bool result;
+    uint8_t mode;
+    char str_mode[10];
+    if (!qATCWMODE(&mode, str_mode, sizeof(str_mode))) {
+        return false;
+    }
+    
     rx_empty();
     m_puart->println("AT+CIFSR");
-    result = recvFindAndFilter("OK", "+CIFSR:STAIP,\"", "\"\r\n", ip, 64);
+    if (mode == 1) // STA mode
+        result = recvFindAndFilter("OK", "+CIFSR:STAIP,\"", "\"\r\n", ip, 64);
+    else if (mode = 2) // AP mode
+        result = recvFindAndFilter("OK", "+CIFSR:APIP,\"", "\"\r\n", ip, 64);
+    
     if (result == true)
     {
         for (int i=0; i<size; i++) list[i] = 0;
@@ -999,10 +1030,70 @@ bool ESP82664fp::eATCIFSR(int* list, int size)
     }
     return result;
 }
+bool ESP82664fp::eATCIPSTA(int* gateway, int gsize, int* subnetmask, int ssize)
+{
+    char ip[64];
+    bool result;
+    rx_empty();
+    m_puart->println("AT+CIPSTA?");
+    
+    result = recvFindAndFilter("OK", "+CIPSTA:gateway:\"", "\"\r\n", ip, 64);
+    if (result == true)
+    {
+        for (int i=0; i<gsize; i++) gateway[i] = 0;
+        digitalLocalIP(ip, gateway);
+    }
+    else
+        return result;
+    
+    timer_Delay(100);
+    rx_empty();
+    m_puart->println("AT+CIPSTA?");
+    result = recvFindAndFilter("OK", "+CIPSTA:netmask:\"", "\"\r\n", ip, 64);
+    if (result == true)
+    {
+        for (int i=0; i<ssize; i++) subnetmask[i] = 0;
+        digitalLocalIP(ip, subnetmask);
+    }
+    else
+        return result;
+    
+    return result;
+}
+bool ESP82664fp::eATCIPAP(int* gateway, int gsize, int* subnetmask, int ssize)
+{
+    char ip[64];
+    bool result;
+    rx_empty();
+    m_puart->println("AT+CIPAP?");
+    
+    result = recvFindAndFilter("OK", "+CIPAP:gateway:\"", "\"\r\n", ip, 64);
+    if (result == true)
+    {
+        for (int i=0; i<gsize; i++) gateway[i] = 0;
+        digitalLocalIP(ip, gateway);
+    }
+    else
+        return result;
+    
+    timer_Delay(100);
+    rx_empty();
+    m_puart->println("AT+CIPAP?");
+    result = recvFindAndFilter("OK", "+CIPAP:netmask:\"", "\"\r\n", ip, 64);
+    if (result == true)
+    {
+        for (int i=0; i<ssize; i++) subnetmask[i] = 0;
+        digitalLocalIP(ip, subnetmask);
+    }
+    else
+        return result;
+    
+    return result;
+}
 void ESP82664fp::digitalLocalIP(char* ip, int* list)
 {
     int i;
-    for (; ip[i] != '.'; i++)
+    for (i=0; ip[i] != '.'; i++)
         list[0] = list[0]*10 + (ip[i] - '0');
     for (i++; ip[i] != '.'; i++)
         list[1] = list[1]*10 + (ip[i] - '0');

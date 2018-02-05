@@ -40,9 +40,9 @@ import processing.app.Theme;
 public class SplashScreenHelper {
 
   private static final int X_OFFSET = 0;
-  private static final int Y_OFFSET = 364;
+  private static final int Y_OFFSET = 300;
   private static final int TEXTAREA_HEIGHT = 30;
-  private static final int TEXTAREA_WIDTH = 594;
+  private static final int TEXTAREA_WIDTH = 475;
 
   private final Map desktopHints;
   private final SplashScreen splash;
@@ -96,7 +96,7 @@ public class SplashScreenHelper {
 
   private void eraseLastStatusText() {
     //splashGraphics.setPaint(new Color(229, 229, 229));
-    splashGraphics.setPaint(new Color(39, 25, 76));
+    splashGraphics.setPaint(new Color(53, 54, 58));
 	splashGraphics.fill(splashTextArea);
   }
 

@@ -155,11 +155,20 @@ class ESP82664fp {
     /**
      * Get the IP address of ESP8266. 
      *
-     * @return the IP list. 
+     * @retval true - success.
+     * @retval false - failure. 
      */
     bool getLocalIP(int* list, int size);
     
     void digitalLocalIP(char* ip, int* list);
+    
+    /**
+     * Get the Gateway address and Subnetmask address of ESP8266. 
+     *
+     * @retval true - success.
+     * @retval false - failure. 
+     */
+    bool getGatewayAndSubnetMask(int* gateway, int gsize, int* subnetmask, int ssize);
     
     /**
      * Enable IP MUX(multiple connection mode). 
@@ -381,7 +390,7 @@ class ESP82664fp {
  private:
 
 	int pushData_now();
-    int checkString(char* c, int size, char* ch);
+    int checkString(char* c, int size, int startpoint, char* ch);
 	int read_until(char* ret, int ret_size, char terminator1, char terminator2);
     bool rx_parser(char* ret, int ret_size);
     /* 
@@ -442,6 +451,8 @@ class ESP82664fp {
     bool eATCWLIF(char* list, int size);
     
     bool eATCIPSTATUS(char* list, int size);
+    bool eATCIPSTA(int* gateway, int gsize, int* subnetmask, int ssize);
+    bool eATCIPAP(int* gateway, int gsize, int* subnetmask, int ssize);
     bool sATCIPSTARTSingle(String type, String addr, uint32_t port);
     bool sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint32_t port);
     bool sATCIPSENDSingle(const uint8_t *buffer, uint32_t len);

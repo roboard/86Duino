@@ -40,10 +40,12 @@
  * TODO: use Program Control to load stored profiles from EEPROM
  */
 
-#include <Servo86.h>
-#include <FreeIMU1.h>
-#include <Wire.h>
 #include <FirmataPlus86.h>
+#include <Servo86.h>
+#if defined __86DUINO_ONE || defined __86DUINO_AI
+    #include <FreeIMU1.h>
+#endif
+#include <Wire.h>
 #include <NewPing.h>
 #include <Stepper.h>
 #include <Encoder.h>
@@ -89,6 +91,8 @@ int imu_data_type = 0;
 
 bool one_servo_is_moving = false;
 int one_servo_used_pin;
+
+bool checkActiveStart = false;
 
 /* analog inputs */
 int analogInputsToReport = 0; // bitwise array to store pin reporting
@@ -193,7 +197,9 @@ byte sonarMSB, sonarLSB ;
 
 Stepper *stepper = NULL;
 
+#if defined __86DUINO_ONE || defined __86DUINO_AI
 FreeIMU1 my3IMU = FreeIMU1();
+#endif
 
 #ifdef FIRMATA_SERIAL_FEATURE
 SerialFirmata serialFeature;
@@ -815,13 +821,13 @@ void sysexCallback(byte command, byte argc, byte *argv)
     // encoderPresent = true ;
     break ; 
 
-  case SERIAL_MESSAGE:
+    case SERIAL_MESSAGE:
 #ifdef FIRMATA_SERIAL_FEATURE
       serialFeature.handleSysex(command, argc, argv);
 #endif
       break;
 
-    case TONE_DATA:
+    case TONE_PLAY:
       byte toneCommand, pin;
       int frequency, duration;
 
@@ -996,6 +1002,9 @@ void sysexCallback(byte command, byte argc, byte *argv)
     case ENABLE_IMU:
       enableIMUWaiting = true;
       imu_waiting_id = (int)argv[0] | ((int)argv[1] << 7);
+      break;
+    case CHECK_86DUINO_ACTIVE:
+      checkActiveStart = true;
       break;
   }
 }
@@ -1236,18 +1245,18 @@ void loop()
       Firmata.write(END_SYSEX);
     }
     if( keepAliveInterval ) {
-       currentMillis = millis();
-       if (currentMillis - previousKeepAliveMillis > keepAliveInterval*1000) {
-         systemResetCallback();
-         
-         wdt_enable(WDTO_15MS);
-         // systemResetCallback();
-         while(1)
-            ;
+      currentMillis = millis();
+      if (currentMillis - previousKeepAliveMillis > keepAliveInterval*1000) {
+        systemResetCallback();
+        
+        wdt_enable(WDTO_15MS);
+        // systemResetCallback();
+        while(1)
+           ;
       }
     }
     if(imu_data_start_sampling) {
-      
+    #if defined __86DUINO_ONE || defined __86DUINO_AI
       my3IMU.getYawPitchRoll(ypr);
       char* pitch_data_p = (char*) &ypr[1];
       char* roll_data_p = (char*) &ypr[2];
@@ -1278,6 +1287,7 @@ void loop()
       Firmata.write(data_5byte[1][3]);
       Firmata.write(data_5byte[1][4]);
       Firmata.write(END_SYSEX);
+    #endif
     }
     
     if (one_servo_is_moving && servos[servoPinMap[one_servo_used_pin]].isMoving() == false) {
@@ -1290,10 +1300,12 @@ void loop()
     }
     
     if (enableIMUWaiting) {
-        Wire.begin();
-        delay(5);
-        my3IMU.init(); // the parameter enable or disable fast mode
-        delay(5);
+        #if defined __86DUINO_ONE || defined __86DUINO_AI
+            Wire.begin();
+            delay(5);
+            my3IMU.init(); // the parameter enable or disable fast mode
+            delay(5);
+        #endif
         
         Firmata.write(START_SYSEX);
         Firmata.write(ENABLE_IMU) ;
@@ -1303,6 +1315,15 @@ void loop()
         Firmata.write(END_SYSEX);
         enableIMUWaiting = false;
         imu_data_start_sampling = true;
+    }
+    
+    if (checkActiveStart == true)
+    {
+        Firmata.write(START_SYSEX);
+        Firmata.write(_86DUINO_RESPONSE) ;
+        Firmata.write(0x5A)  ;
+        Firmata.write(END_SYSEX);
+        checkActiveStart = false;
     }
     
   }

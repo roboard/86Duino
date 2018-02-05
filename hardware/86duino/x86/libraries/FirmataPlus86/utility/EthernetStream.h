@@ -42,6 +42,12 @@ class EthernetStream : public Stream
 
     // get DCHP IP
     IPAddress localIP();
+    
+    // get Gateway IP
+    IPAddress gatewayIP();
+    
+    // get Subnetmask IP
+    IPAddress subnetMask();
 
     // overriden Stream class functions
     virtual size_t write(uint8_t byte);
