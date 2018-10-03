@@ -1,9 +1,9 @@
 86Duino
 ---------
 
-_VERSION_: Coding 316
+_VERSION_: Coding 317
 
-這是 86Duino 硬體平台整合開發環境 (IDE) 的開源專案，相容於 Arduino 1.8.5。
+這是 86Duino 硬體平台整合開發環境 (IDE) 的開源專案，相容於 Arduino 1.8.7。
 已編譯完成的執行檔 (Windows/Linux/Mac) 可在 86Duino 網站下載頁面找到：
 http://www.86duino.com/?page_id=8918&lang=TW
 

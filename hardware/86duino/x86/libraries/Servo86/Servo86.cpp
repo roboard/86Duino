@@ -477,7 +477,7 @@ uint8_t Servo::attach(int pin, unsigned long min, unsigned long max) {
 }
 
 void Servo::detach() {
-	uint8_t pin;
+	uint8_t i, pin;
 	int mc_pwm, md_pwm;
 	
 	if (this->servoIndex >= MAX_SERVOS) return;
@@ -519,6 +519,43 @@ void Servo::detach() {
     sv86[this->servoIndex].state = SERVO_NONE;
 	had_target_pos[this->servoIndex] = 0;
 	Servoptr[this->servoIndex] = NULL;
+    
+    for (i=0; i<MAX_SERVOS; i++)
+    {
+        if (servos[i].Pin.isActive == true)
+            break;
+    }
+    
+    // if it is fianl channel, do ...
+    if (i == MAX_SERVOS)
+    {
+        io_DisableINT();
+        RTC_timer_close();
+        closeServoIRQ();
+        io_RestoreINT();
+    
+        servosA = irqservosA;
+        servosB = irqservosB;
+        uploading = false;
+        havemail = false;
+        
+        ServoCount = 0;
+        ServoSortCount = 0;
+        ServoIRQCountA = 0; 
+        ServoIRQCountB = 0; 
+        over_periodA = false;
+        over_periodB = false;
+        pwm_IsEnable = false;
+        
+        channel = 0;
+        evtnumber = 0;
+        
+        mixingSwitch = ON;
+    }
+}
+
+Servo::~Servo() {
+    detach();
 }
 
 static void sendPWM(uint8_t pin, unsigned int val) {
@@ -1149,6 +1186,9 @@ ServoFrame::ServoFrame(const char* dir) {
 	used_servos = 0x00001FFFFFFFFFFFLL;
 }
 
+ServoFrame::~ServoFrame() {
+}
+
 void ServoFrame::setPositions(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
                               Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
                               Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
@@ -1238,7 +1278,7 @@ static void get_real_path(const char* dir, char* path) {
     int i;
 	const char* parent = "C:\\";
 	
-	if (dir[0] == 'c' || dir[0] == 'C' || dir[0] == 'a' || dir[0] == 'A')
+	if (dir[0] == 'c' || dir[0] == 'C' || dir[0] == 'a' || dir[0] == 'A' || dir[0] == 'd' || dir[0] == 'D')
 	{
 		if (dir[1] == ':' && dir[2] == '\\')
 		{
@@ -1958,6 +1998,9 @@ ServoOffset::ServoOffset(const char* dir) {
 	load(dir);
 }
 
+ServoOffset::~ServoOffset() {
+}
+
 void ServoOffset::setOffsets(Servo &s1, Servo &s2, Servo &s3, Servo &s4, Servo &s5,
                              Servo &s6, Servo &s7, Servo &s8, Servo &s9, Servo &s10,
                              Servo &s11, Servo &s12, Servo &s13, Servo &s14, Servo &s15,
@@ -2084,6 +2127,9 @@ ServoFrameInno::ServoFrameInno() : ServoFrame() {
 	for (i=0; i<2; i++)
 	for (j=0; j<256; j++)
 		all_string[i][j] = '\0';
+}
+
+ServoFrameInno::~ServoFrameInno() {
 }
 
 ServoFrameInno::ServoFrameInno(const char* dir) : ServoFrame() {
@@ -2441,6 +2487,9 @@ ServoOffsetInno::ServoOffsetInno(const char* dir) : ServoOffset() {
 	load(dir);
 }
 
+ServoOffsetInno::~ServoOffsetInno() {
+}
+
 bool is_innoOffsetFile(char* _line, FILE* fp) {
     int i, tmp = 0;
     char result[256] = {'\0'};
@@ -2678,6 +2727,9 @@ ServoFrameKondo::ServoFrameKondo(const char* dir, const char* fname) : ServoFram
 	load(dir, fname);
 }
 
+ServoFrameKondo::~ServoFrameKondo() {
+}
+
 long _capture(int pin) {
 	unsigned long _nowtime;
 	long width = 0L;
@@ -2851,6 +2903,9 @@ ServoOffsetKondo::ServoOffsetKondo(const char* dir) : ServoOffset() {
 	load(dir);
 }
 
+ServoOffsetKondo::~ServoOffsetKondo() {
+}
+
 bool is_kondoOffsetFile(char* _line, FILE* fp) {
     int i, tmp = 0;
     char result[256] = {'\0'};
@@ -2966,6 +3021,9 @@ ServoFramePololu::ServoFramePololu() : ServoFrame() {}
 
 ServoFramePololu::ServoFramePololu(const char* dir, const char* sname, const char* fname) : ServoFrame() {
 	load(dir, sname, fname);
+}
+
+ServoFramePololu::~ServoFramePololu() {
 }
 
 bool is_pololuFrameFile(char* _line, FILE* fp) {
@@ -3248,6 +3306,9 @@ ServoFrameVstone::ServoFrameVstone() : ServoFrame() {}
 
 ServoFrameVstone::ServoFrameVstone(const char* filename, const char* framename) : ServoFrame() {
 	load(filename, framename);
+}
+
+ServoFrameVstone::~ServoFrameVstone() {
 }
 
 static int utf16_mbtowc (int state, ucs4_t *pwc, const unsigned char *s, int n)
@@ -3598,6 +3659,9 @@ ServoOffsetVstone::ServoOffsetVstone(const char* dir, const char* offsetname) : 
 	load(dir, offsetname);
 }
 
+ServoOffsetVstone::~ServoOffsetVstone() {
+}
+
 void vstone_offset_analysis(char* ch, long* target, int servoNum) {
 	int i = 0, j = 0, k = 0;
 	char tmp_ch[10] = {'\0'};
@@ -3818,6 +3882,7 @@ void RTC_timer_close() {
     
     irq_UninstallISR(RTCIRQ, (void*)isrname_rtc);
     timerRTCEnable = false;
+    timerRTCInit = false;
 }
 
 void RTC_setPeriod(long microseconds) {

@@ -1,24 +1,25 @@
-# GUI - STATUS
-#status.notice.fgcolor = #002325
-#status.notice.bgcolor = #17A1A5
-#status.error.fgcolor = #FFFFFF
-#status.error.bgcolor = #E34C00
-#status.edit.fgcolor = #000000
-#status.edit.bgcolor = #F1B500
+#FUNCTIONS COLOR 			#D35400 - ORANGE			KEYWORD1
+#FUNCTIONS COLOR			#D35400 - ORANGE			KEYWORD2
+#STRUCTURE COLORS 			#728E00 - GREEN			KEYWORD3
+#CONSTANTS COLOR 				#00979C - BLUE				LITERAL1
+#VARIABLES COLOR 				#00979C - BLUE				LITERAL2
 
-# °T®§®Ø¤W¤èªºª¬ºA¦CÃC¦â
-#
-# ¦rÅéÃC¦â
+#ERROR COLOR					#A61717 - RED
+#COMMENTS // COLOR			#95A5A6 - LIGHT GREY
+#COMMENTS /**/ COLOR		#434F54	- DARK GREY
+
+# GUI - STATUS
+# å­—é«”é¡è‰²
 status.notice.fgcolor = #000066
-# ­I´ºÃC¦â
+# èƒŒæ™¯é¡è‰²
 status.notice.bgcolor = #59AFD0
-# µo¥Í¿ù»~®Éªº¦rÅéÃC¦â
+# ç™¼ç”ŸéŒ¯èª¤æ™‚çš„å­—é«”é¡è‰²
 status.error.fgcolor = #CC0000
-# µo¥Í¿ù»~®Éªº­I´ºÃC¦â
+# ç™¼ç”ŸéŒ¯èª¤æ™‚çš„èƒŒæ™¯é¡è‰²
 status.error.bgcolor = #FFCCCC
-# ¶}·s tab ®Éªº¦rÅéÃC¦â
+# é–‹æ–° tab æ™‚çš„å­—é«”é¡è‰²
 status.edit.fgcolor = #000000
-# ¶}·s tab ®Éªº­I´ºÃC¦â
+# é–‹æ–° tab æ™‚çš„èƒŒæ™¯é¡è‰²
 status.edit.bgcolor = #82CEE6
 status.font = SansSerif,plain,12
 
@@ -30,13 +31,13 @@ status.font = SansSerif,plain,12
 # header.text.unselected.color = #007e82
 # header.text.font = SansSerif,plain,12
 
-# TAB ¦CªºÃC¦â
+# TAB åˆ—çš„é¡è‰²
 #
-# ­I´ºÃC¦â
+# èƒŒæ™¯é¡è‰²
 header.bgcolor = #083E88
-# user ·Æ¹«¦³¿ï¨ì TAB ªº¦rÅéÃC¦â
+# user æ»‘é¼ æœ‰é¸åˆ° TAB çš„å­—é«”é¡è‰²
 header.text.selected.color = #005B5B
-# user ·Æ¹«¥¼¿ï¨ì TAB ªº¦rÅéÃC¦â
+# user æ»‘é¼ æœªé¸åˆ° TAB çš„å­—é«”é¡è‰²
 header.text.unselected.color = #003399
 header.text.font = SansSerif,plain,12
 
@@ -49,11 +50,11 @@ header.text.font = SansSerif,plain,12
 
 console.font = Monospaced,plain,11
 console.font.macosx = Monaco,plain,10
-# °T®§®Øªº­I´ºÃC¦â
+# è¨Šæ¯æ¡†çš„èƒŒæ™¯é¡è‰²
 console.color = #111111
-# ¥¿½T°T®§¿é¥Xªº¦rÅéÃC¦â
+# æ­£ç¢ºè¨Šæ¯è¼¸å‡ºçš„å­—é«”é¡è‰²
 console.output.color = #AAAAAA
-# ¿ù»~°T®§¿é¥Xªº¦rÅéÃC¦â
+# éŒ¯èª¤è¨Šæ¯è¼¸å‡ºçš„å­—é«”é¡è‰²
 console.error.color = #E34C00
 
 # GUI - BUTTONS
@@ -61,10 +62,10 @@ console.error.color = #E34C00
 # buttons.status.font = SansSerif,plain,12
 # buttons.status.color = #ffffff
 
-# ³Ì¤W±Æªº«ö¶s­I´ºÃC¦â
+# æœ€ä¸Šæ’çš„æŒ‰éˆ•èƒŒæ™¯é¡è‰²
 buttons.bgcolor = #0065B3
 buttons.status.font = SansSerif,bold,12
-# ·Æ¹«¸I¨ì«ö¶s®Éªº¦rÅéÃC¦â
+# æ»‘é¼ ç¢°åˆ°æŒ‰éˆ•æ™‚çš„å­—é«”é¡è‰²
 buttons.status.color = #FFFF00
 
 # GUI - PLOTTING
@@ -84,9 +85,9 @@ plotting.graphcolor.06 = #00CCFF
 plotting.graphcolor.07 = #000000
 
 # GUI - LINESTATUS
-# ³Ì¤U­±ª¬ºA¦Cªº¦rÅéÃC¦â   
+# æœ€ä¸‹é¢ç‹€æ…‹åˆ—çš„å­—é«”é¡è‰²
 linestatus.color = #00CCFF
-# ³Ì¤U­±ª¬ºA¦Cªº­I´ºÃC¦â
+# æœ€ä¸‹é¢ç‹€æ…‹åˆ—çš„èƒŒæ™¯é¡è‰²
 linestatus.bgcolor = #093F89
 
 # EDITOR - DETAILS
@@ -94,9 +95,9 @@ linestatus.bgcolor = #093F89
 # editor.fgcolor = #000000
 # editor.bgcolor = #ffffff
 
-# ¼gµ{¦¡°Ï°ìªº¦rÅéÃC¦â
+# å¯«ç¨‹å¼å€åŸŸçš„å­—é«”é¡è‰²
 editor.fgcolor = #000000
-# ¼gµ{¦¡°Ï°ìªº­I´ºÃC¦â
+# å¯«ç¨‹å¼å€åŸŸçš„èƒŒæ™¯é¡è‰²
 editor.bgcolor = #FFFFFF
 
 # highlight for the current line
@@ -107,7 +108,7 @@ editor.linehighlight=true
 
 # caret blinking and caret color
 # editor.caret.color = #333300
-# ´å¼ĞÃC¦â
+# æ¸¸æ¨™é¡è‰²
 editor.caret.color = #333300
 
 # color to be used for background when 'external editor' enabled
@@ -116,7 +117,7 @@ editor.external.bgcolor = #c8d2dc
 
 # selection color
 # editor.selection.color = #ffcc00
-# ¥Î·Æ¹«®Ø°_«ü©w°Ï°ì®Éªº­I´ºÃC¦â
+# ç”¨æ»‘é¼ æ¡†èµ·æŒ‡å®šå€åŸŸæ™‚çš„èƒŒæ™¯é¡è‰²
 editor.selection.color = #00CCFF
 
 # area that's not in use by the text (replaced with tildes)
@@ -133,27 +134,22 @@ editor.brackethighlight.color = #006699
 
 # TEXT - KEYWORDS
 
-# e.g abstract, final, private
-editor.keyword1.style = #cc6600,plain
-editor.data_type.style = #cc6600,plain
+# FUNCTIONS
+editor.keyword1.style = #d35400,bold
+editor.data_type.style = #d35400,bold
 
-# e.g. beginShape, point, line
-editor.keyword2.style = #cc6600,plain
-editor.function.style = #cc6600,plain
+# METHODS
+editor.keyword2.style = #D35400,plain
+editor.function.style = #d35400,plain
 
-# e.g. byte, char, short, color
-editor.keyword3.style = #cc6600,bold
-editor.reserved_word.style = #cc6600,bold
+# STRUCTURES
+editor.keyword3.style = #5E6D03,plain
+editor.reserved_word.style = #5E6D03,plain
 
 
 # TEXT - LITERALS
-
-# constants: e.g. null, true, this, RGB, TWO_PI
-editor.literal1.style = #006699,bold
-
-# p5 built in variables: e.g. mouseX, width, pixels
-editor.literal2.style = #006699,bold
-
+editor.literal1.style = #00979C,plain
+editor.literal2.style = #00979C,plain
 editor.variable.style = #00979C,plain
 editor.reserved_word_2.style = #00979C,plain
 editor.literal_boolean.style = #00979C,plain
@@ -161,11 +157,12 @@ editor.literal_char.style = #00979C,plain
 editor.literal_string_double_quote.style = #005C5F,plain
 editor.preprocessor.style = #5E6D03,plain
 
-# http://arduino.cc/
+# http://www.arduino.cc/
 editor.url.style = #0000ff,underlined
 
 # e.g. + - = /
-editor.operator.style = #000000,plain
+editor.operator.style = #434f54,plain
+
 
 # ?? maybe this is for words followed by a colon
 # like in case statements or goto
@@ -173,8 +170,8 @@ editor.label.style = #7e7e7e,bold
 
 
 # TEXT - COMMENTS
-editor.comment1.style = #7e7e7e,plain
-editor.comment2.style = #7e7e7e,plain
+editor.comment1.style = #434F54,plain
+editor.comment2.style = #95a5a6,plain
 
 
 # LINE STATUS - editor line number status bar at the bottom of the screen

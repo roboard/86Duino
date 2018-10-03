@@ -34,9 +34,7 @@ volatile u8 RxLEDPulse; /**< Milliseconds remaining for data Rx LED pulse */
 extern const u16 STRING_LANGUAGE[] PROGMEM;
 extern const u8 STRING_PRODUCT[] PROGMEM;
 extern const u8 STRING_MANUFACTURER[] PROGMEM;
-extern const DeviceDescriptor USB_DeviceDescriptor PROGMEM;
-extern const DeviceDescriptor USB_DeviceDescriptorB PROGMEM;
-extern bool _updatedLUFAbootloader;
+extern const DeviceDescriptor USB_DeviceDescriptorIAD PROGMEM;
 
 const u16 STRING_LANGUAGE[2] = {
 	(3<<8) | (2+2),
@@ -71,10 +69,7 @@ const u8 STRING_MANUFACTURER[] PROGMEM = USB_MANUFACTURER;
 #define DEVICE_CLASS 0x02
 
 //	DEVICE DESCRIPTOR
-const DeviceDescriptor USB_DeviceDescriptor =
-	D_DEVICE(0x00,0x00,0x00,64,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
-
-const DeviceDescriptor USB_DeviceDescriptorB =
+const DeviceDescriptor USB_DeviceDescriptorIAD =
 	D_DEVICE(0xEF,0x02,0x01,64,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
 
 //==================================================================
@@ -256,9 +251,7 @@ u8 USB_SendSpace(u8 ep)
 	LockEP lock(ep);
 	if (!ReadWriteAllowed())
 		return 0;
-	// subtract 1 from the EP size to never send a full packet,
-	// this avoids dealing with ZLP's in USB_Send
-	return USB_EP_SIZE - 1 - FifoByteCount();
+	return USB_EP_SIZE - FifoByteCount();
 }
 
 //	Blocking Send of data to an endpoint
@@ -275,7 +268,9 @@ int USB_Send(u8 ep, const void* d, int len)
 	int r = len;
 	const u8* data = (const u8*)d;
 	u8 timeout = 250;		// 250ms timeout on send? TODO
-	while (len)
+	bool sendZlp = false;
+
+	while (len || sendZlp)
 	{
 		u8 n = USB_SendSpace(ep);
 		if (n == 0)
@@ -286,13 +281,16 @@ int USB_Send(u8 ep, const void* d, int len)
 			continue;
 		}
 
-		if (n > len)
+		if (n > len) {
 			n = len;
+		}
+
 		{
 			LockEP lock(ep);
 			// Frame may have been released by the SOF interrupt handler
 			if (!ReadWriteAllowed())
 				continue;
+
 			len -= n;
 			if (ep & TRANSFER_ZERO)
 			{
@@ -309,8 +307,17 @@ int USB_Send(u8 ep, const void* d, int len)
 				while (n--)
 					Send8(*data++);
 			}
-			if (!ReadWriteAllowed() || ((len == 0) && (ep & TRANSFER_RELEASE)))	// Release full buffer
+
+			if (sendZlp) {
 				ReleaseTX();
+				sendZlp = false;
+			} else if (!ReadWriteAllowed()) { // ...release if buffer is full...
+				ReleaseTX();
+				if (len == 0) sendZlp = true;
+			} else if ((len == 0) && (ep & TRANSFER_RELEASE)) { // ...or if forced with TRANSFER_RELEASE
+				// XXX: TRANSFER_RELEASE is never used can be removed?
+				ReleaseTX();
+			}
 		}
 	}
 	TXLED1;					// light the TX LED
@@ -399,7 +406,7 @@ bool SendControl(u8 d)
 	}
 	_cmark++;
 	return true;
-};
+}
 
 //	Clipped by _cmark/_cend
 int USB_SendControl(u8 flags, const void* d, int len)
@@ -475,7 +482,7 @@ static
 bool SendConfiguration(int maxlen)
 {
 	//	Count and measure interfaces
-	InitControl(0);	
+	InitControl(0);
 	u8 interfaces = SendInterfaces();
 	ConfigDescriptor config = D_CONFIG(_cmark + sizeof(ConfigDescriptor),interfaces);
 
@@ -485,8 +492,6 @@ bool SendConfiguration(int maxlen)
 	SendInterfaces();
 	return true;
 }
-
-static u8 _cdcComposite = 0;
 
 static
 bool SendDescriptor(USBSetup& setup)
@@ -507,9 +512,7 @@ bool SendDescriptor(USBSetup& setup)
 	const u8* desc_addr = 0;
 	if (USB_DEVICE_DESCRIPTOR_TYPE == t)
 	{
-		if (setup.wLength == 8)
-			_cdcComposite = 1;
-		desc_addr = _cdcComposite ?  (const u8*)&USB_DeviceDescriptorB : (const u8*)&USB_DeviceDescriptor;
+		desc_addr = (const u8*)&USB_DeviceDescriptorIAD;
 	}
 	else if (USB_STRING_DESCRIPTOR_TYPE == t)
 	{
@@ -815,12 +818,6 @@ void USBDevice_::attach()
 	UDIEN = (1<<EORSTE) | (1<<SOFE) | (1<<SUSPE);	// Enable interrupts for EOR (End of Reset), SOF (start of frame) and SUSPEND
 	
 	TX_RX_LED_INIT;
-
-#if MAGIC_KEY_POS != (RAMEND-1)
-	if (pgm_read_word(FLASHEND - 1) == NEW_LUFA_SIGNATURE) {
-		_updatedLUFAbootloader = true;
-	}
-#endif
 }
 
 void USBDevice_::detach()

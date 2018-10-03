@@ -316,21 +316,12 @@ public class EditorStatus extends JPanel {
           editField.setCaretPosition(start + 1);
           event.consume();
 
-
         } else if ((c == '_') || (c == '.') || ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'))) { // allow .pde and .java
           // these are ok, allow them through
 
         } else if ((c >= '0') && (c <= '9')) {
-          // getCaretPosition == 0 means that it's the first char
-          // and the field is empty.
-          // getSelectionStart means that it *will be* the first
-          // char, because the selection is about to be replaced
-          // with whatever is typed.
-          if ((editField.getCaretPosition() == 0) ||
-            (editField.getSelectionStart() == 0)) {
-            // number not allowed as first digit
-            event.consume();
-          }
+          // these are ok, allow them through
+
         } else {
           event.consume();
         }
@@ -351,7 +342,7 @@ public class EditorStatus extends JPanel {
     copyErrorButton.setVisible(false);
     copyErrorButton.addActionListener(e -> {
       String message1 = "";
-      message1 += tr("Arduino: ") + BaseNoGui.VERSION_NAME_LONG + " (" + System.getProperty("os.name") + "), ";
+      message1 += tr("Arduino: ") + tr(BaseNoGui.VERSION_NAME_LONG) + " (" + System.getProperty("os.name") + "), ";
       message1 += tr("Board: ") + "\"" + BaseNoGui.getBoardPreferences().get("name") + "\"\n\n";
       message1 += editor.console.getText();
       if (!(PreferencesData.getBoolean("build.verbose"))) {

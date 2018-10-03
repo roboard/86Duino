@@ -29,7 +29,7 @@ class Servo
 {
 public:
 	Servo();
-	
+	~Servo();
 	uint8_t servoIndex;                // index into the channel data for this servo
 	long min;                       // minimum is this value times 4 added to MIN_PULSE_WIDTH    
 	long max;                       // maximum is this value times 4 added to MAX_PULSE_WIDTH
@@ -99,6 +99,7 @@ public:
 	unsigned long playtime[45];
 	double accelerations[45][2]; // index 0 is enter acc, index 1 is exit acc
 	ServoFrame();
+    ~ServoFrame();
 	ServoFrame(const char* dir);
 	void setPositions(Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,
                       Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
@@ -227,6 +228,7 @@ public:
 	long offsets[45];
 	
 	ServoOffset();
+    ~ServoOffset();
 	ServoOffset(const char* dir);
 	void setOffsets(Servo &s1=nullServo, Servo &s2=nullServo, Servo &s3=nullServo, Servo &s4=nullServo,          
                     Servo &s5=nullServo, Servo &s6=nullServo, Servo &s7=nullServo, Servo &s8=nullServo,
@@ -262,6 +264,7 @@ private:
 
 public:
 	ServoFrameInno();
+    ~ServoFrameInno();
 	ServoFrameInno(const char* dir);
 
     int frameno;
@@ -302,6 +305,7 @@ private:
 	
 public:
 	ServoOffsetInno();
+    ~ServoOffsetInno();
 	ServoOffsetInno(const char* dir);
 	
 	bool load(const char* dir);
@@ -323,6 +327,7 @@ class ServoFrameKondo : public ServoFrame
 {
 public:
 	ServoFrameKondo();
+    ~ServoFrameKondo();
     ServoFrameKondo(const char* dir, const char* fname);
 
     bool load(const char* dir, const char* fname = NULL);
@@ -345,6 +350,7 @@ class ServoOffsetKondo : public ServoOffset
 {	
 public:
 	ServoOffsetKondo();
+    ~ServoOffsetKondo();
 	ServoOffsetKondo(const char* dir);
 	bool load(const char* dir);
 	bool load(const String &s);
@@ -365,6 +371,7 @@ class ServoFramePololu : public ServoFrame
 {
 public:
 	ServoFramePololu();
+    ~ServoFramePololu();
     ServoFramePololu(const char* dir, const char* sname, const char* fname);
     
     bool load(const char* dir, const char* sname=NULL, const char* fname=NULL);
@@ -386,6 +393,7 @@ class ServoFrameVstone : public ServoFrame
 {
 public:
 	ServoFrameVstone();
+    ~ServoFrameVstone();
     ServoFrameVstone(const char* dir, const char* fname);
 
     bool load(const char* dir, const char* fname = NULL);
@@ -406,6 +414,7 @@ class ServoOffsetVstone : public ServoOffset
 {	
 public:
 	ServoOffsetVstone();
+    ~ServoOffsetVstone();
 	ServoOffsetVstone(const char* dir, const char* offsetname);
 	bool load(const char* dir, const char* offsetname);
 	bool load(const String &s1, const String &s2);
@@ -423,7 +432,7 @@ public:
 
 /* TODO:
  * Hitec Servo Controler
- * Lynxmotion Servo Controler  
+ * Lynxmotion Servo Controler
 */
 
 ////////////////////////////////////////////////////////////////////////////////

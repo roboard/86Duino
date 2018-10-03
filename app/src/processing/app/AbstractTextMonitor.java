@@ -10,6 +10,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.StringTokenizer;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -36,11 +39,15 @@ public abstract class AbstractTextMonitor extends AbstractMonitor {
   protected JButton sendButton;
   protected JButton clearButton;
   protected JCheckBox autoscrollBox;
+  protected JCheckBox addTimeStampBox;
   protected JComboBox lineEndings;
   protected JComboBox serialRates;
 
+  private SimpleDateFormat logDateFormat;
+  
   public AbstractTextMonitor(BoardPort boardPort) {
     super(boardPort);
+    logDateFormat = new SimpleDateFormat("HH:mm:ss.SSS -> ");
   }
   
   protected void onCreateWindow(Container mainPane) {
@@ -90,6 +97,7 @@ public abstract class AbstractTextMonitor extends AbstractMonitor {
     pane.setBorder(new EmptyBorder(4, 4, 4, 4));
 
     autoscrollBox = new JCheckBox(tr("Autoscroll"), true);
+    addTimeStampBox = new JCheckBox(tr("Show timestamp"), false);
 
     noLineEndingAlert = new JLabel(I18n.format(tr("You've pressed {0} but nothing was sent. Should you select a line ending?"), tr("Send")));
     noLineEndingAlert.setToolTipText(noLineEndingAlert.getText());
@@ -108,6 +116,15 @@ public abstract class AbstractTextMonitor extends AbstractMonitor {
     if (PreferencesData.get("serial.line_ending") != null) {
       lineEndings.setSelectedIndex(PreferencesData.getInteger("serial.line_ending"));
     }
+    if (PreferencesData.get("serial.show_timestamp") != null) {
+      addTimeStampBox.setSelected(PreferencesData.getBoolean("serial.show_timestamp"));
+    }
+    addTimeStampBox.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        PreferencesData.setBoolean("serial.show_timestamp", addTimeStampBox.isSelected());
+      }
+    });
+
     lineEndings.setMaximumSize(lineEndings.getMinimumSize());
 
     serialRates = new JComboBox();
@@ -118,6 +135,7 @@ public abstract class AbstractTextMonitor extends AbstractMonitor {
     serialRates.setMaximumSize(serialRates.getMinimumSize());
 
     pane.add(autoscrollBox);
+    pane.add(addTimeStampBox);
     pane.add(Box.createHorizontalGlue());
     pane.add(noLineEndingAlert);
     pane.add(Box.createRigidArea(new Dimension(8, 0)));
@@ -138,6 +156,7 @@ public abstract class AbstractTextMonitor extends AbstractMonitor {
     textField.setEnabled(enable);
     sendButton.setEnabled(enable);
     autoscrollBox.setEnabled(enable);
+    addTimeStampBox.setEnabled(enable);
     lineEndings.setEnabled(enable);
     serialRates.setEnabled(enable);
   }
@@ -157,8 +176,34 @@ public abstract class AbstractTextMonitor extends AbstractMonitor {
   
   public void message(final String s) {
     SwingUtilities.invokeLater(new Runnable() {
+      // Pre-allocate all objects used for streaming data
+      Date t = new Date();
+      String now;
+      StringBuilder out = new StringBuilder(16384);
+      boolean isStartingLine = false;
+
       public void run() {
-        textArea.append(s);
+        if (addTimeStampBox.isSelected()) {
+          t.setTime(System.currentTimeMillis());
+          now = logDateFormat.format(t);
+          out.setLength(0);
+
+          StringTokenizer tokenizer = new StringTokenizer(s, "\n", true);
+          while (tokenizer.hasMoreTokens()) {
+            if (isStartingLine) {
+              out.append(now);
+            }
+            String token = tokenizer.nextToken();
+            out.append(token);
+            // tokenizer returns "\n" as a single token
+            isStartingLine = token.charAt(0) == '\n';
+          }
+
+          textArea.append(out.toString());
+        } else {
+          textArea.append(s);
+        }
+
         if (autoscrollBox.isSelected()) {
           textArea.setCaretPosition(textArea.getDocument().getLength());
         }

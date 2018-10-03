@@ -77,6 +77,7 @@
 #define SONAR_DATA              0x61 // Data returned from sonar distance sensor
 #define ENCODER_CONFIG          0x62
 #define ENCODER_DATA            0x63 // reply with encoders current positions
+#define PLAY_MUSIC              0x64
 
 
 /* StandardFirmata commands */

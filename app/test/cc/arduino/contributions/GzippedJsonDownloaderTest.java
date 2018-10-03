@@ -38,7 +38,7 @@ public class GzippedJsonDownloaderTest {
 
   @Test
   public void testJsonDownload() throws Exception {
-    new GZippedJsonDownloader(downloader, new URL("https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/library_86Duino_index.json"), new URL("https://github.com/acen2009/86Duino_Supports/releases/download/Library_86Duino_package/library_86Duino_index.json.gz")).download(tempFile, new MultiStepProgress(1), "", new NoopProgressListener());
+    new GZippedJsonDownloader(downloader, new URL("http://downloads.arduino.cc/libraries/library_index.json"), new URL("http://downloads.arduino.cc/libraries/library_index.json.gz")).download(tempFile, new MultiStepProgress(1), "", new NoopProgressListener());
 
     InputStream indexIn = new FileInputStream(tempFile);
     ObjectMapper mapper = new ObjectMapper();

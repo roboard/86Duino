@@ -38,6 +38,7 @@ import processing.app.Editor;
 import processing.app.I18n;
 import processing.app.PreferencesData;
 import processing.app.Theme;
+import processing.app.Theme.ZippedTheme;
 import processing.app.helpers.FileUtils;
 import processing.app.legacy.PApplet;
 
@@ -46,6 +47,7 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import static processing.app.I18n.tr;
@@ -159,6 +161,9 @@ public class Preferences extends javax.swing.JDialog {
     autoProxyUsername = new javax.swing.JTextField();
     autoProxyPassword = new javax.swing.JPasswordField();
     autoProxyPasswordLabel = new javax.swing.JLabel();
+    comboThemeLabel = new javax.swing.JLabel();
+    comboTheme = new JComboBox();
+    requiresRestartLabel2 = new javax.swing.JLabel();
     javax.swing.JPanel jPanel3 = new javax.swing.JPanel();
     javax.swing.JButton okButton = new javax.swing.JButton();
     javax.swing.JButton cancelButton = new javax.swing.JButton();
@@ -174,7 +179,8 @@ public class Preferences extends javax.swing.JDialog {
     jTabbedPane1.setRequestFocusEnabled(false);
 
     sketchbookLocationLabel.setText(tr("Sketchbook location:"));
-
+    sketchbookLocationLabel.setLabelFor(sketchbookLocationField);
+    
     sketchbookLocationField.setColumns(40);
 
     browseButton.setText(I18n.PROMPT_BROWSE);
@@ -187,21 +193,28 @@ public class Preferences extends javax.swing.JDialog {
     comboLanguageLabel.setText(tr("Editor language: "));
 
     requiresRestartLabel.setText(tr("  (requires restart of Arduino)"));
+    
+    comboLanguage.getAccessibleContext().setAccessibleName("Editor language (requires restart of Arduino)");
 
     fontSizeLabel.setText(tr("Editor font size: "));
+    fontSizeLabel.setLabelFor(fontSizeField);
 
     fontSizeField.setColumns(4);
 
     showVerboseLabel.setText(tr("Show verbose output during: "));
 
     verboseCompilationBox.setText(tr("compilation "));
+    verboseCompilationBox.getAccessibleContext().setAccessibleName("Show verbose output during compilation");
 
     verboseUploadBox.setText(tr("upload"));
+    verboseUploadBox.getAccessibleContext().setAccessibleName("Show verbose output during upload");
 
     comboWarningsLabel.setText(tr("Compiler warnings: "));
+    comboWarningsLabel.setLabelFor(comboWarnings);
 
     additionalBoardsManagerLabel.setText(tr("Additional Boards Manager URLs: "));
     additionalBoardsManagerLabel.setToolTipText(tr("Enter a comma separated list of urls"));
+    additionalBoardsManagerLabel.setLabelFor(additionalBoardsManagerField);
 
     additionalBoardsManagerField.setToolTipText(tr("Enter a comma separated list of urls"));
 
@@ -212,6 +225,7 @@ public class Preferences extends javax.swing.JDialog {
         extendedAdditionalUrlFieldWindowActionPerformed(evt);
       }
     });
+    extendedAdditionalUrlFieldWindow.getAccessibleContext().setAccessibleName("New Window");
 
     morePreferencesLabel.setForeground(Color.GRAY);
     morePreferencesLabel.setText(tr("More preferences can be edited directly in the file"));
@@ -229,6 +243,7 @@ public class Preferences extends javax.swing.JDialog {
         preferencesFileLabelMouseEntered(evt);
       }
     });
+    preferencesFileLabel.setFocusable(true);
 
     arduinoNotRunningLabel.setForeground(Color.GRAY);
     arduinoNotRunningLabel.setText(tr("(edit only when Arduino is not running)"));
@@ -281,6 +296,7 @@ public class Preferences extends javax.swing.JDialog {
 
     scaleSpinner.setModel(new javax.swing.SpinnerNumberModel(100, 100, 400, 5));
     scaleSpinner.setEnabled(false);
+    scaleSpinner.getAccessibleContext().setAccessibleName("Interface scale (requires restart of Arduino)");
 
     autoScaleCheckBox.setSelected(true);
     autoScaleCheckBox.setText(tr("Automatic"));
@@ -289,8 +305,15 @@ public class Preferences extends javax.swing.JDialog {
         autoScaleCheckBoxItemStateChanged(evt);
       }
     });
+    autoScaleCheckBox.getAccessibleContext().setAccessibleName("Automatic interface scale (requires restart of Arduino");
 
     jLabel3.setText("%");
+    
+    comboThemeLabel.setText(tr("Theme: "));
+
+    comboTheme.getAccessibleContext().setAccessibleName("Theme (requires restart of Arduino)");
+
+    requiresRestartLabel2.setText(tr("  (requires restart of Arduino)"));
 
     javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
     jPanel1.setLayout(jPanel1Layout);
@@ -330,9 +353,14 @@ public class Preferences extends javax.swing.JDialog {
               .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                   .addComponent(comboLanguageLabel)
-                  .addComponent(fontSizeLabel))
+                  .addComponent(fontSizeLabel)
+                  .addComponent(comboThemeLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                  .addGroup(jPanel1Layout.createSequentialGroup()
+                    .addComponent(comboTheme, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(requiresRestartLabel2))
                   .addComponent(fontSizeField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                   .addGroup(jPanel1Layout.createSequentialGroup()
                     .addComponent(comboLanguage, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -352,7 +380,7 @@ public class Preferences extends javax.swing.JDialog {
         .addContainerGap())
     );
 
-    jPanel1Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {comboLanguageLabel, comboWarningsLabel, fontSizeLabel, jLabel1, showVerboseLabel});
+    jPanel1Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {comboLanguageLabel, comboWarningsLabel, fontSizeLabel, jLabel1, showVerboseLabel, comboThemeLabel});
 
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -379,6 +407,11 @@ public class Preferences extends javax.swing.JDialog {
           .addComponent(scaleSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(autoScaleCheckBox)
           .addComponent(jLabel3))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(comboThemeLabel)
+          .addComponent(comboTheme, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(requiresRestartLabel2))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(showVerboseLabel)
@@ -553,7 +586,7 @@ public class Preferences extends javax.swing.JDialog {
         .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(manualProxyPassword, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(manualProxyPasswordLabel))
-        .addContainerGap(190, Short.MAX_VALUE))
+        .addContainerGap(50, Short.MAX_VALUE))
     );
 
     jTabbedPane1.addTab(tr("Network"), jPanel4);
@@ -588,11 +621,9 @@ public class Preferences extends javax.swing.JDialog {
     jPanel3Layout.setVerticalGroup(
       jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(okButton)
-          .addComponent(cancelButton))
-        .addContainerGap())
+          .addComponent(cancelButton)))
     );
 
     jPanel2.add(jPanel3);
@@ -607,7 +638,7 @@ public class Preferences extends javax.swing.JDialog {
     );
     layout.setVerticalGroup(
       layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGap(0, 637, Short.MAX_VALUE)
+      .addGap(0, 580, Short.MAX_VALUE)
       .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
         .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
     );
@@ -733,6 +764,9 @@ public class Preferences extends javax.swing.JDialog {
   private javax.swing.JCheckBox verboseCompilationBox;
   private javax.swing.JCheckBox verboseUploadBox;
   private javax.swing.JCheckBox verifyUploadBox;
+  private javax.swing.JComboBox comboTheme;
+  private javax.swing.JLabel comboThemeLabel;
+  private javax.swing.JLabel requiresRestartLabel2;
   // End of variables declaration//GEN-END:variables
 
   private java.util.List<String> validateData() {
@@ -760,6 +794,12 @@ public class Preferences extends javax.swing.JDialog {
 
     Language newLanguage = (Language) comboLanguage.getSelectedItem();
     PreferencesData.set("editor.languages.current", newLanguage.getIsoCode());
+    
+    if (comboTheme.getSelectedIndex() == 0) {
+      PreferencesData.set("theme.file", "");
+    } else {
+      PreferencesData.set("theme.file", ((ZippedTheme) comboTheme.getSelectedItem()).getKey());
+    }
 
     String newSizeText = fontSizeField.getText();
     try {
@@ -823,6 +863,16 @@ public class Preferences extends javax.swing.JDialog {
     for (Language language : Languages.languages) {
       if (language.getIsoCode().equals(currentLanguageISOCode)) {
         comboLanguage.setSelectedItem(language);
+      }
+    }
+    
+    String selectedTheme = PreferencesData.get("theme.file", "");
+    Collection<ZippedTheme> availablethemes = Theme.getAvailablethemes();
+    comboTheme.addItem(tr("Default theme"));
+    for (ZippedTheme theme : availablethemes) {
+      comboTheme.addItem(theme);
+      if (theme.getKey().equals(selectedTheme)) {
+        comboTheme.setSelectedItem(theme);
       }
     }
 

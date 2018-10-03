@@ -1,7 +1,7 @@
 86Duino
 ---------
 
-_VERSION_: Coding 316
+_VERSION_: Coding 317
 
 This is the IDE of the open-source 86Duino electronic platforms, which is 
 compatible to Arduino 1.8.5. The binaries of this IDE for Windows, Linux, 
@@ -18,7 +18,7 @@ page: https://github.com/roboard/86Duino/issues
 Please refer to the 86Duino Getting-Started page for installation instructions 
 on Windows XP/7/8, Mac OS X, and Linux: http://www.86duino.com/?page_id=2844
 
-Alternatively, since the 86Duino IDE is compatible to Arduino 1.8.5, you can 
+Alternatively, since the 86Duino IDE is compatible to Arduino 1.8.7, you can 
 also refer to Arduino's installation guides: 
 http://arduino.cc/en/Guide/HomePage
 

@@ -95,9 +95,8 @@ public class SplashScreenHelper {
   }
 
   private void eraseLastStatusText() {
-    //splashGraphics.setPaint(new Color(229, 229, 229));
     splashGraphics.setPaint(new Color(53, 54, 58));
-	splashGraphics.fill(splashTextArea);
+    splashGraphics.fill(splashTextArea);
   }
 
   private void prepareTextAreaAndGraphics() {
