@@ -436,6 +436,10 @@ void Servo::detach() {
 	}
 }
 
+Servo::~Servo() {
+    detach();
+}
+
 void Servo::write(int value) {
 	if(value < MIN_PULSE_WIDTH)
 	{   // treat values less than 544 as angles in degrees (valid values in microseconds are handled as microseconds)

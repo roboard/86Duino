@@ -189,6 +189,11 @@ void AIServo::detach()
 	}
 }
 
+AIServo::~AIServo()
+{
+    detach();
+}
+
 double AIServo::read()
 {
 	if(this->nodePtr == NULL)

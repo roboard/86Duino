@@ -1,4 +1,4 @@
-### CODING 317 - 2018.10.03 ###
+### CODING 317 - 2018.10.11 ###
 
 [IDE]
 * Compatible for Arduino IDE 1.8.7
@@ -6,9 +6,9 @@
 [libraries]
 * Add new I2C interrupt STATUS for Wire library.
 * Now, you can save the frame files in USB disk (D:\), the load("D:\FrmName.txt") can get them by Servo86 lib.
-* Add the deconstructor for Servo class in Servo86.cpp.
+* Add the deconstructor for Servo class in Servo.cpp, Servo.h, Servo86.cpp, Servo86.h, AIServo86.cpp, AIServo86.h.
 * Add "PLAY_MUSIC" command in FirmataPlus86.h.
-* Update the "Audio" lib to "AudioSample" lib. It now supports the non-blocking playing and has a friendly API.
+* Update the "Audio" lib. It now supports the non-blocking playing and has a friendly API.
 * Now the Audio supports 86ME Mk-II 2.2.0.
 
 
