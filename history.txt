@@ -2,8 +2,9 @@
 
 [IDE]
 * Compatible for Arduino IDE 1.8.9
-* Directory "java" in Arduino is used by 86Duino. It can solve "ERROR downloading" problem
+* Note: copy "java" directroy of Arduino to 86Duino. It can solve "ERROR downloading" problem
   when using "Boards Manager" to download external json files (those links in "Additional boards URLs").
+  Java version problem. 
 
 [libraries]
 * Change some incorrect servo function name like "mcpwm_xxx()" to "mcsv_xxx()".
