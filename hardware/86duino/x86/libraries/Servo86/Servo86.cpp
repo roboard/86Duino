@@ -110,18 +110,18 @@ static int md = 2;
 
 /************************************ MCM ************************************/
 static int mcint_offset[3] = {0, 8, 16};
-static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
+static void clear_INTSTATUS(unsigned long used_int) {
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
+static void disable_MCINT(unsigned long used_int) {
+    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
+	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
 /************ static functions common to all instances ***********************/
@@ -149,7 +149,7 @@ static void pulse_init(bool mcm_init) {
     mcpwm_ReloadEVT(mc,md,MCPWM_RELOAD_NOW);
 	mcpwm_SetWidth(mc, md, (*(servosB + 0)).value, 1000L); // 1000L is duty, it's value is not important
     mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_NOW);
-	clear_INTSTATUS();
+	clear_INTSTATUS(USER_EVT_INT);
 	enable_MCINT(USER_EVT_INT); 
       
     mcpwm_Enable(mc, md);

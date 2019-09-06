@@ -19,6 +19,7 @@
 # Translators:
 # Translators:
 # Translators:
+# Translators:
 # Cristian Maglie <c.maglie@arduino.cc>, 2016
 # zepyur <jrvezh@yahoo.com>, 2012
 # Levon <deimusmeister@gmail.com>, 2015
@@ -27,7 +28,7 @@ msgstr ""
 "Project-Id-Version: Arduino IDE 1.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-03-29 10:24-0400\n"
-"PO-Revision-Date: 2018-09-06 13:55+0000\n"
+"PO-Revision-Date: 2018-11-23 15:06+0000\n"
 "Last-Translator: Cristian Maglie <c.maglie@arduino.cc>\n"
 "Language-Team: Armenian (http://www.transifex.com/mbanzi/arduino-ide-15/language/hy/)\n"
 "MIME-Version: 1.0\n"
@@ -942,6 +943,10 @@ msgstr "Սխալ bootloader-ի վառման ընթացքում:"
 msgid "Error while burning bootloader: missing '{0}' configuration parameter"
 msgstr "Սխալ bootloader-ը վառելիս: պակասող '{0}' կոնֆիգուրացիոն պարամետր"
 
+#: ../../../../../app/src/processing/app/Editor.java:2355
+msgid "Error while burning bootloader: please select a serial port."
+msgstr ""
+
 #: ../../../../../app/src/processing/app/Editor.java:1940
 msgid "Error while compiling: missing '{0}' configuration parameter"
 msgstr "Սխալ կոմպիլացիայի ընթացքում: պակասող '{0}' կոնֆիգուրացիոն պարամետր"
@@ -1280,6 +1285,12 @@ msgstr "Անվավեր մեջբերում: Փակման [{0}] նշանը չի հ
 msgid "Invalid version '{0}' for library in: {1}"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Base.java:316
+#: ../../../../../app/src/processing/app/Base.java:362
+#, java-format
+msgid "Invalid version {0}"
+msgstr ""
+
 #: Preferences.java:102
 msgid "Italian"
 msgstr "Իտալերեն"
@@ -1595,10 +1606,6 @@ msgstr "Խնդրում ենք ներմուծեք SPI գրադարանը Գծագ
 msgid "Please import the Wire library from the Sketch > Import Library menu."
 msgstr "Խնդրում ենք ներմուծեք Wire գրադարանը Գծագիր > Ներմուծել գրադարան մենյուից:"
 
-#: ../../../../../app/src/processing/app/SketchController.java:713
-msgid "Please select a Port before Upload"
-msgstr ""
-
 #: ../../../../../app//src/processing/app/Editor.java:2799
 msgid "Please select a port to obtain board info"
 msgstr ""
@@ -1775,6 +1782,10 @@ msgstr "Փոխարինել:"
 msgid "Retired"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Editor.java:1973
+msgid "Retry the upload with another serial port?"
+msgstr ""
+
 #: Preferences.java:113
 msgid "Romanian"
 msgstr "Ռումիներեն"
@@ -1898,12 +1909,15 @@ msgid ""
 " Serial Port menu?"
 msgstr "''{0}'' սերիալ պորտը չի գտնված: Դուք ընտրել եք ճիշտ օրինակը Գործիքներ > Սերիալ Պորտ մենյուից?"
 
-#: Editor.java:2343
+#: ../../../../../app/src/processing/app/Editor.java:1969
+#: ../../../../../app/src/processing/app/Editor.java:2040
+msgid "Serial port not selected."
+msgstr ""
+
+#: ../../../../../app/src/processing/app/Editor.java:1971
 #, java-format
-msgid ""
-"Serial port {0} not found.\n"
-"Retry the upload with another serial port?"
-msgstr "''{0}'' սերիալ պորտը չի գտնված:\nԿրկին փորձել վերբեռնել այլ սերիալ պորտով?"
+msgid "Serial port {0} not found."
+msgstr ""
 
 #: ../../../../../app/src/processing/app/Editor.java:65
 msgid "Serial ports"

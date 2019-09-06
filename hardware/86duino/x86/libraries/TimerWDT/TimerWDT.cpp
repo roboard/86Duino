@@ -27,6 +27,7 @@
 #include "io.h"
 #include "mcm.h"
 #include "irq.h"
+#include "Arduino.h"
 #include "TimerWDT.h"
 
 #define SYSTEM_RESET    (0)
@@ -39,6 +40,7 @@ static bool timerWDTInit = false;
 static int wdt_mode;
 static bool timerWDTIntEnable = false;
 static char* isrname_wdt = "TimerWDT";
+static bool usingFPU_INT = false;
 
 static struct wdt_status {
 	unsigned char ctrl_reg;   // 0xA8
@@ -151,7 +153,7 @@ void TimerWatchdogTimer::initialize(long microseconds, bool type) {
     timerWDTInit = true;
 }
 
-void TimerWatchdogTimer::attachInterrupt(void (*isr)(void), long microseconds) {
+void TimerWatchdogTimer::attachInterrupt(void (*isr)(void), long microseconds, bool usingFPU) {
     unsigned char val;
     
     if(timerWDTInit == false || isr == NULL || wdt_mode == SYSTEM_RESET) return;
@@ -162,6 +164,7 @@ void TimerWatchdogTimer::attachInterrupt(void (*isr)(void), long microseconds) {
 	    {
 	        printf("WDT IRQ Setting fail\n"); return;
 	    }
+        if (usingFPU) {irq_Setting_RequestFPU(WDTIRQ); usingFPU_INT = true;}
 		if(irq_InstallISR(WDTIRQ, timerwdt_isr_handler, isrname_wdt) == false)
 		{
 		    printf("irq_install fail\n"); return;
@@ -172,8 +175,8 @@ void TimerWatchdogTimer::attachInterrupt(void (*isr)(void), long microseconds) {
     io_DisableINT();
     isrCallback = isr;
     io_RestoreINT();
-
-    if(microseconds > 0) setPeriod(microseconds);
+    
+    if (microseconds > 0) setPeriod(microseconds);
 
     _wdt_enable();
 }
@@ -182,6 +185,7 @@ void TimerWatchdogTimer::detachInterrupt() {
     if(timerWDTInit == false || timerWDTIntEnable == false) return;
     
     irq_UninstallISR(WDTIRQ, (void*)isrname_wdt);
+    if (usingFPU_INT) {irq_Setting_QuitFPU(WDTIRQ); usingFPU_INT = false;}
     timerWDTIntEnable = false;
 	// No close WDT
 }

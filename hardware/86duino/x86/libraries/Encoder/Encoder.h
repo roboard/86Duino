@@ -26,15 +26,21 @@
 #include <Arduino.h>
 
 // Encoder mode
-#define MODE_NOSET       (0xFF)
-#define MODE_STEP_DIR    (0)
-#define MODE_CWCCW       (1)
-#define MODE_AB_PHASE    (2)
-#define MODE_CAPTURE     (3)
-#define MODE_SSI         (4) // continue mode, no interrupt event
-#define MODE_STEP_DIR_x2 (5) // another mode
-#define MODE_CWCCW_x2    (6) // another mode
-#define MODE_AB_PHASE_x2 (7) // another mode
+#ifndef PulseMode_t
+    #define PulseMode_t
+    enum pulseMode_t
+    {
+        MODE_NOSET       = 0xFF,
+        MODE_STEP_DIR    = 0,
+        MODE_CWCCW       = 1,
+        MODE_AB_PHASE    = 2,
+        MODE_CAPTURE     = 3,
+        MODE_SSI         = 4, // continue mode, no interrupt event
+        MODE_STEP_DIR_x2 = 5, // another mode
+        MODE_CWCCW_x2    = 6, // another mode
+        MODE_AB_PHASE_x2 = 7 // another mode
+    };
+#endif
 
 // attachInterrupt flag
 #define INTR_COMPARE        (0x01)
@@ -76,7 +82,8 @@ class Encoder
 		void setInputPolarity(bool pinA, bool pinB, bool pinZ); // parameters: HIGH/LOW
 		void setComparator(unsigned long evncnt, bool condition=true);
 		void setRange(unsigned long val=0xFFFFFFFFL, bool condition=true);
-		
+		unsigned long readRange(void);
+        
 		void write(unsigned long cnt);
 		unsigned long read(void);
 		unsigned long readNanoseconds(void); // for pulse capture mode in interrupt callback

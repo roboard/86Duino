@@ -571,6 +571,10 @@ void Encoder::setRange(unsigned long val, bool condition) {
 	mcsif_Enable(mcn, mdn);
 }
 
+unsigned long Encoder::readRange(void) {
+    return mcenc_ReadCntMax(mcn, mdn);
+}
+
 // return
 // 1 : Forward
 // -1 : Reverse

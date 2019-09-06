@@ -19,6 +19,7 @@
 # Translators:
 # Translators:
 # Translators:
+# Translators:
 # Dubravko Penezic <dpenezic@gmail.com>, 2012
 # Dubravko Penezic <dpenezic@gmail.com>, 2013
 # mbruck <mladen.bruck@gmail.com>, 2014
@@ -27,7 +28,7 @@ msgstr ""
 "Project-Id-Version: Arduino IDE 1.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-03-29 10:24-0400\n"
-"PO-Revision-Date: 2018-09-06 13:55+0000\n"
+"PO-Revision-Date: 2018-11-23 15:06+0000\n"
 "Last-Translator: Cristian Maglie <c.maglie@arduino.cc>\n"
 "Language-Team: Croatian (Croatia) (http://www.transifex.com/mbanzi/arduino-ide-15/language/hr_HR/)\n"
 "MIME-Version: 1.0\n"
@@ -942,6 +943,10 @@ msgstr "Greska pri zapisu bootloadera."
 msgid "Error while burning bootloader: missing '{0}' configuration parameter"
 msgstr "Greška kod programiranja bootloader-a: nedostaje '{0}' konfiguracijski parametar"
 
+#: ../../../../../app/src/processing/app/Editor.java:2355
+msgid "Error while burning bootloader: please select a serial port."
+msgstr ""
+
 #: ../../../../../app/src/processing/app/Editor.java:1940
 msgid "Error while compiling: missing '{0}' configuration parameter"
 msgstr ""
@@ -1280,6 +1285,12 @@ msgstr ""
 msgid "Invalid version '{0}' for library in: {1}"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Base.java:316
+#: ../../../../../app/src/processing/app/Base.java:362
+#, java-format
+msgid "Invalid version {0}"
+msgstr ""
+
 #: Preferences.java:102
 msgid "Italian"
 msgstr "Italian"
@@ -1595,10 +1606,6 @@ msgstr "Molimo uključite SPI biblioteku s Skica > Uključi biblioteku izbornika
 msgid "Please import the Wire library from the Sketch > Import Library menu."
 msgstr "Molim vas uvezite \"Wire\" bilblioteku iz izbornika \"Skica > Uvoz biblioteke\""
 
-#: ../../../../../app/src/processing/app/SketchController.java:713
-msgid "Please select a Port before Upload"
-msgstr ""
-
 #: ../../../../../app//src/processing/app/Editor.java:2799
 msgid "Please select a port to obtain board info"
 msgstr ""
@@ -1775,6 +1782,10 @@ msgstr "Zamjeni sa:"
 msgid "Retired"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Editor.java:1973
+msgid "Retry the upload with another serial port?"
+msgstr ""
+
 #: Preferences.java:113
 msgid "Romanian"
 msgstr "Polish"
@@ -1898,12 +1909,15 @@ msgid ""
 " Serial Port menu?"
 msgstr "Serijski port \"{0}\" nije pronađen. Da li ste odabrali ispravan port s Alati > Serijski port izbornika"
 
-#: Editor.java:2343
+#: ../../../../../app/src/processing/app/Editor.java:1969
+#: ../../../../../app/src/processing/app/Editor.java:2040
+msgid "Serial port not selected."
+msgstr ""
+
+#: ../../../../../app/src/processing/app/Editor.java:1971
 #, java-format
-msgid ""
-"Serial port {0} not found.\n"
-"Retry the upload with another serial port?"
-msgstr "Serijski port {0} nij pronađen.\nDa pokušam prijenos s drugim serijskim portom?"
+msgid "Serial port {0} not found."
+msgstr ""
 
 #: ../../../../../app/src/processing/app/Editor.java:65
 msgid "Serial ports"

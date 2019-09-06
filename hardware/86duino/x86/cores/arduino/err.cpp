@@ -66,9 +66,9 @@
 static FILE* ERR_outputDevice = stderr;
 static volatile char* ERR_msgPool = NULL;
 #ifdef DMP_DOS_BC
-    #define MSGPOOL_SIZE    (1<<4)
+    #define MSGPOOL_SIZE    (16)
 #else
-    #define MSGPOOL_SIZE    (1<<6)
+    #define MSGPOOL_SIZE    (64)
 #endif
 static volatile int ERR_msgStart = 0;
 static volatile int ERR_msgEnd   = 0;
@@ -121,8 +121,8 @@ __dmp_inline(void) print2pool(const char* fmt, va_list args) {
             dbur_WriteString((char*)(&ERR_msgPool[ERR_msgEnd << 8]));
         #endif
         
-        ERR_msgEnd = (ERR_msgEnd + 1) & MSGPOOL_SIZE;
-        if (ERR_msgEnd == ERR_msgStart) ERR_msgStart = (ERR_msgStart + 1) & MSGPOOL_SIZE;
+        ERR_msgEnd = (ERR_msgEnd + 1) % MSGPOOL_SIZE;
+        if (ERR_msgEnd == ERR_msgStart) ERR_msgStart = (ERR_msgStart + 1) % MSGPOOL_SIZE;
     }
     MSGPOOL_UNLOCK();
 }
@@ -157,6 +157,10 @@ DMPAPI(unsigned int) err_getch(void) {
     while ((ch = dbur_ReadByte()) == 0xffff);
     return ch;
 } DPMI_END_OF_LOCKED_FUNC(err_getch)
+
+DMPAPI(bool) err_chkch(void) {
+    return !dbur_IsReadFIFOEmpty();
+} DPMI_END_OF_LOCKED_FUNC(err_chkch)
 #endif
 
 
@@ -171,7 +175,7 @@ DMPAPI(bool) err_Dump2Buf(char* buf) {
         if (ERR_msgStart != ERR_msgEnd)
         {
             strncpy(buf, (char*)(&ERR_msgPool[ERR_msgStart << 8]), 256);
-            ERR_msgStart = (ERR_msgStart + 1) & MSGPOOL_SIZE;
+            ERR_msgStart = (ERR_msgStart + 1) % MSGPOOL_SIZE;
         }
         has_next_msg = (ERR_msgStart != ERR_msgEnd)? true : false;
     }
@@ -213,8 +217,10 @@ DMPAPI(bool) err_Init(const char* logfile) {
 
         #ifdef DEBUG_WITH_UART
             DPMI_LOCK_FUNC(err_getch);
+            DPMI_LOCK_FUNC(err_chkch);
             DPMI_LOCK_FUNC(dbur_WriteString);
             DPMI_LOCK_FUNC(dbur_ReadByte);
+            DPMI_LOCK_FUNC(dbur_IsReadFIFOEmpty);
         #endif
     #endif
 

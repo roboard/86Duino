@@ -74,7 +74,7 @@ public class Constants {
     if (extenalPackageIndexUrl != null && !"".equals(extenalPackageIndexUrl)) {
       PACKAGE_INDEX_URL = extenalPackageIndexUrl;
     } else {
-      PACKAGE_INDEX_URL = "http://downloads.arduino.cc/packages/package_index.json";
+      PACKAGE_INDEX_URL = "https://downloads.arduino.cc/packages/package_index.json";
     }
 
     String externalLibraryIndexUrl = System.getProperty("LIBRARY_INDEX_URL");

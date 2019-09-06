@@ -163,6 +163,10 @@ long random(long, long);
 void randomSeed(unsigned int);
 long map(long, long, long, long, long);
 
+// irq setting functions
+bool irq_Setting_RequestFPU(int irq);
+void irq_Setting_QuitFPU(int irq);
+
 #endif
 
 #endif

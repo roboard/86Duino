@@ -13,7 +13,6 @@ public:
 	uint8_t servoIndex;
 	unsigned char syncBuffer[256] = {0};
 	AIServo();
-    ~AIServo();
 	
 	bool attach(AIServoBus& bus, unsigned char id);
 	bool attached(void);

@@ -30,18 +30,18 @@ static int mc_md_inuse[PINS];
 static int iroutpin = TIMER_PWM_PIN; // default use pin 10 to send IR signal
 
 static int mcint_offset[3] = {0, 8, 16};
-static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0x00ffffffL); //for EX
+static void clear_INTSTATUS(unsigned long used_int) {
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, 0x00L);  // disable mc interrupt
+static void disable_MCINT(unsigned long used_int) {
+    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, used_int<<mcint_offset[md]);
+	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
 static char* name = "IRremote";
@@ -83,8 +83,8 @@ void rcvInit(double us) {
 	    mcpwm_SetDeadband(mc, md, 0L);
 	    mcpwm_ReloadOUT_Unsafe(mc, md, MCPWM_RELOAD_NOW);  
 	    
-	    disable_MCINT();
-	    clear_INTSTATUS();
+	    disable_MCINT(PULSE_END_INT);
+	    clear_INTSTATUS(PULSE_END_INT);
 		if(init_mc_irq() == false)
 		{
 			printf("Init MC IRQ fail\n");

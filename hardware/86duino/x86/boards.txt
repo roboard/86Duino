@@ -124,43 +124,43 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 
 ################################################################################
 
-86DuinoPLC.name=86Duino PLC
-86DuinoPLC.upload.via_ssh=false
+# 86DuinoPLC.name=86Duino PLC
+# 86DuinoPLC.upload.via_ssh=false
 
-86DuinoPLC.vid.0=0x0525
-86DuinoPLC.pid.0=0x0036
-86DuinoPLC.vid.1=0x0525
-86DuinoPLC.pid.1=0x8036
-86DuinoPLC.vid.2=0x0525
-86DuinoPLC.pid.2=0xa4a5
-86DuinoPLC.vid.3=0x0525
-86DuinoPLC.pid.3=0x00a5
+# 86DuinoPLC.vid.0=0x0525
+# 86DuinoPLC.pid.0=0x0036
+# 86DuinoPLC.vid.1=0x0525
+# 86DuinoPLC.pid.1=0x8036
+# 86DuinoPLC.vid.2=0x0525
+# 86DuinoPLC.pid.2=0xa4a5
+# 86DuinoPLC.vid.3=0x0525
+# 86DuinoPLC.pid.3=0x00a5
 
-86DuinoPLC.upload.tool=86upload
-86DuinoPLC.upload.protocol=avr109
-86DuinoPLC.upload.maximum_size=4194304
-86DuinoPLC.upload.speed=57600
-86DuinoPLC.upload.disable_flushing=true
-86DuinoPLC.upload.use_1200bps_touch=true
-86DuinoPLC.upload.wait_for_upload_port=true
+# 86DuinoPLC.upload.tool=86upload
+# 86DuinoPLC.upload.protocol=avr109
+# 86DuinoPLC.upload.maximum_size=4194304
+# 86DuinoPLC.upload.speed=57600
+# 86DuinoPLC.upload.disable_flushing=true
+# 86DuinoPLC.upload.use_1200bps_touch=true
+# 86DuinoPLC.upload.wait_for_upload_port=true
 
-86DuinoPLC.bootloader.tool=86upload
-86DuinoPLC.bootloader.low_fuses=0xff
-86DuinoPLC.bootloader.high_fuses=0xd8
-86DuinoPLC.bootloader.extended_fuses=0xcb
-86DuinoPLC.bootloader.file=v86boot.exe
-86DuinoPLC.bootloader.unlock_bits=0x3F
-86DuinoPLC.bootloader.lock_bits=0x2F
+# 86DuinoPLC.bootloader.tool=86upload
+# 86DuinoPLC.bootloader.low_fuses=0xff
+# 86DuinoPLC.bootloader.high_fuses=0xd8
+# 86DuinoPLC.bootloader.extended_fuses=0xcb
+# 86DuinoPLC.bootloader.file=v86boot.exe
+# 86DuinoPLC.bootloader.unlock_bits=0x3F
+# 86DuinoPLC.bootloader.lock_bits=0x2F
 
-86DuinoPLC.build.mcu=atmega32u4
-86DuinoPLC.build.f_cpu=16000000L
-86DuinoPLC.build.vid=0x0525
-86DuinoPLC.build.pid=0x8036
-86DuinoPLC.build.usb_product="86Duino PLC"
-86DuinoPLC.build.board=86DuinoPLC
-86DuinoPLC.build.core=arduino
-86DuinoPLC.build.variant=plc
-86DuinoPLC.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+# 86DuinoPLC.build.mcu=atmega32u4
+# 86DuinoPLC.build.f_cpu=16000000L
+# 86DuinoPLC.build.vid=0x0525
+# 86DuinoPLC.build.pid=0x8036
+# 86DuinoPLC.build.usb_product="86Duino PLC"
+# 86DuinoPLC.build.board=86DuinoPLC
+# 86DuinoPLC.build.core=arduino
+# 86DuinoPLC.build.variant=plc
+# 86DuinoPLC.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 
 ################################################################################
 

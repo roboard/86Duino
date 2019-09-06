@@ -29,7 +29,6 @@ class Servo
 {
 public:
   Servo();
-  ~Servo();
   uint8_t attach(int pin);           // attach the given pin to the next free channel, sets pinMode, returns channel number or 0 if failure
   uint8_t attach(int pin, int min, int max); // as above but also sets min and max values for writes. 
   void detach();

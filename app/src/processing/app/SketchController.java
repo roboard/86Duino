@@ -634,7 +634,7 @@ public class SketchController {
     editor.getCurrentTab().setSelection(0, 0);  // scroll to start
   }
 
-   /**
+  /**
    * Preprocess, Compile, and Run the current code.
    * <P>
    * There are three main parts to this process:
@@ -845,7 +845,7 @@ public class SketchController {
     FileUtils.copy(sketch.getFolder(), tempFolder);
 
     for (SketchFile file : Stream.of(sketch.getFiles()).filter(SketchFile::isModified).collect(Collectors.toList())) {
-      Files.write(Paths.get(tempFolder.getAbsolutePath(), file.getFileName()), file.getProgram().getBytes());
+      Files.write(Paths.get(tempFolder.getAbsolutePath(), file.getFileName()), file.getProgram().getBytes("UTF-8"));
     }
 
     return Paths.get(tempFolder.getAbsolutePath(), sketch.getPrimaryFile().getFileName()).toFile();
@@ -880,10 +880,6 @@ public class SketchController {
 
     UploaderUtils uploaderInstance = new UploaderUtils();
     Uploader uploader = uploaderInstance.getUploaderByPreferences(false);
-    if (uploader == null) {
-      editor.statusError(tr("Please select a Port before Upload"));
-      return false;
-    }
 
     EditorConsole.setCurrentEditorConsole(editor.console);
 

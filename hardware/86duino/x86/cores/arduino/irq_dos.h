@@ -39,9 +39,15 @@
     volatile unsigned long _IRQ_oldHandlers[16];   // offset of old IRQ handler
     volatile unsigned long _IRQ_oldHandlers2[16];  // selector of old IRQ handler
 
-    #define _IRQ_STACK_SIZE (256 * 1024)  // (64 * 1024)
-    unsigned char* volatile _IRQ_commonStack;
     volatile int _IRQ_stackInUse;
+
+    #ifdef _IRQ_USE_COMMON_STACK
+        #define _IRQ_STACK_SIZE (256 * 1024)
+        unsigned char* volatile _IRQ_commonStack;
+    #else
+        #define _IRQ_STACK_SIZE (128 * 1024)
+        unsigned char* volatile _IRQ_stackPool[32];
+    #endif
 
     void _irq_IsrWrapper0(void);
     void _irq_IsrWrapper1(void);
@@ -196,7 +202,8 @@ static void __attribute__((noinline, noclone)) get_irq_wrappers(void (* volatile
             "    movw %%ax, %%gs                                \n\t"
             "                                                   \n\t"
             "    incl __IRQ_stackInUse                          \n\t"  // 2. switch ISR's stack (here isn't the best solution; when this ISR is interrupted
-            "    jnz __irq_stack_switched                       \n\t"  //    by another IRQ, that IRQ's ISR may switch to its stack that may has a smaller size.)
+        #ifdef _IRQ_USE_COMMON_STACK                                           //    by another IRQ, that IRQ's ISR may switch to its stack that may has a smaller size.)
+            "    jnz __irq_stack_switched                       \n\t"
             "                                                   \n\t"
             "    movw %%ss, %%cx                                \n\t"  //    get the old stack
             "    movl %%esp, %%esi                              \n\t"
@@ -205,8 +212,18 @@ static void __attribute__((noinline, noclone)) get_irq_wrappers(void (* volatile
             "    pushw %%cx                                     \n\t"  //    backup the old stack in the new stack
             "    pushl %%esi                                    \n\t"
             "                                                   \n\t"
-            "__irq_stack_switched:                              \n\t"  // 3. call the IRQ handler (assume the handler is at "cli" when returning.)
-        //  "    cld                                            \n\t"
+            "__irq_stack_switched:                              \n\t"
+        #else
+            "    movw %%ss, %%cx                                \n\t"
+            "    movl %%esp, %%esi                              \n\t"
+            "    movl __IRQ_stackInUse, %%ebp                   \n\t"  //    get a free stack (this is necessary if employing a DPMI server that may switch the stack
+            "    movl __IRQ_stackPool(,%%ebp,4), %%ebp          \n\t"  //    at nested interrupts, which could make SS != DS)
+            "    movw %%ax, %%ss                                \n\t"
+            "    movl %%ebp, %%esp                              \n\t"
+            "    pushw %%cx                                     \n\t"
+            "    pushl %%esi                                    \n\t"
+        #endif
+        //  "    cld                                            \n\t"  // 3. call the IRQ handler (assume the handler is at "cli" when returning.)
             "    cli                                            \n\t"  //    (DJGPP seems not disable the interrupt flag when entering ISR?)
             "    movl __IRQ_handlers(,%%ebx,4), %%eax           \n\t"
             "    pushl %%ebx                                    \n\t"  //    pass the IRQ number as the argument of the IRQ handler
@@ -214,13 +231,20 @@ static void __attribute__((noinline, noclone)) get_irq_wrappers(void (* volatile
             "    addl $4, %%esp                                 \n\t"  //    remove the argument of the IRQ handler
             "    cli                                            \n\t"  //    must ensure the interrupt flag is disabled before the next step
             "                                                   \n\t"
-            "    cmpl $0, __IRQ_stackInUse                      \n\t"  // 4. restore the old stack (we assume _IRQ_handler() has "cli" before return.)
+        #ifdef _IRQ_USE_COMMON_STACK                                   // 4. restore the old stack (we assume _IRQ_handler() has "cli" before return.)
+            "    cmpl $0, __IRQ_stackInUse                      \n\t"
             "    jnz __irq_stack_restored                       \n\t"
             "    popl %%esi                                     \n\t"
             "    popw %%cx                                      \n\t"
             "    movw %%cx, %%ss                                \n\t"
             "    movl %%esi, %%esp                              \n\t"
             "__irq_stack_restored:                              \n\t"
+        #else
+            "    popl %%esi                                     \n\t"
+            "    popw %%cx                                      \n\t"
+            "    movw %%cx, %%ss                                \n\t"
+            "    movl %%esi, %%esp                              \n\t"
+        #endif
             "    decl __IRQ_stackInUse                          \n\t"
             "                                                   \n\t"
             "    orl %%eax, %%eax                               \n\t"  // 5. restore all registers and exit the ISR
@@ -349,12 +373,25 @@ DMPAPI(bool) _irq_Init(void) {
 
         #if defined(DMP_DOS_DJGPP)
             // allocate the dedicated stack for ISR
-            if ((_IRQ_commonStack = (unsigned char*)ker_Malloc(_IRQ_STACK_SIZE)) == NULL) return false;
-            _IRQ_commonStack = _IRQ_commonStack + (_IRQ_STACK_SIZE - 32);  // reserve 32 bytes for safety
+            #ifdef _IRQ_USE_COMMON_STACK
+                if ((_IRQ_commonStack = (unsigned char*)ker_Malloc(_IRQ_STACK_SIZE)) == NULL) return false;
+                _IRQ_commonStack = _IRQ_commonStack + (_IRQ_STACK_SIZE - 32);  // reserve 32 bytes for safety
+                DPMI_LOCK_VAR(_IRQ_commonStack);
+            #else
+                if ((_IRQ_stackPool[0] = (unsigned char*)ker_Malloc(_IRQ_STACK_SIZE * 32)) == NULL)
+                    return false;
+                else
+                {
+                    int k;
+                    for (k=31; k>=0; k--)
+                        _IRQ_stackPool[k] = _IRQ_stackPool[0] + (_IRQ_STACK_SIZE * (k+1) - 32);  // reserve 32 bytes for safety
+                }
+                DPMI_LOCK_VAR(_IRQ_stackPool);
+            #endif
+
             _IRQ_stackInUse  = -1;
 
             DPMI_LOCK_VAR(_IRQ_stackInUse);
-            DPMI_LOCK_VAR(_IRQ_commonStack);
             DPMI_LOCK_VAR(_IRQ_handlers);
             DPMI_LOCK_VAR(_IRQ_oldHandlers);
             DPMI_LOCK_VAR(_IRQ_oldHandlers2);
@@ -375,7 +412,11 @@ DMPAPI(bool) _irq_Close(void) {
         for (i=0; i<16; i++) if (_IRQ_handlers[i] != NULL) return false;
 
         #if defined(DMP_DOS_DJGPP)
-            ker_Mfree((void*)(_IRQ_commonStack - (_IRQ_STACK_SIZE - 32)));
+            #ifdef _IRQ_USE_COMMON_STACK
+                ker_Mfree((void*)(_IRQ_commonStack - (_IRQ_STACK_SIZE - 32)));
+            #else
+                ker_Mfree((void*)(_IRQ_stackPool[0] - (_IRQ_STACK_SIZE - 32)));
+            #endif
         #endif
     }
 

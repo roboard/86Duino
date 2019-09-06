@@ -28,6 +28,8 @@
     __dmp_inline(void) rdtsc_getclocks64(unsigned long* nowclocks_lsb, unsigned long* nowclocks_msb) {
         unsigned long tsc_lsb, tsc_msb;
 
+	FIX_VORTEX86_RDTSC_BUG:  // all Vortex86 CPUs before Vortex86DX3 could have this poor bug:(
+
         __emit__(0x66); _asm push ax;
         __emit__(0x66); _asm push dx;
 
@@ -37,7 +39,8 @@
 
         __emit__(0x66); _asm pop dx;
         __emit__(0x66); _asm pop ax;
-    
+
+		if (tsc_lsb == 0xffffffffL) goto FIX_VORTEX86_RDTSC_BUG;
         *nowclocks_lsb = tsc_lsb;
         *nowclocks_msb = tsc_msb;
     }
@@ -48,6 +51,8 @@
 #else
     __dmp_inline(unsigned long long) rdtsc_getclocks64(void) {
         unsigned long long nowclocks;
+
+	FIX_VORTEX86_RDTSC_BUG:  // all Vortex86 CPUs before Vortex86DX3 could have this poor bug:(
 
         #if defined(DMP_DOS_DJGPP) || defined(DMP_LINUX)
             __asm__ __volatile__ ("rdtsc" : "=A"(nowclocks) );
@@ -66,6 +71,7 @@
             #error rdtsc_getclocks64() unrecognizes the target platform...
         #endif
 
+		if ((nowclocks & 0xffffffffLL) == 0xffffffffLL) goto FIX_VORTEX86_RDTSC_BUG;
         return nowclocks;
     }
 

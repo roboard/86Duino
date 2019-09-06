@@ -300,18 +300,18 @@ static int mc = 3, md = 2;
 /*   Interrupt   */                                                                       
 /*****************/
 static int mcint_offset[3] = {0, 8, 16};
-static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
+static void clear_INTSTATUS(unsigned long used_int) {
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
+static void disable_MCINT(unsigned long used_int) {
+    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
+	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
 static void pwmInit(int mcn, int mdn) {
@@ -357,9 +357,9 @@ void vw_setup(uint16_t speed)
     vw_digitalWrite_ptt(vw_ptt_inverted);
     
 	pwmInit(mc, md);
-	disable_MCINT();
+	disable_MCINT(PULSE_END_INT);
     
-	clear_INTSTATUS();
+	clear_INTSTATUS(PULSE_END_INT);
 	if(init_mc_irq() == false)
 	{
 		printf("Init MC IRQ fail\n");

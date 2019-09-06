@@ -245,8 +245,14 @@ public class SketchFile {
     return null;
   }
 
-  public int getLineCount() {
-    return BaseNoGui.countLines(program);
+  public int getLineCount() throws IOException {
+    String text = BaseNoGui.loadFile(file);
+
+    if (text == null) {
+      throw new IOException();
+    }
+
+    return BaseNoGui.countLines(text);
   }
 
   public boolean isModified() {

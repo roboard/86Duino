@@ -64,29 +64,28 @@ static uint8_t firstGSInput;
 /*   Interrupt   */                                                                       
 /*****************/
 static int mcint_offset[3] = {0, 8, 16};
-static void clear_INTSTATUS(int pin) {
+static void clear_INTSTATUS(int pin, unsigned long used_int) {
 	int mc, md;
 	mc = PIN86[pin].PWMMC;
     md = PIN86[pin].PWMMD;
-    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(int pin) {
+static void disable_MCINT(int pin, unsigned long used_int) {
     int mc, md;
 	mc = PIN86[pin].PWMMC;
     md = PIN86[pin].PWMMD;
-	mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
+	mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 // enable_MCINT() only is used in this library
-static void enable_MCINT(int pin) {
-	unsigned long used_int = PULSE_END_INT;
+static void enable_MCINT(int pin, unsigned long used_int) {
 	int mc, md;
 	mc = PIN86[pin].PWMMC;
     md = PIN86[pin].PWMMD; 
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
+	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
 static unsigned short crossbar_ioaddr = 0;
@@ -118,7 +117,7 @@ static int Tlc5940_interrupt(int irq, void* data) {
 	mc_outp(mc, 0x04, (PULSE_END_INT << mcint_offset[md]));
     
     closePWMPin(XLAT_PIN); //disable_XLAT_pulses();
-    disable_MCINT(XLAT_PIN); //clear_XLAT_interrupt();
+    disable_MCINT(XLAT_PIN, PULSE_END_INT); //clear_XLAT_interrupt();
     tlc_needXLAT = 0;
     if (tlc_onUpdateFinished != NULL) {
         //sei();
@@ -214,8 +213,8 @@ void Tlc5940::init(uint16_t initialValue)
     initPWM(BLANK_PIN);
     initPWM(GSCLK_PIN);
     
-    disable_MCINT(XLAT_PIN);
-	clear_INTSTATUS(XLAT_PIN);
+    disable_MCINT(XLAT_PIN, PULSE_END_INT);
+	clear_INTSTATUS(XLAT_PIN, PULSE_END_INT);
 	if(initXLATIRQ() == false)
 	{
 		printf("Init MC IRQ fail\n");
@@ -227,7 +226,7 @@ void Tlc5940::init(uint16_t initialValue)
     setAll(initialValue);
     update();
     closePWMPin(XLAT_PIN); //disable_XLAT_pulses();
-    disable_MCINT(XLAT_PIN); //clear_XLAT_interrupt();
+    disable_MCINT(XLAT_PIN, PULSE_END_INT); //clear_XLAT_interrupt();
     tlc_needXLAT = 0;
     pulse_pin(XLAT_PORT, XLAT_PIN);
 
@@ -282,8 +281,8 @@ uint8_t Tlc5940::update(void)
     
     tlc_needXLAT = 1;
     openPWMPin(XLAT_PIN); //enable_XLAT_pulses();
-    clear_INTSTATUS(XLAT_PIN);
-    enable_MCINT(XLAT_PIN); //set_XLAT_interrupt();
+    clear_INTSTATUS(XLAT_PIN, PULSE_END_INT);
+    enable_MCINT(XLAT_PIN, PULSE_END_INT); //set_XLAT_interrupt();
     
     return 0;
 }

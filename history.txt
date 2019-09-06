@@ -1,3 +1,23 @@
+### CODING 318 - 2019.09.05 ###
+
+[IDE]
+* Compatible for Arduino IDE 1.8.9
+* Directory "java" in Arduino is used by 86Duino. It can solve "ERROR downloading" problem
+  when using "Boards Manager" to download external json files (those links in "Additional boards URLs").
+
+[libraries]
+* Change some incorrect servo function name like "mcpwm_xxx()" to "mcsv_xxx()".
+* Bug Fix: Servo86 library does "not" clear the interrupt status of cooperating library (like motion86).
+           Other like TimeOne, MsTimer2 library also be fixed as above.
+* TimerWDT: Add the third parameter of attachInterrupt() to enable "FPU" in ISR. Set "true" to enable, default is disable.
+* Add two new libraries: Motion86 and Modbus86.
+* Encoder: Change the define of pulseMode to "enum" type for the compatibility of Motion86 library.
+
+[core]
+* Add the "wiring_irq.cpp" to manage irq_setting (ex. Enable/Disable FPU).
+
+
+
 ### CODING 317 - 2018.10.11 ###
 
 [IDE]
@@ -10,6 +30,7 @@
 * Add "PLAY_MUSIC" command in FirmataPlus86.h.
 * Update the "Audio" lib. It now supports the non-blocking playing and has a friendly API.
 * Now the Audio supports 86ME Mk-II 2.2.0.
+
 
 
 ### CODING 316 - 2018.02.05 ###

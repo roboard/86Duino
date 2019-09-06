@@ -48,6 +48,7 @@ DMPAPI(bool) err_Close(void);
 
 #ifdef DEBUG_WITH_UART
     DMPAPI(unsigned int) err_getch(void);
+    DMPAPI(bool) err_chkch(void);
 #endif
 
 #ifdef __cplusplus

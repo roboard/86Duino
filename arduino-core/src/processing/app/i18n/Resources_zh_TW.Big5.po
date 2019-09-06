@@ -19,6 +19,7 @@
 # Translators:
 # Translators:
 # Translators:
+# Translators:
 # Ethan <ethan42411@gmail.com>, 2014
 # james58899 <james59988@gmail.com>, 2014
 # Jordan_Fung <jordanfung2002@gmail.com>, 2014
@@ -28,7 +29,7 @@ msgstr ""
 "Project-Id-Version: Arduino IDE 1.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-03-29 10:24-0400\n"
-"PO-Revision-Date: 2018-09-06 13:55+0000\n"
+"PO-Revision-Date: 2018-11-23 15:06+0000\n"
 "Last-Translator: Cristian Maglie <c.maglie@arduino.cc>\n"
 "Language-Team: Chinese (Taiwan) (Big5)  (http://www.transifex.com/mbanzi/arduino-ide-15/language/zh_TW.Big5/)\n"
 "MIME-Version: 1.0\n"
@@ -943,6 +944,10 @@ msgstr "燒錄bootloader時發生錯誤。"
 msgid "Error while burning bootloader: missing '{0}' configuration parameter"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Editor.java:2355
+msgid "Error while burning bootloader: please select a serial port."
+msgstr ""
+
 #: ../../../../../app/src/processing/app/Editor.java:1940
 msgid "Error while compiling: missing '{0}' configuration parameter"
 msgstr ""
@@ -1281,6 +1286,12 @@ msgstr ""
 msgid "Invalid version '{0}' for library in: {1}"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Base.java:316
+#: ../../../../../app/src/processing/app/Base.java:362
+#, java-format
+msgid "Invalid version {0}"
+msgstr ""
+
 #: Preferences.java:102
 msgid "Italian"
 msgstr "意大利語"
@@ -1596,10 +1607,6 @@ msgstr "請從選單「草稿碼>匯入程式庫」匯入SPI程式庫。"
 msgid "Please import the Wire library from the Sketch > Import Library menu."
 msgstr ""
 
-#: ../../../../../app/src/processing/app/SketchController.java:713
-msgid "Please select a Port before Upload"
-msgstr ""
-
 #: ../../../../../app//src/processing/app/Editor.java:2799
 msgid "Please select a port to obtain board info"
 msgstr ""
@@ -1776,6 +1783,10 @@ msgstr "置換為:"
 msgid "Retired"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Editor.java:1973
+msgid "Retry the upload with another serial port?"
+msgstr ""
+
 #: Preferences.java:113
 msgid "Romanian"
 msgstr "羅馬尼亞語"
@@ -1899,12 +1910,15 @@ msgid ""
 " Serial Port menu?"
 msgstr "找不到序列埠''{0}''。您在選單「工具>序列埠」裡的設定正確嗎？"
 
-#: Editor.java:2343
+#: ../../../../../app/src/processing/app/Editor.java:1969
+#: ../../../../../app/src/processing/app/Editor.java:2040
+msgid "Serial port not selected."
+msgstr ""
+
+#: ../../../../../app/src/processing/app/Editor.java:1971
 #, java-format
-msgid ""
-"Serial port {0} not found.\n"
-"Retry the upload with another serial port?"
-msgstr "沒找到序列埠{0}。\n以另一個序列埠再試著上傳嗎？"
+msgid "Serial port {0} not found."
+msgstr ""
 
 #: ../../../../../app/src/processing/app/Editor.java:65
 msgid "Serial ports"

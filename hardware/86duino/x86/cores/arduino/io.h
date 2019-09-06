@@ -175,6 +175,9 @@ DMPAPI(int) vx86_CpuID(void);
      #define CPU_VORTEX86DX2            (41)
      #define CPU_VORTEX86DX3            (42)
      #define CPU_VORTEX86EX             (51)
+     #define CPU_VORTEX86EX2            (52)
+     #define CPU_VORTEX86EX2M           (52)
+     #define CPU_VORTEX86EX2S           (53)
 
 DMPAPI(unsigned long) vx86_CpuCLK(void);
 DMPAPI(unsigned long) vx86_DramCLK(void);

@@ -137,6 +137,8 @@ protected:
 	CallBackInterface* 	pinCallBackArea[12];
 #elif defined (__86DUINO_PLC)
 	CallBackInterface* 	pinCallBackArea[4];
+#elif defined (__86DUINO_EX2)
+    CallBackInterface* 	pinCallBackArea[15];
 #endif
 PCintPort _port86int; // only one port, and this port support 12 interrupt pins
 
@@ -146,18 +148,18 @@ PCintPort _port86int; // only one port, and this port support 12 interrupt pins
 
 static int mc = 0, md = 1;
 static int mcint_offset[2] = {0, 24};
-static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
+static void clear_INTSTATUS(unsigned long used_int) {
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
+static void disable_MCINT(unsigned long used_int) {
+    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
+	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
 static void (*sifIntMode[3])(int, int, unsigned long) = {mcpfau_SetCapMode1, mcpfau_SetCapMode2, mcpfau_SetCapMode3};
@@ -314,7 +316,7 @@ void PCintPort::enable(uint8_t interruptNum, CallBackInterface* cbIface, uint8_t
 	if(interrupt_init() == false) return;
 	mcmsif_init();
 
-    clear_INTSTATUS();
+    clear_INTSTATUS(0xfc);
 	enable_MCINT(0xfc); // SIFB FAULT INT3/2/1 + STAT3/2/1 = 6 bits
 	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
 	
@@ -332,14 +334,14 @@ void PCintPort::enable(uint8_t interruptNum, CallBackInterface* cbIface, uint8_t
 		sifSetRelease[interruptNum%3](mc, md, MCPFAU_FAURELS_FSTAT0);
 		sifClearStat[interruptNum%3](mc, md);
 		_usedMode[mc][interruptNum%3] = MCPFAU_CAP_LEVEL0;
-		clear_INTSTATUS();
+		clear_INTSTATUS(0xfc);
 		break;
 	case HIGH:
 		sifSetMask[interruptNum%3](mc, md, MCPFAU_MASK_INACTIVE);
 		sifSetRelease[interruptNum%3](mc, md, MCPFAU_FAURELS_FSTAT0);
 		sifClearStat[interruptNum%3](mc, md);
 		_usedMode[mc][interruptNum%3] = MCPFAU_CAP_LEVEL1;
-		clear_INTSTATUS();
+		clear_INTSTATUS(0xfc);
 		break;
 	case CHANGE:
 		sifIntMode[interruptNum%3](mc, md, MCPFAU_CAP_BOTH);

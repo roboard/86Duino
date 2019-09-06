@@ -28,7 +28,7 @@ class TimerWatchdogTimer {
 		TimerWatchdogTimer(void);
         ~TimerWatchdogTimer(void);
 		void initialize(long microseconds=500000L,bool type=false);
-		void attachInterrupt(void (*isr)(), long microseconds=-1);
+		void attachInterrupt(void (*isr)(), long microseconds=-1, bool usingFPU=false);
 		void detachInterrupt();
 		void setPeriod(long microseconds);
         void (*isrCallback)(); // isrCallback will be called in ISR (this behavior is same as TimerOne lib)

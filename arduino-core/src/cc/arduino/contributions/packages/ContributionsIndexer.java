@@ -67,7 +67,6 @@ public class ContributionsIndexer {
   private final Platform platform;
   private final SignatureVerifier signatureVerifier;
   private final ContributionsIndex index;
-  // private ContributionsIndex index86; // for 86Duino
 
   public ContributionsIndexer(File preferencesFolder, File builtInHardwareFolder, Platform platform, SignatureVerifier signatureVerifier) {
     this.preferencesFolder = preferencesFolder;
@@ -216,7 +215,7 @@ public class ContributionsIndexer {
   }
 
   private void syncBuiltInHardware() throws IOException {
-    if (index == null) {
+    if (index == null || builtInHardwareFolder == null) {
       return;
     }
     for (File folder : builtInHardwareFolder.listFiles(ONLY_DIRS)) {

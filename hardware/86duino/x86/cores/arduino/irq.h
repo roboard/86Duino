@@ -39,8 +39,13 @@ extern "C" {
  */
 #if defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM) || defined(DMP_DOS_BC)
     #ifdef DMP_DOS_DJGPP
-        // for avoiding gcc to optimize user-defined irq handlers with -fcaller-saves
+        // use optimize("O0") or optimize("O1") for avoiding gcc to optimize user-defined irq handlers with -fcaller-saves
+        // NOTE: if using optimize("O1"), you must ensure that all functions called in the irq_handler() 
+        //       are also optimized at -O1 ~ -O3 level.
         #define _IRQ_HANDLER(rtype) rtype __attribute__((optimize("O1")))
+
+        // allocate only one stack to be shared by all hardware interrupts (this works on CWSDPMI, but not on CWSDPR0 and PMODE/DJ)
+        // #define _IRQ_USE_COMMON_STACK
     #else
         #define _IRQ_HANDLER(rtype) rtype
     #endif

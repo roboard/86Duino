@@ -332,7 +332,7 @@ DMPAPI(void) mcsv_SetSamplCycle(int mc, int module, unsigned long sc);
 #define MCSV_DDADIR_CW      (0x00L) // for stat-mode
 #define MCSV_DDADIR_CCW     (0x01L) // for stat-mode
 DMPAPI(void) mcsv_SetDDA(int mc, int module, unsigned long dir, unsigned long dda);
-DMPAPI(unsigned long) mcpwm_ReadDDA(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadDDA(int mc, int module);
 DMPAPI(void) mcsv_SetStatPulse(int mc, int module);
 DMPAPI(void) mcsv_ClearStatPulse(int mc, int module);
 DMPAPI(void) mcsv_SetDirOwner(int mc, int module);
@@ -356,11 +356,11 @@ DMPAPI(void) mcsv_SetDDAMode(int mc, int module, unsigned long mode);
 #define MCSV_DDAFIFO_REALY	(0x00L)
 #define MCSV_DDAFIFO_FULL	(0x01L)
 #define MCSV_DDAFIFO_EMPTY	(0x03L)
-DMPAPI(unsigned long) mcpwm_ReadDDASTAT(int mc, int module);
-DMPAPI(unsigned long) mcpwm_ReadDDAMode(int mc, int module);
-DMPAPI(unsigned long) mcpwm_ReadDDAInt(int mc, int module);
-DMPAPI(unsigned long) mcpwm_ReadDirOwner(int mc, int module);
-DMPAPI(unsigned long) mcpwm_ReadStatPulse(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadDDASTAT(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadDDAMode(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadDDAInt(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadDirOwner(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadStatPulse(int mc, int module);
 /******************************** End for EX **********************************/
 
 
@@ -369,19 +369,19 @@ DMPAPI(void) mcsv_ClearSCRESET(int mc, int module);
 
 DMPAPI(void) mcsv_SetSCLAST(int mc, int module);
 DMPAPI(void) mcsv_ClearSCLAST(int mc, int module);
-DMPAPI(unsigned long) mcpwm_ReadSCLAST(int mc, int module);
-DMPAPI(unsigned long) mcpwm_ReadSCREG(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadSCLAST(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadSCREG(int mc, int module);
 
 #define MCSV_PFB_SUCCESS        (0x00L)
 #define MCSV_PFB_ERR_NOFB       (0x01L)
 #define MCSV_PFB_ERR_WRONGFB    (0x02L)
 #define MCSV_PFB_BUSY           (0x03L)
-DMPAPI(unsigned long) mcpwm_ReadFBSTAT(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadFBSTAT(int mc, int module);
 
 
 
-DMPAPI(unsigned long) mcpwm_ReadSTATREG1(int mc, int module);
-DMPAPI(unsigned long) mcpwm_ReadSTATREG2(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadSTATREG1(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadSTATREG2(int mc, int module);
 
 
 
@@ -451,7 +451,7 @@ DMPAPI(void) mcsv_SetFAU2Output(int mc, int module, unsigned long mode);
 DMPAPI(void) mcsv_SetFAU3Output(int mc, int module, unsigned long mode);
 
 DMPAPI(void) mcsv_SetDDAPOS(int mc, int module, unsigned long ddapos);
-DMPAPI(unsigned long) mcpwm_ReadDDAPOS(int mc, int module);
+DMPAPI(unsigned long) mcsv_ReadDDAPOS(int mc, int module);
 DMPAPI(void) mcsv_SetSWPIN(int mc, int module);
 DMPAPI(void) mcsv_ClearSWPIN(int mc, int module);
 
@@ -652,6 +652,7 @@ DMPAPI(unsigned long) mcenc_ReadPINS(int mc, int module);
 
 DMPAPI(void) mcenc_SetCntMin(int mc, int module, unsigned long cmin);
 DMPAPI(void) mcenc_SetCntMax(int mc, int module, unsigned long cmax);
+DMPAPI(unsigned long) mcenc_ReadCntMax(int mc, int module);
 DMPAPI(void) mcenc_SetCntIdx(int mc, int module, unsigned long cidx);
 DMPAPI(void) mcenc_SetCntEvt(int mc, int module, unsigned long cevt);
 

@@ -1052,6 +1052,10 @@ DMPAPI(void) mcenc_SetCntMax(int mc, int module, unsigned long cmax) {
     mc_outp(mc, MCSIF_modOffset[module] + MCSIF_ENC_LIMREG2, cmax & 0xffffffffL);
 }
 
+DMPAPI(unsigned long) mcenc_ReadCntMax(int mc, int module) {
+    return mc_inp(mc, MCSIF_modOffset[module] + MCSIF_ENC_LIMREG2) & 0xffffffffL;
+}
+
 DMPAPI(void) mcenc_SetCntIdx(int mc, int module, unsigned long cidx) {
     mc_outp(mc, MCSIF_modOffset[module] + MCSIF_ENC_IDXREG, cidx & 0xffffffffL);
 }

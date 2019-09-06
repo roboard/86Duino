@@ -19,6 +19,7 @@
 # Translators:
 # Translators:
 # Translators:
+# Translators:
 # Cougar <cougar@random.ee>, 2012
 # Cougar <transifex@lost.data.ee>, 2013
 # Cristian Maglie <c.maglie@arduino.cc>, 2016
@@ -32,7 +33,7 @@ msgstr ""
 "Project-Id-Version: Arduino IDE 1.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-03-29 10:24-0400\n"
-"PO-Revision-Date: 2018-09-06 13:55+0000\n"
+"PO-Revision-Date: 2018-11-23 15:06+0000\n"
 "Last-Translator: Cristian Maglie <c.maglie@arduino.cc>\n"
 "Language-Team: Estonian (http://www.transifex.com/mbanzi/arduino-ide-15/language/et/)\n"
 "MIME-Version: 1.0\n"
@@ -947,6 +948,10 @@ msgstr "Viga alglaaduri kirjutamisel."
 msgid "Error while burning bootloader: missing '{0}' configuration parameter"
 msgstr "Viga alglaaduri kirjutamisel: „{0}“ konfiguratsiooniparameeter puudub"
 
+#: ../../../../../app/src/processing/app/Editor.java:2355
+msgid "Error while burning bootloader: please select a serial port."
+msgstr ""
+
 #: ../../../../../app/src/processing/app/Editor.java:1940
 msgid "Error while compiling: missing '{0}' configuration parameter"
 msgstr "Viga kompileerimisel: „{0}“ konfiguratsiooniparameeter puudub"
@@ -1285,6 +1290,12 @@ msgstr "Vigane jutumärkide/ülakomade kasutamine: sulgevat [{0}] märki ei liet
 msgid "Invalid version '{0}' for library in: {1}"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Base.java:316
+#: ../../../../../app/src/processing/app/Base.java:362
+#, java-format
+msgid "Invalid version {0}"
+msgstr ""
+
 #: Preferences.java:102
 msgid "Italian"
 msgstr "Itaalia"
@@ -1600,10 +1611,6 @@ msgstr "Laadi SPI teek menüüst Visand -> Laadi teek."
 msgid "Please import the Wire library from the Sketch > Import Library menu."
 msgstr "Laadi Wire teek menüüst Visand -> Laadi teek."
 
-#: ../../../../../app/src/processing/app/SketchController.java:713
-msgid "Please select a Port before Upload"
-msgstr ""
-
 #: ../../../../../app//src/processing/app/Editor.java:2799
 msgid "Please select a port to obtain board info"
 msgstr "Plaadi info nägemiseks vali port."
@@ -1780,6 +1787,10 @@ msgstr "Asendus:"
 msgid "Retired"
 msgstr "Vananenud"
 
+#: ../../../../../app/src/processing/app/Editor.java:1973
+msgid "Retry the upload with another serial port?"
+msgstr ""
+
 #: Preferences.java:113
 msgid "Romanian"
 msgstr "Rumeenia"
@@ -1903,12 +1914,15 @@ msgid ""
 " Serial Port menu?"
 msgstr "Jadaporti „{0}“ ei leitud. Kas menüüs Tööriistad -> Jadaport on valitud õige port?"
 
-#: Editor.java:2343
+#: ../../../../../app/src/processing/app/Editor.java:1969
+#: ../../../../../app/src/processing/app/Editor.java:2040
+msgid "Serial port not selected."
+msgstr ""
+
+#: ../../../../../app/src/processing/app/Editor.java:1971
 #, java-format
-msgid ""
-"Serial port {0} not found.\n"
-"Retry the upload with another serial port?"
-msgstr "Jadaport „{0}“ puudub.\nKas proovime mõnda teist porti?"
+msgid "Serial port {0} not found."
+msgstr ""
 
 #: ../../../../../app/src/processing/app/Editor.java:65
 msgid "Serial ports"

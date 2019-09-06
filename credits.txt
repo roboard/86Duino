@@ -29,10 +29,10 @@ Contributors
 
   Core I/O library of Vortex86EX.
 
-* DY Hung (Dyhung@dmp.com.tw)
+* WT Hung (Dyhung@dmp.com.tw)
 
-  Porting of the Arduino Ethernet, CANBus, and WiFi libraries, and of the FreeIMU 
-  library.
+  Porting of the Arduino Ethernet, CANBus, and WiFi libraries, and of the FreeIMU
+  library. Modbus86 library.
 
 * Hellion Chuang (hellion@dmp.com.tw)
 
@@ -50,6 +50,10 @@ Contributors
 
   Porting of the OneWire and Capacitive Sensing libraries. Test of Arduino 
   peripherals on 86Duino.
+
+* RBG Tian (roboardgod@dmp.com.tw)
+
+  Motion86 library.
 
 
 ---------------

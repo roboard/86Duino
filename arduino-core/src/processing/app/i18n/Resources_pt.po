@@ -19,6 +19,7 @@
 # Translators:
 # Translators:
 # Translators:
+# Translators:
 # Luis Correia <buga@loide.net>, 2012
 # n3okill <n3okill@hotmail.com>, 2014
 # nelsonduvall <nelsonduvall@gmail.com>, 2012,2014
@@ -28,13 +29,14 @@
 # Paulo Monteiro <b452042@gmail.com>, 2012
 # Pedro Santos <trifaisca@gmail.com>, 2012
 # renatose <renatose.com@gmail.com>, 2012,2015
+# Rui <xymarior@yandex.com>, 2019
 msgid ""
 msgstr ""
 "Project-Id-Version: Arduino IDE 1.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-03-29 10:24-0400\n"
-"PO-Revision-Date: 2018-09-06 13:55+0000\n"
-"Last-Translator: Cristian Maglie <c.maglie@arduino.cc>\n"
+"PO-Revision-Date: 2019-02-05 20:06+0000\n"
+"Last-Translator: Rui <xymarior@yandex.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/mbanzi/arduino-ide-15/language/pt/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -60,7 +62,7 @@ msgstr "Utilizado: {0}"
 msgid ""
 "'Keyboard' not found. Does your sketch include the line '#include "
 "<Keyboard.h>'?"
-msgstr ""
+msgstr "'Keyboard' não foi encontrado. O seu rascunho inclui a linha '#include <Keyboard.h>'?"
 
 #: ../../../../../arduino-core/src/cc/arduino/Compiler.java:553
 msgid ""
@@ -948,6 +950,10 @@ msgstr "Erro ao gravar o bootloader."
 msgid "Error while burning bootloader: missing '{0}' configuration parameter"
 msgstr "Erro ao gravar o bootloader: parâmetro de configuração '{0}' não encontrado"
 
+#: ../../../../../app/src/processing/app/Editor.java:2355
+msgid "Error while burning bootloader: please select a serial port."
+msgstr ""
+
 #: ../../../../../app/src/processing/app/Editor.java:1940
 msgid "Error while compiling: missing '{0}' configuration parameter"
 msgstr "Erro a compilar: o parâmetro de configuração '{0}' está em falta"
@@ -1286,6 +1292,12 @@ msgstr ""
 msgid "Invalid version '{0}' for library in: {1}"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Base.java:316
+#: ../../../../../app/src/processing/app/Base.java:362
+#, java-format
+msgid "Invalid version {0}"
+msgstr ""
+
 #: Preferences.java:102
 msgid "Italian"
 msgstr "Italiano"
@@ -1601,10 +1613,6 @@ msgstr "Por favor importe a biblioteca SPI no menu Rascunho > Importar Bibliotec
 msgid "Please import the Wire library from the Sketch > Import Library menu."
 msgstr "Por favor importe a biblioteca Wire do menu Rascunho > Importar Biblioteca."
 
-#: ../../../../../app/src/processing/app/SketchController.java:713
-msgid "Please select a Port before Upload"
-msgstr ""
-
 #: ../../../../../app//src/processing/app/Editor.java:2799
 msgid "Please select a port to obtain board info"
 msgstr ""
@@ -1781,6 +1789,10 @@ msgstr "Substituir com:"
 msgid "Retired"
 msgstr ""
 
+#: ../../../../../app/src/processing/app/Editor.java:1973
+msgid "Retry the upload with another serial port?"
+msgstr ""
+
 #: Preferences.java:113
 msgid "Romanian"
 msgstr "Romeno"
@@ -1904,12 +1916,15 @@ msgid ""
 " Serial Port menu?"
 msgstr "Porta série \"{0}\" já não encontrada. Selecionou a porta certa no menu Ferramentas > Porta Série ?"
 
-#: Editor.java:2343
+#: ../../../../../app/src/processing/app/Editor.java:1969
+#: ../../../../../app/src/processing/app/Editor.java:2040
+msgid "Serial port not selected."
+msgstr ""
+
+#: ../../../../../app/src/processing/app/Editor.java:1971
 #, java-format
-msgid ""
-"Serial port {0} not found.\n"
-"Retry the upload with another serial port?"
-msgstr "Porta série {0} não encontrada.\nRepetir o carregamento com outra porta série?"
+msgid "Serial port {0} not found."
+msgstr ""
 
 #: ../../../../../app/src/processing/app/Editor.java:65
 msgid "Serial ports"

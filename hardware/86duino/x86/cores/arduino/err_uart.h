@@ -24,6 +24,16 @@ static unsigned int dbur_ReadByte(void) {  // should be usable in ISR
 } DPMI_END_OF_LOCKED_STATIC_FUNC(dbur_ReadByte)
 
 
+static bool dbur_IsReadFIFOEmpty(void) {  // should be usable in ISR
+    bool empty_stat = true;
+
+    // check whether the read fifo is currently empty
+    // return true if it is empty
+
+    return empty_stat;
+} DPMI_END_OF_LOCKED_STATIC_FUNC(dbur_IsReadFIFOEmpty)
+
+
 static void dbur_Close(void) {
 
     // close the debug serial port

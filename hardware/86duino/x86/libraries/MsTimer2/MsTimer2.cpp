@@ -33,18 +33,18 @@ static int md = 1;
 /*   Interrupt   */                                                                       
 /*****************/
 static int mcint_offset[3] = {0, 8, 16};
-static void clear_INTSTATUS(void) {
-    mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
+static void clear_INTSTATUS(unsigned long used_int) {
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(void) {
-    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
+static void disable_MCINT(unsigned long used_int) {
+    mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
     mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
 }
 
 static void enable_MCINT(unsigned long used_int) {
 	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
-	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
+	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
 
@@ -98,9 +98,9 @@ void MsTimer2::set(unsigned long ms, void (*isr)(void)) {
 	mcpwm_Disable(mc, md);
 	
 	pwmInit();
-	disable_MCINT();
+	disable_MCINT(PULSE_END_INT);
     
-	clear_INTSTATUS();
+	clear_INTSTATUS(PULSE_END_INT);
 	if(init_mc_irq() == false)
 	{
 		printf("Init MC IRQ fail\n");
@@ -122,12 +122,12 @@ void MsTimer2::set(unsigned long ms, void (*isr)(void)) {
 
 // enable interrupt
 void MsTimer2::start() {
-	clear_INTSTATUS();
+	clear_INTSTATUS(PULSE_END_INT);
 	enable_MCINT(PULSE_END_INT);
 }
 
 // disable interrupt
 void MsTimer2::stop() {
-    disable_MCINT();
+    disable_MCINT(PULSE_END_INT);
 }
 

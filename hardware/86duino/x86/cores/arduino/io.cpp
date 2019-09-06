@@ -872,7 +872,7 @@ DMPAPI(unsigned char) pci_In8(void* handle, unsigned char offset) {
 static void* VX86_pciDev[VX86_IDE + 1] = {NULL};
 
 static int VX86_cpuID = CPU_UNSUPPORTED;
-static unsigned long VX86_cpuCLK  = 0L;
+static unsigned long VX86_cpuCLK  = 1000L;
 static unsigned long VX86_dramCLK = 0L;
 
 static unsigned long VX86_cpuCLK_SX[] =   { 0L, 200L, 233L, 266L, 300L, 333L, 366L, 400L };         // for Vortex86SX
@@ -891,23 +891,14 @@ static unsigned long VX86_dramCLK_DX[] =  { 166L, 200L, 233L, 266L, 300L, 333L, 
 
 static int get_cpuid(void) {
     unsigned long id = nb_Read(0x90);
+    unsigned long VDid;
 
     switch (id)
 	{
 		case 0x31504D44L: //"DMP1"
             return CPU_VORTEX86SX;
 		case 0x32504D44L: //"DMP2"
-		{
-            unsigned char nbrv = nb_Read8(0x08);
-            unsigned char sbrv = sb_Read8(0x08);
-            unsigned long ide  = pci_In32(VX86_pciDev[VX86_IDE], 0x00);
-
-		    if ((nbrv == 1) && (sbrv == 1) && (ide == 0x101017f3L)) return CPU_VORTEX86DX_A;  // Vortex86DX ver. A
-		    if ((nbrv == 1) && (sbrv == 2) && (ide != 0x101017f3L)) return CPU_VORTEX86DX_C;  // Vortex86DX ver. C (PBA/PBB)
-		    if ((nbrv == 2) && (sbrv == 2) && (ide != 0x101017f3L)) return CPU_VORTEX86DX_D;  // Vortex86DX ver. D
-
             return CPU_VORTEX86DX_UNKNOWN;
-        }
 		case 0x33504D44L: //"DMP3"
 			return CPU_VORTEX86MX;
 		case 0x35504D44L: //"DMP5"
@@ -918,6 +909,12 @@ static int get_cpuid(void) {
 			return CPU_VORTEX86DX3;
 		case 0x37504D44L: //"DMP7"
 			return CPU_VORTEX86EX;
+        case 0x38504D44L:
+            VDid = nb_Read(0x00);
+            if (VDid == 0x602717F3L) {
+                return CPU_VORTEX86EX2S;
+            }
+            return CPU_VORTEX86EX2M;
 	}
 
 	return CPU_UNSUPPORTED;
@@ -970,6 +967,52 @@ static unsigned long get_cpufreq(void) {
         int           crs  = (int)((strapreg2 >> 10) & 0x03L);
         return (25L*cns) / (cms * (1L<<crs) * (cdiv+2L));
     }
+    else
+    if (vx86_CpuID() == CPU_VORTEX86EX2M)
+    {
+        unsigned long strapreg2 = nb_Read(0x64);
+        unsigned long strapreg3 = nb_Read(0x68);
+        unsigned long cks  = (strapreg3 >> 10) & 0x03L;
+        unsigned long cns  = strapreg2 & 0x7fL;
+        unsigned long cdiv = (strapreg2 >> 12) & 0x07L;
+        unsigned long clks;
+        switch (cks)
+        {
+            case 0: // NB PLL
+                clks = 25L * cns;
+                break;
+            case 1: // SB PLL 1200 Mhz
+                clks = 1200L;
+                break;
+            case 2: // PCIE PLL 400 Mhz
+                clks = 400L;
+                break;
+        }
+        return clks / (cdiv + 2L);
+    }
+    else
+    if (vx86_CpuID() == CPU_VORTEX86EX2S)
+    {
+        unsigned long strapreg2 = nb_Read(0x64);
+        unsigned long strapreg3 = nb_Read(0x68);
+        unsigned long cks  = (strapreg3 >> 12) & 0x03L;
+        unsigned long cns  = strapreg2 & 0x7fL;
+        unsigned long cdiv = (strapreg2 >> 15) & 0x07L;
+        unsigned long clks;
+        switch (cks)
+        {
+            case 0: // NB PLL
+                clks = 25L * cns;
+                break;
+            case 1: // SB PLL 1200 Mhz
+                clks = 1200L;
+                break;
+            case 2: // PCIE PLL 400 Mhz
+                clks = 400L;
+                break;
+        }
+        return clks / (cdiv + 2L);
+    }
 
     return 0L;
 }
@@ -1011,6 +1054,11 @@ static unsigned long get_dramfreq(void) {
         int           crs  = (int)((strapreg2 >> 10) & 0x03L);
         return (25L*cns) / (cms * (1L<<crs) * ((ddiv+1L)*2L));
     }
+    else
+    if (vx86_CpuID() == CPU_VORTEX86EX2M || vx86_CpuID() == CPU_VORTEX86EX2S)
+    {
+        return 60L;
+    }
 
     return 0L;
 }
@@ -1023,17 +1071,32 @@ static bool init_vx86(void) {
     // get North Bridge fun0 & South Bridge fun0 & IDE PCI-CFG
     if ((VX86_pciDev[VX86_NB]  = pci_Alloc(0x00, 0x00, 0x00)) == NULL) goto FAIL_INITVX86;
     if ((VX86_pciDev[VX86_SB]  = pci_Alloc(0x00, 0x07, 0x00)) == NULL) goto FAIL_INITVX86;
-    if ((VX86_pciDev[VX86_IDE] = pci_Alloc(0x00, 0x0c, 0x00)) == NULL) goto FAIL_INITVX86;
     
     // now we are allowed to call get_cpuid()
     if ((VX86_cpuID = get_cpuid()) == CPU_UNSUPPORTED) goto FAIL_INITVX86;
+    
+    if (vx86_CpuID() == CPU_VORTEX86DX_UNKNOWN) {
+        unsigned char nbrv;
+        unsigned char sbrv;
+        unsigned long ide;
+
+        if ((VX86_pciDev[VX86_IDE] = pci_Alloc(0x00, 0x0c, 0x00)) == NULL) goto FAIL_INITVX86;
+    
+        nbrv = nb_Read8(0x08);
+        sbrv = sb_Read8(0x08);
+        ide  = pci_In32(VX86_pciDev[VX86_IDE], 0x00);
+        
+        if ((nbrv == 1) && (sbrv == 1) && (ide == 0x101017f3L)) VX86_cpuID = CPU_VORTEX86DX_A;  // Vortex86DX ver. A
+        if ((nbrv == 1) && (sbrv == 2) && (ide != 0x101017f3L)) VX86_cpuID = CPU_VORTEX86DX_C;  // Vortex86DX ver. C (PBA/PBB)
+        if ((nbrv == 2) && (sbrv == 2) && (ide != 0x101017f3L)) VX86_cpuID = CPU_VORTEX86DX_D;  // Vortex86DX ver. D
+    }
 
     if (vx86_CpuID() != CPU_VORTEX86SX)
     {
         // North Bridge fun1 exists (note NB fun1 isn't a normal PCI device -- its vid & did are 0xffff)
         if ((VX86_pciDev[VX86_NB1]  = pci_Alloc(0x00, 0x00, 0x01)) == NULL) goto FAIL_INITVX86;
     }
-    if ((vx86_CpuID() == CPU_VORTEX86DX2) || (vx86_CpuID() == CPU_VORTEX86DX3) || (vx86_CpuID() == CPU_VORTEX86EX))
+    if ((vx86_CpuID() == CPU_VORTEX86DX2) || (vx86_CpuID() == CPU_VORTEX86DX3) || (vx86_CpuID() == CPU_VORTEX86EX) || (vx86_CpuID() == CPU_VORTEX86EX2M || (vx86_CpuID() == CPU_VORTEX86EX2S)))
     {
         // South Bridge fun1 exists (note SB fun1 isn't a normal PCI device -- its vid & did are 0xffff)
         if ((VX86_pciDev[VX86_SB1]  = pci_Alloc(0x00, 0x07, 0x01)) == NULL) goto FAIL_INITVX86;
@@ -1071,7 +1134,6 @@ static bool close_vx86(void) {
 DMPAPI(int) vx86_CpuID(void) {
     return VX86_cpuID;
 }
-
 
 DMPAPI(unsigned long) vx86_CpuCLK(void) {
     return VX86_cpuCLK;

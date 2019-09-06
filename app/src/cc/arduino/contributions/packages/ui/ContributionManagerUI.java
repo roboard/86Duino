@@ -98,16 +98,23 @@ public class ContributionManagerUI extends InstallerJDialog {
 
     categoryChooser.removeActionListener(categoryChooserActionListener);
 
-    categoryFilter = x -> true;
-    categoryChooser.removeAllItems();
-    
     filterField.setEnabled(getContribModel().getRowCount() > 0);
+
     categoryChooser.addActionListener(categoryChooserActionListener);
 
     // Enable categories combo only if there are two or more choices
+    categoryFilter = x -> true;
+    categoryChooser.removeAllItems();
+
     Collection<String> categories = BaseNoGui.indexer.getCategories();
     for (String s : categories) {
       if (s.equals("86Duino"))
+      	categoryChooser.addItem(new DropdownCoreOfCategoryItem(s));
+    }
+
+	categories = BaseNoGui.indexer.getCategories();
+    for (String s : categories) {
+      if (!s.equals("86Duino"))
         categoryChooser.addItem(new DropdownCoreOfCategoryItem(s));
     }
 

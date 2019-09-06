@@ -42,9 +42,9 @@ import static processing.app.helpers.filefilters.OnlyDirs.ONLY_DIRS;
 public class BaseNoGui {
 
   /** Version string to be used for build */
-  public static final int REVISION = 10807;
+  public static final int REVISION = 10810;
   /** Extended version string displayed on GUI */
-  public static final String VERSION_NAME = "Coding 317";
+  public static final String VERSION_NAME = "Coding 318";
   public static final String VERSION_NAME_LONG;
 
   // Current directory to use for relative paths specified on the
@@ -223,7 +223,7 @@ public class BaseNoGui {
 
   public static DiscoveryManager getDiscoveryManager() {
     if (discoveryManager == null) {
-      discoveryManager = new DiscoveryManager();
+      discoveryManager = new DiscoveryManager(packages);
     }
     return discoveryManager;
   }
@@ -485,8 +485,8 @@ public class BaseNoGui {
     } catch (JsonProcessingException | SignatureVerificationFailedException e) {
       File indexFile = indexer.getIndexFile(Constants.DEFAULT_INDEX_FILE_NAME);
       File indexSignatureFile = indexer.getIndexFile(Constants.DEFAULT_INDEX_FILE_NAME + ".sig");
-      FileUtils.deleteIfExists(indexFile);
-      FileUtils.deleteIfExists(indexSignatureFile);
+      indexFile.delete();
+      indexSignatureFile.delete();
       throw e;
     }
     indexer.syncWithFilesystem();
@@ -502,11 +502,11 @@ public class BaseNoGui {
       librariesIndexer.parseIndex();
     } catch (JsonProcessingException e) {
       File librariesIndexFile = librariesIndexer.getIndexFile();
-      FileUtils.deleteIfExists(librariesIndexFile);
+      librariesIndexFile.delete();
     }
 
     if (discoveryManager == null) {
-      discoveryManager = new DiscoveryManager();
+      discoveryManager = new DiscoveryManager(packages);
     }
   }
 
@@ -676,7 +676,9 @@ public class BaseNoGui {
     // Libraries located in the latest folders on the list can override
     // other libraries with the same name.
     librariesIndexer.setLibrariesFolders(librariesFolders);
-    librariesIndexer.setArchitecturePriority(getTargetPlatform().getId());
+    if (getTargetPlatform() != null) {
+      librariesIndexer.setArchitecturePriority(getTargetPlatform().getId());
+    }
     librariesIndexer.rescanLibraries();
 
     populateImportToLibraryTable();
@@ -893,7 +895,7 @@ public class BaseNoGui {
     PApplet.saveStrings(temp, strArray);
 
     try {
-      file = file.getCanonicalFile();
+      file = file.toPath().toRealPath().toFile().getCanonicalFile();
     } catch (IOException e) {
     }
 
