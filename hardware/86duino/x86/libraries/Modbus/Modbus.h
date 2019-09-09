@@ -1,5 +1,5 @@
 /*
-  Modbus86.h - 86Duino Modbus library.
+  Modbus.h - 86Duino Modbus library.
   Copyright (c) 2019 Johnson Hung <Dyhung@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -21,8 +21,8 @@
 
 */
 
-#ifndef Modbus86_h
-#define Modbus86_h
+#ifndef __Modbus_h
+#define __Modbus_h
 
 #include <ModbusMaster.h>
 #include <ModbusSlave.h>

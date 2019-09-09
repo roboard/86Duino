@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Ethernet.h>
-#include <Modbus86.h>
+#include <Modbus.h>
 
 ModbusMaster bus;
 ModbusMasterNode node;

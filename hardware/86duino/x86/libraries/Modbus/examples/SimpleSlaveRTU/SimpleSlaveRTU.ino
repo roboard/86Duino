@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <Modbus86.h>
+#include <Modbus.h>
 
 ModbusSlave bus;
 ModbusSlaveNode node;

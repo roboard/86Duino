@@ -24,7 +24,7 @@
 #include "ModbusSlave.h"
 
 #include "HardwareSerial.h"
-#include "modbus.h"
+#include "modbus-core.h"
 #include "io.h"
 
 #define MAX_CLIENT_NUM  (128)

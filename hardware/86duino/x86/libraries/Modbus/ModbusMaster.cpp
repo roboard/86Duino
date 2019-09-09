@@ -27,7 +27,7 @@
 #include "ModbusMaster.h"
 
 #include "HardwareSerial.h"
-#include "modbus.h"
+#include "modbus-core.h"
 
 #define TIME_SEC        (1)
 #define TIME_USEC       (0)

@@ -21,8 +21,8 @@
 
 */
 
-#include "Modbus86.h"
-#include "modbus.h"
+#include "Modbus.h"
+#include "modbus-core.h"
 #include "io.h"
 
 #define MAX_CLIENT_NUM  (128)
