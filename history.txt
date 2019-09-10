@@ -9,7 +9,7 @@
 [libraries]
 * Change some incorrect servo function name like "mcpwm_xxx()" to "mcsv_xxx()".
 * Bug Fix: Servo86 library does "not" clear the interrupt status of cooperating library (like Motion86).
-           Other like TimeOne, MsTimer2 library also be fixed as above.
+           Other like TimerOne, MsTimer2 library also be fixed as above.
 * TimerWDT: Add the third parameter of attachInterrupt() to enable "FPU" in ISR. Set "true" to enable, default is disable.
 * Add two new libraries: Motion86 and Modbus.
 * Encoder: Change the define of pulseMode to "enum" type for the compatibility of Motion86 library.
