@@ -32,7 +32,7 @@ Contributors
 * WT Hung (Dyhung@dmp.com.tw)
 
   Porting of the Arduino Ethernet, CANBus, and WiFi libraries, and of the FreeIMU
-  library. Modbus86 library.
+  library. Modbus library.
 
 * Hellion Chuang (hellion@dmp.com.tw)
 
