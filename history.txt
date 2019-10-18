@@ -1,3 +1,12 @@
+### CODING 319 - 2019.10.18 ###
+[libraries]
+* TimerOne: SetPeriod() for RTC should write data into cmos (register 0x0A).
+            Add the protection of initialize for start().
+            Now setPeriod() has a upper limit 21474836, if over this value, it will be set to 21474836.
+* Motion86: Fix some bugs.
+
+
+
 ### CODING 318 - 2019.09.05 ###
 
 [IDE]

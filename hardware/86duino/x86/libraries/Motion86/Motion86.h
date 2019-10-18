@@ -40,7 +40,7 @@ class Machine
     ~Machine();
 
     bool config_MaxVelocity(machineAxis_t axis, double max_feedrate_mps);
-    bool config_MaxAcc(double vel);
+    bool config_MaxAcc(double max_acc);
     bool config_PosLimit(machineAxis_t axis, int min, int max);
     bool config_PPU(machineAxis_t axis, double steps_per_mm);
     bool config_ReverseDirection(machineAxis_t axis);

@@ -55,6 +55,7 @@ static void enable_MCINT(unsigned long used_int) {
 
 // TimerOne ISR
 static char* isrname_one = "TimerOne";
+
 static int timer1_isr_handler(int irq, void* data) {
     if((mc_inp(mc, 0x04) & (PULSE_END_INT << mcint_offset[md])) == 0) return ISR_NONE;
     
@@ -109,9 +110,10 @@ static int mc_md_inuse[PINS];
 static int isPwmInit[PINS];
 void TimerOne::setPeriod(long microseconds)	{ // AR modified for atomic access
 	int mcn, mdn, i;
-	if(timerOneInit == false || microseconds <= 0) return;
+	if (timerOneInit == false || microseconds <= 0) return;
 	
-	pwmPeriod = microseconds;
+    if (microseconds > 21474836) microseconds = 21474836;
+    
 	_period = (double)(microseconds*SYSCLK);
 	
 	if(timer1Enable == true) // if call attachInterrupt(), timer1Enable is ture
@@ -275,6 +277,9 @@ void TimerOne::restart() { // Depricated - Public interface to start at zero - L
 
 void TimerOne::start() { // AR addition, renamed by Lex to reflect it's actual role
 	int mcn, mdn, i;
+    
+    if(timerOneInit == false) return;
+    
 	if(timer1Enable == false)
 	{
 		//if(isrCallback != NULL) disable_MCINT();        // AR added 
@@ -420,7 +425,8 @@ void TimerRealTimeClock::detachInterrupt() {
 }
 
 void TimerRealTimeClock::setPeriod(long microseconds) {
-	if(timerRTCInit == false || microseconds <= 0) return;
+	unsigned char tmp;
+    if(timerRTCInit == false || microseconds <= 0) return;
 	
 	if     (microseconds < 183L)    _freq = 3;
 	else if(microseconds < 366L)    _freq = 4;
@@ -436,6 +442,9 @@ void TimerRealTimeClock::setPeriod(long microseconds) {
 	else if(microseconds < 375000L) _freq = 14;
 	else if(microseconds < 500000L) _freq = 15;
 	else                            _freq = 15;
+    
+    tmp = inpb_cmos(0x0A);
+    outpb_cmos(0x0A, (tmp & 0xF0) | _freq);
 }
 
 /*

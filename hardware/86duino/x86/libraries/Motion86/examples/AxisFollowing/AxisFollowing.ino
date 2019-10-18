@@ -52,7 +52,7 @@ void setup() {
   // In this case, this slave_machine needs to reverse the direction of the y-axis.
   slave_machine.config_ReverseDirection(AXIS_Y);
 
-  // Config PosLimit to set the software limit for the slave_machine motion.
+  // Config PPU (pulse per unit) for the slave_machine.
   slave_machine.config_PPU(AXIS_X, 80.0);
   slave_machine.config_PPU(AXIS_Y, 80.0);
   slave_machine.config_PPU(AXIS_Z, 3200.0);

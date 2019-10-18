@@ -128,7 +128,7 @@ class MotSetting
     void SetAxisStepsPerMM(int axis, double steps_per_mm);
     double GetAxisStepsPerMM(int axis);
 
-    void SetMotorAcceleration(double vel);
+    void SetMotorAcceleration(double max_acc);
     double GetMotorAcceleration(void);
 
     void SetAxisMaxFeedRate(int axis, double max_feedrate_mps);

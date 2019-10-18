@@ -25,13 +25,13 @@
 #include <string.h>
 #include <math.h>
 
-#include "motion/g_code.h" // for Motion86
-#include "motion/global.h" // for Motion86
-#include "motion/blockqueue.h" // for Motion86
-#include "motion/stepperqueue.h" // for Motion86
-#include "motion/planner.h" // for Motion86
-#include "motion/interpolator.h" // for Motion86
-#include "motion/dda.h" // for Motion86
+#include <motion/g_code.h>
+#include <motion/global.h>
+#include <motion/blockqueue.h>
+#include <motion/stepperqueue.h>
+#include <motion/planner.h>
+#include <motion/interpolator.h>
+#include <motion/dda.h>
 
 #include "Motion86.h"
 
@@ -139,7 +139,7 @@ bool jogCallback(int axis_group)
 
 Machine::Machine(int axis_group)
 {
-  if (axis_group < AXIS_X || axis_group > AXIS_Z)
+  if (axis_group < 0 || axis_group > 2)
   {
     axis_group_number = AXIS_UNUSED;
     return;
@@ -191,11 +191,11 @@ bool Machine::config_MaxVelocity(machineAxis_t axis, double max_feedrate_mps)
   return true;
 }
 
-bool Machine::config_MaxAcc(double vel)
+bool Machine::config_MaxAcc(double max_acc)
 {
   if (MC_Group[axis_group_number].setting->machineMode != MachineOff) return false;
   if (!isValid()) return false;
-  MC_Group[axis_group_number].g_code->SetMotorAcceleration(vel);
+  MC_Group[axis_group_number].g_code->SetMotorAcceleration(max_acc);
   return true;
 }
 
