@@ -1,3 +1,100 @@
+
+### CODING 501 - 2026.03.13 ###
+
+### 1. New Hardware Support: QEC-M02 & PPC Series
+*   **Broad Compatibility:** Full support added for the **QEC-M02** controller and industrial panel PCs (**PPC 9" / 10.4" / 15"**).
+*   **QEC-M02 Exclusive Features:**
+    *   **Multi-Slot Execution:** Supports up to **10 independent slots**, each with its own isolated resource library and automatic path correction.
+    *   **Physical Run/Stop Support:** Added hardware switch integration; system timers (`millis`, `delay`) now automatically compensate for "Stop" duration.
+    *   **Optimized I/O:** Introduced new pin naming (X00/Y00) and high-performance batch operations (`digitalWriteAll`, `digitalReadAll`).
+    *   **Status Diagnostics:** Added a red light blinking indicator for system crashes and external thermistor support for precise CPU temperature monitoring.
+
+### 2. 86HMI & UI Enhancements
+*   **New Components:** Added a **Console component** for 86HMI and updated the firmware upload UI to a modern **ArcBar style** that scales with screen size.
+*   **Technical Fixes:** Resolved file path errors in Chinese language directories and fixed coordinate interference when using a USB keyboard and touch screen simultaneously.
+*   **Library Compatibility:** **LVGL86** is now fully compatible with the official **LVGL 9.3.0**, allowing them to coexist in the same project.
+
+### 3. EtherCAT & 86EVA Evolution
+*   **FOE (File over EtherCAT):** 86EVA now supports FOE for automatic slave firmware detection and one-click updates.
+*   **Expanded Ecosystem:** Added support for major third-party devices (Oriental Motor, NPM, Ezi, Bore, Microchip, etc.). Oriental Motors can now be operated via standard **CiA402 APIs** using VirtualServo IDs.
+*   **High-Scale Control:** Increased the maximum number of **Virtual Servos to 384 axes**.
+
+### 4. System Stability & Development Tools
+*   **Core Updates:** Upgraded internal **FreeDOS to v1.3** and updated Ethernet/EtherCAT libraries to the latest Arduino-compatible standards.
+*   **Compiler Optimization:** Patched the `arduino-builder` to fix linking errors caused by character lengths exceeding 30,000—essential for large-scale projects.
+*   **ArduBlock Updates:** Added blocks for retrieving motor positions in **3-axis G-Code mode** and improved the UI to allow moving single blocks independently (Ctrl + Drag).
+*   **Library Additions:** Integrated the finalized **VirtualServo library** for motion control.
+
+---
+
+### CODING 500 - 2024.08.16 ###
+
+### Core IDE Improvements
+*   **Version Upgrade:** Arduino IDE base updated from **1.8.9** to **1.8.19**.
+*   **UI Optimization:** 
+    *   Enhanced theme colors for a softer, more comfortable visual experience.
+    *   Optimized theme fonts with improved typography and color contrast.
+*   **Serial Monitor:** Added support for **3,000,000 Baudrate**.
+*   **Burner Tool Update:** Updated `v86dude.exe` to support more essential burning commands and PL2303 pin operations.
+*   **Dynamic Menus:** The **Help** and **Example** menus now dynamically display items based on the selected board.
+
+### QEC Series Support
+*   **New Boards Supported:** 
+    *   QEC M01, M043T, M070T, M090T, M150T.
+*   **Enhanced QEC Toolset:** Added three quick-access buttons in the top-right corner (visible only when a QEC board is selected) for **86HMI**, **86EVA**, and **ArduBlock**.
+
+### 1. External Software Tools (Beginner-Friendly)
+
+#### **(1) 86HMI – Visual HMI Editor**
+*   **WYSIWYG Editing:** 1:1 scale UI design for QEC interactive interfaces.
+*   **Hardware Support:** Full support for QEC M043T, M070T, M090T, and M150T.
+*   **Rich Assets:** Includes 33 UI components with essential parameter settings.
+*   **Resource Management:** Supports custom images, audio, and fonts.
+*   **Theming:** Two built-in themes with support for custom styles.
+*   **Zero-Code Drawing:** Automatically generates code into the IDE; no manual graphics programming required.
+
+#### **(2) 86EVA – Visual EtherCAT Configuration Tool**
+*   **Low Barrier to Entry:** Implements EtherCAT operations using the **Virtual Arduino** concept.
+*   **Hot-Swapping:** Supports online QEC Slave position exchange or removal without reconfiguration; existing programs continue to function.
+*   **Code Generation:** Automatically generates Arduino-style code.
+*   **AI Integration:** Generates GPT prompts to assist users in creating code via ChatGPT (Note: Users must choose between ArduBlock or GPT).
+
+#### **(3) ArduBlock – Drag-and-Drop Block Programming**
+*   **Feature Mapping:** Comprehensive blocks for 86HMI and EtherCAT functions, plus standard Arduino functions (e.g., `digitalWrite`, `analogWrite`).
+*   **Interactive UI:** Full 86HMI component blocks to define interaction behaviors when triggered.
+*   **No-Code EtherCAT:** Dedicated QEC EtherCAT blocks work with 86EVA to complete EtherCAT programs without writing code.
+*   **One-Click Workflow:** Integrated "Generate + Upload" functionality.
+
+#### **(4) Management & Utilities**
+*   **Upload/Download Resources:** Batch upload or download all files in the project’s `resource` folder. (Download can be disabled in Bootloader for security).
+*   **Remote Reboot:** Software-reset the QEC online without manual power cycling.
+*   **Bootloader Menu (Visual):** A visual configuration tool for the screenless **QEC M01** to set essential boot options.
+
+### 2. Firmware & Burning Features
+*   **Firmware Package Burning:** One-click automated burning for multiple firmwares and tools (EtherCAT, 86EVA firmware, Bootloader Menu, etc.).
+*   **IDE Updates:** Future IDE versions can update all firmware/tools on the QEC Master with a single click.
+*   **Unified Upload:** One-click process that automatically detects and burns 86HMI resources and 86EVA configuration files along with the user program.
+
+### 3. New Libraries
+*   **Ethercat:** Full Master library with comprehensive APIs for advanced developers.
+*   **SCoop:** Cooperative multi-tasking library for concurrent programming in the Arduino environment.
+*   **FRAM:** Library for non-volatile data read/write (similar to EEPROM).
+*   **MySQL:** Database connectivity support.
+*   **LVGL86:** The underlying library for 86HMI used to render QEC UI screens.
+
+### 4. Bootloader & BIOS
+*   **New Bootloader Commands:** Added support for uploading executables, resource packages, and firmware packages.
+*   **Wear Leveling:** Supports **Load Balance** burning to extend disk lifespan under frequent write cycles.
+*   **Auto-Recovery:** Automatic formatting and environment restoration in case of disk corruption.
+*   **Built-in Visual Menu (M070T/M090T/M150T):** 
+    *   Accessed by pressing the top-left corner of the screen.
+    *   **Security:** Set passwords for Bootloader and User Apps; toggle IDE upload and resource download permissions.
+    *   **Calibration:** Real-time touch screen calibration.
+    *   **Configuration:** Set system time and modify EtherCAT settings (Redundancy, Cycle Time) without entering BIOS.
+*   **BIOS Updates:** Added support for adjusting **EtherCAT Redundancy** and **Cycle Time** settings.
+
+---
+
 ### CODING 319 - 2019.10.18 ###
 [libraries]
 * TimerOne: SetPeriod() for RTC should write data into cmos (register 0x0A).
@@ -6,7 +103,7 @@
 * Motion86: Fix some bugs.
 * SPI: the high-byte of clock divisor should be clear when only set low-byte divisor again. 
 
-
+---
 
 ### CODING 318 - 2019.09.05 ###
 
@@ -27,7 +124,7 @@
 [core]
 * Add the "wiring_irq.cpp" to manage irq_setting (ex. Enable/Disable FPU).
 
-
+---
 
 ### CODING 317 - 2018.10.11 ###
 
@@ -42,7 +139,7 @@
 * Update the "Audio" lib. It now supports the non-blocking playing and has a friendly API.
 * Now the Audio supports 86ME Mk-II 2.2.0.
 
-
+---
 
 ### CODING 316 - 2018.02.05 ###
 
@@ -65,7 +162,7 @@
 * Add the "INPUT_NOCHANGE" setting in the wiring_digital.cpp and pins_arduino.h.
 * Move the "DhcpClass* _dhcp" form private to public for the Ethernet.h.
 
-
+---
 
 ### CODING 315 - 2017.01.20 ###
 
@@ -84,8 +181,7 @@
 * Support the prototype of 86Duino AI board in Wire library.
 * Fix a bug for attachInterrupt() and support the prototype of 86Duino AI board in Encoder library.
 
-
-
+---
 
 ### CODING 300 - 2016.08.27 ###
 
@@ -105,7 +201,7 @@
 * Add the Adafruit_GFX and RGBmatrixPanel library to support Adafruit LED Matrix (https://www.adafruit.com/product/420)
 * Fix a marco conflict with C++ STL in Rosserial86 library for GCC 6.1.0.
 
-
+---
 
 ### CODING 213 - 2016.06.17 ###
 
@@ -122,7 +218,7 @@
 * For FreeIMU1, now support the RM-G146 module (RM-G146 info: http://www.roboard.com/?page_id=1055)
 * Remove the SpiderL3S from the \libraries.
 
-
+---
 
 ### CODING 212 - 2016.03.28 ###
 
@@ -143,7 +239,7 @@
 * Fixed: the servoMultiRun() in playPositions() should use 45 parameters to know which servo should be moved.
 * Update: WiFi library for Arduino 1.6.8 compatibility.
 
-
+---
 
 ### CODING 211 - 2016.01.12 ###
 
@@ -179,7 +275,7 @@
 * For Rosserial86 lib, now support ESP8266 WiFi module.
 * Update the FreeIMU1 library to version 2.0.1.
  
-
+---
 
 ### CODING 210 - 2015.07.06 ###
 
@@ -192,6 +288,7 @@
 * The Servo86 library can read the Frame and Offset files that created by Pololu, KONDO, Innovati Motion Editors.
 * Fixed the bug for Time86 Library: the now() returned a unexpected value in Coding 209/208/207.
  
+---
 
 ### CODING 209 - 2015.05.14 ###
 
@@ -206,7 +303,7 @@
   via 86ME (86Duino Motion Editor).
   (86ME tutorial: http://www.86duino.com/index.php?p=11544)
 
-
+---
 
 ### CODING 208 - 2015.03.17 ###
 
@@ -226,7 +323,7 @@
 * Modified SD library to speed up writing buffer into SD card.
 * Remove Adafruit_Motor_shield example: AFMotor_ConstantSpeed and AFMotor_MultiStepper.
 
-
+---
 
 ### CODING 207 - 2014.12.30 ###
 
@@ -251,7 +348,7 @@
 * Fixed a Serial timeout setting issue for compatibility of rosserail package.
 * All the name of .cpp/.h files are recovered to origin for compatibility.
 
-
+---
 
 ### CODING 106 - 2014.11.11 ###
 
@@ -273,7 +370,7 @@
 * Added VirtualWire library. Support the radio modules like Sparkfun WRL-10534 and WRL-10532.
 * Added RF12 library. This is experimental library in this version, and it is just compiled pass, is not tested.
 
-
+---
 
 ### CODING 105 - 2014.09.18 ###
 
@@ -298,7 +395,7 @@
 [bootloader]
 * For EduCake, it also can enter to bootloader mode by shorting RING pin with RTS/DTR pin on RSR232 connector. 
 
-
+---
 
 ### CODING 104 - 2014.07.07 ###
 
@@ -320,7 +417,7 @@
 * Fix the bug for Servo ISR.
 * Due to tone and IRrmote use a PWM module as their timer, so servo will use GPIO to simulate PWM signal if you use the 32 PIN.
 
-
+---
 
 ### CODING 103 - 2014.04.23 ###
 
@@ -341,7 +438,7 @@
 * Use a better method to read LSM303 in FreeIMU1 library.
 * You can use a new parameter(PCSPEAKER) in tone() to enable internal speaker on 86Duino EduCake.
 
-
+---
 
 ### CODING 102 - 2014.03.07 ###
 
@@ -372,7 +469,7 @@
   Add EEPROM_200B and EEPROM_16K parameters for setBank().
 * Modify TWI library to work fine if the SDA's state is LOW after soft-reset.
 
-
+---
 
 ### CODING 101 - 2013.12.27 ###
 
@@ -407,7 +504,7 @@
 * The bootloader is now named as Hehuan.
 * Update bootloader to support the older uploader for compatibility.
 
-
+---
 
 ### CODING 100r3 - 2013.12.01 ###
 
@@ -417,14 +514,14 @@
 [bootloader]
 * Fix a USB descriptor issue that only occurs in Mac OS X.
 
-
+---
 
 ### CODING 100r2 - 2013.11.17 ###
 
 [ide]
 * Support Linux (only tested on Ubuntu 10.04, 11.04, 12.04, and 13.04).
 
-
+---
 
 ### CODING 100 - 2013.11.12 ###
 
@@ -453,7 +550,7 @@
 * Remove the file size limit to sketch programs.
 * Much safe memory and disk allocation approach for uploading sketches.
 
-
+---
 
 ### CODING 080 - 2013.10.18 ###
 
