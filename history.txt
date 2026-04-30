@@ -4,6 +4,7 @@
             Add the protection of initialize for start().
             Now setPeriod() has a upper limit 21474836, if over this value, it will be set to 21474836.
 * Motion86: Fix some bugs.
+* SPI: the high-byte of clock divisor should be clear when only set low-byte divisor again. 
 
 
 

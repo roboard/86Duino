@@ -230,6 +230,8 @@ void SPIClass::setClockDivider(uint16_t rate)
 	if(SPI_IOaddr == 0) return;
 	if(rate > 15)
 		io_outpb(SPI_IOaddr + 6, (rate&0x0ff0)>>4);
+    else
+        io_outpb(SPI_IOaddr + 6, 0);
 
 	io_outpb(SPI_IOaddr + 2, (io_inpb(SPI_IOaddr + 2) & 0xF0) | (rate%16));
 }
