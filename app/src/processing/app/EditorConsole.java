@@ -27,6 +27,8 @@ import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
 import java.io.PrintStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static processing.app.Theme.scale;
 
@@ -37,20 +39,21 @@ public class EditorConsole extends JScrollPane {
 
   private static ConsoleOutputStream out;
   private static ConsoleOutputStream err;
+  private int startOfLine = 0;
+  private int insertPosition = 0;
 
-  private static synchronized void init(SimpleAttributeSet outStyle, PrintStream outStream, SimpleAttributeSet errStyle, PrintStream errStream) {
-    if (out != null) {
-      return;
+  // Regex for linesplitting, see insertString for comments.
+  private static final Pattern newLinePattern = Pattern.compile("([^\r\n]*)([\r\n]*\n)?(\r+)?");
+
+  public static synchronized void setCurrentEditorConsole(EditorConsole console) {
+    if (out == null) {
+      out = new ConsoleOutputStream(console.stdOutStyle, System.out);
+      System.setOut(new PrintStream(out, true));
+
+      err = new ConsoleOutputStream(console.stdErrStyle, System.err);
+      System.setErr(new PrintStream(err, true));
     }
 
-    out = new ConsoleOutputStream(outStyle, outStream);
-    System.setOut(new PrintStream(out, true));
-
-    err = new ConsoleOutputStream(errStyle, errStream);
-    System.setErr(new PrintStream(err, true));
-  }
-
-  public static void setCurrentEditorConsole(EditorConsole console) {
     out.setCurrentEditorConsole(console);
     err.setCurrentEditorConsole(console);
   }
@@ -75,7 +78,7 @@ public class EditorConsole extends JScrollPane {
 
     Font consoleFont = Theme.getFont("console.font");
     Font editorFont = PreferencesData.getFont("editor.font");
-    Font actualFont = new Font(consoleFont.getName(), consoleFont.getStyle(), scale(editorFont.getSize()));
+    Font actualFont = new Font(consoleFont.getName(), consoleFont.getStyle(), scale(consoleFont.getSize()));
 
     stdOutStyle = new SimpleAttributeSet();
     StyleConstants.setForeground(stdOutStyle, Theme.getColor("console.output.color"));
@@ -109,10 +112,9 @@ public class EditorConsole extends JScrollPane {
     setPreferredSize(new Dimension(100, (height * lines)));
     setMinimumSize(new Dimension(100, (height * lines)));
 
-    EditorConsole.init(stdOutStyle, System.out, stdErrStyle, System.err);
-
     // Add font size adjustment listeners.
-    base.addEditorFontResizeListeners(consoleTextPane);
+    if (base != null)
+      base.addEditorFontResizeListeners(consoleTextPane);
   }
 
   public void applyPreferences() {
@@ -120,7 +122,7 @@ public class EditorConsole extends JScrollPane {
     // Update the console text pane font from the preferences.
     Font consoleFont = Theme.getFont("console.font");
     Font editorFont = PreferencesData.getFont("editor.font");
-    Font actualFont = new Font(consoleFont.getName(), consoleFont.getStyle(), scale(editorFont.getSize()));
+    Font actualFont = new Font(consoleFont.getName(), consoleFont.getStyle(), scale(consoleFont.getSize()));
 
     AttributeSet stdOutStyleOld = stdOutStyle.copyAttributes();
     AttributeSet stdErrStyleOld = stdErrStyle.copyAttributes();
@@ -130,8 +132,10 @@ public class EditorConsole extends JScrollPane {
     // Re-insert console text with the new preferences if there were changes.
     // This assumes that the document has single-child paragraphs (default).
     if (!stdOutStyle.isEqual(stdOutStyleOld) || !stdErrStyle.isEqual(stdOutStyleOld)) {
-      out.setAttibutes(stdOutStyle);
-      err.setAttibutes(stdErrStyle);
+      if (out != null)
+        out.setAttibutes(stdOutStyle);
+      if (err != null)
+        err.setAttibutes(stdErrStyle);
 
       int start;
       for (int end = document.getLength() - 1; end >= 0; end = start - 1) {
@@ -164,6 +168,8 @@ public class EditorConsole extends JScrollPane {
   public void clear() {
     try {
       document.remove(0, document.getLength());
+      startOfLine = 0;
+      insertPosition = 0;
     } catch (BadLocationException e) {
       // ignore the error otherwise this will cause an infinite loop
       // maybe not a good idea in the long run?
@@ -179,14 +185,53 @@ public class EditorConsole extends JScrollPane {
     return document.getLength() == 0;
   }
 
-  public void insertString(String line, SimpleAttributeSet attributes) throws BadLocationException {
-    line = line.replace("\r\n", "\n").replace("\r", "\n");
-    int offset = document.getLength();
-    document.insertString(offset, line, attributes);
+  public void insertString(String str, SimpleAttributeSet attributes) throws BadLocationException {
+    // Separate the string into content, newlines and lone carriage
+    // returns.
+    //
+    // Doing so allows lone CRs to move the insertPosition back to the
+    // start of the line to allow overwriting the most recent line (e.g.
+    // for a progress bar). Any CR or NL that are immediately followed
+    // by another NL are bunched together for efficiency, since these
+    // can just be inserted into the document directly and still be
+    // correct.
+    //
+    // The regex is written so it will necessarily match any string
+    // completely if applied repeatedly. This is important because any
+    // part not matched would be silently dropped.
+    Matcher m = newLinePattern.matcher(str);
+
+    while (m.find()) {
+      String content = m.group(1);
+      String newlines = m.group(2);
+      String crs = m.group(3);
+
+      // Replace (or append if at end of the document) the content first
+      int replaceLength = Math.min(content.length(), document.getLength() - insertPosition);
+      document.replace(insertPosition, replaceLength, content, attributes);
+      insertPosition += content.length();
+
+      // Then insert any newlines, but always at the end of the document
+      // e.g. if insertPosition is halfway a line, do not delete
+      // anything, just add the newline(s) at the end).
+      if (newlines != null) {
+        document.insertString(document.getLength(), newlines, attributes);
+        insertPosition = document.getLength();
+        startOfLine = insertPosition;
+      }
+
+      // Then, for any CRs not followed by newlines, move insertPosition
+      // to the start of the line. Note that if a newline follows before
+      // any content in the next call to insertString, it will be added
+      // at the end of the document anyway, as expected.
+      if (crs != null) {
+        insertPosition = startOfLine;
+      }
+    }
   }
 
   public String getText() {
-    return consoleTextPane.getText().trim();
+    return consoleTextPane.getText();
   }
 
 }

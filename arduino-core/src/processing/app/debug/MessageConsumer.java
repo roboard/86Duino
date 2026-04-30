@@ -36,7 +36,8 @@ package processing.app.debug;
  * should implement this interface.
  */
 public interface MessageConsumer {
-
-  void message(String s);
-
+    void message(String s);
+    default void message(String s, boolean stdout) {
+        message(s);
+    }
 }

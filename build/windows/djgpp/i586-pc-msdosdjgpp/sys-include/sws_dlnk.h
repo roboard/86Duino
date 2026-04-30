@@ -53,7 +53,6 @@ enum
   SWS_kDatalinkProperty_PrivateMax = 0x7fff
   };
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

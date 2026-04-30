@@ -892,8 +892,8 @@ SWS_EXTERNC( void, SWS_SockExit( void));
 #define timeval SWS_timeval
 #define DECL_TIMEOUT( n,m) SWS_DECL_TO( n, m)
 #define linger SWS_linger
-//#undef fd_set
-//#define fd_set SWS_fd_set
+#undef fd_set
+#define fd_set SWS_fd_set
 #define _fd_set SWS_fd_set
 #ifndef FD_SETSIZE
 #define FD_SETSIZE SWS_FD_SETSIZE

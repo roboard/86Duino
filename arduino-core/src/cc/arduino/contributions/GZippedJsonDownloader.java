@@ -29,14 +29,19 @@
 
 package cc.arduino.contributions;
 
+import cc.arduino.Constants;
 import cc.arduino.utils.Progress;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
 
+import processing.app.BaseNoGui;
+import processing.app.debug.TargetPlatform;  
 public class GZippedJsonDownloader {
 
   private final DownloadableContributionsDownloader downloader;
@@ -49,18 +54,27 @@ public class GZippedJsonDownloader {
     this.gzippedUrl = gzippedUrl;
   }
 
-  public void download(File tmpFile, Progress progress, String statusText, ProgressListener progressListener) throws Exception {
+  public void download(File tmpFile, Progress progress, String statusText, ProgressListener progressListener, boolean allowCache) throws Exception {
+    File gzipTmpFile = null;
     try {
-      File gzipTmpFile = new File(tmpFile.getParentFile(), GzipUtils.getCompressedFilename(tmpFile.getName()));
+      TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform(); // for 86Duino
+      if (targetPlatform.getPreferences().get("name").indexOf("Vortex86") >= 0) { // for 86Duino
+        Constants.LIBRARY_INDEX_URL_GZ = "https://github.com/acen2009/86Duino_Supports/releases/download/Library_86Duino_package/library_86Duino_index.json.gz";
+      } 
+      
+      String tmpFileName = FilenameUtils.getName(new URL(Constants.LIBRARY_INDEX_URL_GZ).getPath());
+      gzipTmpFile = File.createTempFile(tmpFileName, GzipUtils.getCompressedFilename(tmpFile.getName()));
       // remove eventual leftovers from previous downloads
-      if (gzipTmpFile.exists()) {
-        gzipTmpFile.delete();
-      }
-      new JsonDownloader(downloader, gzippedUrl).download(gzipTmpFile, progress, statusText, progressListener);
+      Files.deleteIfExists(gzipTmpFile.toPath());
+
+      new JsonDownloader(downloader, gzippedUrl).download(gzipTmpFile, progress, statusText, progressListener, allowCache);
       decompress(gzipTmpFile, tmpFile);
-      gzipTmpFile.delete();
     } catch (Exception e) {
-      new JsonDownloader(downloader, url).download(tmpFile, progress, statusText, progressListener);
+      new JsonDownloader(downloader, url).download(tmpFile, progress, statusText, progressListener, allowCache);
+    } finally {
+      if (gzipTmpFile != null) {
+        Files.deleteIfExists(gzipTmpFile.toPath());
+      }
     }
   }
 

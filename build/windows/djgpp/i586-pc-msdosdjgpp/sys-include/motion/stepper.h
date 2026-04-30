@@ -33,7 +33,7 @@ class MotStepper
     unsigned long period;
     unsigned long duty;
     unsigned long sc;
-    unsigned long motor_dda[MAX_AXIS];
+    unsigned long motor_count[MAX_AXIS];
     int count_direction[MAX_AXIS];
 };
 

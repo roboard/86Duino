@@ -23,6 +23,7 @@
 #ifndef __BLOCKQUEUE_H
 #define __BLOCKQUEUE_H
 
+#include "global.h"
 #include "block.h"
 
 class MotBlockQueue

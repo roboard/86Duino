@@ -40,4 +40,11 @@ int modbus_tcp_config(char *path, char *ip_address,
                       char *subnet, char *gateway, char *dns);
 void modbus_tcp_unconfig();
 
+modbus_t* modbus_new_tcp_ext(modbus_hal_t *hal, const char *ip_address, int port);
+
+#if defined(DJGPP)
+    int modbus_tcp_listen2(modbus_t *ctx, int nb_connection);
+    int modbus_tcp_available2(modbus_t *ctx);
+#endif
+
 #endif

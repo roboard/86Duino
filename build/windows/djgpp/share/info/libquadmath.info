@@ -1,7 +1,7 @@
 This is libquadmath.info, produced by makeinfo version 4.13 from
-../../../gnu/gcc-6.40/libquadmath/libquadmath.texi.
+../../../gnu/gcc-8.30/libquadmath/libquadmath.texi.
 
-Copyright (C) 2010-2016 Free Software Foundation, Inc.
+Copyright (C) 2010-2018 Free Software Foundation, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -24,7 +24,7 @@ END-INFO-DIR-ENTRY
    Published by the Free Software Foundation 51 Franklin Street, Fifth
 Floor Boston, MA 02110-1301 USA
 
-   Copyright (C) 2010-2016 Free Software Foundation, Inc.
+   Copyright (C) 2010-2018 Free Software Foundation, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -909,7 +909,7 @@ File: libquadmath.info,  Node: Reporting Bugs,  Prev: GNU Free Documentation Lic
 ****************
 
 Bugs in the GCC Quad-Precision Math Library implementation should be
-reported via `http://gcc.gnu.org/bugs.html'.
+reported via `https://gcc.gnu.org/bugs/'.
 
 
 

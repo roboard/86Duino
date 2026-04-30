@@ -93,11 +93,14 @@ public class EditorLineStatus extends JComponent {
     Graphics2D g = Theme.setupGraphics2D(graphics);
     if (name.isEmpty() && port.isEmpty()) {
       PreferencesMap boardPreferences = BaseNoGui.getBoardPreferences();
-      if (boardPreferences != null)
-        setBoardName(boardPreferences.get("name"));
-      else
+      if (boardPreferences != null) {
+        if (boardPreferences.get("aliasname") != null)
+            setBoardName(boardPreferences.get("aliasname"));
+        else
+            setBoardName(boardPreferences.get("name"));
+      } else
         setBoardName("-");
-      setPort(PreferencesData.get("serial.port"));
+      setPort(PreferencesData.get("serial.port")); 
     }
     g.setColor(background);
     Dimension size = getSize();
@@ -146,4 +149,14 @@ public class EditorLineStatus extends JComponent {
   public Dimension getMaximumSize() {
     return scale(new Dimension(3000, height));
   }
+  /*
+  public void updateBoardAndPort() {
+    PreferencesMap boardPreferences = BaseNoGui.getBoardPreferences();
+    if (boardPreferences != null)
+      setBoardName(boardPreferences.get("name"));
+    else
+      setBoardName("-");
+    setPort(PreferencesData.get("serial.port"));
+  }
+  */
 }

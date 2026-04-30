@@ -26,9 +26,11 @@ import cc.arduino.Compiler;
 import cc.arduino.Constants;
 import cc.arduino.UpdatableBoardsLibsFakeURLsHandler;
 import cc.arduino.UploaderUtils;
-import cc.arduino.packages.Uploader;
 import cc.arduino.contributions.*;
-import cc.arduino.contributions.libraries.*;
+import cc.arduino.contributions.libraries.ContributedLibrary;
+import cc.arduino.contributions.libraries.LibrariesIndexer;
+import cc.arduino.contributions.libraries.LibraryInstaller;
+import cc.arduino.contributions.libraries.LibraryOfSameTypeComparator;
 import cc.arduino.contributions.libraries.ui.LibraryManagerUI;
 import cc.arduino.contributions.packages.ContributedPlatform;
 import cc.arduino.contributions.packages.ContributionInstaller;
@@ -36,20 +38,17 @@ import cc.arduino.contributions.packages.ContributionsIndexer;
 import cc.arduino.contributions.packages.ui.ContributionManagerUI;
 import cc.arduino.files.DeleteFilesOnShutdown;
 import cc.arduino.packages.DiscoveryManager;
+import cc.arduino.packages.Uploader;
 import cc.arduino.view.Event;
 import cc.arduino.view.JMenuUtils;
 import cc.arduino.view.SplashScreenHelper;
-
+import com.github.zafarkhaja.semver.Version;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import com.github.zafarkhaja.semver.Version;
-
 import processing.app.debug.TargetBoard;
 import processing.app.debug.TargetPackage;
 import processing.app.debug.TargetPlatform;
 import processing.app.helpers.*;
-import processing.app.helpers.OSUtils;
 import processing.app.helpers.filefilters.OnlyDirs;
 import processing.app.helpers.filefilters.OnlyFilesWithExtension;
 import processing.app.javax.swing.filechooser.FileNameExtensionFilter;
@@ -67,9 +66,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.*;
 import java.util.List;
 import java.util.Timer;
+import java.util.*;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -142,7 +141,7 @@ public class Base {
     if (OSUtils.isMacOS()) {
       System.setProperty("apple.laf.useScreenMenuBar",
         String.valueOf(!System.getProperty("os.version").startsWith("10.13")
-          || com.apple.eawt.Application.getApplication().isAboutMenuItemPresent()));
+          || isMacOsAboutMenuItemPresent()));
 
       ThinkDifferent.init();
     }
@@ -153,6 +152,11 @@ public class Base {
       e.printStackTrace(System.err);
       System.exit(255);
     }
+  }
+
+  @SuppressWarnings("deprecation")
+  public static boolean isMacOsAboutMenuItemPresent() {
+    return com.apple.eawt.Application.getApplication().isAboutMenuItemPresent();
   }
 
   static public void initLogger() {
@@ -286,8 +290,9 @@ public class Base {
     pdeKeywords = new PdeKeywords();
     pdeKeywords.reload();
 
-    contributionInstaller = new ContributionInstaller(BaseNoGui.getPlatform(), new GPGDetachedSignatureVerifier());
-    libraryInstaller = new LibraryInstaller(BaseNoGui.getPlatform());
+    final GPGDetachedSignatureVerifier gpgDetachedSignatureVerifier = new GPGDetachedSignatureVerifier();
+    contributionInstaller = new ContributionInstaller(BaseNoGui.getPlatform(), gpgDetachedSignatureVerifier);
+    libraryInstaller = new LibraryInstaller(BaseNoGui.getPlatform(), gpgDetachedSignatureVerifier);
 
     parser.parseArgumentsPhase2();
 
@@ -301,11 +306,10 @@ public class Base {
     if (parser.isInstallBoard()) {
       ContributionsIndexer indexer = new ContributionsIndexer(
           BaseNoGui.getSettingsFolder(), BaseNoGui.getHardwareFolder(),
-          BaseNoGui.getPlatform(), new GPGDetachedSignatureVerifier());
+          BaseNoGui.getPlatform(), gpgDetachedSignatureVerifier);
       ProgressListener progressListener = new ConsoleProgressListener();
 
-      List<String> downloadedPackageIndexFiles = contributionInstaller.updateIndex(progressListener);
-      contributionInstaller.deleteUnknownFiles(downloadedPackageIndexFiles);
+      contributionInstaller.updateIndex(progressListener);
       indexer.parseIndex();
       indexer.syncWithFilesystem();
 
@@ -384,7 +388,7 @@ public class Base {
                       library, mayInstalled.get().getParsedVersion())));
           libraryInstaller.remove(mayInstalled.get(), progressListener);
         } else {
-          libraryInstaller.install(selected, mayInstalled, progressListener);
+          libraryInstaller.install(selected, progressListener);
         }
       }
 
@@ -467,6 +471,7 @@ public class Base {
 
         if (!parser.isForceSavePrefs())
           PreferencesData.setDoSave(true);
+        
         if (handleOpen(file, retrieveSketchLocation(".default"), false) == null) {
           String mess = format(tr("Failed to open sketch: \"{0}\""), path);
           // Open failure is fatal in upload/verify mode
@@ -566,11 +571,15 @@ public class Base {
    * Store list of sketches that are currently open.
    * Called when the application is quitting and documents are still open.
    */
-  protected void storeSketches() {
+  protected void storeSketchLocation(boolean toDefault) { // 86Duino
 
     // If there is only one sketch opened save his position as default
     if (editors.size() == 1) {
-      storeSketchLocation(editors.get(0), ".default");
+      _storeSketchLocation(editors.get(0), ".default", toDefault);
+      _storeSketchLocation(editors.get(0), "" + 0, toDefault);
+    } else {
+      _storeSketchLocation(activeEditor, ".default", toDefault);
+      _storeSketchLocation(activeEditor, "" + 0, toDefault);
     }
 
     // Save the sketch path and window placement for each open sketch
@@ -585,17 +594,64 @@ public class Base {
       if (path.startsWith(untitledPath) && !sketch.isModified()) {
         continue;
       }
-      storeSketchLocation(editor, "" + index);
+      _storeSketchLocation(editor, "" + index, toDefault);
       index++;
     }
     PreferencesData.setInteger("last.sketch.count", index);
   }
 
-  private void storeSketchLocation(Editor editor, String index) {
-    String path = editor.getSketch().getMainFilePath();
-    String loc = StringUtils.join(editor.getPlacement(), ',');
-    PreferencesData.set("last.sketch" + index + ".path", path);
+  private void _storeSketchLocation(Editor editor, String index, boolean toDefault) {
+    
+    String loc = "";
+
+    if (toDefault) {
+      Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+      int location[] = new int[6];
+      final int _86DefaultScreenW = 538;
+      final int _86DefaultScreenH = 629;
+      final int _86ConsoleTopLoc = 416;
+      location[0] = (screen.width - _86DefaultScreenW) / 2;
+      location[1] = (screen.height - _86DefaultScreenH) / 2;
+      location[2] = _86DefaultScreenW;
+      location[3] = _86DefaultScreenH;
+      location[4] = _86ConsoleTopLoc;
+      location[5] = 0;
+      loc = StringUtils.join(location, ',');
+      editor.setPlacement(location, location); // Adjust the size of window right now.
+    } else {
+      loc = StringUtils.join(editor.getPlacement(), ',');
+    }
+  
     PreferencesData.set("last.sketch" + index + ".location", loc);
+  }
+
+  private void storeSketchPath() { // 86Duino
+    
+    if (editors.size() == 1) {
+      _storeSketchPath(editors.get(0), ".default");
+    }
+
+    // Save the sketch path and window placement for each open sketch
+    String untitledPath = untitledFolder.getAbsolutePath();
+    List<Editor> reversedEditors = new LinkedList<>(editors);
+    Collections.reverse(reversedEditors);
+    int index = 0;
+    for (Editor editor : reversedEditors) {
+      Sketch sketch = editor.getSketch();
+      String path = sketch.getMainFilePath();
+      // Skip untitled sketches if they do not contains changes.
+      if (path.startsWith(untitledPath) && !sketch.isModified()) {
+        continue;
+      }
+      _storeSketchPath(editor, "" + index);
+      index++;
+    }
+    PreferencesData.setInteger("last.sketch.count", index);
+  }
+  
+  private void _storeSketchPath(Editor editor, String index) { // 86Duino
+    String path = editor.getSketch().getMainFilePath();
+    PreferencesData.set("last.sketch" + index + ".path", path);
   }
 
   private int[] retrieveSketchLocation(String index) {
@@ -607,15 +663,19 @@ public class Base {
     Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
     int screenW = PreferencesData.getInteger("last.screen.width");
     int screenH = PreferencesData.getInteger("last.screen.height");
-
+    
     if ((screen.width != screenW) || (screen.height != screenH))
       return defaultEditorLocation();
 
-    String locationStr = PreferencesData
-        .get("last.sketch" + index + ".location");
+    String locationStr = PreferencesData.get("last.sketch" + index + ".location");
     if (locationStr == null)
       return defaultEditorLocation();
-    return PApplet.parseInt(PApplet.split(locationStr, ','));
+
+    int location[] = PApplet.parseInt(PApplet.split(locationStr, ','));
+    if (location[0] > screen.width || location[1] > screen.height)
+      return defaultEditorLocation();
+
+    return location;
   }
 
   protected void storeRecentSketches(SketchController sketch) {
@@ -663,14 +723,18 @@ public class Base {
     return new int[]{
             (screen.width - defaultWidth) / 2,
             (screen.height - defaultHeight) / 2,
-            defaultWidth, defaultHeight, 0
+            defaultWidth, defaultHeight, 0, 0
     };
   }
 
   protected int[] nextEditorLocation() {
     if (activeEditor == null) {
       // If no current active editor, use default placement
-      return defaultEditorLocation();
+      String locationStr = PreferencesData.get("last.sketch.default.location");
+      if (locationStr != null)
+        return retrieveSketchLocation(".default");
+      else 
+        return defaultEditorLocation(); // ORG
     }
 
     Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
@@ -678,12 +742,17 @@ public class Base {
     // With a currently active editor, open the new window
     // using the same dimensions, but offset slightly.
     synchronized (editors) {
-      int[] location = activeEditor.getPlacement();
-
+      int[] location = activeEditor.getPlacement(); // ORG
+      int[] windowSize = retrieveSketchLocation(".default"); // 86Duino
+      
       // Just in case the bounds for that window are bad
       final int OVER = 50;
       location[0] += OVER;
       location[1] += OVER;
+      location[2] = windowSize[2]; // 86Duino
+      location[3] = windowSize[3]; // 86Duino
+      location[4] = windowSize[4]; // 86Duino
+      location[5] = windowSize[5]; // 86Duino
 
       if (location[0] == OVER || location[2] == OVER
           || location[0] + location[2] > screen.width
@@ -764,7 +833,20 @@ public class Base {
     if (!newbieFile.createNewFile()) {
       throw new IOException();
     }
-    FileUtils.copyFile(new File(getContentFile("examples"), "01.Basics" + File.separator + "BareMinimum" + File.separator + "BareMinimum.ino"), newbieFile);
+
+    // Initialize the pde file with the BareMinimum sketch.
+    // Apply user-defined tab settings.
+    String sketch = FileUtils.readFileToString(
+        new File(getContentFile("examples"), "01.Basics" + File.separator
+            + "BareMinimum" + File.separator + "BareMinimum.ino"));
+    String currentTab = "  ";
+    String newTab = (PreferencesData.getBoolean("editor.tabs.expand")
+        ? StringUtils.repeat(" ",
+            PreferencesData.getInteger("editor.tabs.size"))
+        : "\t");
+    sketch = sketch.replaceAll(
+        "(?<=(^|\n)(" + currentTab + "){0,50})" + currentTab, newTab);
+    FileUtils.writeStringToFile(newbieFile, sketch);
     return newbieFile;
   }
 
@@ -871,7 +953,11 @@ public class Base {
     if (storeOpenedSketches) {
       // Store information on who's open and running
       // (in case there's a crash or something that can't be recovered)
-      storeSketches();
+      // storeSketches(); // ORG
+      String locationStr = PreferencesData.get("last.sketch.default.location");
+      if (locationStr == null) {
+        storeSketchLocation(false); // 86Duino
+      }
       storeRecentSketches(editor.getSketchController());
       rebuildRecentSketchesMenuItems();
       PreferencesData.save();
@@ -960,7 +1046,8 @@ public class Base {
     // If quit is canceled, this will be replaced anyway
     // by a later handleQuit() that is not canceled.
     storeScreenDimensions();
-    storeSketches();
+    // storeSketches(); // ORG
+    storeSketchPath(); // 86Duino
     try {
       Editor.serialMonitor.close();
     } catch (Exception e) {
@@ -970,9 +1057,9 @@ public class Base {
     // kill uploader (if still alive)
     UploaderUtils uploaderInstance = new UploaderUtils();
     Uploader uploader = uploaderInstance.getUploaderByPreferences(false);
-    if (uploader != null && uploader.programmerPid != null && uploader.programmerPid.isAlive()) {
+    if (uploader != null && Uploader.programmerPid != null && Uploader.programmerPid.isAlive()) {
         // kill the stuck programmer
-        uploader.programmerPid.destroyForcibly();
+        Uploader.programmerPid.destroyForcibly();
     }
 
     if (handleQuitEach()) {
@@ -1109,7 +1196,10 @@ public class Base {
       LibraryList libs = getSortedLibraries();
       String lastLibType = null;
       for (UserLibrary lib : libs) {
-        if ((targetPlatform.getPreferences().get("name").indexOf("Vortex86EX")>=0) && (!lib.getTypes().get(0).equals("86Duino"))) continue;
+        if ((targetPlatform.getPreferences().get("name").indexOf("Vortex86")>=0) && (!lib.getTypes().get(0).equals("86Duino"))) continue;
+        lib.parser86Board(); // for 86Duino
+        if (lib.getTypes().size() == 2 && lib.getTypes().get(1).indexOf(lib.get86LibBoardString(BaseNoGui.getTargetBoard().getPreferences().get("name"))) < 0) continue;
+
         String libType = lib.getTypes().get(0);
         if (!libType.equals(lastLibType)) {
           if (lastLibType != null) {
@@ -1139,45 +1229,43 @@ public class Base {
         importMenu.add(item);
       }
     }
+    if (targetPlatform.getPreferences().get("name").indexOf("Vortex86")>=0) {
+	  LibraryList libs = getSortedLibraries();
+      String lastLibType = null;
+	  for (UserLibrary lib : libs) {
+	    // Show Contributed or other libraries
+	    if (lib.getTypes().get(0).equals("86Duino") || lib.getTypes().get(0).equals("Arduino")) continue;
 
-    if (targetPlatform.getPreferences().get("name").indexOf("Vortex86EX")>=0) {
-	    LibraryList libs = getSortedLibraries();
-        String lastLibType = null;
-	    for (UserLibrary lib : libs) {
-	      // Show Contributed or other libraries
-		  if (lib.getTypes().get(0).equals("86Duino") || lib.getTypes().get(0).equals("Arduino")) continue;
+	    String libType = lib.getTypes().get(0);
+      if (!libType.equals(lastLibType)) {
+        if (lastLibType != null) {
+          importMenu.addSeparator();
+        }
+        lastLibType = libType;
+        JMenuItem platformItem = new JMenuItem(I18n.format(tr("{0} libraries"), tr(lastLibType)));
+        platformItem.setEnabled(false);
+        importMenu.add(platformItem);
+      }
 
-	      String libType = lib.getTypes().get(0);
-          if (!libType.equals(lastLibType)) {
-            if (lastLibType != null) {
-              importMenu.addSeparator();
-            }
-            lastLibType = libType;
-            JMenuItem platformItem = new JMenuItem(I18n.format(tr("{0} libraries"), tr(lastLibType)));
-            platformItem.setEnabled(false);
-            importMenu.add(platformItem);
+      AbstractAction action = new AbstractAction(lib.getName()) {
+        public void actionPerformed(ActionEvent event) {
+          UserLibrary l = (UserLibrary) getValue("library");
+          try {
+            activeEditor.getSketchController().importLibrary(l);
+          } catch (IOException e) {
+            showWarning(tr("Error"), I18n.format("Unable to list header files in {0}", l.getSrcFolder()), e);
           }
+        }
+      };
+      action.putValue("library", lib);
 
-          AbstractAction action = new AbstractAction(lib.getName()) {
-            public void actionPerformed(ActionEvent event) {
-              UserLibrary l = (UserLibrary) getValue("library");
-              try {
-                activeEditor.getSketchController().importLibrary(l);
-              } catch (IOException e) {
-                showWarning(tr("Error"), I18n.format("Unable to list header files in {0}", l.getSrcFolder()), e);
-              }
-            }
-          };
-          action.putValue("library", lib);
-
-          // Add new element at the bottom
-          JMenuItem item = new JMenuItem(action);
-          item.putClientProperty("library", lib);
-          importMenu.add(item);
-	    }
+      // Add new element at the bottom
+      JMenuItem item = new JMenuItem(action);
+      item.putClientProperty("library", lib);
+      importMenu.add(item);
 	  }
+	}
   }
-
   public void rebuildExamplesMenu(JMenu menu) {
     if (menu == null) {
       return;
@@ -1201,7 +1289,10 @@ public class Base {
     TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform();
     if (targetPlatform != null) {
       myArch = targetPlatform.getId();
-      boardId = BaseNoGui.getTargetBoard().getName();
+      if (BaseNoGui.getTargetBoard().getAliasName() != null)
+        boardId = BaseNoGui.getTargetBoard().getAliasName();
+      else
+        boardId = BaseNoGui.getTargetBoard().getName();
       String core = BaseNoGui.getBoardPreferences().get("build.core", "arduino");
       if (core.contains(":")) {
         String refcore = core.split(":")[0];
@@ -1235,10 +1326,12 @@ public class Base {
         compatible = true;
       } else {
         compatible = arch.contains(myArch);
+        if (!compatible && targetPlatform.getPreferences().get("name").indexOf("Vortex86")>=0) // 86Duino
+            compatible = arch.contains("avr"); 
       }
       // IDE Libaries (including retired)
       if (location == Location.IDE_BUILTIN) {
-        if (compatible && (targetPlatform.getPreferences().get("name").indexOf("Vortex86EX")<0)) {
+        if (compatible && (targetPlatform.getPreferences().get("name").indexOf("Vortex86")<0)) {
           // only compatible IDE libs are shown
           if (lib.getTypes().contains("Retired")) {
             retiredIdeLibs.add(lib);
@@ -1275,7 +1368,7 @@ public class Base {
 
     // Add examples from libraries
     if (!ideLibs.isEmpty()) {
-      menu.addSeparator();
+      if (targetPlatform.getPreferences().get("name").indexOf("Vortex86")>=0) menu.addSeparator();                                                                                            
       ideLibs.sort();
       label = new JMenuItem(tr("Examples for any board"));
       label.setEnabled(false);
@@ -1295,13 +1388,22 @@ public class Base {
     }
 
     if (!platformLibs.isEmpty()) {
-      // menu.addSeparator();
+      if (targetPlatform.getPreferences().get("name").indexOf("Vortex86")<0) menu.addSeparator();
       platformLibs.sort();
       label = new JMenuItem(format(tr("Examples for {0}"), boardId));
       label.setEnabled(false);
       menu.add(label);
       for (UserLibrary lib : platformLibs) {
-        addSketchesSubmenu(menu, lib);
+        if (targetPlatform.getPreferences().get("name").indexOf("Vortex86")>=0) {
+          lib.parser86Board(); // for 86Duino
+          if (lib.getTypes().size() == 2) {
+            String[] _myboards = lib.getTypes().get(1).split("/");
+            for (String _myboard : _myboards) {
+              if (lib.get86LibBoardString(BaseNoGui.getTargetBoard().getPreferences().get("name")).equals(_myboard))
+                addSketchesSubmenu(menu, lib);
+            }
+          }
+        }
       }
     }
 
@@ -1454,8 +1556,9 @@ public class Base {
         String filterText = "";
         String dropdownItem = "";
         if (actionevent instanceof Event) {
-          filterText = ((Event) actionevent).getPayload().get("filterText").toString();
-          dropdownItem = ((Event) actionevent).getPayload().get("dropdownItem").toString();
+          Event e = ((Event) actionevent);
+          filterText = e.getPayload().get("filterText").toString();
+          dropdownItem = e.getPayload().get("dropdownItem").toString();
         }
         try {
           openBoardsManager(filterText, dropdownItem);
@@ -1475,16 +1578,16 @@ public class Base {
     boardMenu.add(new JSeparator());
 
     // Generate custom menus for all platforms
-    Set<String> customMenusTitles = new LinkedHashSet<>();
     for (TargetPackage targetPackage : BaseNoGui.packages.values()) {
       for (TargetPlatform targetPlatform : targetPackage.platforms()) {
-        customMenusTitles.addAll(targetPlatform.getCustomMenus().values());
+        for (String customMenuTitle : targetPlatform.getCustomMenus().values()) {
+          JMenu customMenu = new JMenu(tr(customMenuTitle));
+          customMenu.putClientProperty("platform", getPlatformUniqueId(targetPlatform));
+          customMenu.putClientProperty("removeOnWindowDeactivation", true);
+          boardsCustomMenus.add(customMenu);
+          MenuScroller.setScrollerFor(customMenu);
+        }
       }
-    }
-    for (String customMenuTitle : customMenusTitles) {
-      JMenu customMenu = new JMenu(tr(customMenuTitle));
-      customMenu.putClientProperty("removeOnWindowDeactivation", true);
-      boardsCustomMenus.add(customMenu);
     }
 
     List<JMenuItem> menuItemsToClickAfterStartup = new LinkedList<>();
@@ -1492,22 +1595,28 @@ public class Base {
     ButtonGroup boardsButtonGroup = new ButtonGroup();
     Map<String, ButtonGroup> buttonGroupsMap = new HashMap<>();
 
+    List<JMenu> platformMenus = new ArrayList<>();
+
     // Cycle through all packages
-    boolean first = true;
     for (TargetPackage targetPackage : BaseNoGui.packages.values()) {
+      // For every package cycle through all platform
       for (TargetPlatform targetPlatform : targetPackage.platforms()) {
-		if (targetPlatform.getPreferences().get("name").equals("Vortex86EX (32-bits) Boards")) {
-          // Add a separator from the previous platform
-		  if (!first)
-            boardMenu.add(new JSeparator());
-          first = false;
+        if (targetPlatform.getPreferences().get("name").indexOf("Vortex86") >= 0) {
+          // Add a title for each platform
           String platformLabel = targetPlatform.getPreferences().get("name");
+          if (platformLabel == null)
+            platformLabel = targetPackage.getId() + "-" + targetPlatform.getId();
+          
+          // add an hint that this core lives in sketchbook
+          if (targetPlatform.isInSketchbook())
+            platformLabel += " (in sketchbook)";
+          
           if (platformLabel != null && !targetPlatform.getBoards().isEmpty()) {
             JMenuItem menuLabel = new JMenuItem(tr(platformLabel));
             menuLabel.setEnabled(false);
             boardMenu.add(menuLabel);
           }
-
+          
           // Cycle through all boards of this platform
           for (TargetBoard board : targetPlatform.getBoards().values()) {
             JMenuItem item = createBoardMenusAndCustomMenus(boardsCustomMenus, menuItemsToClickAfterStartup,
@@ -1516,27 +1625,28 @@ public class Base {
             boardMenu.add(item);
             boardsButtonGroup.add(item);
           }
-		}
-	  }
-	}
+        }
+      }
+    }
 
+    boardMenu.add(new JSeparator());
+    
     for (TargetPackage targetPackage : BaseNoGui.packages.values()) {
       // For every package cycle through all platform
       for (TargetPlatform targetPlatform : targetPackage.platforms()) {
-        if (targetPlatform.getPreferences().get("name").equals("Vortex86EX (32-bits) Boards")) continue;
-
-        // Add a separator from the previous platform
-        if (!first)
-          boardMenu.add(new JSeparator());
-        first = false;
-
+        if (targetPlatform.getPreferences().get("name").indexOf("Vortex86") >= 0) continue;
         // Add a title for each platform
         String platformLabel = targetPlatform.getPreferences().get("name");
-        if (platformLabel != null && !targetPlatform.getBoards().isEmpty()) {
-          JMenuItem menuLabel = new JMenuItem(tr(platformLabel));
-          menuLabel.setEnabled(false);
-          boardMenu.add(menuLabel);
-        }
+        if (platformLabel == null)
+          platformLabel = targetPackage.getId() + "-" + targetPlatform.getId();
+
+        // add an hint that this core lives in sketchbook
+        if (targetPlatform.isInSketchbook())
+          platformLabel += " (in sketchbook)";
+
+        JMenu platformBoardsMenu = new JMenu(platformLabel);
+        MenuScroller.setScrollerFor(platformBoardsMenu);
+        platformMenus.add(platformBoardsMenu);
 
         // Cycle through all boards of this platform
         for (TargetBoard board : targetPlatform.getBoards().values()) {
@@ -1545,12 +1655,40 @@ public class Base {
           JMenuItem item = createBoardMenusAndCustomMenus(boardsCustomMenus, menuItemsToClickAfterStartup,
                   buttonGroupsMap,
                   board, targetPlatform, targetPackage);
-          boardMenu.add(item);
+          platformBoardsMenu.add(item);
           boardsButtonGroup.add(item);
         }
       }
     }
 
+    platformMenus.sort((x,y) -> x.getText().compareToIgnoreCase(y.getText()));
+
+    JMenuItem firstBoardItem = null;
+    /*
+    if (platformMenus.size() == 1) {
+      // When just one platform exists, add the board items directly,
+      // rather than using a submenu
+      for (Component boardItem : platformMenus.get(0).getMenuComponents()) {
+        boardMenu.add(boardItem);
+        if (firstBoardItem == null)
+          firstBoardItem = (JMenuItem)boardItem;
+      }
+    } else {
+    */
+      // For multiple platforms, use submenus
+      for (JMenu platformMenu : platformMenus) {
+        if (firstBoardItem == null && platformMenu.getItemCount() > 0)
+          firstBoardItem = platformMenu.getItem(0);
+        boardMenu.add(platformMenu);
+      }
+    //}
+
+    if (firstBoardItem == null) {
+      throw new IllegalStateException("No available boards");
+    }
+
+    // If there is no current board yet (first startup, or selected
+    // board no longer defined), select first available board.
     if (menuItemsToClickAfterStartup.isEmpty()) {
       menuItemsToClickAfterStartup.add(selectFirstEnabledMenuItem(boardMenu));
     }
@@ -1559,6 +1697,10 @@ public class Base {
       menuItemToClick.setSelected(true);
       menuItemToClick.getAction().actionPerformed(new ActionEvent(this, -1, ""));
     }
+  }
+
+  private String getPlatformUniqueId(TargetPlatform platform) {
+    return platform.getId() + "_" + platform.getFolder();
   }
 
   private JRadioButtonMenuItem createBoardMenusAndCustomMenus(
@@ -1573,10 +1715,15 @@ public class Base {
     String boardId = board.getId();
     String packageName = targetPackage.getId();
     String platformName = targetPlatform.getId();
+    String myBoardName = ""; // 86Duino
+    if (board.getAliasName() != null)
+      myBoardName = board.getAliasName();
+    else
+      myBoardName = board.getName();
 
     // Setup a menu item for the current board
     @SuppressWarnings("serial")
-    Action action = new AbstractAction(board.getName()) {
+    Action action = new AbstractAction(myBoardName) {
       public void actionPerformed(ActionEvent actionevent) {
         BaseNoGui.selectBoard((TargetBoard) getValue("b"));
         filterVisibilityOfSubsequentBoardMenus(boardsCustomMenus, (TargetBoard) getValue("b"), 1);
@@ -1584,6 +1731,7 @@ public class Base {
         onBoardOrPortChange();
         rebuildImportMenu(Editor.importMenu);
         rebuildExamplesMenu(Editor.examplesMenu);
+        rebuildProgrammerMenu();
       }
     };
     action.putValue("b", board);
@@ -1598,7 +1746,7 @@ public class Base {
     PreferencesMap customMenus = targetPlatform.getCustomMenus();
     for (final String menuId : customMenus.keySet()) {
       String title = customMenus.get(menuId);
-      JMenu menu = getBoardCustomMenu(tr(title));
+      JMenu menu = getBoardCustomMenu(tr(title), getPlatformUniqueId(targetPlatform));
 
       if (board.hasMenu(menuId)) {
         PreferencesMap boardCustomMenu = board.getMenuLabels(menuId);
@@ -1606,11 +1754,16 @@ public class Base {
           @SuppressWarnings("serial")
           Action subAction = new AbstractAction(tr(boardCustomMenu.get(customMenuOption))) {
             public void actionPerformed(ActionEvent e) {
-              PreferencesData.set("custom_" + menuId, ((TargetBoard) getValue("board")).getId() + "_" + getValue("custom_menu_option"));
+              PreferencesData.set("custom_" + menuId, ((List<TargetBoard>) getValue("board")).get(0).getId() + "_" + getValue("custom_menu_option"));
               onBoardOrPortChange();
             }
           };
-          subAction.putValue("board", board);
+          List<TargetBoard> boards = (List<TargetBoard>) subAction.getValue("board");
+          if (boards == null) {
+            boards = new ArrayList<>();
+          }
+          boards.add(board);
+          subAction.putValue("board", boards);
           subAction.putValue("custom_menu_option", customMenuOption);
 
           if (!buttonGroupsMap.containsKey(menuId)) {
@@ -1638,7 +1791,9 @@ public class Base {
       JMenu menu = boardsCustomMenus.get(i);
       for (int m = 0; m < menu.getItemCount(); m++) {
         JMenuItem menuItem = menu.getItem(m);
-        menuItem.setVisible(menuItem.getAction().getValue("board").equals(board));
+        for (TargetBoard t_board : (List<TargetBoard>)menuItem.getAction().getValue("board")) {
+          menuItem.setVisible(t_board.equals(board));
+        }
       }
       menu.setVisible(ifThereAreVisibleItemsOn(menu));
 
@@ -1661,9 +1816,9 @@ public class Base {
     return false;
   }
 
-  private JMenu getBoardCustomMenu(String label) throws Exception {
+  private JMenu getBoardCustomMenu(String label, String platformUniqueId) throws Exception {
     for (JMenu menu : boardsCustomMenus) {
-      if (label.equals(menu.getText())) {
+      if (label.equals(menu.getText()) && menu.getClientProperty("platform").equals(platformUniqueId)) {
         return menu;
       }
     }
@@ -1704,31 +1859,51 @@ public class Base {
     }
     throw new IllegalStateException("Menu has no enabled items");
   }
-
+  
   public void rebuildProgrammerMenu() {
     programmerMenus = new LinkedList<>();
-
     ButtonGroup group = new ButtonGroup();
-    for (TargetPackage targetPackage : BaseNoGui.packages.values()) {
-      for (TargetPlatform targetPlatform : targetPackage.platforms()) {
-        for (String programmer : targetPlatform.getProgrammers().keySet()) {
-          String id = targetPackage.getId() + ":" + programmer;
 
-          @SuppressWarnings("serial")
-          AbstractAction action = new AbstractAction(targetPlatform.getProgrammer(programmer).get("name")) {
-            public void actionPerformed(ActionEvent actionevent) {
-              PreferencesData.set("programmer", "" + getValue("id"));
-            }
-          };
-          action.putValue("id", id);
-          JMenuItem item = new JRadioButtonMenuItem(action);
-          if (PreferencesData.get("programmer").equals(id)) {
-            item.setSelected(true);
-          }
-          group.add(item);
-          programmerMenus.add(item);
-        }
+    TargetBoard board = BaseNoGui.getTargetBoard();
+    if (board != null) {
+      TargetPlatform boardPlatform = board.getContainerPlatform();
+      TargetPlatform corePlatform = null;
+
+      String core = board.getPreferences().get("build.core");
+      if (core != null && core.contains(":")) {
+        String[] split = core.split(":", 2);
+        corePlatform = BaseNoGui.getCurrentTargetPlatformFromPackage(split[0]);
       }
+
+      addProgrammersForPlatform(boardPlatform, programmerMenus, group);
+      if (corePlatform != null)
+        addProgrammersForPlatform(corePlatform, programmerMenus, group);
+    }
+
+    if (programmerMenus.isEmpty()) {
+      JMenuItem item = new JMenuItem(tr("No programmers available for this board"));
+      item.setEnabled(false);
+      programmerMenus.add(item);
+    }
+  }
+
+  public void addProgrammersForPlatform(TargetPlatform platform, List<JMenuItem> menus, ButtonGroup group) {
+    for (String programmer : platform.getProgrammers().keySet()) {
+      String id = platform.getContainerPackage().getId() + ":" + programmer;
+
+      @SuppressWarnings("serial")
+      AbstractAction action = new AbstractAction(platform.getProgrammer(programmer).get("name")) {
+        public void actionPerformed(ActionEvent actionevent) {
+          PreferencesData.set("programmer", "" + getValue("id"));
+        }
+      };
+      action.putValue("id", id);
+      JMenuItem item = new JRadioButtonMenuItem(action);
+      if (PreferencesData.get("programmer").equals(id)) {
+        item.setSelected(true);
+      }
+      group.add(item);
+      menus.add(item);
     }
   }
 
@@ -1881,16 +2056,58 @@ public class Base {
   @SuppressWarnings("serial")
   public void handleAbout() {
     final Image image = Theme.getLibImage("about", activeEditor,
-                                          Theme.scale(475), Theme.scale(300));
+                                          Theme.scale(500), Theme.scale(300));
     final Window window = new Window(activeEditor) {
       public void paint(Graphics graphics) {
         Graphics2D g = Theme.setupGraphics2D(graphics);
         g.drawImage(image, 0, 0, null);
-
-        Font f = new Font("SansSerif", Font.PLAIN, Theme.scale(11));
+        Font f = new Font("Lucida Console", Font.PLAIN, Theme.scale(11));
         g.setFont(f);
-        g.setColor(new Color(0,151,156));
-        g.drawString(tr(BaseNoGui.VERSION_NAME_LONG), Theme.scale(33), Theme.scale(20));
+        g.setColor(new Color(240,240,240));
+
+        File aboutFile = getArduinoFile("hardware/86duino/x86/bootloaders/niitaka/about.v86");
+        if (aboutFile.exists())
+        {
+          int[] position = new int[2];
+          try
+			    {
+            InputStream is = new FileInputStream(aboutFile);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            String line = null;
+            int lineHeight = 0;
+            if ((line = reader.readLine()) != null) {
+              String[] numberArray = line.split(",");
+              int i = 0;
+              for (String numberString : numberArray) {
+                try {
+                    int number = Integer.parseInt(numberString.trim());
+                    position[i] = number;
+                    i++;
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid number: " + numberString);
+                }
+              }
+            }
+            
+            while((line = reader.readLine()) != null) {
+              g.drawString(line, Theme.scale(position[0]), Theme.scale(position[1] + lineHeight));
+              lineHeight += 12;
+            }
+            reader.close();
+          }
+          catch (FileNotFoundException e)
+          {
+          }
+          catch (UnsupportedEncodingException e)
+          {
+          }
+          catch (IOException e)
+          {
+            e.printStackTrace();
+          }
+        } else {
+          g.drawString(tr(BaseNoGui.VERSION_NAME_LONG), Theme.scale(33), Theme.scale(20));
+        }
       }
     };
     window.addMouseListener(new MouseAdapter() {
@@ -1906,6 +2123,20 @@ public class Base {
     window.setVisible(true);
   }
 
+  public File getArduinoFile(String name)
+	{
+		String path = System.getProperty("user.dir");
+		if (OSUtils.isMacOS())
+		{
+			String javaroot = System.getProperty("javaroot");
+			if (javaroot != null)
+			{
+				path = javaroot;
+			}
+		}
+		File workingDir = new File(path);
+		return new File(workingDir, name);
+	}
 
   /**
    * Show the Preferences window.
@@ -1936,9 +2167,6 @@ public class Base {
     getEditors().forEach(Editor::applyPreferences);
   }
 
-  private MouseWheelListener editorFontResizeMouseWheelListener = null;
-  private KeyListener editorFontResizeKeyListener = null;
-
   /**
    * Adds a {@link MouseWheelListener} and {@link KeyListener} to the given
    * component that will make "CTRL scroll" and "CTRL +/-"
@@ -1950,8 +2178,8 @@ public class Base {
    * @param comp - The component to add the listener to.
    */
   public void addEditorFontResizeListeners(Component comp) {
-    this.addEditorFontResizeMouseWheelListener(comp);
-    this.addEditorFontResizeKeyListener(comp);
+    addEditorFontResizeMouseWheelListener(comp);
+    addEditorFontResizeKeyListener(comp);
   }
 
   /**
@@ -1963,20 +2191,19 @@ public class Base {
    * @param comp - The component to add the listener to.
    */
   public void addEditorFontResizeMouseWheelListener(Component comp) {
-    if (this.editorFontResizeMouseWheelListener == null) {
-      this.editorFontResizeMouseWheelListener = (MouseWheelEvent e) -> {
-        if (e.isControlDown()) {
-          if (e.getWheelRotation() < 0) {
-            this.handleFontSizeChange(1);
-          } else {
-            this.handleFontSizeChange(-1);
-          }
+    comp.addMouseWheelListener(e -> {
+      if (e.isControlDown()) {
+        if (e.getWheelRotation() < 0) {
+          this.handleFontSizeChange(1);
         } else {
+          this.handleFontSizeChange(-1);
+        }
+      } else {
+        if (e.getComponent() != null && e.getComponent().getParent() != null) {
           e.getComponent().getParent().dispatchEvent(e);
         }
-      };
-    }
-    comp.addMouseWheelListener(this.editorFontResizeMouseWheelListener);
+      }
+    });
   }
 
   /**
@@ -1986,29 +2213,27 @@ public class Base {
    * @param comp - The component to add the listener to.
    */
   public void addEditorFontResizeKeyListener(Component comp) {
-    if (this.editorFontResizeKeyListener == null) {
-      this.editorFontResizeKeyListener = new KeyAdapter() {
-        @Override
-        public void keyPressed(KeyEvent e) {
-          if (e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK
-              || e.getModifiersEx() == (KeyEvent.CTRL_DOWN_MASK
-                  | KeyEvent.SHIFT_DOWN_MASK)) {
-            switch (e.getKeyCode()) {
-              case KeyEvent.VK_PLUS:
-              case KeyEvent.VK_EQUALS:
-                Base.this.handleFontSizeChange(1);
-                break;
-              case KeyEvent.VK_MINUS:
-                if (!e.isShiftDown()) {
-                  Base.this.handleFontSizeChange(-1);
-                }
-                break;
+    comp.addKeyListener(new KeyAdapter() {
+      @Override
+      public void keyPressed(KeyEvent e) {
+        if (e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK
+            || e.getModifiersEx() == (KeyEvent.CTRL_DOWN_MASK
+                                      | KeyEvent.SHIFT_DOWN_MASK)) {
+          switch (e.getKeyCode()) {
+          case KeyEvent.VK_PLUS:
+          case KeyEvent.VK_EQUALS:
+            Base.this.handleFontSizeChange(1);
+            break;
+          case KeyEvent.VK_MINUS:
+            if (!e.isShiftDown()) {
+              Base.this.handleFontSizeChange(-1);
             }
+            break;
+          default:
           }
         }
-      };
-    }
-    comp.addKeyListener(this.editorFontResizeKeyListener);
+      }
+    });
   }
 
   public List<JMenu> getBoardsCustomMenus() {
@@ -2159,83 +2384,57 @@ public class Base {
             JComponent.WHEN_IN_FOCUSED_WINDOW);
   }
 
-
-  // .................................................................
-
-
-  static public void showReference(String filename) {
-    showReference("reference/www.arduino.cc/en", filename);
-  }
-
-  static public void showReference(String prefix, String filename) {
-    File referenceFolder = getContentFile(prefix);
-    File referenceFile = new File(referenceFolder, filename);
-    if (!referenceFile.exists())
-      referenceFile = new File(referenceFolder, filename + ".html");
-
-    if(referenceFile.exists()){
-      openURL(referenceFile.getAbsolutePath());
-    }else{
-      showWarning(tr("Problem Opening URL"), format(tr("Could not open the URL\n{0}"), referenceFile), null);
-    }
-  }
-
-  public static void showEdisonGettingStarted() {
-    showReference("reference/Edison_help_files", "ArduinoIDE_guide_edison");
-  }
-
   static public void show86DuinoGettingStarted() {
-    openURL("http://www.86duino.com/?page_id=2844");
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      openURL("https://www.qec.tw/ethercat/ethercat-application/set-up-the-qec-m-043t-for-86duino/");
+    } else {
+      openURL("http://www.86duino.com/?page_id=2844");
+    }
   }
 
   static public void show86DuinoLanguageReference() {
-    openURL("http://www.86duino.com/?page_id=2255");
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      openURL("https://www.qec.tw/86duino/86duino-language-reference/");
+    } else {
+      openURL("http://www.86duino.com/?page_id=2255");
+    }
   }
 
   static public void show86DuinoLibrariesference() {
-    openURL("http://www.86duino.com/?page_id=2257");
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      openURL("https://www.qec.tw/86duino/libraries/");
+    } else {
+      openURL("http://www.86duino.com/?page_id=2257");
+    }
   }
 
   static public void show86DuinoHardwareference() {
-    openURL("http://www.86duino.com/?page_id=2848");
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      openURL("https://www.qec.tw/86duino/86duino-hardware-configuration-introduction-qec-m/");
+    } else {
+      openURL("http://www.86duino.com/?page_id=2848");
+    }
   }
 
   static public void show86DuinoEnvironment() {
-	openURL("http://www.86duino.com/?p=4427");
-  }
-  /*
-  static public void showArduinoGettingStarted() {
-    if (OSUtils.isMacOS()) {
-      showReference("Guide/MacOSX");
-    } else if (OSUtils.isWindows()) {
-      showReference("Guide/Windows");
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      openURL("https://www.qec.tw/86duino/86duino-development-environment/");
     } else {
-      openURL("http://www.arduino.cc/playground/Learning/Linux");
+	    openURL("http://www.86duino.com/?p=4427");
     }
-  }
-  */
-  static public void showReference() {
-    showReference("Reference/HomePage");
-  }
-
-
-  static public void showEnvironment() {
-    showReference("Guide/Environment");
-  }
-
-
-  static public void showTroubleshooting() {
-    showReference("Guide/Troubleshooting");
   }
 
   static public void show86DuinoForum() {
     openURL("http://www.86duino.com/?page_id=85");
   }
 
-  static public void showFAQ() {
-    showReference("Main/FAQ");
+  static public void show86DuinoWebLink() {
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      openURL("https://www.qec.tw/");
+    } else {
+      openURL("http://www.86duino.com/");
+    }
   }
-
 
   // .................................................................
 

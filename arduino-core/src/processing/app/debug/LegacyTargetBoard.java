@@ -60,6 +60,10 @@ public class LegacyTargetBoard implements TargetBoard {
     return prefs.get("name");
   }
 
+  public String getAliasName() {
+    return prefs.get("aliasname");
+  }
+  
   @Override
   public String getId() {
     return id;

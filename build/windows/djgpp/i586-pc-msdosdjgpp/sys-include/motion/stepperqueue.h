@@ -23,6 +23,7 @@
 #ifndef __STEPPERQUEUE_H
 #define __STEPPERQUEUE_H
 
+#include "global.h"
 #include "stepper.h"
 
 class MotStepperQueue

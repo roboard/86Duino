@@ -30,9 +30,8 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.MouseWheelEvent;
-
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.IOException;
 
 import javax.swing.Action;
@@ -177,6 +176,15 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
 
       editor.lineStatus.set(lineStart, lineEnd);
     });
+    textArea.addFocusListener(new FocusListener() {
+      public void focusGained(FocusEvent e) {
+        Element root = textArea.getDocument().getDefaultRootElement();
+        int lineStart = root.getElementIndex(textArea.getCaret().getMark());
+        int lineEnd = root.getElementIndex(textArea.getCaret().getDot());
+        editor.lineStatus.set(lineStart, lineEnd);
+      };
+      public void focusLost(FocusEvent e) {};
+    });
     ToolTipManager.sharedInstance().registerComponent(textArea);
 
     configurePopupMenu(textArea);
@@ -239,7 +247,7 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
     menu.add(item);
 
     final JMenuItem referenceItem = new JMenuItem(tr("Find in Reference"));
-    referenceItem.addActionListener(editor::handleFindReference);
+    referenceItem.addActionListener(ev -> editor.handleFindReference(getCurrentKeyword()));
     menu.add(referenceItem);  
 
     final JMenuItem openURLItem = new JMenuItem(tr("Open URL"));
@@ -434,6 +442,9 @@ public class EditorTab extends JPanel implements SketchFile.TextStorage {
     } finally {
       caret.setUpdatePolicy(policy);
     }
+    // A trick to force textarea to recalculate the bracket matching rectangle.
+    // In the worst case scenario, this should be ineffective.
+    textarea.setLineWrap(textarea.getLineWrap());
   }
 
   /**

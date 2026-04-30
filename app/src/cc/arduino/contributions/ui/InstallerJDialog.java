@@ -71,7 +71,6 @@ import javax.swing.text.DefaultEditorKit;
 
 import cc.arduino.contributions.ui.listeners.AbstractKeyListener;
 import processing.app.Base;
-import processing.app.Theme;
 
 public abstract class InstallerJDialog<T> extends JDialog {
 
@@ -82,6 +81,7 @@ public abstract class InstallerJDialog<T> extends JDialog {
   protected final FilterJTextField filterField;
   protected final JPanel filtersContainer;
   // Currently selected category and filters
+  protected Predicate<T> extraFilter = x -> true;
   protected Predicate<T> categoryFilter;
   protected String[] filters;
   protected final String noConnectionErrorMessage;
@@ -133,6 +133,7 @@ public abstract class InstallerJDialog<T> extends JDialog {
           updateIndexFilter(filters, categoryFilter);
         }
       };
+      filterField.getAccessibleContext().setAccessibleDescription(tr("Search Filter"));
 
       // Add cut/copy/paste contextual menu to the search filter input field.
       JPopupMenu menu = new JPopupMenu();
@@ -179,7 +180,6 @@ public abstract class InstallerJDialog<T> extends JDialog {
     contribTable.setDragEnabled(false);
     contribTable.setIntercellSpacing(new Dimension(0, 1));
     contribTable.setShowVerticalLines(false);
-    contribTable.setSelectionBackground(Theme.getColor("status.notice.bgcolor"));
     contribTable.addKeyListener(new AbstractKeyListener() {
 
       @Override
@@ -329,7 +329,6 @@ public abstract class InstallerJDialog<T> extends JDialog {
   }
 
   protected final ActionListener categoryChooserActionListener = new ActionListener() {
-
     @Override
     public void actionPerformed(ActionEvent event) {
       DropdownItem<T> selected = (DropdownItem<T>) categoryChooser.getSelectedItem();
@@ -339,7 +338,7 @@ public abstract class InstallerJDialog<T> extends JDialog {
         if (contribTable.getCellEditor() != null) {
           contribTable.getCellEditor().stopCellEditing();
         }
-        updateIndexFilter(filters, categoryFilter);
+        updateIndexFilter(filters, categoryFilter.and(extraFilter));
       }
     }
   };

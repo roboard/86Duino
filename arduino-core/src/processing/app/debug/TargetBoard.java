@@ -32,7 +32,7 @@ public interface TargetBoard {
    * @return
    */
   public String getName();
-
+  public String getAliasName();
   /**
    * Get the identifier of the board
    * 

@@ -24,33 +24,38 @@
 #define __INTERPOLATOR_H
 
 #include <TimerWDT.h>
-
 #include "global.h"
 #include "setting.h"
 #include "blockqueue.h"
 #include "stepperqueue.h"
-#include "planner.h"
-#include "dda.h"
+#include "MotInterface.h"
 
 class MotInterpolator
 {
   public:
-    MotInterpolator(MotSetting *_setting, MotBlockQueue *_bqueue, MotStepperQueue *_squeue, MotDDA *_dda);
+    MotInterpolator(MotSetting *_setting, MotBlockQueue *_bqueue, MotStepperQueue *_squeue, MotInterface *_motDevice);
     ~MotInterpolator();
 
     void run_cycle(void);
     void clearInterpolatorBuffer(void);
-    void InitJog(bool(*checkCallback)(int));
-    void CloseJog();
     int getTimerPeriod();
+    void st_set_motor_dir_invert(int axis, int invert);
+    int st_get_motor_dir_invert(int axis);
+	
+	 
+    static bool AttachInterrupt();
+    static bool DetachInterrupt(); 
+	
   private:
     MotSetting *setting;
     MotBlockQueue *bqueue;
     MotStepperQueue *squeue;
-    MotDDA *dda;
+    MotInterface *motDevice;
 
     MotBlock *current_block;
-    unsigned char out_bits;
+    
+    long block_steps[MAX_AXIS];
+    unsigned char block_dir_bits;
     long counter[MAX_AXIS];
 
     volatile double acc_vel_square, dec_vel_square;
@@ -59,15 +64,14 @@ class MotInterpolator
     unsigned char motor_dir[MAX_AXIS];
     int count_dir[MAX_AXIS];
     double skip_pluse = 0.0;
-    unsigned long step_nominal, acceleration_time, deceleration_time, acc_step_rate;
+    double step_nominal;
+    double acceleration_time, deceleration_time, acc_step_rate;
+    double tmp_period;
 
-    unsigned long calc_vel(unsigned long acc_time, unsigned long acc_st);
+    unsigned long calc_vel(double acc_time, unsigned long acc_st);
     unsigned long acc_calc(unsigned long count, unsigned long acc_st);
     unsigned long dec_calc(unsigned long count, unsigned long acc_st);
-    unsigned long calc_timer(unsigned long step_rate);
+    double calc_timer(double step_rate);
 };
-
-bool interpolator_AttachInterrupt();
-bool interpolator_DetachInterrupt();
 
 #endif

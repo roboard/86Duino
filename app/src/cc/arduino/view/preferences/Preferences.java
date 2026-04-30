@@ -134,6 +134,7 @@ public class Preferences extends javax.swing.JDialog {
     externalEditorBox = new javax.swing.JCheckBox();
     checkUpdatesBox = new javax.swing.JCheckBox();
     saveVerifyUploadBox = new javax.swing.JCheckBox();
+    accessibleIDEBox = new javax.swing.JCheckBox();
     jLabel1 = new javax.swing.JLabel();
     jLabel2 = new javax.swing.JLabel();
     scaleSpinner = new javax.swing.JSpinner();
@@ -280,6 +281,9 @@ public class Preferences extends javax.swing.JDialog {
 
     saveVerifyUploadBox.setText(tr("Save when verifying or uploading"));
     checkboxesContainer.add(saveVerifyUploadBox);
+
+    accessibleIDEBox.setText(tr("Use accessibility features"));
+    checkboxesContainer.add(accessibleIDEBox);
 
     jLabel1.setText(tr("Interface scale:"));
 
@@ -713,6 +717,7 @@ public class Preferences extends javax.swing.JDialog {
   private javax.swing.JCheckBox autoScaleCheckBox;
   private javax.swing.JButton browseButton;
   private javax.swing.JCheckBox checkUpdatesBox;
+  private javax.swing.JCheckBox accessibleIDEBox;
   private javax.swing.JPanel checkboxesContainer;
   private javax.swing.JComboBox comboLanguage;
   private javax.swing.JLabel comboLanguageLabel;
@@ -826,7 +831,7 @@ public class Preferences extends javax.swing.JDialog {
 
     PreferencesData.setBoolean("update.check", checkUpdatesBox.isSelected());
 
-    PreferencesData.setBoolean("editor.save_on_verify", saveVerifyUploadBox.isSelected());
+    PreferencesData.setBoolean("ide.accessible", accessibleIDEBox.isSelected());
 
     PreferencesData.set("boardsmanager.additional.urls", additionalBoardsManagerField.getText().replace("\r\n", "\n").replace("\r", "\n").replace("\n", ","));
 
@@ -835,10 +840,14 @@ public class Preferences extends javax.swing.JDialog {
     PreferencesData.set(Constants.PREF_PROXY_MANUAL_TYPE, manualProxyTypeButtonGroup.getSelection().getActionCommand());
     PreferencesData.set(Constants.PREF_PROXY_MANUAL_HOSTNAME, manualProxyHostName.getText());
     PreferencesData.set(Constants.PREF_PROXY_MANUAL_PORT, manualProxyPort.getText());
-    PreferencesData.set(Constants.PREF_PROXY_MANUAL_USERNAME, manualProxyUsername.getText());
-    PreferencesData.set(Constants.PREF_PROXY_MANUAL_PASSWORD, String.valueOf(manualProxyPassword.getPassword()));
-    PreferencesData.set(Constants.PREF_PROXY_AUTO_USERNAME, autoProxyUsername.getText());
-    PreferencesData.set(Constants.PREF_PROXY_AUTO_PASSWORD, String.valueOf(autoProxyPassword.getPassword()));
+    if (PreferencesData.get(Constants.PREF_PROXY_TYPE).equals(Constants.PROXY_TYPE_MANUAL)) {
+      PreferencesData.set(Constants.PREF_PROXY_USERNAME, manualProxyUsername.getText());
+      PreferencesData.set(Constants.PREF_PROXY_PASSWORD, String.valueOf(manualProxyPassword.getPassword()));
+    }
+    if (PreferencesData.get(Constants.PREF_PROXY_TYPE).equals(Constants.PROXY_TYPE_AUTO)) {
+      PreferencesData.set(Constants.PREF_PROXY_USERNAME, autoProxyUsername.getText());
+      PreferencesData.set(Constants.PREF_PROXY_PASSWORD, String.valueOf(autoProxyPassword.getPassword()));
+    }
   }
 
   private void showPreferencesData() {
@@ -902,6 +911,8 @@ public class Preferences extends javax.swing.JDialog {
       PreferencesData.setBoolean("editor.update_extension", true);
     }
 
+    accessibleIDEBox.setSelected(PreferencesData.getBoolean("ide.accessible"));
+
     saveVerifyUploadBox.setSelected(PreferencesData.getBoolean("editor.save_on_verify"));
 
     additionalBoardsManagerField.setText(PreferencesData.get("boardsmanager.additional.urls"));
@@ -917,16 +928,16 @@ public class Preferences extends javax.swing.JDialog {
       if (!PreferencesData.get(Constants.PREF_PROXY_PAC_URL, "").isEmpty()) {
         autoProxyUsePAC.setSelected(true);
         autoProxyPACURL.setText(PreferencesData.get(Constants.PREF_PROXY_PAC_URL));
-        autoProxyUsername.setText(PreferencesData.get(Constants.PREF_PROXY_AUTO_USERNAME));
-        autoProxyPassword.setText(PreferencesData.get(Constants.PREF_PROXY_AUTO_PASSWORD));
+        autoProxyUsername.setText(PreferencesData.get(Constants.PREF_PROXY_USERNAME));
+        autoProxyPassword.setText(PreferencesData.get(Constants.PREF_PROXY_PASSWORD));
       }
     } else {
       manualProxy.setSelected(true);
       manualProxyFieldsSetEnabled(true);
       manualProxyHostName.setText(PreferencesData.get(Constants.PREF_PROXY_MANUAL_HOSTNAME));
       manualProxyPort.setText(PreferencesData.get(Constants.PREF_PROXY_MANUAL_PORT));
-      manualProxyUsername.setText(PreferencesData.get(Constants.PREF_PROXY_MANUAL_USERNAME));
-      manualProxyPassword.setText(PreferencesData.get(Constants.PREF_PROXY_MANUAL_PASSWORD));
+      manualProxyUsername.setText(PreferencesData.get(Constants.PREF_PROXY_USERNAME));
+      manualProxyPassword.setText(PreferencesData.get(Constants.PREF_PROXY_PASSWORD));
     }
 
     String selectedManualProxyType = PreferencesData.get(Constants.PREF_PROXY_MANUAL_TYPE, Constants.PROXY_MANUAL_TYPE_HTTP);

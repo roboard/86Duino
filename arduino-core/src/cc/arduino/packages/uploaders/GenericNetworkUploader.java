@@ -109,9 +109,8 @@ public class GenericNetworkUploader extends Uploader {
   public boolean burnBootloader() throws RunnerException {
     throw new RunnerException("Burning bootloader is not supported via network!");
   }
-
   @Override
-  public boolean burn86Bootloader() throws RunnerException {
+  public boolean burn86Bootloader(String s) throws RunnerException {
     throw new RunnerException("Burning bootloader is not supported via network!");
   }
 }

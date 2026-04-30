@@ -36,7 +36,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 import org.apache.commons.compress.utils.IOUtils;
 import processing.app.BaseNoGui;
 import processing.app.I18n;
@@ -47,6 +46,7 @@ import processing.app.packages.UserLibrary;
 import processing.app.packages.UserLibraryFolder;
 import processing.app.packages.UserLibraryFolder.Location;
 import processing.app.packages.UserLibraryPriorityComparator;
+import processing.app.debug.TargetPlatform; // for 86Duino
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -66,23 +66,34 @@ public class LibrariesIndexer {
   private final LibraryList installedLibraries = new LibraryList();
   private List<UserLibraryFolder> librariesFolders;
   private final File indexFile;
+  private final File indexFile_86Duino;
   private final File stagingFolder;
 
   private final List<String> badLibNotified = new ArrayList<>();
 
   public LibrariesIndexer(File preferencesFolder) {
-    indexFile = new File(preferencesFolder, "library_86Duino_index.json");
+    indexFile_86Duino = new File(preferencesFolder, "library_86Duino_index.json");
+    indexFile = new File(preferencesFolder, "library_index.json");
     stagingFolder = new File(new File(preferencesFolder, "staging"), "libraries");
   }
 
   public void parseIndex() throws IOException {
-    index = new EmptyLibrariesIndex(); // Fallback
+    index = new LibrariesIndex(); // Fallback
 
-    if (!indexFile.exists()) {
-      return;
-    }
+    TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform(); // for 86Duino
+    if (targetPlatform.getPreferences().get("name").indexOf("Vortex86") >= 0) { // for 86Duino
+      if (!indexFile_86Duino.exists()) {
+        return;
+      }
 
-    parseIndex(indexFile);
+      parseIndex(indexFile_86Duino);
+    } else {
+      if (!indexFile.exists()) {
+        return;
+      }
+      
+      parseIndex(indexFile);
+    } 
 
     // TODO: resolve libraries inner references
   }
@@ -92,7 +103,6 @@ public class LibrariesIndexer {
     try {
       indexIn = new FileInputStream(file);
       ObjectMapper mapper = new ObjectMapper();
-      mapper.registerModule(new MrBeanModule());
       mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
       mapper.configure(DeserializationFeature.EAGER_DESERIALIZER_FETCH, true);
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -116,7 +126,11 @@ public class LibrariesIndexer {
   }
 
   public void setLibrariesFolders(List<UserLibraryFolder> folders) {
-    librariesFolders = folders;
+    this.librariesFolders = folders;
+  }
+
+  public void setLibrariesFoldersAndRescan(List<UserLibraryFolder> folders) {
+    setLibrariesFolders(folders);
     rescanLibraries();
   }
 
@@ -229,26 +243,25 @@ public class LibrariesIndexer {
     addToInstalledLibraries(lib);
 
     Location loc = lib.getLocation();
-    if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86EX")<0) {
-	  if (loc != Location.CORE && loc != Location.REFERENCED_CORE) {
-	    // Check if we can find the same library in the index
-	    // and mark it as installed
-	    ContributedLibrary foundLib = index.find(lib.getName(), lib.getVersion());
-	    if (foundLib != null) {
-	      foundLib.setInstalledUserLibrary(lib);
-	      lib.setTypes(foundLib.getTypes());
-	    }
-	  }
-	} else {
-      // for 86Duino
-	  if (lib.getTypes().isEmpty() && lib.getDeclaredTypes().get(0).equals("86Duino")) {
-        lib.setTypes(lib.getDeclaredTypes());
-	  }
-
-      if (lib.getTypes().isEmpty() && lib.getDeclaredTypes().get(0).equals("Arduino")) {
-        lib.setTypes(lib.getDeclaredTypes());
-	  }
-	}
+    if (loc != Location.CORE && loc != Location.REFERENCED_CORE) {
+      // Check if we can find the same library in the index
+      // and mark it as installed
+      ContributedLibrary foundLib = index.find(lib.getName(), lib.getVersion());
+      if (foundLib != null) {
+        foundLib.setInstalledUserLibrary(lib);
+        if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86")<0)
+        lib.setTypes(foundLib.getTypes());
+      }
+    }
+    
+    // for 86Duino
+    if (lib.getTypes().isEmpty() && lib.getDeclaredTypes().get(0).equals("86Duino")) {
+      lib.setTypes(lib.getDeclaredTypes());
+    }
+    
+    if (lib.getTypes().isEmpty() && lib.getDeclaredTypes().get(0).equals("Arduino")) {
+      lib.setTypes(lib.getDeclaredTypes());
+    }
 
     if (lib.getTypes().isEmpty() && loc == Location.SKETCHBOOK) {
       lib.setTypes(lib.getDeclaredTypes());
@@ -272,6 +285,10 @@ public class LibrariesIndexer {
   }
 
   public File getIndexFile() {
+    TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform(); // for 86Duino
+    if (targetPlatform.getPreferences().get("name").indexOf("Vortex86") >= 0) { // for 86Duino
+      return indexFile_86Duino;
+    } 
     return indexFile;
   }
 }

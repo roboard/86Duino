@@ -1,7 +1,7 @@
 This is doc/gccinstall.info, produced by makeinfo version 4.13 from
-../../gnu/gcc-6.40/gcc/doc/install.texi.
+../../gnu/gcc-8.30/gcc/doc/install.texi.
 
-Copyright (C) 1988-2017 Free Software Foundation, Inc.
+Copyright (C) 1988-2018 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -20,7 +20,7 @@ is included in the section entitled "GNU Free Documentation License".
 software.  Copies published by the Free Software Foundation raise
 funds for GNU development.
 
-   Copyright (C) 1988-2017 Free Software Foundation, Inc.
+   Copyright (C) 1988-2018 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -195,7 +195,7 @@ GNU tar version 1.14 (or later)
      systems' `tar' programs will also work, only try GNU `tar' if you
      have problems.
 
-Perl version 5.6.1 (or later)
+Perl version between 5.6.1 and 5.6.24
      Necessary when targeting Darwin, building `libstdc++', and not
      using `--disable-symvers'.  Necessary when targeting Solaris 2
      with Sun `ld' and not using `--disable-symvers'.  The bundled
@@ -207,8 +207,7 @@ Perl version 5.6.1 (or later)
      scripts to generate some files included in SVN (mainly
      Unicode-related and rarely changing) from source tables.
 
-`jar', or InfoZIP (`zip' and `unzip')
-     Necessary to build libgcj, the GCJ runtime.
+     Used by `automake'.
 
 
    Several support libraries are necessary to build GCC, some are
@@ -226,7 +225,8 @@ GNU Multiple Precision Library (GMP) version 4.3.2 (or later)
      together with GCC.  Alternatively, if GMP is already installed but
      it is not in your library search path, you will have to configure
      with the `--with-gmp' configure option.  See also `--with-gmp-lib'
-     and `--with-gmp-include'.
+     and `--with-gmp-include'.  The in-tree build is only supported
+     with the GMP version that download_prerequisites installs.
 
 MPFR Library version 2.4.2 (or later)
      Necessary to build GCC.  It can be downloaded from
@@ -235,7 +235,9 @@ MPFR Library version 2.4.2 (or later)
      built together with GCC.  Alternatively, if MPFR is already
      installed but it is not in your default library search path, the
      `--with-mpfr' configure option should be used.  See also
-     `--with-mpfr-lib' and `--with-mpfr-include'.
+     `--with-mpfr-lib' and `--with-mpfr-include'.  The in-tree build is
+     only supported with the MPFR version that download_prerequisites
+     installs.
 
 MPC Library version 0.8.1 (or later)
      Necessary to build GCC.  It can be downloaded from
@@ -244,9 +246,11 @@ MPC Library version 0.8.1 (or later)
      will be built together with GCC.  Alternatively, if MPC is already
      installed but it is not in your default library search path, the
      `--with-mpc' configure option should be used.  See also
-     `--with-mpc-lib' and `--with-mpc-include'.
+     `--with-mpc-lib' and `--with-mpc-include'.  The in-tree build is
+     only supported with the MPC version that download_prerequisites
+     installs.
 
-isl Library version 0.16, 0.15, or 0.14.
+isl Library version 0.15 or later.
      Necessary to build GCC with the Graphite loop optimizations.  It
      can be downloaded from `ftp://gcc.gnu.org/pub/gcc/infrastructure/'.
      If an isl source distribution is found in a subdirectory of your
@@ -276,6 +280,9 @@ automake version 1.11.6
      in the 1.11 series, which is currently 1.11.6.  When regenerating
      a directory to a newer version, please update all the directories
      using an older 1.11 to the latest released version.
+
+     Note that `automake' 1.11.6 is incompatible with `perl' version
+     5.6.26.
 
 gettext version 0.14.5 (or later)
      Needed to regenerate `gcc.pot'.
@@ -344,25 +351,6 @@ patch version 2.5.4 (or later)
      Necessary when applying patches, created with `diff', to one's own
      sources.
 
-ecj1
-gjavah
-     If you wish to modify `.java' files in libjava, you will need to
-     configure with `--enable-java-maintainer-mode', and you will need
-     to have executables named `ecj1' and `gjavah' in your path.  The
-     `ecj1' executable should run the Eclipse Java compiler via the
-     GCC-specific entry point.  You can download a suitable jar from
-     `ftp://sourceware.org/pub/java/', or by running the script
-     `contrib/download_ecj'.
-
-antlr.jar version 2.7.1 (or later)
-antlr binary
-     If you wish to build the `gjdoc' binary in libjava, you will need
-     to have an `antlr.jar' library available. The library is searched
-     for in system locations but can be specified with
-     `--with-antlr-jar=' instead.  When configuring with
-     `--enable-java-maintainer-mode', you will need to have one of the
-     executables named `cantlr', `runantlr' or `antlr' in your path.
-
 
 
 File: gccinstall.info,  Node: Downloading the source,  Next: Configuration,  Prev: Prerequisites,  Up: Installing GCC
@@ -377,11 +365,11 @@ File: gccinstall.info,  Node: Downloading the source,  Next: Configuration,  Pre
 obtain GCC.
 
    The source distribution includes the C, C++, Objective-C, Fortran,
-Java, and Ada (in the case of GCC 3.1 and later) compilers, as well as
-runtime libraries for C++, Objective-C, Fortran, and Java.  For
-previous versions these were downloadable as separate components such
-as the core GCC distribution, which included the C language front end
-and shared components, and language-specific distributions including the
+and Ada (in the case of GCC 3.1 and later) compilers, as well as
+runtime libraries for C++, Objective-C, and Fortran.  For previous
+versions these were downloadable as separate components such as the
+core GCC distribution, which included the C language front end and
+shared components, and language-specific distributions including the
 language front end and the language runtime (where appropriate).
 
    If you also intend to build binutils (either to upgrade an existing
@@ -700,6 +688,10 @@ option.
      specified where to install part of GCC.  Perhaps they make this
      assumption because installing GCC creates the directory.
 
+`--with-gcc-major-version-only'
+     Specifies that GCC should use only the major number rather than
+     MAJOR.MINOR.PATCHLEVEL in filesystem paths.
+
 `--with-native-system-header-dir=DIRNAME'
      Specifies that DIRNAME is the directory that contains native system
      header files, rather than `/usr/include'.  This option is most
@@ -719,8 +711,8 @@ option.
      static libraries will be built.  Package names currently
      recognized in the GCC tree are `libgcc' (also known as `gcc'),
      `libstdc++' (not `libstdc++-v3'), `libffi', `zlib', `boehm-gc',
-     `ada', `libada', `libjava', `libgo', and `libobjc'.  Note
-     `libiberty' does not support shared libraries at all.
+     `ada', `libada', `libgo', and `libobjc'.  Note `libiberty' does
+     not support shared libraries at all.
 
      Use `--disable-shared' to build only static libraries.  Note that
      `--disable-shared' does not accept a list of package names as
@@ -801,33 +793,6 @@ option.
      whatever format the host normally uses.  Normally GCC uses the
      same debug format as the host system.
 
-     On MIPS based systems and on Alphas, you must specify whether you
-     want GCC to create the normal ECOFF debugging format, or to use
-     BSD-style stabs passed through the ECOFF symbol table.  The normal
-     ECOFF debug format cannot fully handle languages other than C.
-     BSD stabs format can handle other languages, but it only works
-     with the GNU debugger GDB.
-
-     Normally, GCC uses the ECOFF debugging format by default; if you
-     prefer BSD stabs, specify `--with-stabs' when you configure GCC.
-
-     No matter which default you choose when you configure GCC, the user
-     can use the `-gcoff' and `-gstabs+' options to specify explicitly
-     the debug format for a particular compilation.
-
-     `--with-stabs' is meaningful on the ISC system on the 386, also, if
-     `--with-gas' is used.  It selects use of stabs debugging
-     information embedded in COFF output.  This kind of debugging
-     information supports C++ well; ordinary COFF debugging information
-     does not.
-
-     `--with-stabs' is also meaningful on 386 systems running SVR4.  It
-     selects use of stabs debugging information embedded in ELF output.
-     The C++ compiler currently (2.6.0) does not support the DWARF
-     debugging information normally used on 386 SVR4 platforms; stabs
-     provide a workable alternative.  This requires gas and gdb, as the
-     normal SVR4 tools can not generate or interpret stabs.
-
 `--with-tls=DIALECT'
      Specify the default TLS dialect, for systems were there is a
      choice.  For ARM targets, possible values for DIALECT are `gnu' or
@@ -885,19 +850,56 @@ option.
 
 `--with-multilib-list=LIST'
 `--without-multilib-list'
-     Specify what multilibs to build.  Currently only implemented for
-     arm*-*-*, sh*-*-* and x86-64-*-linux*.
+     Specify what multilibs to build.  LIST is a comma separated list of
+     values, possibly consisting of a single value.  Currently only
+     implemented for aarch64*-*-*, arm*-*-*, sh*-*-* and
+     x86-64-*-linux*.  The accepted alues and meaning for each target
+     is given below.
+
+    `aarch64*-*-*'
+          LIST is a comma separated list of `ilp32', and `lp64' to
+          enable ILP32 and LP64 run-time libraries, respectively.  If
+          LIST is empty, then there will be no multilibs and only the
+          default run-time library will be built.  If LIST is `default'
+          or -with-multilib-list= is not specified, then the default
+          set of libraries is selected based on the value of `--target'.
 
     `arm*-*-*'
-          LIST is either `default' or `aprofile'.  Specifying `default'
-          is equivalent to omitting this option while specifying
-          `aprofile' builds multilibs for each combination of ISA
-          (`-marm' or `-mthumb'), architecture (`-march=armv7-a',
-          `-march=armv7ve', or `-march=armv8-a'), FPU available (none,
-          `-mfpu=vfpv3-d16', `-mfpu=neon', `-mfpu=vfpv4-d16',
-          `-mfpu=neon-vfpv4' or `-mfpu=neon-fp-armv8' depending on
-          architecture) and floating-point ABI (`-mfloat-abi=softfp' or
-          `-mfloat-abi=hard').
+          LIST is a comma separated list of `aprofile' and `rmprofile'
+          to build multilibs for A or R and M architecture profiles
+          respectively.  Note that, due to some limitation of the
+          current multilib framework, using the combined
+          `aprofile,rmprofile' multilibs selects in some cases a less
+          optimal multilib than when using the multilib profile for the
+          architecture targetted.  The special value `default' is also
+          accepted and is equivalent to omitting the option, ie. only
+          the default run-time library will be enabled.
+
+          The table below gives the combination of ISAs, architectures,
+          FPUs and floating-point ABIs for which multilibs are built
+          for each accepted value.  The union of these options is
+          considered when specifying both `aprofile' and `rmprofile'.
+
+          Option    aprofile          rmprofile
+          ISAs      `-marm' and       `-mthumb'
+                    `-mthumb'         
+          Architecturesdefault           default
+                    architecture      architecture
+                    `-march=armv7-a'  `-march=armv6s-m'
+                    `-march=armv7ve'  `-march=armv7-m'
+                    `-march=armv8-a'  `-march=armv7e-m'
+                                      `-march=armv8-m.base'
+                                      `-march=armv8-m.main'
+                                      `-march=armv7'
+          FPUs      none              none
+                    `-mfpu=vfpv3-d16' `-mfpu=vfpv3-d16'
+                    `-mfpu=neon'      `-mfpu=fpv4-sp-d16'
+                    `-mfpu=vfpv4-d16' `-mfpu=fpv5-sp-d16'
+                    `-mfpu=neon-vfpv4'`-mfpu=fpv5-d16'
+                    `-mfpu=neon-fp-armv8'
+          floating-point`-mfloat-abi=soft'`-mfloat-abi=soft'
+          ABIs      `-mfloat-abi=softfp'`-mfloat-abi=softfp'
+                    `-mfloat-abi=hard'`-mfloat-abi=hard'
 
     `sh*-*-*'
           LIST is a comma separated list of CPU names.  These must be
@@ -961,8 +963,8 @@ option.
 `--enable-threads'
      Specify that the target supports threads.  This affects the
      Objective-C compiler and runtime library, and exception handling
-     for other languages like C++ and Java.  On some systems, this is
-     the default.
+     for other languages like C++.  On some systems, this is the
+     default.
 
      In general, the best (and, in many cases, the only known) threading
      model available will be configured for use.  Beware that on some
@@ -977,8 +979,7 @@ option.
 `--enable-threads=LIB'
      Specify that LIB is the thread support library.  This affects the
      Objective-C compiler and runtime library, and exception handling
-     for other languages like C++ and Java.  The possibilities for LIB
-     are:
+     for other languages like C++.  The possibilities for LIB are:
 
     `aix'
           AIX thread support.
@@ -1138,6 +1139,40 @@ option.
      On MIPS targets, make `-mno-synci' the default when no `-msynci'
      option is passed.  This is the default.
 
+`--with-lxc1-sxc1'
+     On MIPS targets, make `-mlxc1-sxc1' the default when no
+     `-mno-lxc1-sxc1' option is passed.  This is the default.
+
+`--without-lxc1-sxc1'
+     On MIPS targets, make `-mno-lxc1-sxc1' the default when no
+     `-mlxc1-sxc1' option is passed.  The indexed load/store
+     instructions are not directly a problem but can lead to unexpected
+     behaviour when deployed in an application intended for a 32-bit
+     address space but run on a 64-bit processor.  The issue is seen
+     because all known MIPS 64-bit Linux kernels execute o32 and n32
+     applications with 64-bit addressing enabled which affects the
+     overflow behaviour of the indexed addressing mode.  GCC will
+     assume that ordinary 32-bit arithmetic overflow behaviour is the
+     same whether performed as an `addu' instruction or as part of the
+     address calculation in `lwxc1' type instructions.  This assumption
+     holds true in a pure 32-bit environment and can hold true in a
+     64-bit environment if the address space is accurately set to be
+     32-bit for o32 and n32.
+
+`--with-madd4'
+     On MIPS targets, make `-mmadd4' the default when no `-mno-madd4'
+     option is passed.  This is the default.
+
+`--without-madd4'
+     On MIPS targets, make `-mno-madd4' the default when no `-mmadd4'
+     option is passed.  The `madd4' instruction family can be
+     problematic when targeting a combination of cores that implement
+     these instructions differently.  There are two known cores that
+     implement these as fused operations instead of unfused (where
+     unfused is normally expected).  Disabling these instructions is the
+     only way to ensure compatible code is generated; this will incur a
+     performance penalty.
+
 `--with-mips-plt'
      On MIPS targets, make use of copy relocations and PLTs.  These
      features are extensions to the traditional SVR4-based MIPS ABIs
@@ -1226,7 +1261,7 @@ option.
      `--with-gxx-include-dir=DIRNAME'.  Using this option is
      particularly useful if you intend to use several versions of GCC in
      parallel.  This is currently supported by `libgfortran',
-     `libjava', `libstdc++', and `libobjc'.
+     `libstdc++', and `libobjc'.
 
 `--with-aix-soname=`aix', `svr4' or `both''
      Traditional AIX shared library versioning (versioned `Shared
@@ -1348,15 +1383,18 @@ option.
      LANGN you can issue the following command in the `gcc' directory
      of your GCC source tree:
           grep ^language= */config-lang.in
-     Currently, you can use any of the following: `all', `ada', `c',
-     `c++', `fortran', `go', `java', `jit', `lto', `objc', `obj-c++'.
-     Building the Ada compiler has special requirements, see below.  If
-     you do not pass this flag, or specify the option `all', then all
-     default languages available in the `gcc' sub-tree will be
-     configured.  Ada, Go, Jit, and Objective-C++ are not default
-     languages.  LTO is not a default language, but is built by default
-     because `--enable-lto' is enabled by default.  The other languages
-     are default languages.
+     Currently, you can use any of the following: `all', `default',
+     `ada', `c', `c++', `fortran', `go', `jit', `lto', `objc',
+     `obj-c++'.  Building the Ada compiler has special requirements,
+     see below.  If you do not pass this flag, or specify the option
+     `default', then the default languages available in the `gcc'
+     sub-tree will be configured.  Ada, Go, Jit, and Objective-C++ are
+     not default languages.  LTO is not a default language, but is
+     built by default because `--enable-lto' is enabled by default.
+     The other languages are default languages.  If `all' is specified,
+     then all available languages are built.  An exception is `jit'
+     language, which requires `--enable-host-shared' to be included
+     with `all'.
 
 `--enable-stage1-languages=LANG1,LANG2,...'
      Specify that a particular subset of compilers and their runtime
@@ -1386,7 +1424,8 @@ option.
 
 `--disable-libssp'
      Specify that the run-time libraries for stack smashing protection
-     should not be built.
+     should not be built or linked against.  On many targets library
+     support is provided by the C library instead.
 
 `--disable-libquadmath'
      Specify that the GCC quad-precision math library should not be
@@ -1487,16 +1526,19 @@ option.
      internal consistency checks of the requested complexity.  This
      does not change the generated code, but adds error checking within
      the compiler.  This will slow down the compiler and may only work
-     properly if you are building the compiler with GCC.  This is `yes'
-     by default when building from SVN or snapshots, but `release' for
-     releases.  The default for building the stage1 compiler is `yes'.
-     More control over the checks may be had by specifying LIST.  The
-     categories of checks available are `yes' (most common checks
-     `assert,misc,tree,gc,rtlflag,runtime'), `no' (no checks at all),
-     `all' (all but `valgrind'), `release' (cheapest checks
-     `assert,runtime') or `none' (same as `no').  Individual checks can
-     be enabled with these flags `assert', `df', `fold', `gc', `gcac'
-     `misc', `rtl', `rtlflag', `runtime', `tree', and `valgrind'.
+     properly if you are building the compiler with GCC.  This is
+     `yes,extra' by default when building from SVN or snapshots, but
+     `release' for releases.  The default for building the stage1
+     compiler is `yes'.  More control over the checks may be had by
+     specifying LIST.  The categories of checks available are `yes'
+     (most common checks `assert,misc,tree,gc,rtlflag,runtime'), `no'
+     (no checks at all), `all' (all but `valgrind'), `release' (cheapest
+     checks `assert,runtime') or `none' (same as `no').  Individual
+     checks can be enabled with these flags `assert', `df', `fold',
+     `gc', `gcac', `misc', `rtl', `rtlflag', `runtime', `tree', `extra'
+     and `valgrind'.  `extra' adds for `misc' checking extra checks
+     that might affect code generation and should therefore not differ
+     between stage1 and later stages.
 
      The `valgrind' check requires the external `valgrind' simulator,
      available from `http://valgrind.org/'.  The `df', `rtl', `gcac'
@@ -1603,6 +1645,35 @@ option.
      configure options are used, the default will be 128-bit `long
      double' when built against GNU C Library 2.4 and later, 64-bit
      `long double' otherwise.
+
+`--with-long-double-format=ibm'
+`--with-long-double-format=ieee'
+     Specify whether `long double' uses the IBM extended double format
+     or the IEEE 128-bit floating point format on PowerPC Linux systems.
+     This configuration switch will only work on little endian PowerPC
+     Linux systems and on big endian 64-bit systems where the default
+     cpu is at least power7 (i.e. `--with-cpu=power7',
+     `--with-cpu=power8', or `--with-cpu=power9' is used).
+
+     If you use the `--with-long-double-64' configuration option, the
+     `--with-long-double-format=ibm' and
+     `--with-long-double-format=ieee' options are ignored.
+
+     The default `long double' format is to use IBM extended double.
+     Until all of the libraries are converted to use IEEE 128-bit
+     floating point, it is not recommended to use
+     `--with-long-double-format=ieee'.
+
+     On little endian PowerPC Linux systems, if you explicitly set the
+     `long double' type, it will build multilibs to allow you to select
+     either `long double' format, unless you disable multilibs with the
+     `--disable-multilib' option.  At present, `long double' multilibs
+     are not built on big endian PowerPC Linux systems.  If you are
+     building multilibs, you will need to configure the compiler using
+     the `--with-system-zlib' option.
+
+     If you do not set the `long double' type explicitly, no multilibs
+     will be generated.
 
 `--enable-fdpic'
      On SH Linux systems, generate ELF FDPIC code.
@@ -1789,10 +1860,19 @@ option.
      `--with-hsa-runtime-lib=HSAINSTALLDIR/lib' and
      `--with-hsa-runtime-include=HSAINSTALLDIR/include'.
 
-`--with-hsa-kmt-lib=PATHNAME'
-     If you configure GCC with HSA offloading but do not have the HSA
-     KMT library installed in a standard location then you can
-     explicitly specify the directory where it resides.
+`--enable-cet'
+`--disable-cet'
+     Enable building target run-time libraries with control-flow
+     instrumentation, see `-fcf-protection' option.  When
+     `--enable-cet' is specified target libraries are configured to add
+     `-fcf-protection' and, if needed, other target specific options to
+     a set of building options.
+
+     The option is disabled by default.  When `--enable-cet=auto' is
+     used, it is enabled on Linux/x86 if target binutils supports
+     `Intel CET' instructions and disabled otherwise.  In this case the
+     target libraries are configured to get additional
+     `-fcf-protection' option.
 
 Cross-Compiler-Specific Options
 -------------------------------
@@ -1927,233 +2007,41 @@ provides three variables for this:
 overrides, you can pass a setting for `CONFIG_SITE' and set variables
 in the site file.
 
-Java-Specific Options
----------------------
+Objective-C-Specific Options
+----------------------------
 
-The following option applies to the build of the Java front end.
+The following options apply to the build of the Objective-C runtime
+library.
 
-`--disable-libgcj'
-     Specify that the run-time libraries used by GCJ should not be
-     built.  This is useful in case you intend to use GCJ with some
-     other run-time, or you're going to install it separately, or it
-     just happens not to build on your particular machine.  In general,
-     if the Java front end is enabled, the GCJ libraries will be
-     enabled too, unless they're known to not work on the target
-     platform.  If GCJ is enabled but `libgcj' isn't built, you may
-     need to port it; in this case, before modifying the top-level
-     `configure.ac' so that `libgcj' is enabled by default on this
-     platform, you may use `--enable-libgcj' to override the default.
+`--enable-objc-gc'
+     Specify that an additional variant of the GNU Objective-C runtime
+     library is built, using an external build of the
+     Boehm-Demers-Weiser garbage collector
+     (`http://www.hboehm.info/gc/').  This library needs to be
+     available for each multilib variant, unless configured with
+     `--enable-objc-gc=`auto'' in which case the build of the
+     additional runtime library is skipped when not available and the
+     build continues.
 
+`--with-target-bdw-gc=LIST'
+`--with-target-bdw-gc-include=LIST'
+`--with-target-bdw-gc-lib=LIST'
+     Specify search directories for the garbage collector header files
+     and libraries. LIST is a comma separated list of key value pairs
+     of the form `MULTILIBDIR=PATH', where the default multilib key is
+     named as `.' (dot), or is omitted (e.g.
+     `--with-target-bdw-gc=/opt/bdw-gc,32=/opt-bdw-gc32').
 
-   The following options apply to building `libgcj'.
-
-General Options
-...............
-
-`--enable-java-maintainer-mode'
-     By default the `libjava' build will not attempt to compile the
-     `.java' source files to `.class'.  Instead, it will use the
-     `.class' files from the source tree.  If you use this option you
-     must have executables named `ecj1' and `gjavah' in your path for
-     use by the build.  You must use this option if you intend to
-     modify any `.java' files in `libjava'.
-
-`--with-java-home=DIRNAME'
-     This `libjava' option overrides the default value of the
-     `java.home' system property.  It is also used to set
-     `sun.boot.class.path' to `DIRNAME/lib/rt.jar'.  By default
-     `java.home' is set to `PREFIX' and `sun.boot.class.path' to
-     `DATADIR/java/libgcj-VERSION.jar'.
-
-`--with-ecj-jar=FILENAME'
-     This option can be used to specify the location of an external jar
-     file containing the Eclipse Java compiler.  A specially modified
-     version of this compiler is used by `gcj' to parse `.java' source
-     files.  If this option is given, the `libjava' build will create
-     and install an `ecj1' executable which uses this jar file at
-     runtime.
-
-     If this option is not given, but an `ecj.jar' file is found in the
-     topmost source tree at configure time, then the `libgcj' build
-     will create and install `ecj1', and will also install the
-     discovered `ecj.jar' into a suitable place in the install tree.
-
-     If `ecj1' is not installed, then the user will have to supply one
-     on his path in order for `gcj' to properly parse `.java' source
-     files.  A suitable jar is available from
-     `ftp://sourceware.org/pub/java/'.
-
-`--disable-getenv-properties'
-     Don't set system properties from `GCJ_PROPERTIES'.
-
-`--enable-hash-synchronization'
-     Use a global hash table for monitor locks.  Ordinarily, `libgcj''s
-     `configure' script automatically makes the correct choice for this
-     option for your platform.  Only use this if you know you need the
-     library to be configured differently.
-
-`--enable-interpreter'
-     Enable the Java interpreter.  The interpreter is automatically
-     enabled by default on all platforms that support it.  This option
-     is really only useful if you want to disable the interpreter
-     (using `--disable-interpreter').
-
-`--disable-java-net'
-     Disable java.net.  This disables the native part of java.net only,
-     using non-functional stubs for native method implementations.
-
-`--disable-jvmpi'
-     Disable JVMPI support.
-
-`--disable-libgcj-bc'
-     Disable BC ABI compilation of certain parts of libgcj.  By default,
-     some portions of libgcj are compiled with `-findirect-dispatch'
-     and `-fno-indirect-classes', allowing them to be overridden at
-     run-time.
-
-     If `--disable-libgcj-bc' is specified, libgcj is built without
-     these options.  This allows the compile-time linker to resolve
-     dependencies when statically linking to libgcj.  However it makes
-     it impossible to override the affected portions of libgcj at
-     run-time.
-
-`--enable-reduced-reflection'
-     Build most of libgcj with `-freduced-reflection'.  This reduces
-     the size of libgcj at the expense of not being able to do accurate
-     reflection on the classes it contains.  This option is safe if you
-     know that code using libgcj will never use reflection on the
-     standard runtime classes in libgcj (including using serialization,
-     RMI or CORBA).
-
-`--with-ecos'
-     Enable runtime eCos target support.
-
-`--without-libffi'
-     Don't use `libffi'.  This will disable the interpreter and JNI
-     support as well, as these require `libffi' to work.
-
-`--enable-libgcj-debug'
-     Enable runtime debugging code.
-
-`--enable-libgcj-multifile'
-     If specified, causes all `.java' source files to be compiled into
-     `.class' files in one invocation of `gcj'.  This can speed up
-     build time, but is more resource-intensive.  If this option is
-     unspecified or disabled, `gcj' is invoked once for each `.java'
-     file to compile into a `.class' file.
-
-`--with-libiconv-prefix=DIR'
-     Search for libiconv in `DIR/include' and `DIR/lib'.
-
-`--with-system-zlib'
-     Use installed `zlib' rather than that included with GCC.
-
-`--with-win32-nlsapi=ansi, unicows or unicode'
-     Indicates how MinGW `libgcj' translates between UNICODE characters
-     and the Win32 API.
-
-`--enable-java-home'
-     If enabled, this creates a JPackage compatible SDK environment
-     during install.  Note that if -enable-java-home is used,
-     -with-arch-directory=ARCH must also be specified.
-
-`--with-arch-directory=ARCH'
-     Specifies the name to use for the `jre/lib/ARCH' directory in the
-     SDK environment created when -enable-java-home is passed. Typical
-     names for this directory include i386, amd64, ia64, etc.
-
-`--with-os-directory=DIR'
-     Specifies the OS directory for the SDK include directory. This is
-     set to auto detect, and is typically 'linux'.
-
-`--with-origin-name=NAME'
-     Specifies the JPackage origin name. This defaults to the 'gcj' in
-     java-1.5.0-gcj.
-
-`--with-arch-suffix=SUFFIX'
-     Specifies the suffix for the sdk directory. Defaults to the empty
-     string.  Examples include '.x86_64' in
-     'java-1.5.0-gcj-1.5.0.0.x86_64'.
-
-`--with-jvm-root-dir=DIR'
-     Specifies where to install the SDK. Default is $(prefix)/lib/jvm.
-
-`--with-jvm-jar-dir=DIR'
-     Specifies where to install jars. Default is
-     $(prefix)/lib/jvm-exports.
-
-`--with-python-dir=DIR'
-     Specifies where to install the Python modules used for
-     aot-compile. DIR should not include the prefix used in
-     installation. For example, if the Python modules are to be
-     installed in /usr/lib/python2.5/site-packages, then
-     -with-python-dir=/lib/python2.5/site-packages should be passed. If
-     this is not specified, then the Python modules are installed in
-     $(prefix)/share/python.
-
-`--enable-aot-compile-rpm'
-     Adds aot-compile-rpm to the list of installed scripts.
-
-`--enable-browser-plugin'
-     Build the gcjwebplugin web browser plugin.
-
-`--enable-static-libjava'
-     Build static libraries in libjava. The default is to only build
-     shared libraries.
-
-    `ansi'
-          Use the single-byte `char' and the Win32 A functions natively,
-          translating to and from UNICODE when using these functions.
-          If unspecified, this is the default.
-
-    `unicows'
-          Use the `WCHAR' and Win32 W functions natively.  Adds
-          `-lunicows' to `libgcj.spec' to link with `libunicows'.
-          `unicows.dll' needs to be deployed on Microsoft Windows 9X
-          machines running built executables.  `libunicows.a', an
-          open-source import library around Microsoft's `unicows.dll',
-          is obtained from `http://libunicows.sourceforge.net/', which
-          also gives details on getting `unicows.dll' from Microsoft.
-
-    `unicode'
-          Use the `WCHAR' and Win32 W functions natively.  Does _not_
-          add `-lunicows' to `libgcj.spec'.  The built executables will
-          only run on Microsoft Windows NT and above.
-
-AWT-Specific Options
-....................
-
-`--with-x'
-     Use the X Window System.
-
-`--enable-java-awt=PEER(S)'
-     Specifies the AWT peer library or libraries to build alongside
-     `libgcj'.  If this option is unspecified or disabled, AWT will be
-     non-functional.  Current valid values are `gtk' and `xlib'.
-     Multiple libraries should be separated by a comma (i.e.
-     `--enable-java-awt=gtk,xlib').
-
-`--enable-gtk-cairo'
-     Build the cairo Graphics2D implementation on GTK.
-
-`--enable-java-gc=TYPE'
-     Choose garbage collector.  Defaults to `boehm' if unspecified.
-
-`--disable-gtktest'
-     Do not try to compile and run a test GTK+ program.
-
-`--disable-glibtest'
-     Do not try to compile and run a test GLIB program.
-
-`--with-libart-prefix=PFX'
-     Prefix where libart is installed (optional).
-
-`--with-libart-exec-prefix=PFX'
-     Exec prefix where libart is installed (optional).
-
-`--disable-libarttest'
-     Do not try to compile and run a test libart program.
-
+     The options `--with-target-bdw-gc-include' and
+     `--with-target-bdw-gc-lib' must always be specified together for
+     each multilib variant and they take precedence over
+     `--with-target-bdw-gc'.  If `--with-target-bdw-gc-include' is
+     missing values for a multilib, then the value for the default
+     multilib is used (e.g.
+     `--with-target-bdw-gc-include=/opt/bdw-gc/include'
+     `--with-target-bdw-gc-lib=/opt/bdw-gc/lib64,32=/opt-bdw-gc/lib32').
+     If none of these options are specified, the library is assumed in
+     default locations.
 
 
 File: gccinstall.info,  Node: Building,  Next: Testing,  Prev: Configuration,  Up: Installing GCC
@@ -2366,6 +2254,12 @@ configurations are:
      must be used along with `bootstrap-debug-lean' and
      `bootstrap-debug-lib'.
 
+`bootstrap-cet'
+     This option enables Intel CET for host tools during bootstrapping.
+     `BUILD_CONFIG=bootstrap-cet' is equivalent to adding
+     `-fcf-protection' to `BOOT_CFLAGS'.  This option assumes that the
+     host supports Intel CET (e.g. GNU assembler version 2.30 or later).
+
 `bootstrap-time'
      Arranges for the run time of each program started by the GCC
      driver, built in any stage, to be logged to `time.log', in the top
@@ -2383,12 +2277,6 @@ problem as parts of GCC can only be built with GCC.
 installing a native compiler.  You can then use the native GCC compiler
 to build the cross compiler.  The installed native compiler needs to be
 GCC version 2.95 or later.
-
-   If the cross compiler is to be built with support for the Java
-programming language and the ability to compile .java source files is
-desired, the installed native compiler used to build the cross compiler
-needs to be the same GCC version as the cross compiler.  In addition
-the cross compiler needs to be configured with `--with-ecj-jar=...'.
 
    Assuming you have already installed a native copy of GCC and
 configured your cross compiler, issue the command `make', which
@@ -2491,13 +2379,23 @@ profiledbootstrap'.
    When `make profiledbootstrap' is run, it will first build a `stage1'
 compiler.  This compiler is used to build a `stageprofile' compiler
 instrumented to collect execution counts of instruction and branch
-probabilities.  Then runtime libraries are compiled with profile
-collected.  Finally a `stagefeedback' compiler is built using the
-information collected.
+probabilities.  Training run is done by building `stagetrain' compiler.
+Finally a `stagefeedback' compiler is built using the information
+collected.
 
    Unlike standard bootstrap, several additional restrictions apply.
 The compiler used to build `stage1' needs to support a 64-bit integral
 type.  It is recommended to only use GCC for this.
+
+   On Linux/x86_64 hosts with some restrictions (no virtualization) it
+is also possible to do autofdo build with `make autoprofiledback'. This
+uses Linux perf to sample branches in the binary and then rebuild it
+with feedback derived from the profile.  Linux perf and the `autofdo'
+toolkit needs to be installed for this.
+
+   Only the profile from the current build is used, so when an error
+occurs it is recommended to clean before restarting. Otherwise the code
+quality may be much worse.
 
 
 File: gccinstall.info,  Node: Testing,  Next: Final install,  Prev: Building,  Up: Installing GCC
@@ -2520,7 +2418,9 @@ the full distribution, but if you downloaded the "core" compiler plus
 any front ends, you must download the testsuites separately.
 
    Second, you must have the testing tools installed.  This includes
-DejaGnu, Tcl, and Expect; the DejaGnu site has links to these.
+DejaGnu, Tcl, and Expect; the DejaGnu site has links to these. For
+running the BRIG frontend tests, a tool to assemble the binary BRIGs
+from HSAIL text, HSAILasm must be installed.
 
    If the directories where `runtest' and `expect' were installed are
 not in the `PATH', you may need to set the following environment
@@ -2552,10 +2452,10 @@ testsuite on a simulator as described at
 
 In order to run sets of tests selectively, there are targets `make
 check-gcc' and language specific `make check-c', `make check-c++',
-`make check-fortran', `make check-java', `make check-ada', `make
-check-objc', `make check-obj-c++', `make check-lto' in the `gcc'
-subdirectory of the object directory.  You can also just run `make
-check' in a subdirectory of the object directory.
+`make check-fortran', `make check-ada', `make check-objc', `make
+check-obj-c++', `make check-lto' in the `gcc' subdirectory of the
+object directory.  You can also just run `make check' in a subdirectory
+of the object directory.
 
    A more selective way to just run all `gcc' execute tests in the
 testsuite is to use
@@ -2566,6 +2466,15 @@ testsuite is to use
 testsuite with filenames matching `9805*', you would use
 
      make check-g++ RUNTESTFLAGS="old-deja.exp=9805* OTHER-OPTIONS"
+
+   The file-matching expression following FILENAME`.exp=' is treated as
+a series of whitespace-delimited glob expressions so that multiple
+patterns may be passed, although any whitespace must either be escaped
+or surrounded by single quotes if multiple expressions are desired. For
+example,
+
+     make check-g++ RUNTESTFLAGS="old-deja.exp=9805*\ virtual2.c OTHER-OPTIONS"
+     make check-g++ RUNTESTFLAGS="'old-deja.exp=9805* virtual2.c' OTHER-OPTIONS"
 
    The `*.exp' files are located in the testsuite directories of the GCC
 source, the most important ones being `compile.exp', `execute.exp',
@@ -2632,19 +2541,7 @@ all ten combinations as described above.  Note that this is currently
 only supported in the `gcc' subdirectory.  (To see how this works, try
 typing `echo' before the example given here.)
 
-6.3 Additional testing for Java Class Libraries
-===============================================
-
-The Java runtime tests can be executed via `make check' in the
-`TARGET/libjava/testsuite' directory in the build tree.
-
-   The Mauve Project provides a suite of tests for the Java Class
-Libraries.  This suite can be run as part of libgcj testing by placing
-the Mauve tree within the libjava testsuite at
-`libjava/testsuite/libjava.mauve/mauve', or by specifying the location
-of that tree when invoking `make', as in `make MAUVEDIR=~/mauve check'.
-
-6.4 How to interpret test results
+6.3 How to interpret test results
 =================================
 
 The result of running the testsuite are various `*.sum' and `*.log'
@@ -2672,7 +2569,7 @@ current time the testing harness does not allow fine grained control
 over whether or not a test is expected to fail.  This problem should be
 fixed in future releases.
 
-6.5 Submitting test results
+6.4 Submitting test results
 ===========================
 
 If you want to report the results to the GCC project, use the
@@ -2709,10 +2606,10 @@ be found in `PREFIX/bin' where PREFIX is the value you specified with
 the `--prefix' to configure (or `/usr/local' by default).  (If you
 specified `--bindir', that directory will be used instead; otherwise,
 if you specified `--exec-prefix', `EXEC-PREFIX/bin' will be used.)
-Headers for the C++ and Java libraries are installed in
-`PREFIX/include'; libraries in `LIBDIR' (normally `PREFIX/lib');
-internal parts of the compiler in `LIBDIR/gcc' and `LIBEXECDIR/gcc';
-documentation in info format in `INFODIR' (normally `PREFIX/info').
+Headers for the C++ library are installed in `PREFIX/include';
+libraries in `LIBDIR' (normally `PREFIX/lib'); internal parts of the
+compiler in `LIBDIR/gcc' and `LIBEXECDIR/gcc'; documentation in info
+format in `INFODIR' (normally `PREFIX/info').
 
    When installing cross-compilers, GCC's executables are not only
 installed into `BINDIR', that is, `EXEC-PREFIX/bin', but additionally
@@ -2835,6 +2732,11 @@ makers.
 
         * TGCware
 
+   * macOS:
+        * The Homebrew package manager;
+
+        * MacPorts.
+
    * Microsoft Windows:
         * The Cygwin project;
 
@@ -2891,26 +2793,12 @@ alpha*-*-*
 ==========
 
 This section contains general configuration information for all
-alpha-based platforms using ELF (in particular, ignore this section for
-DEC OSF/1, Digital UNIX and Tru64 UNIX).  In addition to reading this
-section, please read all other sections that match your target.
+Alpha-based platforms using ELF.  In addition to reading this section,
+please read all other sections that match your target.
 
    We require binutils 2.11.2 or newer.  Previous binutils releases had
 a number of problems with DWARF 2 debugging information, not the least
 of which is incorrect linking of shared libraries.
-
-alpha*-dec-osf5.1
-=================
-
-Systems using processors that implement the DEC Alpha architecture and
-are running the DEC/Compaq/HP Unix (DEC OSF/1, Digital UNIX, or
-Compaq/HP Tru64 UNIX) operating system, for example the DEC Alpha AXP
-systems.
-
-   Support for Tru64 UNIX V5.1 has been removed in GCC 4.8.  As of GCC
-4.6, support for Tru64 UNIX V4.0 and V5.0 has been removed.  As of GCC
-3.2, versions before `alpha*-dec-osf4' are no longer supported.  (These
-are the versions which identify themselves as DEC OSF/1.)
 
 amd64-*-solaris2.1[0-9]*
 ========================
@@ -2933,9 +2821,7 @@ Use `configure --target=arc-linux-uclibc --with-cpu=arc700
 arm-*-eabi
 ==========
 
-ARM-family processors.  Subtargets that use the ELF object format
-require GNU binutils 2.13 or newer.  Such subtargets include:
-`arm-*-netbsdelf', `arm-*-*linux-*' and `arm-*-rtemseabi'.
+ARM-family processors.
 
    Building the Ada frontend commonly fails (an infinite loop executing
 `xsinfo') if the host compiler is GNAT 4.8.  Host compilers built from
@@ -2957,8 +2843,6 @@ tools can also be obtained from:
 
    * http://www.amelek.gda.pl/avr/
 
-   We _strongly_ recommend using binutils 2.13 or newer.
-
    The following error:
      Error: register required
 
@@ -2971,7 +2855,7 @@ The Blackfin processor, an Analog Devices DSP.  *Note Blackfin Options:
 (gcc)Blackfin Options,
 
    More information, and a version of binutils with support for this
-processor, is available at `http://blackfin.uclinux.org'
+processor, is available at `https://blackfin.uclinux.org'
 
 CR16
 ====
@@ -3004,9 +2888,6 @@ options.
 `cris-axis-linux-gnu'
      A GNU/Linux port for the CRIS architecture, currently targeting
      `ETRAX 100 LX' by default.
-
-   For `cris-axis-elf' you need binutils 2.11 or newer.  For
-`cris-axis-linux-gnu' you need binutils 2.12 or newer.
 
    Pre-packaged tools can be obtained from
 `ftp://ftp.axis.com/pub/axis/tools/cris/compiler-kit/'.  More
@@ -3060,9 +2941,9 @@ good results on FreeBSD 3.0, 3.4, 4.0, 4.2, 4.3, 4.4, 4.5, 4.8, 4.9 and
 this release of GCC.  Bootstrapping against the latest GNU binutils
 and/or the version found in `/usr/ports/devel/binutils' has been known
 to enable additional features and improve overall testsuite results.
-However, it is currently known that boehm-gc (which itself is required
-for java) may not configure properly on FreeBSD prior to the FreeBSD
-7.0 release with GNU binutils after 2.16.1.
+However, it is currently known that boehm-gc may not configure properly
+on FreeBSD prior to the FreeBSD 7.0 release with GNU binutils after
+2.16.1.
 
 ft32-*-elf
 ==========
@@ -3150,12 +3031,12 @@ hppa*-hp-hpux11
 GCC 3.0 and up support HP-UX 11.  GCC 2.95.x is not supported and cannot
 be used to compile GCC 3.0 and up.
 
-   The libffi and libjava libraries haven't been ported to 64-bit HP-UX
-and don't build.
+   The libffi library haven't been ported to 64-bit HP-UX and doesn't
+build.
 
    Refer to binaries for information about obtaining precompiled GCC
 binaries for HP-UX.  Precompiled binaries must be obtained to build the
-Ada language as it can't be bootstrapped using C.  Ada is only
+Ada language as it cannot be bootstrapped using C.  Ada is only
 available for the 32-bit PA-RISC runtime.
 
    Starting with GCC 3.4 an ISO C compiler is required to bootstrap.
@@ -3164,10 +3045,7 @@ HP's unbundled compiler, or a binary distribution of GCC.
 
    It is possible to build GCC 3.3 starting with the bundled HP
 compiler, but the process requires several steps.  GCC 3.3 can then be
-used to build later versions.  The fastjar program contains ISO C code
-and can't be built with the HP bundled compiler.  This problem can be
-avoided by not building the Java language.  For example, use the
-`--enable-languages="c,c++,f77,objc"' option in your configure command.
+used to build later versions.
 
    There are several possible approaches to building the distribution.
 Binutils can be built first using the HP tools.  Then, the GCC
@@ -3238,12 +3116,12 @@ sections for array initializers and finalizers.
 linker be used for link editing on this target.
 
    At this time, the GNU linker does not support the creation of long
-branch stubs.  As a result, it can't successfully link binaries
+branch stubs.  As a result, it cannot successfully link binaries
 containing branch offsets larger than 8 megabytes.  In addition, there
 are problems linking shared libraries, linking executables with
 `-static', and with dwarf2 unwind and exception support.  It also
 doesn't provide stubs for internal calls to global functions in shared
-libraries, so these calls can't be overloaded.
+libraries, so these calls cannot be overloaded.
 
    The HP dynamic loader does not support GNU symbol versioning, so
 symbol versioning is not supported.  It may be necessary to disable
@@ -3281,18 +3159,16 @@ with GCC 4.7, there is also a 64-bit `amd64-*-solaris2.1[0-9]*' or
 The versions included in Solaris 10, from GNU binutils 2.15 (in
 `/usr/sfw/bin/gas'), and Solaris 11, from GNU binutils 2.19 or newer
 (also available as `/usr/bin/gas' and `/usr/gnu/bin/as'), work fine.
-Please note that the current version, from GNU binutils 2.26, only
-works on Solaris 12 when using the Solaris linker.  On Solaris 10 and
-11, you either have to wait for GNU binutils 2.26.1 or newer, or stay
-with GNU binutils 2.25.1.  Recent versions of the Solaris assembler in
-`/usr/ccs/bin/as' work almost as well, though.
+The current version, from GNU binutils 2.29, is known to work, but the
+version from GNU binutils 2.26 must be avoided.  Recent versions of the
+Solaris assembler in `/usr/ccs/bin/as' work almost as well, though.
 
    For linking, the Solaris linker, is preferred.  If you want to use
 the GNU linker instead, note that due to a packaging bug the version in
 Solaris 10, from GNU binutils 2.15 (in `/usr/sfw/bin/gld'), cannot be
 used, while the version in Solaris 11, from GNU binutils 2.19 or newer
 (also in `/usr/gnu/bin/ld' and `/usr/bin/gld'), works, as does the
-latest version, from GNU binutils 2.26.
+latest version, from GNU binutils 2.29.
 
    To use GNU `as', configure with the options `--with-gnu-as
 --with-as=/usr/sfw/bin/gas'.  It may be necessary to configure with
@@ -3541,12 +3417,6 @@ GCC 4.3 changed the uClinux configuration so that it uses the
 improved support for C++ and flat shared libraries, both of which were
 ABI changes.
 
-mep-*-elf
-=========
-
-Toshiba Media embedded Processor.  This configuration is intended for
-embedded systems.
-
 microblaze-*-elf
 ================
 
@@ -3590,26 +3460,6 @@ generating the proper signal (`SIGFPE').  To enable the use of break,
 use the `--with-divide=breaks' `configure' option when configuring GCC.
 The default is to use traps on systems that support them.
 
-   The assembler from GNU binutils 2.17 and earlier has a bug in the way
-it sorts relocations for REL targets (o32, o64, EABI).  This can cause
-bad code to be generated for simple C++ programs.  Also the linker from
-GNU binutils versions prior to 2.17 has a bug which causes the runtime
-linker stubs in very large programs, like `libgcj.so', to be
-incorrectly generated.  GNU Binutils 2.18 and later (and snapshots made
-after Nov. 9, 2006) should be free from both of these problems.
-
-mips-sgi-irix5
-==============
-
-Support for IRIX 5 has been removed in GCC 4.6.
-
-mips-sgi-irix6
-==============
-
-Support for IRIX 6.5 has been removed in GCC 4.8.  Support for IRIX 6
-releases before 6.5 has been removed in GCC 4.6, as well as support for
-the O32 ABI.
-
 moxie-*-elf
 ===========
 
@@ -3640,7 +3490,8 @@ Nvidia PTX target.
 GCC where to find it:
 `--with-build-time-tools=[install-nvptx-tools]/nvptx-none/bin'.
 
-   A nvptx port of newlib is available at nvptx-newlib.  It can be
+   You will need newlib 3.0 git revision
+cd31fbb2aea25f94d7ecedc9db16dfc87ab0c316 or later.  It can be
 automatically built together with GCC.  For this, add a symbolic link
 to nvptx-newlib's `newlib' directory to the directory containing the
 GCC sources.
@@ -3654,7 +3505,7 @@ powerpc-*-*
 You can specify a default version for the `-mcpu=CPU_TYPE' switch by
 using the configure option `--with-cpu-CPU_TYPE'.
 
-   You will need binutils 2.15 or newer for a working GCC.
+   You will need GNU binutils 2.15 or newer.
 
 powerpc-*-darwin*
 =================
@@ -3663,7 +3514,7 @@ PowerPC running Darwin (Mac OS X kernel).
 
    Pre-installed versions of Mac OS X may not include any developer
 tools, meaning that you will not be able to build GCC from source.  Tool
-binaries are available at `http://opensource.apple.com/'.
+binaries are available at `https://opensource.apple.com'.
 
    This version of GCC requires at least cctools-590.36.  The
 cctools-590.36 package referenced from
@@ -3718,12 +3569,36 @@ rl78-*-elf
 The Renesas RL78 processor.  This configuration is intended for
 embedded systems.
 
+riscv32-*-elf
+=============
+
+The RISC-V RV32 instruction set.  This configuration is intended for
+embedded systems.  This (and all other RISC-V) targets are supported
+upstream as of the binutils 2.28 release.
+
+riscv32-*-linux
+===============
+
+The RISC-V RV32 instruction set running GNU/Linux.  This (and all other
+RISC-V) targets are supported upstream as of the binutils 2.28 release.
+
+riscv64-*-elf
+=============
+
+The RISC-V RV64 instruction set.  This configuration is intended for
+embedded systems.  This (and all other RISC-V) targets are supported
+upstream as of the binutils 2.28 release.
+
+riscv64-*-linux
+===============
+
+The RISC-V RV64 instruction set running GNU/Linux.  This (and all other
+RISC-V) targets are supported upstream as of the binutils 2.28 release.
+
 rx-*-elf
 ========
 
-The Renesas RX processor.  See
-`http://eu.renesas.com/fmwk.jsp?cnt=rx600_series_landing.jsp&fp=/products/mpumcu/rx_family/rx600_series'
-for more information about this processor.
+The Renesas RX processor.
 
 s390-*-linux*
 =============
@@ -3755,9 +3630,9 @@ also provides GCC 4.5.2, 4.7.3, and 4.8.2 as `/usr/gcc/4.5/bin/gcc' or
 similar.  Alternatively, you can install a pre-built GCC to bootstrap
 and install GCC.  See the binaries page for details.
 
-   The Solaris 2 `/bin/sh' will often fail to configure `libstdc++-v3',
-`boehm-gc' or `libjava'.  We therefore recommend using the following
-initial sequence of commands
+   The Solaris 2 `/bin/sh' will often fail to configure
+`libstdc++-v3'or `boehm-gc'.  We therefore recommend using the
+following initial sequence of commands
 
      % CONFIG_SHELL=/bin/ksh
      % export CONFIG_SHELL
@@ -3792,17 +3667,16 @@ if you have `/usr/xpg4/bin' in your `PATH', we recommend that you place
 in conjunction with the Solaris linker.  The GNU `as' versions included
 in Solaris 10, from GNU binutils 2.15 (in `/usr/sfw/bin/gas'), and
 Solaris 11, from GNU binutils 2.19 or newer (also in `/usr/bin/gas' and
-`/usr/gnu/bin/as'), are known to work.  Current versions of GNU
-binutils (2.26) are known to work as well, with the caveat mentioned in
-i?86-*-solaris2.10 .  Note that your mileage may vary if you use a
-combination of the GNU tools and the Solaris tools: while the
-combination GNU `as' + Sun `ld' should reasonably work, the reverse
-combination Sun `as' + GNU `ld' may fail to build or cause memory
-corruption at runtime in some cases for C++ programs.  GNU `ld' usually
-works as well, although the version included in Solaris 10 cannot be
-used due to several bugs.  Again, the current version (2.26) is known
-to work, but generally lacks platform specific features, so better stay
-with Solaris `ld'.  To use the LTO linker plugin
+`/usr/gnu/bin/as'), are known to work.  The current version, from GNU
+binutils 2.29, is known to work as well.  Note that your mileage may
+vary if you use a combination of the GNU tools and the Solaris tools:
+while the combination GNU `as' + Sun `ld' should reasonably work, the
+reverse combination Sun `as' + GNU `ld' may fail to build or cause
+memory corruption at runtime in some cases for C++ programs.  GNU `ld'
+usually works as well, although the version included in Solaris 10
+cannot be used due to several bugs.  Again, the current version (2.29)
+is known to work, but generally lacks platform specific features, so
+better stay with Solaris `ld'.  To use the LTO linker plugin
 (`-fuse-linker-plugin') with GNU `ld', GNU binutils _must_ be
 configured with `--enable-largefile'.
 
@@ -3811,9 +3685,6 @@ you need to have any version of GNU `c++filt', which is part of GNU
 binutils.  `libstdc++' symbol versioning will be disabled if no
 appropriate version is found.  Solaris `c++filt' from the Solaris
 Studio compilers does _not_ work.
-
-   GNU `make' version 3.81 or later is required to build libjava with
-the Solaris linker.
 
    Sun bug 4927647 sometimes causes random spurious testsuite failures
 related to missing diagnostic output.  This bug doesn't affect GCC
@@ -3872,10 +3743,6 @@ This bug is fixed in Sun patch 118683-03 or later.
 
 sparc-*-linux*
 ==============
-
-GCC versions 3.0 and higher require binutils 2.11.2 and glibc 2.2.4 or
-newer on this platform.  All earlier binutils and glibc releases
-mishandled unaligned relocations on `sparc-*-*' targets.
 
 sparc64-*-solaris2*
 ===================
@@ -4020,21 +3887,18 @@ and which C libraries are used.
    * Cygwin *-*-cygwin: Cygwin provides a user-space Linux API
      emulation layer in the Win32 subsystem.
 
-   * Interix *-*-interix: The Interix subsystem provides native support
-     for POSIX.
-
    * MinGW *-*-mingw32: MinGW is a native GCC port for the Win32
      subsystem that provides a subset of POSIX.
 
    * MKS i386-pc-mks: NuTCracker from MKS.  See
-     `http://www.mkssoftware.com/' for more information.
+     `https://www.mkssoftware.com' for more information.
 
 Intel 64-bit versions
 ---------------------
 
 GCC contains support for x86-64 using the mingw-w64 runtime library,
-available from `http://mingw-w64.sourceforge.net/'.  This library
-should be used with the target triple x86_64-pc-mingw32.
+available from `http://mingw-w64.org/doku.php'.  This library should be
+used with the target triple x86_64-pc-mingw32.
 
    Presently Windows for Itanium is not supported.
 
@@ -4074,14 +3938,6 @@ cpu architecture desired; the default is i686-pc-cygwin.  It should be
 used with as up-to-date a version of binutils as possible; use either
 the latest official GNU binutils release in the Cygwin distribution, or
 version 2.20 or above if building your own.
-
-*-*-interix
-===========
-
-The Interix target is used by OpenNT, Interix, Services For UNIX (SFU),
-and Subsystem for UNIX-based Applications (SUA).  Applications compiled
-with this target run in the Interix subsystem, which is separate from
-the Win32 subsystem.  This target was last known to work in GCC 3.3.
 
 *-*-mingw32
 ===========
@@ -4784,7 +4640,7 @@ Concept Index
 * Menu:
 
 * Binaries:                              Binaries.           (line    6)
-* build_configargs:                      Configuration.      (line 1511)
+* build_configargs:                      Configuration.      (line 1603)
 * Configuration:                         Configuration.      (line    6)
 * configurations supported by GCC:       Configurations.     (line    6)
 * Downloading GCC:                       Downloading the source.
@@ -4794,7 +4650,7 @@ Concept Index
 * FDL, GNU Free Documentation License:   GNU Free Documentation License.
                                                              (line    6)
 * Host specific installation:            Specific.           (line    6)
-* host_configargs:                       Configuration.      (line 1515)
+* host_configargs:                       Configuration.      (line 1607)
 * Installing GCC: Binaries:              Binaries.           (line    6)
 * Installing GCC: Building:              Building.           (line    6)
 * Installing GCC: Configuration:         Configuration.      (line    6)
@@ -4804,7 +4660,7 @@ Concept Index
 * Specific installation notes:           Specific.           (line    6)
 * Target specific installation:          Specific.           (line    6)
 * Target specific installation notes:    Specific.           (line    6)
-* target_configargs:                     Configuration.      (line 1519)
+* target_configargs:                     Configuration.      (line 1611)
 * Testing:                               Testing.            (line    6)
 * Testsuite:                             Testing.            (line    6)
 
@@ -4814,102 +4670,101 @@ Tag Table:
 Node: Top1729
 Node: Installing GCC2287
 Node: Prerequisites3924
-Node: Downloading the source15043
-Node: Configuration16721
-Ref: with-gnu-as32172
-Ref: with-as33070
-Ref: with-gnu-ld34483
-Ref: WithAixSoname52635
-Ref: AixLdCommand53296
-Node: Building93460
-Node: Testing109369
-Node: Final install117241
-Node: Binaries122555
-Node: Specific123613
-Ref: aarch64-x-x124123
-Ref: alpha-x-x125555
-Ref: alpha-dec-osf51126044
-Ref: amd64-x-solaris210126569
-Ref: arc-x-elf32126672
-Ref: arc-linux-uclibc126848
-Ref: arm-x-eabi126989
-Ref: avr127406
-Ref: bfin128046
-Ref: cr16128288
-Ref: cris128703
-Ref: dos129519
-Ref: epiphany-x-elf129842
-Ref: x-x-freebsd129947
-Ref: ft32-x-elf131784
-Ref: h8300-hms131882
-Ref: hppa-hp-hpux132234
-Ref: hppa-hp-hpux10134605
-Ref: hppa-hp-hpux11135018
-Ref: x-x-linux-gnu140677
-Ref: ix86-x-linux140870
-Ref: ix86-x-solaris210141183
-Ref: ia64-x-linux142642
-Ref: ia64-x-hpux143412
-Ref: x-ibm-aix143967
-Ref: TransferAixShobj147629
-Ref: iq2000-x-elf151440
-Ref: lm32-x-elf151580
-Ref: lm32-x-uclinux151684
-Ref: m32c-x-elf151812
-Ref: m32r-x-elf151914
-Ref: m68k-x-x152016
-Ref: m68k-x-uclinux153054
-Ref: mep-x-elf153300
-Ref: microblaze-x-elf153410
-Ref: mips-x-x153529
-Ref: mips-sgi-irix5155925
-Ref: mips-sgi-irix6156005
-Ref: moxie-x-elf156192
-Ref: msp430-x-elf156239
-Ref: nds32le-x-elf156342
-Ref: nds32be-x-elf156414
-Ref: nvptx-x-none156483
-Ref: powerpc-x-x157010
-Ref: powerpc-x-darwin157215
-Ref: powerpc-x-elf157709
-Ref: powerpc-x-linux-gnu157794
-Ref: powerpc-x-netbsd157889
-Ref: powerpc-x-eabisim157977
-Ref: powerpc-x-eabi158103
-Ref: powerpcle-x-elf158179
-Ref: powerpcle-x-eabisim158271
-Ref: powerpcle-x-eabi158404
-Ref: rl78-x-elf158487
-Ref: rx-x-elf158593
-Ref: s390-x-linux158792
-Ref: s390x-x-linux158864
-Ref: s390x-ibm-tpf158951
-Ref: x-x-solaris2159082
-Ref: sparc-x-x163099
-Ref: sparc-sun-solaris2163601
-Ref: sparc-sun-solaris210164741
-Ref: sparc-x-linux165117
-Ref: sparc64-x-solaris2165342
-Ref: sparcv9-x-solaris2165675
-Ref: c6x-x-x165762
-Ref: tilegx-*-linux165853
-Ref: tilegxbe-*-linux165995
-Ref: tilepro-*-linux166138
-Ref: visium-x-elf166259
-Ref: x-x-vxworks166367
-Ref: x86-64-x-x167889
-Ref: x86-64-x-solaris210168217
-Ref: xtensa-x-elf168881
-Ref: xtensa-x-linux169552
-Ref: windows169893
-Ref: x-x-cygwin171830
-Ref: x-x-interix172383
-Ref: x-x-mingw32172692
-Ref: older172918
-Ref: elf175035
-Node: Old175293
-Node: Configurations178430
-Node: GNU Free Documentation License181971
-Node: Concept Index207118
+Node: Downloading the source14483
+Node: Configuration16149
+Ref: with-gnu-as31740
+Ref: with-as32638
+Ref: with-gnu-ld34051
+Ref: WithAixSoname54478
+Ref: AixLdCommand55139
+Node: Building90227
+Node: Testing106567
+Node: Final install114447
+Node: Binaries119750
+Node: Specific120882
+Ref: aarch64-x-x121392
+Ref: alpha-x-x122824
+Ref: amd64-x-solaris210123233
+Ref: arc-x-elf32123336
+Ref: arc-linux-uclibc123512
+Ref: arm-x-eabi123653
+Ref: avr123906
+Ref: bfin124488
+Ref: cr16124731
+Ref: cris125146
+Ref: dos125845
+Ref: epiphany-x-elf126168
+Ref: x-x-freebsd126273
+Ref: ft32-x-elf128074
+Ref: h8300-hms128172
+Ref: hppa-hp-hpux128524
+Ref: hppa-hp-hpux10130895
+Ref: hppa-hp-hpux11131308
+Ref: x-x-linux-gnu136710
+Ref: ix86-x-linux136903
+Ref: ix86-x-solaris210137216
+Ref: ia64-x-linux138561
+Ref: ia64-x-hpux139331
+Ref: x-ibm-aix139886
+Ref: TransferAixShobj143548
+Ref: iq2000-x-elf147359
+Ref: lm32-x-elf147499
+Ref: lm32-x-uclinux147603
+Ref: m32c-x-elf147731
+Ref: m32r-x-elf147833
+Ref: m68k-x-x147935
+Ref: m68k-x-uclinux148973
+Ref: microblaze-x-elf149219
+Ref: mips-x-x149338
+Ref: moxie-x-elf151249
+Ref: msp430-x-elf151296
+Ref: nds32le-x-elf151399
+Ref: nds32be-x-elf151471
+Ref: nvptx-x-none151540
+Ref: powerpc-x-x152103
+Ref: powerpc-x-darwin152294
+Ref: powerpc-x-elf152788
+Ref: powerpc-x-linux-gnu152873
+Ref: powerpc-x-netbsd152968
+Ref: powerpc-x-eabisim153056
+Ref: powerpc-x-eabi153182
+Ref: powerpcle-x-elf153258
+Ref: powerpcle-x-eabisim153350
+Ref: powerpcle-x-eabi153483
+Ref: rl78-x-elf153566
+Ref: riscv32-x-elf153672
+Ref: riscv32-x-linux153882
+Ref: riscv64-x-elf154060
+Ref: riscv64-x-linux154270
+Ref: rx-x-elf154448
+Ref: s390-x-linux154494
+Ref: s390x-x-linux154566
+Ref: s390x-ibm-tpf154653
+Ref: x-x-solaris2154784
+Ref: sparc-x-x158652
+Ref: sparc-sun-solaris2159154
+Ref: sparc-sun-solaris210160294
+Ref: sparc-x-linux160670
+Ref: sparc64-x-solaris2160701
+Ref: sparcv9-x-solaris2161034
+Ref: c6x-x-x161121
+Ref: tilegx-*-linux161212
+Ref: tilegxbe-*-linux161354
+Ref: tilepro-*-linux161497
+Ref: visium-x-elf161618
+Ref: x-x-vxworks161726
+Ref: x86-64-x-x163248
+Ref: x86-64-x-solaris210163576
+Ref: xtensa-x-elf164240
+Ref: xtensa-x-linux164911
+Ref: windows165252
+Ref: x-x-cygwin167096
+Ref: x-x-mingw32167649
+Ref: older167875
+Ref: elf169992
+Node: Old170250
+Node: Configurations173387
+Node: GNU Free Documentation License176928
+Node: Concept Index202075
 
 End Tag Table

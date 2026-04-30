@@ -101,8 +101,8 @@ public class Compiler implements MessageConsumer {
     tr("Couldn't determine program size: {0}");
     tr("Global variables use {0} bytes ({2}%%) of dynamic memory, leaving {3} bytes for local variables. Maximum is {1} bytes.");
     tr("Global variables use {0} bytes of dynamic memory.");
-    tr("Sketch too big; see http://www.arduino.cc/en/Guide/Troubleshooting#size for tips on reducing it.");
-    tr("Not enough memory; see http://www.arduino.cc/en/Guide/Troubleshooting#size for tips on reducing your footprint.");
+    tr("Sketch too big; see https://support.arduino.cc/hc/en-us/articles/360013825179 for tips on reducing it.");
+    tr("Not enough memory; see https://support.arduino.cc/hc/en-us/articles/360013825179 for tips on reducing your footprint.");
     tr("Low memory available, stability problems may occur.");
     tr("An error occurred while verifying the sketch");
     tr("An error occurred while verifying/uploading the sketch");
@@ -134,7 +134,7 @@ public class Compiler implements MessageConsumer {
     }
   }
 
-  private static final Pattern ERROR_FORMAT = Pattern.compile("(.+\\.\\w+):(\\d+)(:\\d+)*:\\s*(fatal)?\\s*error:\\s*(.*)\\s*", Pattern.MULTILINE | Pattern.DOTALL);
+  private static final Pattern ERROR_FORMAT = Pattern.compile("(.+\\.\\w+):(\\d+)(:\\d+)*:\\s*((fatal)?\\s*error:\\s*)(.*)\\s*", Pattern.MULTILINE | Pattern.DOTALL);
 
   private final File pathToSketch;
   private final Sketch sketch;
@@ -260,14 +260,12 @@ public class Compiler implements MessageConsumer {
     cmd.add("-build-path");
     cmd.add(buildPath);
     cmd.add("-warnings=" + PreferencesData.get("compiler.warning_level"));
-
-	/*
+    /*
     if (PreferencesData.getBoolean("compiler.cache_core") == true && buildCache != null) {
       cmd.add("-build-cache");
       cmd.add(buildCache.getAbsolutePath());
     }
-	*/
-
+    */
     PreferencesData.getMap()
       .subTree("runtime.build_properties_custom")
       .entrySet()
@@ -327,7 +325,11 @@ public class Compiler implements MessageConsumer {
     }
 
     if (result != 0) {
-      RunnerException re = new RunnerException(I18n.format(tr("Error compiling for board {0}."), board.getName()));
+      RunnerException re;
+      if (board.getAliasName() != null)
+        re = new RunnerException(I18n.format(tr("Error compiling for board {0}."), board.getAliasName()));
+      else
+        re = new RunnerException(I18n.format(tr("Error compiling for board {0}."), board.getName()));
       re.hideStackTrace();
       throw re;
     }
@@ -518,16 +520,14 @@ public class Compiler implements MessageConsumer {
 
     if (pieces != null) {
       String msg = "";
-      int errorIdx = pieces.length - 1;
-      String error = pieces[errorIdx];
       String filename = pieces[1];
       int line = PApplet.parseInt(pieces[2]);
-      int col;
-      if (errorIdx > 3) {
+      int col = -1;
+      if (pieces[3] != null) {
         col = PApplet.parseInt(pieces[3].substring(1));
-      } else {
-        col = -1;
       }
+      String errorPrefix = pieces[4];
+      String error = pieces[6];
 
       if (error.trim().equals("SPI.h: No such file or directory")) {
         error = tr("Please import the SPI library from the Sketch > Import Library menu.");
@@ -587,11 +587,8 @@ public class Compiler implements MessageConsumer {
         String fileName = ex.getCodeFile().getPrettyName();
         int lineNum = ex.getCodeLine() + 1;
         int colNum = ex.getCodeColumn();
-        if (colNum != -1) {
-          s = fileName + ":" + lineNum + ":" + colNum + ": error: " + error + msg;
-        } else {
-          s = fileName + ":" + lineNum + ": error: " + error + msg;
-        }
+        String column = (colNum != -1) ? (":" + colNum) : "";
+        s = fileName + ":" + lineNum + column + ": " + errorPrefix + error + msg;
       }
 
       if (ex != null) {

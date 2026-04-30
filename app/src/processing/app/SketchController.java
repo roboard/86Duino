@@ -633,51 +633,6 @@ public class SketchController {
     editor.getCurrentTab().setText(buffer.toString());
     editor.getCurrentTab().setSelection(0, 0);  // scroll to start
   }
-
-  /**
-   * Preprocess, Compile, and Run the current code.
-   * <P>
-   * There are three main parts to this process:
-   * <PRE>
-   *   (0. if not java, then use another 'engine'.. i.e. python)
-   *
-   *    1. do the p5 language preprocessing
-   *       this creates a working .java file in a specific location
-   *       better yet, just takes a chunk of java code and returns a
-   *       new/better string editor can take care of saving this to a
-   *       file location
-   *
-   *    2. compile the code from that location
-   *       catching errors along the way
-   *       placing it in a ready classpath, or .. ?
-   *
-   *    3. run the code
-   *       needs to communicate location for window
-   *       and maybe setup presentation space as well
-   *       run externally if a code folder exists,
-   *       or if more than one file is in the project
-   *
-   *    X. afterwards, some of these steps need a cleanup function
-   * </PRE>
-   */
-  //protected String compile() throws RunnerException {
-
-
-  /**
-   * Build all the code for this sketch.
-   *
-   * In an advanced program, the returned class name could be different,
-   * which is why the className is set based on the return value.
-   * A compilation error will burp up a RunnerException.
-   *
-   * Setting purty to 'true' will cause exception line numbers to be incorrect.
-   * Unless you know the code compiles, you should first run the preprocessor
-   * with purty set to false to make sure there are no errors, then once
-   * successful, re-export with purty set to true.
-   *
-   * @param buildPath Location to copy all the .java files
-   * @return null if compilation failed, main class name if not
-   */
   public void preprocess(String buildPath) throws RunnerException {
     preprocess(buildPath, new PdePreprocessor());
   }
@@ -686,8 +641,8 @@ public class SketchController {
 
     String buildPath = buildPath86 + "/sketch";
 
-	File sketch_file = new File (buildPath);
-    sketch_file.mkdir();
+    File sketch_file = new File (buildPath);
+      sketch_file.mkdir();
 
     // 1. concatenate all .pde files to the 'main' pde
     //    store line number for starting point of each code bit
@@ -696,13 +651,18 @@ public class SketchController {
     int bigCount = 0;
     for (SketchFile sf : sketch.getFiles()) {
       if (sf.isExtension(Sketch.SKETCH_EXTENSIONS)) {
-        sf.setPreprocOffset(bigCount);
-        // These #line directives help the compiler report errors with
-        // correct the filename and line number (issue 281 & 907)
-        bigCode.append("#line 1 \"" + sf.getFileName() + "\"\n");
-        bigCode.append(sf.getProgram());
-        bigCode.append('\n');
-        bigCount += sf.getLineCount();
+        try {
+          sf.setPreprocOffset(bigCount);
+          // These #line directives help the compiler report errors with
+          // correct the filename and line number (issue 281 & 907)
+          bigCode.append("#line 1 \"" + sf.getFileName() + "\"\n");
+          bigCode.append(sf.getProgram());
+          bigCode.append('\n');
+          bigCount += sf.getLineCount();
+        } catch (IOException e) {
+          e.printStackTrace();
+          throw new RunnerException(I18n.format(tr("I don't know why this line is wrong.")));
+        }
       }
     }
 
@@ -790,14 +750,11 @@ public class SketchController {
       }
     }
   }
-
-  /**
-   * List of library folders.
-   */
+  
   private LibraryList importedLibraries;
   private List<String>      importedDuplicateHeaders;
   private List<LibraryList> importedDuplicateLibraries;
-
+  
   /**
    * Preprocess and compile all the code for this sketch.
    *
@@ -826,10 +783,9 @@ public class SketchController {
       pathToSketch = saveSketchInTempFolder();
       deleteTemp = true;
     }
-
     // Just for 86Duino
-	if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86EX")>=0)
-		preprocess(sketch.getBuildPath().getAbsolutePath());
+	if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86")>=0)
+      preprocess(sketch.getBuildPath().getAbsolutePath());
 
     try {
       return new Compiler(pathToSketch, sketch).build(editor.status.getCompilerProgressListeners(), save);

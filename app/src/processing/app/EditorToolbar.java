@@ -41,6 +41,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 
 import static processing.app.I18n.tr;
@@ -55,17 +56,17 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
    * Rollover titles for each button.
    */
   private static final String[] title = {
-    tr("Verify"), tr("Upload"), tr("New"), tr("Open"), tr("Save"), tr("Serial Monitor")
+    tr("Verify"), tr("Upload"), tr("New"), tr("Open"), tr("Save"), tr("Serial Monitor"), tr("86LDmicro"), tr("ArduBlock"), tr("86HMI Editor"), tr("86EVA Configurator")
   };
 
   /**
    * Titles for each button when the shift key is pressed.
    */
   private static final String[] titleShift = {
-    tr("Verify"), tr("Upload Using Programmer"), tr("New"), tr("Open"), tr("Save As..."), tr("Serial Monitor")
+    tr("Verify"), tr("Upload Using Programmer"), tr("New"), tr("Open"), tr("Save As..."), tr("Serial Monitor"), tr("86LDmicro"), tr("ArduBlock"), tr("86HMI Editor"), tr("86EVA Configurator")
   };
 
-  private static final int BUTTON_COUNT = title.length;
+  private static int BUTTON_COUNT = 0;
   /**
    * Width of each toolbar button.
    */
@@ -92,10 +93,17 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   private static final int SAVE = 4;
 
   private static final int SERIAL = 5;
-
+  
+  private static final int LDMICRO = 6;
+  private static final int ARDUBLOCK = 7;
+  private static final int HMI = 8;
+  private static final int EVA = 9;
+  
   private static final int INACTIVE = 0;
   private static final int ROLLOVER = 1;
   private static final int ACTIVE = 2;
+  
+  private static String myPictureFileName = "buttons";
 
   private final Editor editor;
 
@@ -115,9 +123,9 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   private TouchBarButton[] touchBarButtons;
 
   private int buttonCount;
-  private int[] state = new int[BUTTON_COUNT];
+  private int[] state;
   private Image[] stateImage;
-  private final int[] which; // mapping indices to implementation
+  private int[] which; // mapping indices to implementation
 
   private int[] x1;
   private int[] x2;
@@ -133,16 +141,41 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     this.editor = editor;
     this.menu = menu;
 
-    buttonCount = 0;
-    which = new int[BUTTON_COUNT];
+    if (BaseNoGui.getTargetBoard().getName().contains("QEC")) {
+        BUTTON_COUNT = 10;
+        buttonCount = 0;
+        
+        state = new int[BUTTON_COUNT];
+        which = new int[BUTTON_COUNT];
 
-    //which[buttonCount++] = NOTHING;
-    which[buttonCount++] = RUN;
-    which[buttonCount++] = EXPORT;
-    which[buttonCount++] = NEW;
-    which[buttonCount++] = OPEN;
-    which[buttonCount++] = SAVE;
-    which[buttonCount++] = SERIAL;
+        which[buttonCount++] = RUN;
+        which[buttonCount++] = EXPORT;
+        which[buttonCount++] = NEW;
+        which[buttonCount++] = OPEN;
+        which[buttonCount++] = SAVE;
+        which[buttonCount++] = EVA;    
+        which[buttonCount++] = HMI;
+        which[buttonCount++] = ARDUBLOCK;
+        which[buttonCount++] = LDMICRO;
+        which[buttonCount++] = SERIAL;
+        
+        myPictureFileName = "buttons_backup";
+    } else {
+        BUTTON_COUNT = 6;
+        buttonCount = 0;
+        
+        state = new int[BUTTON_COUNT];
+        which = new int[BUTTON_COUNT];
+
+        which[buttonCount++] = RUN;
+        which[buttonCount++] = EXPORT;
+        which[buttonCount++] = NEW;
+        which[buttonCount++] = OPEN;
+        which[buttonCount++] = SAVE;
+        which[buttonCount++] = SERIAL;
+        
+        myPictureFileName = "buttons";
+    }
 
     currentRollover = -1;
 
@@ -154,6 +187,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       editor.addWindowListener(new WindowAdapter() {
         public void windowActivated(WindowEvent e) {
           if (touchBar == null) {
+            
             buildTouchBar();
             
             touchBar.show(editor); 
@@ -168,13 +202,13 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   }
   
   private void buildTouchBar() {
-    if (touchBarImages == null) {
-      loadTouchBarImages();
-    }
-    
     touchBar = new JTouchBar();
     touchBarButtons = new TouchBarButton[BUTTON_COUNT];
     touchBar.setCustomizationIdentifier("Arduino");
+
+    if (touchBarImages == null) {
+      loadTouchBarImages();
+    }
     
     for (int i = 0; i < BUTTON_COUNT; i++) {
       final int selection = i;
@@ -205,8 +239,55 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     }
   }
 
+  public void rebuildTouchBar() {
+    
+    if (BaseNoGui.getTargetBoard().getName().contains("QEC")) {
+        BUTTON_COUNT = 10;
+        buttonCount = 0;
+        state = new int[BUTTON_COUNT];
+        which = new int[BUTTON_COUNT];
+
+        which[buttonCount++] = RUN;
+        which[buttonCount++] = EXPORT;
+        which[buttonCount++] = NEW;
+        which[buttonCount++] = OPEN;
+        which[buttonCount++] = SAVE;
+        which[buttonCount++] = EVA;    
+        which[buttonCount++] = HMI;
+        which[buttonCount++] = ARDUBLOCK;
+        which[buttonCount++] = LDMICRO;
+        which[buttonCount++] = SERIAL;
+        
+        myPictureFileName = "buttons_backup";
+        
+    } else {
+        
+        BUTTON_COUNT = 6;
+        buttonCount = 0;
+        state = new int[BUTTON_COUNT];
+        which = new int[BUTTON_COUNT];
+
+        which[buttonCount++] = RUN;
+        which[buttonCount++] = EXPORT;
+        which[buttonCount++] = NEW;
+        which[buttonCount++] = OPEN;
+        which[buttonCount++] = SAVE;
+        which[buttonCount++] = SERIAL;
+        
+        myPictureFileName = "buttons";
+    }
+
+    touchBarImages = null;
+    buttonImages = null;
+    stateImage = null;
+    offscreen = null;
+    
+    loadTouchBarImages();
+    loadButtons();
+  }
+
   private void loadButtons() {
-    Image allButtons = Theme.getThemeImage("buttons", this,
+    Image allButtons = Theme.getThemeImage(myPictureFileName, this,
                                            BUTTON_IMAGE_SIZE * BUTTON_COUNT,
                                            BUTTON_IMAGE_SIZE * 3);
     buttonImages = new Image[BUTTON_COUNT][3];
@@ -226,7 +307,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   }
   
   private void loadTouchBarImages() {
-    Image allButtonsRetina = Theme.getThemeImage("buttons", this,
+    Image allButtonsRetina = Theme.getThemeImage(myPictureFileName, this,
                                            BUTTON_IMAGE_SIZE * BUTTON_COUNT * 2,
                                            BUTTON_IMAGE_SIZE * 3 * 2);
     touchBarImages = new com.thizzer.jtouchbar.common.Image[BUTTON_COUNT][3];
@@ -285,11 +366,26 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       int offsetX = 3;
       for (int i = 0; i < buttonCount; i++) {
         x1[i] = offsetX;
-        if (i == 2 || i == 6) x1[i] += BUTTON_GAP;
+        if (i == 2 || i == 10) x1[i] += BUTTON_GAP; // ORG: if (i == 2 || i == 6) 
         x2[i] = x1[i] + BUTTON_WIDTH;
         offsetX = x2[i];
       }
 
+      if (buttonCount == 10) {
+          // EVA
+          x1[EVA] = width - (BUTTON_WIDTH * 5) - 14;
+          x2[EVA] = width - (BUTTON_WIDTH * 4) - 14;            
+          // HMI
+          x1[HMI] = width - (BUTTON_WIDTH * 4) - 14;
+          x2[HMI] = width - (BUTTON_WIDTH * 3) - 14;
+          // ArduBlock
+          x1[ARDUBLOCK] = width - (BUTTON_WIDTH * 3) - 14;
+          x2[ARDUBLOCK] = width - (BUTTON_WIDTH * 2) - 14;
+          // LDmicro
+          x1[LDMICRO] = width - (BUTTON_WIDTH * 2) - 14;
+          x2[LDMICRO] = width - (BUTTON_WIDTH * 1) - 14;
+      }
+      
       // Serial button must be on the right
       x1[SERIAL] = width - BUTTON_WIDTH - 14;
       x2[SERIAL] = width - 14;
@@ -319,10 +415,15 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     if (currentRollover != -1) {
       int statusY = (BUTTON_HEIGHT + g.getFontMetrics().getAscent()) / 2;
       String status = shiftPressed ? titleShift[currentRollover] : title[currentRollover];
-      if (currentRollover != SERIAL)
-        g.drawString(status, (buttonCount - 1) * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY);
+      if (currentRollover != SERIAL && currentRollover != ARDUBLOCK && currentRollover != HMI && currentRollover != EVA && currentRollover != LDMICRO)
+        g.drawString(status, 5 * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY); // ORG: g.drawString(status, (buttonCount - 1) * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY);
       else {
-        int statusX = x1[SERIAL] - BUTTON_GAP;
+        int statusX = 0;
+        if (buttonCount == 6)
+            statusX = x1[SERIAL] - BUTTON_GAP; // ORG: x1[SERIAL] - BUTTON_GAP
+        else if (buttonCount == 10)
+            statusX = x1[SERIAL] - (BUTTON_WIDTH * 4 + BUTTON_GAP);
+        
         statusX -= g.getFontMetrics().stringWidth(status);
         g.drawString(status, statusX, statusY);
       }
@@ -499,8 +600,83 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
         }
         break;
 
+      case EVA:
+        try {
+          //System.out.println("Run ArduBlock program ...");
+          if (!editor.getSketchController().isReadOnly()) {
+            SwingUtilities.invokeLater(editor.getEVATool());
+          } else {
+            Base.showMessage(tr("Sketch is Read-Only"),
+                       tr("Some files are marked \"read-only\", so you'll\n" +
+                         "need to re-save the sketch in another location,\n" +
+                         "and try again."));
+            return;
+          }
+        } catch (Exception e1) {
+          throw new RuntimeException(e1);
+        }
+        break;
+                
+      case ARDUBLOCK:
+        try {
+          //System.out.println("Run ArduBlock program ...");
+          File file = new File(editor.getSketchController().getSketch().getFolder().getAbsolutePath() + "/data/_ardublock.abp");
+          if (!editor.getSketchController().isReadOnly() || file.exists()) {
+            SwingUtilities.invokeLater(editor.getArduBlockTool());
+          } else {
+            Base.showMessage(tr("Sketch is Read-Only"),
+                       tr("Some files are marked \"read-only\", so you'll\n" +
+                         "need to re-save the sketch in another location,\n" +
+                         "and try again."));
+            return;
+          }
+        } catch (Exception e1) {
+          throw new RuntimeException(e1);
+        }
+        break;
+        
+      case HMI:
+        try {
+          //System.out.println("Run HMI Editor program ...");
+          File file = new File(editor.getSketchController().getSketch().getFolder().getAbsolutePath() + "/data/_project.hpj");
+          if (!editor.getSketchController().isReadOnly() || file.exists()) {
+            SwingUtilities.invokeLater(editor.getHMITool());
+          } else {
+            Base.showMessage(tr("Sketch is Read-Only"),
+                       tr("Some files are marked \"read-only\", so you'll\n" +
+                         "need to re-save the sketch in another location,\n" +
+                         "and try again."));
+            return;
+          }
+        } catch (Exception e1) {
+          throw new RuntimeException(e1);
+        }
+        break;
+      
+      case LDMICRO:
+        try {
+          File file = new File(editor.getSketchController().getSketch().getFolder().getAbsolutePath() + "/data/myLD.ld");
+          //System.out.println("Run LDmicro program ...");
+          if (!editor.getSketchController().isReadOnly() || file.exists()) {
+            SwingUtilities.invokeLater(editor.getLDmicroTool());
+          } else {
+            Base.showMessage(tr("Sketch is Read-Only"),
+                       tr("Some files are marked \"read-only\", so you'll\n" +
+                         "need to re-save the sketch in another location,\n" +
+                         "and try again."));
+            return;
+          }
+        } catch (Exception e1) {
+          throw new RuntimeException(e1);
+        }
+        break;
+
       case SERIAL:
-        editor.handleSerial();
+        if (isShiftDown) {
+          editor.handlePlotter();
+        } else {
+          editor.handleSerial();
+        }
         break;
 
       default:

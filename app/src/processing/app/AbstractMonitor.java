@@ -17,10 +17,11 @@ public abstract class AbstractMonitor extends JFrame implements ActionListener {
 
   private StringBuffer updateBuffer;
   private Timer updateTimer;
+  private Timer portExistsTimer;
 
   private BoardPort boardPort;
 
-  protected String[] serialRateStrings = {"300", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "74880", "115200", "230400", "250000", "500000", "1000000", "2000000"};
+  protected String[] serialRateStrings = {"300", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "74880", "115200", "230400", "250000", "500000", "1000000", "2000000", "3000000"};
 
   public AbstractMonitor(BoardPort boardPort) {
     super(boardPort.getLabel());
@@ -73,6 +74,26 @@ public abstract class AbstractMonitor extends JFrame implements ActionListener {
     updateTimer = new Timer(33, this);  // redraw serial monitor at 30 Hz
     updateTimer.start();
 
+    ActionListener portExists = new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        try {
+          if (Base.getDiscoveryManager().find(boardPort.getAddress()) == null) {
+            if (!closed) {
+              suspend();
+            }
+          } else {
+            if (closed && !Editor.isUploading()) {
+              resume(boardPort);
+            }
+          }
+        } catch (Exception e) {}
+      }
+    };
+
+    portExistsTimer = new Timer(1000, portExists);  // check if the port is still there every second
+    portExistsTimer.start();
+
     closed = false;
   }
 
@@ -90,6 +111,11 @@ public abstract class AbstractMonitor extends JFrame implements ActionListener {
     enableWindow(false);
 
     close();
+  }
+
+  public void dispose() {
+    super.dispose();
+    portExistsTimer.stop();
   }
 
   public void resume(BoardPort boardPort) throws Exception {

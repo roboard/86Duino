@@ -62,4 +62,21 @@ public class ProgressAwareMessageConsumer implements MessageConsumer {
       parent.message(s);
     }
   }
+  
+  // 86Duino
+  @Override
+  public void message(String s, boolean stdout) {
+    if (s.startsWith("===info ||| Progress") || s.startsWith("===Progress")) {
+      Map<String, Object> parsedMessage = parser.parse(s);
+      Object[] args = (Object[]) parsedMessage.get("args");
+      for (CompilerProgressListener progressListener : progressListeners){
+        progressListener.progress(Double.valueOf(args[0].toString()).intValue());
+      }
+      return;
+    }
+
+    if (parent != null) {
+      parent.message(s, stdout);
+    }
+  }
 }

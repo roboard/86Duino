@@ -31,20 +31,22 @@ package processing.app.packages;
 import static processing.app.I18n.format;
 import static processing.app.I18n.tr;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*; // 86duino
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.github.zafarkhaja.semver.Version;
 
 import cc.arduino.Constants;
 import cc.arduino.contributions.VersionHelper;
-import cc.arduino.contributions.libraries.ContributedLibraryReference;
+import cc.arduino.contributions.libraries.ContributedLibraryDependency;
+import processing.app.*; // 86duino
 import processing.app.helpers.PreferencesMap;
 import processing.app.packages.UserLibraryFolder.Location;
 
@@ -64,6 +66,7 @@ public class UserLibrary {
   private List<String> declaredTypes;
   private boolean onGoingDevelopment;
   private List<String> includes;
+  private Map<String, String> _86boardparser;
   protected File installedFolder;
   protected Location location;
 
@@ -177,7 +180,29 @@ public class UserLibrary {
     res.location = location;
     return res;
   }
+  
+  public void parser86Board() {
+    _86boardparser = new HashMap<>();
+    String path = BaseNoGui.getHardwarePath() + "/86duino/x86/variants/boards.txt";
+    try(BufferedReader in = new BufferedReader(new FileReader(path))) {
+        String str;
+        while ((str = in.readLine()) != null) {
+            String[] tokens = str.split(",");
+            _86boardparser.put(tokens[0], tokens[1]);
+        }
+        in.close();
+    }
+    catch (IOException e) {
+        System.err.println(path + ": File Read Error\n");
+    }
+  }
 
+  public String get86LibBoardString(String _86board) {
+    if (_86boardparser.containsKey(_86board))
+      return _86boardparser.get(_86board);
+    else
+      return _86board;
+  }
   public String getName() {
     return name;
   }
@@ -230,7 +255,7 @@ public class UserLibrary {
     return maintainer;
   }
 
-  public List<ContributedLibraryReference> getRequires() {
+  public List<ContributedLibraryDependency> getRequires() {
     return null;
   }
 

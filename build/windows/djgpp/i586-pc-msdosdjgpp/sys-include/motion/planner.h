@@ -23,15 +23,16 @@
 #ifndef __PLANNER_H
 #define __PLANNER_H
 
-#include "blockqueue.h"
+#include "global.h"
 #include "setting.h"
+#include "blockqueue.h"
 #include "stepperqueue.h"
-#include "dda.h"
+#include "MotInterface.h"
 
 class MotPlanner
 {
   public:
-    MotPlanner(MotSetting *_setting, MotBlockQueue *_queue, MotDDA *_dda);
+    MotPlanner(MotSetting *_setting, MotBlockQueue *_queue, MotStepperQueue *_squeue, MotInterface *_motDevice);
     void plan_buffer_line(double *work, double feed_rate);
     void replan_buffer_line();
     void replan_buffer_line(double ratio);
@@ -40,15 +41,17 @@ class MotPlanner
     void plan_get_position_mm(double *pos);
     void plan_update_position(void);
     double GetFeedrateRatio();
+    void reset_acceleration_rates(void);
 
   private:
     MotSetting *setting;
     MotBlockQueue *queue;
-    MotDDA *dda;
+    MotStepperQueue *squeue;
+    MotInterface *motDevice;
 
-    unsigned long axis_steps_per_sqr_second[MAX_AXIS];
+    double axis_steps_per_sqr_second[MAX_AXIS];
     double cartesian_pos_mm[MAX_AXIS];
-    long motor_pos_steps[MAX_AXIS];
+    double motor_pos_steps[MAX_AXIS];
     double previous_speed[MAX_AXIS]; // Speed of previous path line segment
     double previous_nominal_speed; // Nominal speed of previous path line segment
     double feedrate_ratio;
@@ -61,10 +64,9 @@ class MotPlanner
     void inverse_kinematics(double *Cartesian, double *Motor);
     void forward_kinematics(double *Cartesian, double *Motor);
 
-    void AxistoMotor(double *Axis, long *Motor);
-    void MotortoAxis(double *Axis, long *Motor);
+    void AxistoMotor(double *Axis, double *Motor);
+    void MotortoAxis(double *Axis, double *Motor);
 
-    void reset_acceleration_rates(void);
 
     double max_allowable_speed(double acceleration, double target_velocity, double distance);
 

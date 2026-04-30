@@ -37,6 +37,7 @@ public class Constants {
   public static final String PREF_REMOVE_PLACEHOLDER = "___REMOVE___";
   public static final String PREF_BOARDS_MANAGER_ADDITIONAL_URLS = "boardsmanager.additional.urls";
   public static final String PREF_CONTRIBUTIONS_TRUST_ALL = "contributions.trust.all";
+  public static final String ALLOW_INSECURE_PACKAGES = "allow_insecure_packages";
 
   public static final String DEFAULT_INDEX_FILE_NAME = "package_index.json";
   public static final String BUNDLED_INDEX_FILE_NAME = "package_index_bundled.json";
@@ -57,14 +58,12 @@ public class Constants {
   public static final String PREF_PROXY_PAC_URL = "proxy.pac.url";
   public static final String PREF_PROXY_MANUAL_HOSTNAME = "proxy.manual.hostname";
   public static final String PREF_PROXY_MANUAL_PORT = "proxy.manual.port";
-  public static final String PREF_PROXY_MANUAL_USERNAME = "proxy.manual.username";
-  public static final String PREF_PROXY_MANUAL_PASSWORD = "proxy.manual.password";
-  public static final String PREF_PROXY_AUTO_USERNAME = "proxy.manual.username";
-  public static final String PREF_PROXY_AUTO_PASSWORD = "proxy.manual.password";
+  public static final String PREF_PROXY_USERNAME = "proxy.manual.username";
+  public static final String PREF_PROXY_PASSWORD = "proxy.manual.password";
 
   public static final String PACKAGE_INDEX_URL;
-  public static final String LIBRARY_INDEX_URL;
-  public static final String LIBRARY_INDEX_URL_GZ;
+  public static String LIBRARY_INDEX_URL;
+  public static String LIBRARY_INDEX_URL_GZ;
 
   public static final List<String> LIBRARY_CATEGORIES = Arrays.asList("Display", "Communication", "Signal Input/Output", "Sensors", "Device Control", "Timing", "Data Storage", "Data Processing", "Other", "Uncategorized");
   public static final List<String> LIBRARY_MANDATORY_PROPERTIES = Arrays.asList("name", "version", "author", "maintainer", "sentence", "paragraph", "url");
@@ -76,7 +75,7 @@ public class Constants {
     } else {
       PACKAGE_INDEX_URL = "https://downloads.arduino.cc/packages/package_index.json";
     }
-
+    /*
     String externalLibraryIndexUrl = System.getProperty("LIBRARY_INDEX_URL");
     if (externalLibraryIndexUrl != null && !externalLibraryIndexUrl.isEmpty()) {
       LIBRARY_INDEX_URL = externalLibraryIndexUrl;
@@ -87,9 +86,10 @@ public class Constants {
         LIBRARY_INDEX_URL_GZ = "";
       }
     } else {
-      LIBRARY_INDEX_URL = "https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/library_86Duino_index.json";
-      LIBRARY_INDEX_URL_GZ = "https://github.com/acen2009/86Duino_Supports/releases/download/Library_86Duino_package/library_86Duino_index.json.gz";
+      LIBRARY_INDEX_URL = "https://downloads.arduino.cc/libraries/library_index.json";
+      LIBRARY_INDEX_URL_GZ = "https://downloads.arduino.cc/libraries/library_index.json.gz";
     }
+    */   
   }
 
 }

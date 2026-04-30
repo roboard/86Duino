@@ -46,13 +46,23 @@ import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
+import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.FileNotFoundException;
+
+import java.nio.file.Files;
+
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -63,6 +73,7 @@ import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import javax.sql.rowset.serial.SerialException;
 import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.JCheckBoxMenuItem;
@@ -82,6 +93,7 @@ import javax.swing.TransferHandler;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.text.BadLocationException;
+//import javafx.application.Platform;
 
 import org.fife.ui.rsyntaxtextarea.folding.FoldManager;
 
@@ -95,9 +107,10 @@ import cc.arduino.packages.uploaders.SerialUploader;
 import cc.arduino.view.GoToLineNumber;
 import cc.arduino.view.StubMenuListener;
 import cc.arduino.view.findreplace.FindReplace;
+
 import jssc.SerialPortException;
 import processing.app.debug.RunnerException;
-import processing.app.debug.TargetBoard;
+import processing.app.debug.TargetBoard;                                        
 import processing.app.forms.PasswordAuthorizationDialog;
 import processing.app.helpers.DocumentTextChangeListener;
 import processing.app.helpers.Keys;
@@ -109,6 +122,9 @@ import processing.app.syntax.PdeKeywords;
 import processing.app.syntax.SketchTextArea;
 import processing.app.tools.MenuScroller;
 import processing.app.tools.Tool;
+import processing.app.Platform;
+
+import processing.app.helpers.ProcessUtils;
 
 /**
  * Main editor panel for the Processing Development Environment.
@@ -121,6 +137,7 @@ public class Editor extends JFrame implements RunnerListener {
   final Platform platform;
   private JMenu recentSketchesMenu;
   private JMenu programmersMenu;
+  private JMenu burnbootloaderMenu;                                 
   private final Box upper;
   private ArrayList<EditorTab> tabs = new ArrayList<>();
   private int currentTabIndex = -1;
@@ -183,20 +200,21 @@ public class Editor extends JFrame implements RunnerListener {
 
   private int numTools = 0;
 
-  public boolean avoidMultipleOperations = false;
+  static public boolean avoidMultipleOperations = false;
 
-  private final EditorToolbar toolbar;
+  private EditorToolbar toolbar;
   // these menus are shared so that they needn't be rebuilt for all windows
   // each time a sketch is created, renamed, or moved.
   static JMenu toolbarMenu;
   static JMenu sketchbookMenu;
   static JMenu examplesMenu;
   static JMenu importMenu;
+  static JMenu appearanceMenu;
 
   private static JMenu portMenu;
 
-  static volatile AbstractMonitor serialMonitor;
-  static AbstractMonitor serialPlotter;
+  static public volatile AbstractMonitor serialMonitor;
+  static public AbstractMonitor serialPlotter;
 
   final EditorHeader header;
   EditorStatus status;
@@ -221,7 +239,7 @@ public class Editor extends JFrame implements RunnerListener {
   private JMenuItem saveAsMenuItem;
 
   //boolean presenting;
-  private boolean uploading;
+  static private boolean uploading;
 
   // undo fellers
   private JMenuItem undoItem;
@@ -236,8 +254,16 @@ public class Editor extends JFrame implements RunnerListener {
   private UploadHandler uploadHandler;
   private UploadHandler uploadUsingProgrammerHandler;
   private Runnable timeoutUploadHandler;
+  private Upload86EVARes upload86EVAres;
 
+  private Tool ArduBlockTool;
+  private Tool HMITool;
+  private Tool EVATool;
+  private Tool LDmicroTool;
   private Map<String, Tool> internalToolCache = new HashMap<String, Tool>();
+  private Map<String, JMenuItem> globalToolItems = new HashMap<>();
+  private Map<Integer, JMenuItem> removeToolSlots = new HashMap<>();
+  private JMenuItem helpItem;
 
   public Editor(Base ibase, File file, int[] storedLocation, int[] defaultLocation, Platform platform) throws Exception {
     super("Arduino");
@@ -447,7 +473,7 @@ public class Editor extends JFrame implements RunnerListener {
     }
   }
 
-  private void setPlacement(int[] storedLocation, int[] defaultLocation) {
+  protected void setPlacement(int[] storedLocation, int[] defaultLocation) {
     if (storedLocation.length > 5 && storedLocation[5] != 0) {
       setExtendedState(storedLocation[5]);
       setPlacement(defaultLocation);
@@ -540,6 +566,9 @@ public class Editor extends JFrame implements RunnerListener {
     });
     buildSketchMenu(sketchMenu);
     menubar.add(sketchMenu);
+
+    toolsMenu = new JMenu(tr("Tools"));
+    toolsMenu.setMnemonic(KeyEvent.VK_T);
 
     final JMenu toolsMenu = buildToolsMenu();
     toolsMenu.addMenuListener(new StubMenuListener() {
@@ -643,6 +672,19 @@ public class Editor extends JFrame implements RunnerListener {
       item.addActionListener(event -> base.handlePrefs());
       fileMenu.add(item);
 
+      // 86Duino
+      appearanceMenu = new JMenu(tr("Appearance..."));
+
+      JMenuItem sa = new JMenuItem(tr("Save Current Settings"));
+      sa.addActionListener(evant -> saveAppearanceSettings());
+      appearanceMenu.add(sa);
+
+      JMenuItem re = new JMenuItem(tr("Reset Settings"));
+      re.addActionListener(evant -> resetAppearanceSettings());
+      appearanceMenu.add(re);
+
+      fileMenu.add(appearanceMenu);
+
       fileMenu.addSeparator();
 
       item = newJMenuItem(tr("Quit"), 'Q');
@@ -671,11 +713,11 @@ public class Editor extends JFrame implements RunnerListener {
     sketchMenu.add(item);
 
     // if selected board is not 86Duino, hide the "Upload Using Programmer" option
-	if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86EX")<0) {
-	    item = newJMenuItemShift(tr("Upload Using Programmer"), 'U');
-	    item.addActionListener(event -> handleExport(true));
-	    sketchMenu.add(item);
-	}
+    if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86")<0) {
+        item = newJMenuItemShift(tr("Upload Using Programmer"), 'U');
+        item.addActionListener(event -> handleExport(true));
+        sketchMenu.add(item);
+    }
 
     item = newJMenuItemAlt(tr("Export compiled Binary"), 'S');
     item.addActionListener(event -> {
@@ -713,11 +755,9 @@ public class Editor extends JFrame implements RunnerListener {
 
 
   private JMenu buildToolsMenu() {
-    toolsMenu = new JMenu(tr("Tools"));
-    toolsMenu.setMnemonic(KeyEvent.VK_T);
 
     addInternalTools(toolsMenu);
-
+    
     JMenuItem item = newJMenuItemShift(tr("Manage Libraries..."), 'I');
     item.addActionListener(e -> base.openLibraryManager("", ""));
     toolsMenu.add(item);
@@ -730,9 +770,35 @@ public class Editor extends JFrame implements RunnerListener {
     item.addActionListener(e -> handlePlotter());
     toolsMenu.add(item);
 
-    addTools(toolsMenu, BaseNoGui.getToolsFolder());
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      if (globalToolItems.size() > 6) { // loading with high speed
+        toolsMenu.addSeparator();
+        item = globalToolItems.get("ArduBlock");
+        if (item != null) {
+          toolsMenu.add(item);
+        }
+        item = globalToolItems.get("86HMI Editor");
+        if (item != null) {
+          toolsMenu.add(item);
+        }
+        item = globalToolItems.get("86EVA (EtherCAT) Configurator");
+        if (item != null) {
+          toolsMenu.add(item);
+        }
+        item = globalToolItems.get("LDmicro");
+        if (item != null) {
+          toolsMenu.add(item);
+        }
+      } else { // loading with low speed
+        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "ArduBlock", true, 0, true); // 86Duino, specify name to sort, put it on UP location, and reverse sort
+        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "HMI", true, 0, false);
+        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "EcConfig", true, 0, false);
+        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "LDmicro", true, 0, false);
+      }
+    }
+    
     File sketchbookTools = new File(BaseNoGui.getSketchbookFolder(), "tools");
-    addTools(toolsMenu, sketchbookTools);
+    addTools(toolsMenu, sketchbookTools, "", true, 0, true); // 86Duino, all sketchbookTools accept, no reverse
 
     toolsMenu.addSeparator();
 
@@ -751,24 +817,87 @@ public class Editor extends JFrame implements RunnerListener {
     item = new JMenuItem(tr("Get Board Info"));
     item.addActionListener(e -> handleBoardInfo());
     toolsMenu.add(item);
-    toolsMenu.addSeparator();
+    // toolsMenu.addSeparator();
 
     base.rebuildProgrammerMenu();
     programmersMenu = new JMenu(tr("Programmer"));
     MenuScroller.setScrollerFor(programmersMenu);
     base.getProgrammerMenus().stream().forEach(programmersMenu::add);
-    toolsMenu.add(programmersMenu);
+    if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86") < 0) {
+      toolsMenu.add(programmersMenu);
+    }
 
     // item = new JMenuItem(tr("Burn Bootloader"));
     // item.addActionListener(e -> handleBurnBootloader());
     // toolsMenu.add(item);
 
+    // For 86Duino, only QEC
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      if (globalToolItems.size() > 6) { // loading with high speed
+        toolsMenu.addSeparator();
+        item = globalToolItems.get("Upload All Resources");
+        if (item != null) {
+          toolsMenu.add(item);
+        }
+        item = globalToolItems.get("Download All Resources");
+        if (item != null) {
+          toolsMenu.add(item);
+        }
+        item = globalToolItems.get("Reset EtherCAT Master");
+        if (item != null) {
+          toolsMenu.add(item);
+        }
+      } else { // loading with low speed
+        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "AllRes", true, 1, true); // Download and Upload are here.
+        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "ResetECMaster", true, 0, false);
+      }
+    }
+    
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) { // other plug-in, have "upload" in filename.
+      addTools(toolsMenu, BaseNoGui.getToolsFolder(), "upload", true, 0, false);
+    }
+    
     // for 86Duino
-    JMenu burnbootloaderMenu = new JMenu(tr("Burn Bootloader"));
+    toolsMenu.addSeparator();
+    burnbootloaderMenu = new JMenu(tr("Burn Bootloader"));
     rebuildburnbootloaderMenu(burnbootloaderMenu);
     toolsMenu.add(burnbootloaderMenu);
+    
+    // For 86Duino
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      item = globalToolItems.get("Launch Bootloader Menu");
+      if (item != null) {
+        toolsMenu.add(item);
+      } else {
+        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "BootMenu", true, 0, false); // specify name to show
+      }
+    }
 
+    //If the selected borad is not QEC M01, remove this option.
+    if (!BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QECM2")) {
+      item = globalToolItems.get("Launch Bootloader Menu");
+      if (item != null) toolsMenu.remove(item);
+    }
+
+    // For 86Duino
+    updateToolsName();
+    boardSeriesChanged();
+    
     toolsMenu.addMenuListener(new StubMenuListener() {
+      public JMenuItem getSelectedItemRecursive(JMenu menu) {
+        int count = menu.getItemCount();
+        for (int i=0; i < count; i++) {
+          JMenuItem item = menu.getItem(i);
+
+          if ((item instanceof JMenu))
+            item = getSelectedItemRecursive((JMenu)item);
+
+          if (item != null && item.isSelected())
+            return item;
+        }
+        return null;
+      }
+
       public void menuSelected(MenuEvent e) {
         //System.out.println("Tools menu selected.");
         populatePortMenu();
@@ -780,15 +909,9 @@ public class Editor extends JFrame implements RunnerListener {
             String basename = name;
             int index = name.indexOf(':');
             if (index > 0) basename = name.substring(0, index);
-            String sel = null;
-            int count = menu.getItemCount();
-            for (int i=0; i < count; i++) {
-              JMenuItem item = menu.getItem(i);
-              if (item != null && item.isSelected()) {
-                sel = item.getText();
-                if (sel != null) break;
-              }
-            }
+
+            JMenuItem item = getSelectedItemRecursive(menu);
+            String sel = item != null ? item.getText() : null;
             if (sel == null) {
               if (!name.equals(basename)) menu.setText(basename);
             } else {
@@ -803,27 +926,65 @@ public class Editor extends JFrame implements RunnerListener {
 
     return toolsMenu;
   }
+  
+  private void rebuildToolsMenu() {
+    toolsMenu.removeAll();
+    buildToolsMenu();
+  }
 
   // For 86Duino version
   protected void rebuildburnbootloaderMenu(JMenu menu) {
-    JMenuItem item = new JMenuItem(tr("Arduino Bootloader"));
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        handleBurnBootloader();
+    if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86") >= 0) {
+      String myBoardName = "";
+      if (BaseNoGui.getTargetBoard().getPreferences().get("aliasname") != null)
+        myBoardName = BaseNoGui.getTargetBoard().getPreferences().get("aliasname");
+      else
+        myBoardName = BaseNoGui.getTargetBoard().getPreferences().get("name");
+      
+      String firmwareVersion = "";
+      File versionFile = base.getArduinoFile("hardware/86duino/x86/bootloaders/niitaka/fwver.v86");
+      if (versionFile.exists())
+      {
+        try
+        {
+          InputStream is = new FileInputStream(versionFile);
+          BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+          firmwareVersion = reader.readLine();
+          reader.close();
+        }
+        catch (FileNotFoundException e)
+        {
+        }
+        catch (UnsupportedEncodingException e)
+        {
+        }
+        catch (IOException e)
+        {
+          e.printStackTrace();
+        }
       }
-    });
-    menu.add(item);
-
-    item = new JMenuItem(tr("86Duino Bootloader"));
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        handle86BurnBootloader();
-      }
-    });
-    menu.add(item);
+      
+      JMenuItem item = new JMenuItem(tr(myBoardName + " Firmware") + " " + firmwareVersion);
+      item.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+          handle86BurnBootloader(BaseNoGui.getTargetBoard().getPreferences().get("name")); // always use name, not alias name
+        }
+      });
+      menu.add(item);
+    }
+    else
+    {
+      JMenuItem item = new JMenuItem(tr("Arduino Bootloader"));
+      item.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+          handleBurnBootloader();
+        }
+      });
+      menu.add(item);
+    }
   }
 
-  private void addTools(JMenu menu, File sourceFolder) {
+  private void addTools(JMenu menu, File sourceFolder, String startWith, boolean acceptOrNot, int sort, boolean addSeparator) { // 86Duino : String startWith, boolean acceptOrNot, int sort
     if (sourceFolder == null)
       return;
 
@@ -853,9 +1014,17 @@ public class Editor extends JFrame implements RunnerListener {
 
         // add .jar files to classpath
         File[] archives = toolDirectory.listFiles(new FilenameFilter() {
-          public boolean accept(File dir, String name) {
-            return (name.toLowerCase().endsWith(".jar") ||
-              name.toLowerCase().endsWith(".zip"));
+          public boolean accept(File dir, String name) { // 86Duino
+            if ((name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".zip"))) {
+                if (!startWith.isEmpty()) {
+                    if (acceptOrNot)
+                        if (name.toLowerCase().contains(startWith.toLowerCase())) return true; else return false;
+                    else // !acceptOrNot
+                        if (name.toLowerCase().contains(startWith.toLowerCase())) return false; else return true;
+                }
+                return true;
+            }
+            return false;
           }
         });
 
@@ -905,11 +1074,37 @@ public class Editor extends JFrame implements RunnerListener {
         String title = tool.getMenuTitle();
         JMenuItem item = new JMenuItem(title);
         item.addActionListener(event -> {
-          SwingUtilities.invokeLater(tool);
+          File file;
+          String path = getSketchController().getSketch().getFolder().getAbsolutePath();
+          if (title.equals("ArduBlock")) {
+            file = new File(path + "/data/_ardublock.abp");
+          } else if (title.equals("86HMI Editor")) {
+            file = new File(path + "/data/_project.hpj");
+          } else if (title.equals("86LDmicro")) {
+            file = new File(path + "/data/myLD.ld");
+          } else {
+            file = new File(path + "/data/noname.xxx");
+          }
+          if (title.contains("Reset EtherCAT Master")) {
+            SwingUtilities.invokeLater(tool);
+          } else if (!getSketchController().isReadOnly() || file.exists()) {
+            SwingUtilities.invokeLater(tool);
+          } else {
+            Base.showMessage(tr("Sketch is Read-Only"),
+                       tr("Some files are marked \"read-only\", so you'll\n" +
+                         "need to re-save the sketch in another location,\n" +
+                         "and try again."));
+            return;
+          }
           //new Thread(tool).start();
         });
         //menu.add(item);
         toolItems.put(title, item);
+        globalToolItems.put(title, item);
+        if (title.equals("ArduBlock")) registerArduBlockTool(tool); // 86Duino
+        else if (title.equals("86HMI Editor")) registerHMITool(tool); // 86Duino
+        else if (title.equals("86EVA (EtherCAT) Configurator")) registerEVATool(tool); // 86Duino
+        else if (title.equals("86LDmicro")) registerLDmicroTool(tool); // 86Duino
 
       } catch (Exception e) {
         e.printStackTrace();
@@ -918,14 +1113,48 @@ public class Editor extends JFrame implements RunnerListener {
     ArrayList<String> toolList = new ArrayList<>(toolItems.keySet());
     if (toolList.size() == 0) return;
 
-    menu.addSeparator();
-    Collections.sort(toolList);
+    if (addSeparator) menu.addSeparator();
+    
+    if (sort == 0) Collections.sort(toolList);
+    else if (sort == 1) Collections.sort(toolList, Collections.reverseOrder()); // 86Duino
     for (String title : toolList) {
       menu.add(toolItems.get(title));
     }
+    return;
   }
 
+  private void registerArduBlockTool(Tool tool) {
+    ArduBlockTool = tool;
+  }
+  
+  private void registerHMITool(Tool tool) {
+    HMITool = tool;
+  }
+  
+  private void registerEVATool(Tool tool) {
+    EVATool = tool;
+  }
 
+  private void registerLDmicroTool(Tool tool) {
+    LDmicroTool = tool;
+  }
+  
+  public Tool getArduBlockTool() {
+    return ArduBlockTool;
+  }
+
+  public Tool getLDmicroTool() {
+    return LDmicroTool;
+  }
+  
+  public Tool getHMITool() {
+    return HMITool;
+  }
+  
+  public Tool getEVATool() {
+    return EVATool;
+  }
+  
   private String findClassInZipFile(String base, File file) {
     // Class file to search for
     String classFileName = "/" + base + ".class";
@@ -1043,22 +1272,20 @@ public class Editor extends JFrame implements RunnerListener {
     //System.out.println(item.getLabel());
 
     BaseNoGui.selectSerialPort(name);
-    if (serialMonitor != null) {
-      try {
+    try {
+      boolean reopenMonitor = ((serialMonitor != null && serialMonitor.isVisible()) ||
+                                serialPlotter != null && serialPlotter.isVisible());
+      if (serialMonitor != null) {
         serialMonitor.close();
-        serialMonitor.setVisible(false);
-      } catch (Exception e) {
-        // ignore
       }
-    }
-
-    if (serialPlotter != null) {
-      try {
+      if (serialPlotter != null) {
         serialPlotter.close();
-        serialPlotter.setVisible(false);
-      } catch (Exception e) {
-        // ignore
       }
+      if (reopenMonitor) {
+        handleSerial();
+      }
+    } catch (Exception e) {
+      // ignore
     }
 
     onBoardOrPortChange();
@@ -1084,7 +1311,7 @@ public class Editor extends JFrame implements RunnerListener {
     public String toString() {
       // This is required for serialPrompt()
       String label = port.getLabel();
-      if (port.getBoardName() != null && label.isEmpty()) {
+      if (port.getBoardName() != null && !port.getBoardName().isEmpty()) {
         label += " (" + port.getBoardName() + ")";
       }
       return label;
@@ -1166,36 +1393,39 @@ public class Editor extends JFrame implements RunnerListener {
 
     item = new JMenuItem(tr("Troubleshooting"));
     item.addActionListener(event -> Base.show86DuinoForum());
+    // menu.add(item);
+
+    // item = new JMenuItem(tr("Reference"));
+    // item.addActionListener(event -> Base.openURL("https://www.arduino.cc/reference/en/"));
     menu.add(item);
 
     menu.addSeparator();
-
     item = new JMenuItem(tr("Language Reference"));
     item.addActionListener(event -> Base.show86DuinoLanguageReference());
     menu.add(item);
 
     item = new JMenuItem(tr("Libraries Reference"));
     item.addActionListener(event -> Base.show86DuinoLibrariesference());
-    menu.add(item);
+    menu.add(item); 
 
     item = new JMenuItem(tr("Hardware Reference"));
     item.addActionListener(event -> Base.show86DuinoHardwareference());
     menu.add(item);
 
-    item = new JMenuItem(tr("Environment"));
-    item.addActionListener(event -> Base.show86DuinoEnvironment());
-    menu.add(item);
-
     menu.addSeparator();
-
-    item = new JMenuItem(tr("Visit 86Duino.com"));
-    item.addActionListener(event -> Base.openURL(tr("http://www.86duino.com/")));
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      item = new JMenuItem(tr("Visit qec.tw")); // show one when open IDE
+    } else {
+      item = new JMenuItem(tr("Visit 86duino.com")); // show one when open IDE
+    }
+    helpItem = item;
+    item.addActionListener(event -> Base.show86DuinoWebLink());
     menu.add(item);
 
     // macosx already has its own about menu
     if (!OSUtils.hasMacOSStyleMenus()) {
       menu.addSeparator();
-      item = new JMenuItem(tr("About Arduino"));
+      item = new JMenuItem(tr("About 86Duino"));
       item.addActionListener(event -> base.handleAbout());
       menu.add(item);
     }
@@ -1421,6 +1651,8 @@ public class Editor extends JFrame implements RunnerListener {
     uploadUsingProgrammerHandler = new UploadHandler();
     uploadUsingProgrammerHandler.setUsingProgrammer(true);
     timeoutUploadHandler = new TimeoutUploadHandler();
+    upload86EVAres = new Upload86EVARes();
+    upload86EVAres.init(Editor.this);
   }
 
 
@@ -1479,8 +1711,10 @@ public class Editor extends JFrame implements RunnerListener {
     // This must be run in the GUI thread
     SwingUtilities.invokeLater(() -> {
       codePanel.removeAll();
-      codePanel.add(tabs.get(index), BorderLayout.CENTER);
-      tabs.get(index).requestFocusInWindow(); // get the caret blinking
+      EditorTab selectedTab = tabs.get(index);
+      codePanel.add(selectedTab, BorderLayout.CENTER);
+      selectedTab.applyPreferences();
+      selectedTab.requestFocusInWindow(); // get the caret blinking
       // For some reason, these are needed. Revalidate says it should be
       // automatically called when components are added or removed, but without
       // it, the component switched to is not displayed. repaint() is needed to
@@ -1582,20 +1816,25 @@ public class Editor extends JFrame implements RunnerListener {
     tabs.remove(index);
   }
 
+
   // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-  void handleFindReference(ActionEvent e) {
-    String text = getCurrentTab().getCurrentKeyword();
 
+  void handleFindReference(String text) {
     String referenceFile = base.getPdeKeywords().getReference(text);
+    String q;
     if (referenceFile == null) {
-      statusNotice(I18n.format(tr("No reference available for \"{0}\""), text));
+      q = text;
+    } else if (referenceFile.startsWith("Serial_")) {
+      q = referenceFile.substring(7);
     } else {
-      if (referenceFile.startsWith("Serial_")) {
-        Base.showReference("Serial/" + referenceFile.substring("Serial_".length()));
-      } else {
-        Base.showReference("Reference/" + referenceFile);
-      }
+      q = referenceFile;
+    }
+    try {
+      Base.openURL("https://www.arduino.cc/search?tab=&q="
+                   + URLEncoder.encode(q, "UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
     }
   }
 
@@ -1793,7 +2032,7 @@ public class Editor extends JFrame implements RunnerListener {
     if (file == null) {
       if (!fileName.endsWith(".ino") && !fileName.endsWith(".pde")) {
 
-        Base.showWarning(tr("Bad file selected"), tr("Arduino can only open its own sketches\n" +
+        Base.showWarning(tr("Bad file selected"), tr("86Duino can only open its own sketches\n" +
           "and other files ending in .ino or .pde"), null);
         return false;
 
@@ -1978,6 +2217,16 @@ public class Editor extends JFrame implements RunnerListener {
         base.storeRecentSketches(sketchController);
         base.rebuildRecentSketchesMenuItems();
         statusNotice(tr("Done Saving."));
+        // 86Duino -- start to delete prev sketch file including ino.cpp, .o, .d
+        String buildSketchPath = sketch.getBuildPath().getAbsolutePath() + "/sketch";
+        File sketchDir = new File(buildSketchPath);
+        if (sketchDir.exists() && sketchDir.isDirectory()) {
+            File[] listFiles = sketchDir.listFiles();
+            for (File sf : listFiles)
+                sf.delete();
+        }
+        // 86Duino -- end
+        
         // Disabling this for 0125, instead rebuild the menu inside
         // the Save As method of the Sketch object, since that's the
         // only one who knows whether something was renamed.
@@ -2068,6 +2317,8 @@ public class Editor extends JFrame implements RunnerListener {
 
     public void run() {
       try {
+        uploading = true;
+
         removeAllLineHighlights();
         if (serialMonitor != null) {
           serialMonitor.suspend();
@@ -2075,8 +2326,6 @@ public class Editor extends JFrame implements RunnerListener {
         if (serialPlotter != null) {
           serialPlotter.suspend();
         }
-
-        uploading = true;
 
         boolean success = sketchController.exportApplet(usingProgrammer);
         if (success) {
@@ -2118,9 +2367,18 @@ public class Editor extends JFrame implements RunnerListener {
     }
   }
 
-  private void resumeOrCloseSerialMonitor() {
+  static public boolean isUploading() {
+    return uploading;
+  }
+
+  public void resumeOrCloseSerialMonitor() {
     // Return the serial monitor window to its initial state
     if (serialMonitor != null) {
+      try {
+        Thread.sleep(200);
+      } catch (InterruptedException e) {
+          // noop
+      }
       BoardPort boardPort = BaseNoGui.getDiscoveryManager().find(PreferencesData.get("serial.port"));
       long sleptFor = 0;
       while (boardPort == null && sleptFor < MAX_TIME_AWAITING_FOR_RESUMING_SERIAL_MONITOR) {
@@ -2148,7 +2406,7 @@ public class Editor extends JFrame implements RunnerListener {
    }
   }
 
-  private void resumeOrCloseSerialPlotter() {
+  public void resumeOrCloseSerialPlotter() {
     // Return the serial plotter window to its initial state
     if (serialPlotter != null) {
       BoardPort boardPort = BaseNoGui.getDiscoveryManager().find(PreferencesData.get("serial.port"));
@@ -2182,6 +2440,252 @@ public class Editor extends JFrame implements RunnerListener {
     }
   }
 
+  // 86Duino Start ---
+  class Upload86EVARes implements Runnable {
+    Editor editor;
+
+    private int listenOnProcess(String[] arguments) {
+      try {
+        final Process p = ProcessUtils.exec(arguments);
+        
+        // stdout
+        Thread thread1 = new Thread() {
+          public void run() {
+            try {
+              int c;
+              InputStreamReader reader = new InputStreamReader(p.getInputStream());
+              while ((c = reader.read()) != -1)
+                  System.out.print((char) c);
+              reader.close();
+            } catch (Exception e){}
+          }
+        };
+        
+        //stderr
+        Thread thread2 = new Thread() {
+          public void run() {
+            try {
+              int c;
+              InputStreamReader reader = new InputStreamReader(p.getErrorStream());
+              while ((c = reader.read()) != -1)
+                  System.err.print((char) c);
+              reader.close();
+            } catch (Exception e){}
+          }
+        };
+        
+        thread1.start();
+        thread2.start();
+        int res = p.waitFor();
+        thread1.join();
+        thread2.join();
+        return res;
+      } catch (Exception e){
+        return -1;
+      }
+    }
+
+    private void sysExec(final String[] arguments){
+        Thread thread = new Thread() {
+            public void run() {
+                try {
+                    if(listenOnProcess(arguments) != 0) {
+                        editor.statusError("Bootloader Upload failed!");
+                    } else {
+                        editor.statusNotice("Uplaoding Bootloader ... Done");
+                    }
+                } catch (Exception e){
+                    editor.statusError("fail to run v86dude!");
+                }
+            }
+        };
+        thread.start();
+    }
+
+    private void copyFileUsingJava7Files(File source, File dest) throws IOException {   
+        Files.copy(source.toPath(), dest.toPath());
+    }
+    
+    private void clearAllFile(File destFolder) throws IOException {
+        File[] files = destFolder.listFiles();
+        
+        for (File file : files) {
+          if (!file.isDirectory()) {
+            if (file.getName().indexOf(".png") != -1) file.delete();
+                    else if (file.getName().indexOf(".PNG") != -1) file.delete();
+                    else if (file.getName().indexOf(".txt") != -1) file.delete();
+                    else if (file.getName().indexOf("v86boot") != -1) file.delete();
+                    else if (file.getName().indexOf("86eva") != -1) file.delete();
+                    else if (file.getName().indexOf("_fecfg") != -1) file.delete();
+                    else if (file.getName().indexOf("_fblui") != -1) file.delete();
+                    else if (file.getName().indexOf(".v86") != -1) file.delete();
+          } else {
+            clearAllFile(file);
+          }
+        }
+    }
+    
+    private void copyResourceTo86EVA(File source, File target) throws IOException {
+        for (File file : source.listFiles()) {
+          if (!file.isDirectory()) {
+                    File srcDir  = new File(source.getAbsolutePath() + "/" + file.getName());
+                File destDir = new File(target.getAbsolutePath() + "/" + file.getName());
+            copyFileUsingJava7Files(srcDir, destDir);
+          } else {
+            // do nothing
+          }
+        }
+    }
+
+    private Map<String, String> _86boardparser;
+
+    private void parser86Board() {
+      _86boardparser = new HashMap<>();
+      String path = BaseNoGui.getHardwarePath() + "/86duino/x86/variants/boards.txt";
+      try(BufferedReader in = new BufferedReader(new FileReader(path))) {
+          String str;
+          while ((str = in.readLine()) != null) {
+              String[] tokens = str.split(",");
+              _86boardparser.put(tokens[0], tokens[1]);
+          }
+          in.close();
+      }
+      catch (IOException e) {
+          System.err.println(path + ": File Read Error\n");
+      }
+    }
+
+    private String get86BoardString(String _86board) {
+      if (_86boardparser.containsKey(_86board))
+        return _86boardparser.get(_86board);
+      else
+        return _86board;
+    }
+
+    public void init(Editor editor) {
+      if (this.editor == null) {
+        this.editor = editor;
+      }
+    }
+    
+    public void run() {
+      // !!!!!!!!!!!!!if re-start HMI editor
+      
+      String programName = "v86dude.exe";
+      String dudeDir = BaseNoGui.getHardwarePath() + "/tools/x86";
+
+      File tool = new File(dudeDir, programName);
+      if (!tool.exists()) {
+        editor.statusError("Openfile Error: v86dude.exe not found!");
+        return;
+      } else {
+        String boardName1 = BaseNoGui.getTargetBoard().getPreferences().get("name").substring(8);
+        
+        if (!boardName1.contains("QEC") && !boardName1.contains("CYF")) {
+            editor.statusError("Need the PL2303 chip on board. (EX. QEC series)");
+            return;
+        }
+
+        parser86Board();
+
+        String boardName = get86BoardString(BaseNoGui.getTargetBoard().getPreferences().get("name"));
+        
+        // M2 need the many special steps
+        String rpath      = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka";
+        String destPath   = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/86eva";
+        String srcPath    = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/resource"; // PNG files
+        String src1Path   = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/" + boardName.toLowerCase() + "/86eva.exe";
+        String src2Path   = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/" + boardName.toLowerCase() + "/v86boot.exe";
+        String src3Path   = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/" + boardName.toLowerCase() + "/_bldver.v86";
+        String src4Path   = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/" + boardName.toLowerCase() + "/_fecfg.exe";
+        String src5Path   = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/" + boardName.toLowerCase() + "/_fblui.exe";
+        String src6Path   = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/fwver.v86";
+        String dest1Path  = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/86eva/86eva.exe";
+        String dest2Path  = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/86eva/v86boot.exe";
+        String dest3Path  = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/86eva/_bldver.v86";
+        String dest4Path  = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/86eva/_fecfg.exe";
+        String dest5Path  = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/86eva/_fblui.exe";
+        String dest6Path  = BaseNoGui.getHardwarePath() + "/86duino/x86/bootloaders/niitaka/86eva/fwver.v86";
+
+        File srcFolder    = new File(srcPath);
+        File destFolder   = new File(destPath);
+        File src1File     = new File(src1Path);
+        File src2File     = new File(src2Path);
+        File src3File     = new File(src3Path);
+        File src4File     = new File(src4Path);
+        File src5File     = new File(src5Path);
+        File src6File     = new File(src6Path);
+
+        File dest1File    = new File(dest1Path);
+        File dest2File    = new File(dest2Path);
+        File dest3File    = new File(dest3Path);
+        File dest4File    = new File(dest4Path);
+        File dest5File    = new File(dest5Path);
+        File dest6File    = new File(dest6Path);
+        
+        File f = new File(rpath);
+        if (!f.exists()) {
+            editor.statusError("86EVA folder is not found!");
+            return;
+        }
+        
+        try {
+            // Clear ALL files in 86EVA except Autoupload.ini, firmware.exe, _fecfg.exe
+            clearAllFile(destFolder);
+            
+            // If board is M01, don't copy resource png to 86EVA directory
+            if (!boardName.equals("QECM2") && !boardName.equals("QECM02")) {
+                copyResourceTo86EVA(srcFolder, destFolder);
+            }
+            
+            // Copy the nesseary file to 86EVA directory
+            // !!! Note: If have the same filename in dest folder, we will get IOException.
+            if (src1File.exists()) copyFileUsingJava7Files(src1File, dest1File);
+            if (src2File.exists()) copyFileUsingJava7Files(src2File, dest2File);
+            if (src3File.exists()) copyFileUsingJava7Files(src3File, dest3File);
+            if (src4File.exists()) copyFileUsingJava7Files(src4File, dest4File);
+            if (src5File.exists()) copyFileUsingJava7Files(src5File, dest5File);
+            if (src6File.exists()) copyFileUsingJava7Files(src6File, dest6File);
+        } catch (IOException e) {
+            editor.statusError("Copy file error!");
+            return;
+        }
+        
+        // show message box
+        editor.statusNotice("Uplaoding bootloader resource ... waiting about 20 sec.");
+        
+        String uploadPort = PreferencesData.get("serial.port");
+        
+        try {
+            if (editor.serialMonitor != null) {
+              editor.serialMonitor.close();
+              editor.serialMonitor.setVisible(false);
+            }
+            if (editor.serialPlotter != null) {
+              editor.serialPlotter.close();
+              editor.serialPlotter.setVisible(false);
+            }
+        } catch (PreferencesMapException e) {
+            editor.statusError(I18n.format(
+                      tr("Error while uploading: missing '{0}' configuration parameter"),
+                      e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+      
+        try {
+            Thread.sleep(500);
+        }catch(Exception e) {
+            System.out.println(e);
+        }
+        
+        // run v86dude.exe
+        sysExec(new String[]{tool.getAbsolutePath(), uploadPort, Integer.toString(0x22), src1Path, boardName, rpath}); // 不用下命令 0x25 檢查來源和目標空間大小，因為我自己知道 86EVA 的內容有沒有超過 disk 限制
+      }
+    }
+  }
+  // 86Duino End ---
+  
   public void handleSerial() {
     if(serialPlotter != null) {
       if(serialPlotter.isClosed()) {
@@ -2220,7 +2724,7 @@ public class Editor extends JFrame implements RunnerListener {
       return;
     }
 
-    serialMonitor = new MonitorFactory().newMonitor(base, port);
+    serialMonitor = new MonitorFactory().newMonitor(port);
 
     if (serialMonitor == null) {
       String board = port.getPrefs().get("board");
@@ -2229,6 +2733,7 @@ public class Editor extends JFrame implements RunnerListener {
       return;
     }
 
+    base.addEditorFontResizeListeners(serialMonitor);
     Base.setIcon(serialMonitor);
 
     // If currently uploading, disable the monitor (it will be later
@@ -2415,13 +2920,29 @@ public class Editor extends JFrame implements RunnerListener {
     }).start();
   }
 
-  private void handle86BurnBootloader() {
+  private void saveAppearanceSettings() {
+    base.storeSketchLocation(false);
+    statusNotice(tr("Done Saving."));
+  }
+
+  private void resetAppearanceSettings() {
+    base.storeSketchLocation(true);
+    statusNotice(tr("Done Reset."));
+  }
+
+  private void handle86BurnBootloader(String _86board) {
     console.clear();
     statusNotice(tr("Burning bootloader to I/O Board (this may take a minute)..."));
+    
+    if (_86board.contains("QEC")) {
+          new Thread(upload86EVAres).start();
+          return;
+    }
+    
     new Thread(() -> {
       try {
         Uploader uploader = new SerialUploader();
-        if (uploader.burn86Bootloader()) {
+        if (uploader.burn86Bootloader(_86board)) {
           SwingUtilities.invokeLater(() -> statusNotice(tr("Done burning bootloader.")));
         } else {
           SwingUtilities.invokeLater(() -> statusError(tr("Error while burning bootloader.")));
@@ -2441,7 +2962,6 @@ public class Editor extends JFrame implements RunnerListener {
       }
     }).start();
   }
-
   private void handleBoardInfo() {
     console.clear();
 
@@ -2629,27 +3149,109 @@ public class Editor extends JFrame implements RunnerListener {
 
   // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+  String privBoardName = "";
+  public boolean boardSeriesChanged() {
+    String[] nowBoardName;
+    
+    if (BaseNoGui.getTargetBoard().getAliasName() != null)
+        nowBoardName = BaseNoGui.getTargetBoard().getAliasName().split(" ");
+    else
+        nowBoardName = BaseNoGui.getTargetBoard().getName().split(" ");
+    
+    if (!nowBoardName[0].equals(privBoardName)) {
+        privBoardName = nowBoardName[0];
+        return true;
+    }
+    
+    return false;
+  }
+
+  public void updateToolsName() {
+    JMenuItem item;
+    item = globalToolItems.get("Upload All Resources");
+    if (item != null) {
+      item.setText(tr("Upload Resources to " + BaseNoGui.getTargetBoard().getAliasName()));
+    }
+    item = globalToolItems.get("Download All Resources");
+    if (item != null) {
+      item.setText(tr("Download Resources from " + BaseNoGui.getTargetBoard().getAliasName()));
+    }
+    item = globalToolItems.get("Reset EtherCAT Master");
+    if (item != null) {
+      item.setText(tr("Reset the " + BaseNoGui.getTargetBoard().getAliasName()));
+    }
+
+    //If the selected borad is QEC M01, add "Launch Bootloader Menu" option. If not, remove it.
+    item = globalToolItems.get(tr("Launch Bootloader Menu"));
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QECM2") ||
+        BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QECM02")) {
+      if (item != null) toolsMenu.add(item);
+    } else {
+      if (item != null) toolsMenu.remove(item);
+    }
+  }
+
+  public void updateHelpName() {
+    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
+      if (helpItem != null) helpItem.setText(tr("Visit qec.tw"));
+    } else {
+      if (helpItem != null) helpItem.setText(tr("Visit 86duino.com"));
+    }
+  }
+  
   protected void onBoardOrPortChange() {
     TargetBoard board = BaseNoGui.getTargetBoard();
-    if (board != null)
-      lineStatus.setBoardName(board.getName());
-    else
+    if (board != null) {
+      if (board.getAliasName() != null) {// 86Duino
+        lineStatus.setBoardName(board.getAliasName()); // 86Duino
+      } else {
+        lineStatus.setBoardName(board.getName());
+      }
+    } else
       lineStatus.setBoardName("-");
     lineStatus.setPort(PreferencesData.get("serial.port"));
     lineStatus.repaint();
-
     // if select 86Duino board, update menu bar
-	if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86EX") >= 0) {
-		// rebuild a part of Skecth menu
-		final JMenu sketchMenu = new JMenu(tr("Sketch"));
-	    sketchMenu.setMnemonic(KeyEvent.VK_S);
-        buildSketchMenu(sketchMenu);
-        sketchMenu.revalidate();
-        validate();
-	}
+    if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86") >= 0) {
+      // rebuild a part of Skecth menu
+      final JMenu sketchMenu = new JMenu(tr("Sketch"));
+      sketchMenu.setMnemonic(KeyEvent.VK_S);
+      buildSketchMenu(sketchMenu);
+      sketchMenu.revalidate();
+      validate();
 
+      toolsMenu.remove(programmersMenu);
+      
+    } else { // Arduino
+      toolsMenu.add(programmersMenu);
+      programmersMenu.removeAll();
+      base.getProgrammerMenus().forEach(programmersMenu::add);
+    }
+
+    updateToolsName();
+    updateHelpName();
+
+    // 86Duino special function
+    if (boardSeriesChanged()) {
+        rebuildToolsMenu();
+        toolbar.rebuildTouchBar();
+        
+        // update all icon button, must repaint splitPane
+        List<Editor> editors = Base.INSTANCE.getEditors();
+        for (Editor editor : editors) {
+            editor.getSplitPane().repaint();
+        }
+    }
+    
+    burnbootloaderMenu.removeAll();
+    rebuildburnbootloaderMenu(burnbootloaderMenu);
   }
 
+  // 86Duino special function
+  public JSplitPane getSplitPane() {
+    return splitPane;
+  }
+  
   public void addCompilerProgressListener(CompilerProgressListener listener){
     this.status.addCompilerProgressListener(listener);
   }

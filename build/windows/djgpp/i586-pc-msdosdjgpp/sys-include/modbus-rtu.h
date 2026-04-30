@@ -22,6 +22,8 @@
 #ifndef __MODBUS_RTU_H
 #define __MODBUS_RTU_H
 
+#include "modbus-hal.h"
+
 #define MODBUS_RTU_MAX_ADU_LENGTH       (256)
 
 #define _MODBUS_RTU_HEADER_LENGTH       (1)
@@ -31,5 +33,6 @@
 
 modbus_t* modbus_new_rtu(const char *device, int baud, char parity,
                                     int data_bit, int stop_bit);
+modbus_t* modbus_new_rtu_ext(modbus_hal_t *hal);
 
 #endif

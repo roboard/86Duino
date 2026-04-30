@@ -29,17 +29,14 @@
 
 package cc.arduino.packages.discoverers.serial;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-
 import cc.arduino.packages.BoardPort;
 import cc.arduino.packages.Discovery;
 import processing.app.BaseNoGui;
 import processing.app.Platform;
 import processing.app.debug.TargetBoard;
+import processing.app.helpers.BoardCloudResolver;
+
+import java.util.*;
 
 public class SerialDiscovery implements Discovery, Runnable {
 
@@ -49,7 +46,7 @@ public class SerialDiscovery implements Discovery, Runnable {
   private final List<String> oldPorts = new ArrayList<>();
   public boolean uploadInProgress = false;
   public boolean pausePolling = false;
-  private BoardPort oldUploadBoardPort = null;
+  private final BoardCloudResolver boardCloudResolver = new BoardCloudResolver();
 
 
   @Override
@@ -58,7 +55,7 @@ public class SerialDiscovery implements Discovery, Runnable {
   }
 
   @Override
-  public List<BoardPort> listDiscoveredBoards(boolean complete) {
+  public synchronized List<BoardPort> listDiscoveredBoards(boolean complete) {
       if (complete) {
         return new ArrayList<>(serialBoardPorts);
       }
@@ -71,7 +68,7 @@ public class SerialDiscovery implements Discovery, Runnable {
       return onlineBoardPorts;
   }
 
-  public void setSerialBoardPorts(List<BoardPort> newSerialBoardPorts) {
+  public synchronized void setSerialBoardPorts(List<BoardPort> newSerialBoardPorts) {
       serialBoardPorts.clear();
       serialBoardPorts.addAll(newSerialBoardPorts);
   }
@@ -118,36 +115,36 @@ public class SerialDiscovery implements Discovery, Runnable {
       return;
     }
 
-    // if (updating) {}
-    // a port will disappear, another will appear
-    // use this information to "merge" the boards
-    // updating must be signaled by SerialUpload class
-
     oldPorts.clear();
     oldPorts.addAll(ports);
 
+    // set unreachable ports offline
     for (BoardPort board : boardPorts) {
-      if (ports.contains(board.toString())) {
-        if (board.isOnline()) {
-          ports.remove(ports.indexOf(board.toString()));
-        }
-      } else {
-        if (uploadInProgress && board.isOnline()) {
-          oldUploadBoardPort = board;
-        }
+      if (!ports.contains(board.toCompleteString())) {
         board.setOnlineStatus(false);
       }
     }
 
+    // add information for newly added ports
     for (String newPort : ports) {
 
-      String[] parts = newPort.split("_");
+      // if port has been already discovered bring it back online
+      BoardPort oldBoardPort = boardPorts.stream() //
+          .filter(bp -> bp.toCompleteString().equalsIgnoreCase(newPort)) //
+          .findAny().orElse(null);
+      if (oldBoardPort != null) {
+        oldBoardPort.setOnlineStatus(true);
+        continue;
+      }
 
+      // Otherwise build a BoardPort object out of it and add it to
+      // to the known boardPorts
+
+      String[] parts = newPort.split("_");
       if (parts.length < 3) {
         // something went horribly wrong
         continue;
       }
-
       if (parts.length > 3) {
         // port name with _ in it (like CP2102 on OSX)
         for (int i = 1; i < (parts.length-2); i++) {
@@ -159,67 +156,50 @@ public class SerialDiscovery implements Discovery, Runnable {
 
       String port = parts[0];
 
-      Map<String, Object> boardData = platform.resolveDeviceByVendorIdProductId(port, BaseNoGui.packages);
-
-      BoardPort boardPort = null;
-      int i = 0;
-      // create new board or update existing
-      for (BoardPort board : boardPorts) {
-        if (board.toString().equals(newPort)) {
-          boardPort = boardPorts.get(i);
-          break;
-        }
-        i++;
-      }
-      if (boardPort == null) {
-        boardPort = new BoardPort();
-        boardPorts.add(boardPort);
-      }
+      BoardPort boardPort = new BoardPort();
+      boardPorts.add(boardPort);
       boardPort.setAddress(port);
       boardPort.setProtocol("serial");
       boardPort.setOnlineStatus(true);
-
+      boardPort.setLabel(port);
+      
       String label = port;
-
+      
+      Map<String, Object> boardData = platform.resolveDeviceByVendorIdProductId(port, BaseNoGui.packages);
       if (boardData != null) {
         boardPort.getPrefs().put("vid", boardData.get("vid").toString());
         boardPort.getPrefs().put("pid", boardData.get("pid").toString());
 
         String iserial = boardData.get("iserial").toString();
-        if (iserial.length() >= 10) {
-          boardPort.getPrefs().put("iserial", iserial);
-        }
-        if (uploadInProgress && oldUploadBoardPort!=null) {
-          oldUploadBoardPort.getPrefs().put("iserial", iserial);
-        }
+        boardPort.getPrefs().put("iserial", iserial);
 
         TargetBoard board = (TargetBoard) boardData.get("board");
         if (board != null) {
           String boardName = board.getName();
+          String boardAliasName = board.getAliasName();
+
           if (boardName != null) {
-            if (boardName.indexOf("86Duino") >= 0) {
+            if (boardAliasName != null && boardAliasName.indexOf("QEC") >= 0){
+              label += " (QEC)";
+              boardName = "QEC";
+            } else if (boardName.indexOf("86Duino") >= 0) {
 	    	  label += " (86Duino)";
               boardName = "86Duino";
-			} else {
+            } else
               label += " (" + boardName + ")";
-       		}
-          }
+          } 
           boardPort.setBoardName(boardName);
         }
+      } else if (!parts[1].equals("0000")) {
+        boardPort.getPrefs().put("vid", parts[1]);
+        boardPort.getPrefs().put("pid", parts[2]);
+        // ask Cloud API to match the board with known VID/PID pair
+        boardCloudResolver.getBoardBy(parts[1], parts[2]);
       } else {
-        if (!parts[1].equals("0000")) {
-          boardPort.getPrefs().put("vid", parts[1]);
-          boardPort.getPrefs().put("pid", parts[2]);
-          // ask Cloud API to match the board with known VID/PID pair
-          platform.getBoardWithMatchingVidPidFromCloud(parts[1], parts[2]);
-        } else {
-          boardPort.getPrefs().put("vid", "0000");
-          boardPort.getPrefs().put("pid", "0000");
-          boardPort.getPrefs().put("iserial", "");
-        }
+        boardPort.getPrefs().put("vid", "0000");
+        boardPort.getPrefs().put("pid", "0000");
+        boardPort.getPrefs().put("iserial", "");
       }
-
-      boardPort.setLabel(label);
     }
     setSerialBoardPorts(boardPorts);
   }

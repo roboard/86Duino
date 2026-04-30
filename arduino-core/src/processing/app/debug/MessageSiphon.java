@@ -38,20 +38,27 @@ public class MessageSiphon implements Runnable {
 
   private Thread thread;
   private boolean canRun;
+  private boolean _stdout; // 86Duino
+
   // Data is processed line-by-line if possible, but if this is non-zero
   // then a partial line is also processed if no line end is received
   // within this many milliseconds.
   private int lineTimeout;
 
   public MessageSiphon(InputStream stream, MessageConsumer consumer) {
-    this(stream, consumer, 0);
+    this(stream, consumer, 0, true);
   }
 
   public MessageSiphon(InputStream stream, MessageConsumer consumer, int lineTimeout) {
+    this(stream, consumer, lineTimeout, true);
+  }
+
+  public MessageSiphon(InputStream stream, MessageConsumer consumer, int lineTimeout, boolean stdout) {
     this.streamReader = new InputStreamReader(stream);
     this.consumer = consumer;
     this.canRun = true;
     this.lineTimeout = lineTimeout;
+    this._stdout = stdout;
 
     thread = new Thread(this);
     thread.setName("MessageSiphon");
@@ -93,7 +100,7 @@ public class MessageSiphon implements Runnable {
 
           if (c == '\n') {
             // We read a full line, pass it on
-            consumer.message(currentLine.toString());
+            consumer.message(currentLine.toString(), this._stdout);
             currentLine.setLength(0);
           }
         }
@@ -108,7 +115,7 @@ public class MessageSiphon implements Runnable {
           continue;
         }
 
-        consumer.message(currentLine.toString());
+        consumer.message(currentLine.toString(), this._stdout);
         currentLine.setLength(0);
       }
       //EditorConsole.systemOut.println("messaging thread done");

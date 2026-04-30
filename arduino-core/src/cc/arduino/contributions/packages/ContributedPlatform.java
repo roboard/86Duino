@@ -29,32 +29,67 @@
 
 package cc.arduino.contributions.packages;
 
-import cc.arduino.contributions.DownloadableContribution;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.io.File;
-import java.util.*;
+import cc.arduino.contributions.DownloadableContribution;
 
-public abstract class ContributedPlatform extends DownloadableContribution {
+public class ContributedPlatform extends DownloadableContribution {
 
-  public abstract String getName();
-
-  public abstract String getCategory();
-
-  public abstract void setCategory(String category);
-
-  public abstract String getArchitecture();
+  private String url;
+  private String version;
+  private long size;
+  private String archiveFileName;
+  private String name;
+  private String category;
+  private String architecture;
+  private String checksum;
+  private ArrayList<ContributedToolReference> toolsDependencies = new ArrayList<>();
+  private ArrayList<ContributedBoard> boards = new ArrayList<>();
+  private ContributedHelp help;
+  private boolean installed;
+  private File installedFolder;
+  private boolean builtIn;
+  private Map<ContributedToolReference, ContributedTool> resolvedToolReferences;
+  private ContributedPackage parentPackage;
+  private boolean deprecated;
 
   @Override
-  public abstract String getChecksum();
+  public String getUrl() { return url; }
 
-  public abstract List<ContributedToolReference> getToolsDependencies();
+  @Override
+  public String getVersion() { return version; }
 
-  public abstract List<ContributedBoard> getBoards();
+  @Override
+  public long getSize() { return size; }
 
-  public abstract ContributedHelp getHelp();
+  @Override
+  public String getArchiveFileName() { return archiveFileName; }
 
-  private boolean installed;
+  public String getName() { return name; }
+
+  public String getCategory() { return category; }
+
+  public void setCategory(String category) { this.category = category; }
+
+  public String getArchitecture() { return architecture; }
+
+  @Override
+  public String getChecksum() { return checksum; }
+
+  public List<ContributedToolReference> getToolsDependencies() { return toolsDependencies; }
+
+  public List<ContributedBoard> getBoards() { return boards; }
+
+  public ContributedHelp getHelp() { return help; }
 
   public boolean isInstalled() {
     return installed;
@@ -64,8 +99,6 @@ public abstract class ContributedPlatform extends DownloadableContribution {
     this.installed = installed;
   }
 
-  private File installedFolder;
-
   public File getInstalledFolder() {
     return installedFolder;
   }
@@ -73,8 +106,6 @@ public abstract class ContributedPlatform extends DownloadableContribution {
   public void setInstalledFolder(File installedFolder) {
     this.installedFolder = installedFolder;
   }
-
-  private boolean builtIn;
 
   public boolean isBuiltIn() {
     return builtIn;
@@ -89,10 +120,6 @@ public abstract class ContributedPlatform extends DownloadableContribution {
     int py = y.isBuiltIn() ? 1 : -1;
     return px - py;
   };
-
-  private Map<ContributedToolReference, ContributedTool> resolvedToolReferences;
-
-  private ContributedPackage parentPackage;
 
   public List<ContributedTool> getResolvedTools() {
     return new LinkedList<>(resolvedToolReferences.values());
@@ -129,6 +156,14 @@ public abstract class ContributedPlatform extends DownloadableContribution {
 
   public void setParentPackage(ContributedPackage parentPackage) {
     this.parentPackage = parentPackage;
+  }
+
+  public boolean isDeprecated() {
+    return deprecated;
+  }
+
+  public void setDeprecated(boolean deprecated) {
+    this.deprecated = deprecated;
   }
 
   @Override

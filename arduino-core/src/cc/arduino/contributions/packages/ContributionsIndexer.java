@@ -31,14 +31,14 @@ package cc.arduino.contributions.packages;
 
 import cc.arduino.Constants;
 import cc.arduino.contributions.DownloadableContribution;
-import cc.arduino.contributions.SignatureVerificationFailedException;
 import cc.arduino.contributions.SignatureVerifier;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.FilenameUtils;
+
+import processing.app.BaseNoGui;
 import processing.app.Platform;
 import processing.app.PreferencesData;
 import processing.app.debug.TargetPackage;
@@ -51,6 +51,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,7 +75,7 @@ public class ContributionsIndexer {
     this.builtInHardwareFolder = builtInHardwareFolder;
     this.platform = platform;
     this.signatureVerifier = signatureVerifier;
-    index = new EmptyContributionIndex();
+    index = new ContributionsIndex();
     packagesFolder = new File(preferencesFolder, "packages");
     stagingFolder = new File(preferencesFolder, "staging" + File.separator + "packages");
   }
@@ -87,30 +89,35 @@ public class ContributionsIndexer {
     File defaultIndexFile = getIndexFile(Constants.DEFAULT_INDEX_FILE_NAME);
     if (defaultIndexFile.exists()) {
       // Check main index signature
-      if (!PreferencesData.getBoolean("allow_insecure_packages") && !signatureVerifier.isSigned(defaultIndexFile)) {
-        throw new SignatureVerificationFailedException(Constants.DEFAULT_INDEX_FILE_NAME);
+      if (signatureVerifier.isSigned(defaultIndexFile)) {
+        mergeContributions(defaultIndexFile);
+      } else if (PreferencesData.areInsecurePackagesAllowed()) {
+        System.err.println(format(tr("Warning: forced trusting untrusted contributions")));
+        mergeContributions(defaultIndexFile);
+      } else {
+        BaseNoGui
+            .showWarning(Constants.DEFAULT_INDEX_FILE_NAME,
+                              tr("A package index has an invalid signature and needs to be updated.\n"
+                                 + "Please open the Board Manager from the menu\n"
+                                 + "\n" //
+                                 + "      Tools -> Board -> Board Manager\n"
+                                 + "\nto update it"),
+                              null);
       }
-
-      mergeContributions(defaultIndexFile);
     }
 
     // Set main and bundled indexes as trusted
     index.getPackages().forEach(pack -> pack.setTrusted(true));
 
     // Overlay 3rd party indexes
-    File[] indexFiles = preferencesFolder.listFiles(new TestPackageIndexFilenameFilter(new PackageIndexFilenameFilter(Constants.DEFAULT_INDEX_FILE_NAME)));
-
-    if (indexFiles != null) {
-      for (File indexFile : indexFiles) {
-        try {
-          mergeContributions(indexFile);
-        } catch (JsonProcessingException e) {
-          System.err.println(format(tr("Skipping contributed index file {0}, parsing error occured:"), indexFile));
-          System.err.println(e);
-        }
+    List<File> indexFiles = get3rdPartyIndexFiles();
+    for (File indexFile : indexFiles) {
+      try {
+        mergeContributions(indexFile);
+      } catch (JsonProcessingException e) {
+        System.err.println(format(tr("Skipping contributed index file {0}, parsing error occured:"), indexFile));
+        System.err.println(e);
       }
-    } else {
-      System.err.println(format(tr("Error reading package indexes folder: {0}\n(maybe a permission problem?)"), preferencesFolder));
     }
 
     // Fill tools and toolsDependency cross references
@@ -137,19 +144,47 @@ public class ContributionsIndexer {
     index.fillCategories();
   }
 
+  private List<File> get3rdPartyIndexFiles() {
+    List<File> indexFiles = new ArrayList<>();
+    for (String urlString : PreferencesData.getCollection(Constants.PREF_BOARDS_MANAGER_ADDITIONAL_URLS)) {
+      URL url;
+      try {
+        url = new URL(urlString);
+        String filename = FilenameUtils.getName(url.getPath());
+        indexFiles.add(getIndexFile(filename));
+      } catch (MalformedURLException e) {
+        System.err.println(format(tr("Malformed Additional Board Manager URL '{0}': {1}"), urlString, e.getMessage()));
+      }
+    }
+
+    File[] testIndexFiles = preferencesFolder.listFiles((dir, name) -> {
+      if (!new File(dir, name).isFile())
+        return false;
+      if (!name.startsWith("test_package_") || !name.endsWith("_index.json"))
+        return false;
+      return true;
+    });
+    if (testIndexFiles == null) {
+      System.err.println(
+          format(tr("Error reading package indexes folder: {0}\n(maybe a permission problem?)"), preferencesFolder));
+    }
+    indexFiles.addAll(Arrays.asList(testIndexFiles));
+    return indexFiles;
+  }
+
   private void mergeContributions(File indexFile) throws IOException {
     if (!indexFile.exists())
       return;
 
     ContributionsIndex contributionsIndex = parseIndex(indexFile);
     boolean signed = signatureVerifier.isSigned(indexFile);
-    boolean trustall = PreferencesData.getBoolean(Constants.PREF_CONTRIBUTIONS_TRUST_ALL);
+    boolean trustall = PreferencesData.areInsecurePackagesAllowed();
 
     for (ContributedPackage contributedPackage : contributionsIndex.getPackages()) {
       contributedPackage.setTrusted(signed || trustall);
       if (!contributedPackage.isTrusted()) {
         for (ContributedPlatform contributedPlatform : contributedPackage.getPlatforms()) {
-          contributedPlatform.setCategory(contributedPlatform.getCategory()); // This can be for other external boards ex. 86Duino/ESP8266 etc. Origin string is ("Contributed");
+          contributedPlatform.setCategory(contributedPlatform.getCategory());// This can be for other external boards ex. 86Duino/ESP8266 etc. Origin string is ("Contributed");
         }
       }
 
@@ -198,7 +233,6 @@ public class ContributionsIndexer {
     try {
       inputStream = new FileInputStream(indexFile);
       ObjectMapper mapper = new ObjectMapper();
-      mapper.registerModule(new MrBeanModule());
       mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
       mapper.configure(DeserializationFeature.EAGER_DESERIALIZER_FETCH, true);
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

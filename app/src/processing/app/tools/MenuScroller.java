@@ -3,6 +3,8 @@
  */
 package processing.app.tools;
 
+import processing.app.PreferencesData;
+
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -14,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.KeyEvent;
+import java.util.Arrays;
 
 /**
  * A class that provides scrolling capabilities to a long menu dropdown or
@@ -31,6 +34,7 @@ public class MenuScroller {
 
   private JPopupMenu menu;
   private Component[] menuItems;
+  private Component[] allMenuItems;
   private MenuScrollItem upItem;
   private MenuScrollItem downItem;
   private final MenuScrollListener menuListener = new MenuScrollListener();
@@ -537,7 +541,8 @@ public class MenuScroller {
     }
 
     private void setMenuItems() {
-      menuItems = menu.getComponents();
+      allMenuItems = menu.getComponents();
+      menuItems = Arrays.stream(allMenuItems).filter(x -> x.isVisible()).toArray(Component[]::new);
       if (keepVisibleIndex >= topFixedCount
         && keepVisibleIndex <= menuItems.length - bottomFixedCount
         && (keepVisibleIndex > firstIndex + scrollCount
@@ -552,7 +557,7 @@ public class MenuScroller {
 
     private void restoreMenuItems() {
       menu.removeAll();
-      for (Component component : menuItems) {
+      for (Component component : allMenuItems) {
         menu.add(component);
       }
     }
@@ -567,6 +572,43 @@ public class MenuScroller {
         public void actionPerformed(ActionEvent e) {
           firstIndex += increment * accelerator;
           refreshMenu();
+          if (PreferencesData.getBoolean("ide.accessible")) {
+            //    If the user has chosen to use accessibility features, it means that they are using a screen reader
+            // to assist them in development of their project.  This scroller is very unfriendly toward screen readers
+            // because it does not tell the user that it is scrolling through the board options, and it does not read
+            // the name of the boards as they scroll by.  It is possible that the desired board will never become
+            // accessible.
+            //    Because this scroller is quite nice for the sighted user, the idea here is to continue to use the
+            // scroller, but to fool it into scrolling one item at a time for accessible features users so that the
+            // screen readers work well, too.
+            //    It's not the prettiest of code, but it works.
+            String    itemClassName;
+            int keyEvent;
+
+            // The blind user likely used an arrow key to get to the scroller.  Determine which arrow key
+            // so we can send an event for the opposite arrow key.  This fools the scroller into scrolling
+            // a single item.  Get the class name of the new item while we're here
+            if (increment > 0) {
+              itemClassName = menuItems[firstIndex + scrollCount - 1].getClass().getName();
+              keyEvent = KeyEvent.VK_UP;
+            }
+            else {
+              itemClassName = menuItems[firstIndex].getClass().getName();
+              keyEvent = KeyEvent.VK_DOWN;
+            }
+
+            // Use the class name to check if the next item is a separator.  If it is, just let it scroll on like
+            // normal, otherwise move the cursor back with the opposite key event to the new item so that item is read
+            // by a screen reader and the user can use their arrow keys to navigate the list one item at a time
+            if (!itemClassName.equals(JSeparator.class.getName()) ) {
+              KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+              Component comp = manager.getFocusOwner();
+              KeyEvent event = new KeyEvent(comp,
+                KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0,
+                keyEvent, KeyEvent.CHAR_UNDEFINED);
+              comp.dispatchEvent(event);
+            }
+          }
         }
       });
     }

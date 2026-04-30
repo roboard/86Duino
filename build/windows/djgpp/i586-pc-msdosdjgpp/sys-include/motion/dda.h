@@ -23,40 +23,42 @@
 #ifndef __DDA_H
 #define __DDA_H
 
-#include "mcm.h"
-#include "io.h"
-#include "irq.h"
-#include "Arduino.h"
 #include "global.h"
-#include "setting.h"
-#include "stepperqueue.h"
+#include "MotInterface.h"
 
 typedef struct {
   int motor_mc;
   int motor_md;
-  unsigned long lock_val;
   int dir_invert;
 } Axis_t;
 
-class MotDDA
+class MotDDA : public MotInterface
 {
   public:
     MotDDA(MotSetting *_setting, MotStepperQueue *_squeue);
-    ~MotDDA();
+    ~MotDDA() override;
 
-    void st_set_position(const long &x, const long &y, const long &z);
-    long st_get_position(int axis);
-    void st_get_position(long *pos);
-    void st_set_motor_dir_invert(int axis, int invert);
-    int st_get_motor_dir_invert(int axis);
+    void st_set_position(const long &x, const long &y, const long &z) override;
+    long st_get_position(int axis) override;
+    void st_get_position(long *pos) override;
+    void st_set_motor_dir_invert(int axis, int invert) override;
+    int st_get_motor_dir_invert(int axis) override;
     void set_reg(unsigned long sc, unsigned long *dda, unsigned long period, unsigned long duty);
     void set_idle(void);
-	bool DDAInit();
 
+    bool Init() override;
+    bool AttachIfIdle() override;
+    bool DetachIfIdle() override;
+    void Update() override { };
+	
+    const std::type_info& getType() const override {
+        return typeid(MotDDA);
+    };
+	
     MotSetting *setting;
     MotStepperQueue *squeue;
     Axis_t AXIS[MAX_AXIS];
-    volatile int isr_state;
+    volatile int mot_state;
     MotStepper volatile *current_stepper;
     volatile long count_position[MAX_AXIS];
 
@@ -67,8 +69,5 @@ class MotDDA
     bool MCMColse();
     bool DDAClose();
 };
-
-bool dda_AttachInterrupt();
-bool dda_DetachInterrupt();
 
 #endif

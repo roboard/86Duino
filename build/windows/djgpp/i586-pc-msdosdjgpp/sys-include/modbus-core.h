@@ -186,6 +186,8 @@ int modbus_set_error_recovery(modbus_t *ctx, modbus_error_recovery_mode error_re
 int modbus_set_socket(modbus_t *ctx, int s);
 int modbus_get_socket(modbus_t *ctx);
 
+int modbus_disable_sync_read_function(modbus_t *ctx);
+
 int modbus_get_response_timeout(modbus_t *ctx, uint32_t *to_sec, uint32_t *to_usec);
 int modbus_set_response_timeout(modbus_t *ctx, uint32_t to_sec, uint32_t to_usec);
 
@@ -196,7 +198,6 @@ int modbus_get_header_length(modbus_t *ctx);
 
 int modbus_connect(modbus_t *ctx);
 void modbus_close(modbus_t *ctx);
-int modbus_connect_assign(modbus_t *ctx, void *port);
 
 void modbus_free(modbus_t *ctx);
 

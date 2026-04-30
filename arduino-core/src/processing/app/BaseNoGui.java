@@ -2,7 +2,6 @@ package processing.app;
 
 import cc.arduino.Constants;
 import cc.arduino.contributions.GPGDetachedSignatureVerifier;
-import cc.arduino.contributions.SignatureVerificationFailedException;
 import cc.arduino.contributions.VersionComparator;
 import cc.arduino.contributions.libraries.LibrariesIndexer;
 import cc.arduino.contributions.packages.ContributedPlatform;
@@ -42,9 +41,9 @@ import static processing.app.helpers.filefilters.OnlyDirs.ONLY_DIRS;
 public class BaseNoGui {
 
   /** Version string to be used for build */
-  public static final int REVISION = 10810;
+  public static final int REVISION = 10819;
   /** Extended version string displayed on GUI */
-  public static final String VERSION_NAME = "Coding 318";
+  public static final String VERSION_NAME = "Coding 501";
   public static final String VERSION_NAME_LONG;
 
   // Current directory to use for relative paths specified on the
@@ -482,7 +481,7 @@ public class BaseNoGui {
 
     try {
       indexer.parseIndex();
-    } catch (JsonProcessingException | SignatureVerificationFailedException e) {
+    } catch (JsonProcessingException e) {
       File indexFile = indexer.getIndexFile(Constants.DEFAULT_INDEX_FILE_NAME);
       File indexSignatureFile = indexer.getIndexFile(Constants.DEFAULT_INDEX_FILE_NAME + ".sig");
       indexFile.delete();
@@ -510,7 +509,7 @@ public class BaseNoGui {
     }
   }
 
-  static protected void initPlatform() {
+  static public void initPlatform() {
     try {
       Class<?> platformClass = Class.forName("processing.app.Platform");
       if (OSUtils.isMacOS()) {

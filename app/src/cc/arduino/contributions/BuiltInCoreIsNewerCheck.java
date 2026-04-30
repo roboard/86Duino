@@ -61,11 +61,10 @@ public class BuiltInCoreIsNewerCheck implements Runnable {
 
   private void builtInPackageIsNewerCheck() throws InterruptedException {
     // For 86Duino, not check Arduino IDE version
-    if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86EX")>=0) {
-		return;
-	}
-
-	if (PreferencesData.getInteger("builtin_platform_is_newer", -1) >= BaseNoGui.REVISION) {
+    if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86")>=0) {
+      return;
+    }
+    if (PreferencesData.getInteger("builtin_platform_is_newer", -1) >= BaseNoGui.REVISION) {
       return;
     }
 

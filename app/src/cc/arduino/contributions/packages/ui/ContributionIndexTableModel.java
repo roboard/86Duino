@@ -36,6 +36,7 @@ import cc.arduino.contributions.ui.FilteredAbstractTableModel;
 import processing.app.BaseNoGui;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -47,12 +48,29 @@ public class ContributionIndexTableModel
   private final List<ContributedPlatformReleases> contributions = new ArrayList<>();
   private final String[] columnNames = { "Description" };
   private final Class<?>[] columnTypes = { ContributedPlatform.class };
+  private Predicate<ContributedPlatform> filter;
+  private String[] filters;
 
   public void updateIndexFilter(String[] filters,
                                 Predicate<ContributedPlatform> filter) {
+    this.filter = filter;
+    this.filters = filters;
+    updateContributions();
+  }
+
+  private void updateContributions() {
     contributions.clear();
+
+    // Generate ContributedPlatformReleases from all platform releases
     for (ContributedPackage pack : BaseNoGui.indexer.getPackages()) {
       for (ContributedPlatform platform : pack.getPlatforms()) {
+        addContribution(platform);
+      }
+    }
+
+    // Filter ContributedPlatformReleases based on search terms
+    contributions.removeIf(releases -> {
+      for (ContributedPlatform platform : releases.releases) {
         String compoundTargetSearchText = platform.getName() + "\n"
                                           + platform.getBoards().stream()
                                               .map(ContributedBoard::getName)
@@ -62,9 +80,25 @@ public class ContributionIndexTableModel
         }
         if (!stringContainsAll(compoundTargetSearchText, filters))
           continue;
-        addContribution(platform);
+        return false;
       }
-    }
+      return true;
+    });
+
+    // Sort ContributedPlatformReleases and put deprecated platforms to the bottom
+    Collections.sort(contributions, (x,y)-> {
+      if (x.isDeprecated() != y.isDeprecated()) {
+        return x.isDeprecated() ? 1 : -1;
+      }
+      ContributedPlatform x1 = x.getLatest();
+      ContributedPlatform y1 = y.getLatest();
+      int category = (x1.getCategory().equals("Arduino") ? -1 : 0) + (y1.getCategory().equals("Arduino") ? 1 : 0);
+      if (category != 0) {
+        return category;
+      }
+      return x1.getName().compareToIgnoreCase(y1.getName());
+    });
+
     fireTableDataChanged();
   }
 
@@ -89,12 +123,12 @@ public class ContributionIndexTableModel
 
   private void addContribution(ContributedPlatform platform) {
     for (ContributedPlatformReleases contribution : contributions) {
-      if (!contribution.shouldContain(platform))
+      if (!contribution.shouldContain(platform)) {
         continue;
+      }
       contribution.add(platform);
       return;
     }
-
     contributions.add(new ContributedPlatformReleases(platform));
   }
 
@@ -146,6 +180,7 @@ public class ContributionIndexTableModel
   }
 
   public void update() {
+    updateContributions();
     fireTableDataChanged();
   }
 

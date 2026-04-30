@@ -23,19 +23,12 @@
 #ifndef __G_CODE_H
 #define __G_CODE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <Encoder.h>
-
 #include "global.h"
 #include "setting.h"
 #include "blockqueue.h"
 #include "stepperqueue.h"
 #include "planner.h"
 #include "interpolator.h"
-#include "dda.h"
 
 enum workPlane_t
 {
@@ -47,19 +40,21 @@ enum workPlane_t
 class MotGcode
 {
   public:
-    MotGcode(MotSetting *_setting, MotBlockQueue *_bqueue, MotStepperQueue *_squeue, MotPlanner *_planner, MotInterpolator *_interpolator, MotDDA *_dda);
+    MotGcode(MotSetting *_setting, MotBlockQueue *_bqueue, MotStepperQueue *_squeue, MotPlanner *_planner, MotInterpolator *_interpolator);
 
     void process_commands(char *cmdbuffer);
 
     //softlimit
-    void SetAxisLimitPos(int axis, int min, int max);
+    void SetAxisLimitPos(int axis, double min, double max);
     void SetSoftLimit(int Enable);
     bool GetSoftLimitMode();
 
     void SetAxisStepsPerMM(int axis, double steps_per_mm);
     double GetAxisStepsPerMM(int axis);
-    void SetMotorAcceleration(double max_acc);
-    double GetMotorAcceleration(void);
+    void SetMotorAcceleration(int axis, double max_acc);
+    double GetMotorAcceleration(int axis);
+    void SetAcceleration(double max_acc);
+    double GetAcceleration(void);
     void SetAxisMaxFeedRate(int axis, double max_feedrate_mps);
     double GetAxisMaxFeedRate(int axis);
     void SetMotorDirInvert(int axis, int invert);
@@ -97,7 +92,6 @@ class MotGcode
     MotStepperQueue *squeue;
     MotPlanner *planner;
     MotInterpolator *interpolator;
-    MotDDA *dda;
     /*****CMD*****/
     char *cmdbuffer;
     char *strchr_pointer = 0;
@@ -106,9 +100,9 @@ class MotGcode
     bool relative_mode = false;  //Determines Absolute or Relative Coordinates
     bool arc_distance_mode = true;
     const char *axis_codes = "XYZ";
-    double destination[3] = {0.0, 0.0, 0.0};
-    double current_position[3] = {0.0, 0.0, 0.0};
-    double offset[3] = {0.0, 0.0, 0.0};
+    double destination[MAX_AXIS] = {0.0, 0.0, 0.0};
+    double current_position[MAX_AXIS] = {0.0, 0.0, 0.0};
+    double offset[MAX_AXIS] = {0.0, 0.0, 0.0};
     long circle = 1;
     double radius = 0;
     double feedrate = 600.0;
@@ -124,7 +118,7 @@ class MotGcode
     void prepare_arc_move(void);
     void state_wait_delay(void);
     void emergency_stop(void);
-	void EGear_plan_buffer_line(double* dest, double feed);
+	  void EGear_plan_buffer_line(double* dest, double feed);
 
     void line(double x, double y, double z, double feedrate);
     void set_arc_plane(workPlane_t mode);

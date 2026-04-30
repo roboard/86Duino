@@ -44,24 +44,90 @@ import processing.app.helpers.PreferencesMap;
 import processing.app.helpers.PreferencesMapException;
 import processing.app.helpers.StringReplacer;
 
-import java.io.File;
+import java.io.*; // 86duino
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static processing.app.I18n.tr;
 
 public class SerialUploader extends Uploader {
 
+  private Map<String, String> _86boardparser;
+
+  private void parser86Board() {
+    _86boardparser = new HashMap<>();
+    String path = BaseNoGui.getHardwarePath() + "/86duino/x86/variants/boards.txt";
+    try(BufferedReader in = new BufferedReader(new FileReader(path))) {
+        String str;
+        while ((str = in.readLine()) != null) {
+            String[] tokens = str.split(",");
+            _86boardparser.put(tokens[0], tokens[1]);
+        }
+        in.close();
+    }
+    catch (IOException e) {
+        System.err.println(path + ": File Read Error\n");
+    }
+  }
   public SerialUploader()
   {
-    super();
+    super(); parser86Board();
   }
 
   public SerialUploader(boolean noUploadPort)
   {
     super(noUploadPort);
+    parser86Board();
   }
 
+  private String get86LibBoardString(String _86board) {
+    if (_86boardparser.containsKey(_86board))
+      return _86boardparser.get(_86board);
+    else
+      return _86board;
+  }
+  
+  private boolean hasResource(String inopath) {
+    String path = inopath + "/data/Resource";
+    File file = new File(path);
+
+    if (!file.exists()) {
+        System.out.println("Resource directory is not found.");
+        return false;
+    }
+
+    if (file.isDirectory()) {
+        long totalSize = getFolderSize(file);
+        return totalSize > 0;
+    }
+
+    return false;
+  }
+
+  private long getFolderSize(File folder) {
+    long length = 0;
+    File[] files = folder.listFiles();
+    
+    if (files != null) {
+        for (File f : files) {
+            if (f.isFile()) {
+                length += f.length();
+            } else {
+                length += getFolderSize(f);
+            }
+        }
+    }
+    return length;
+  }
+  
   @Override
   public boolean uploadUsingPreferences(File sourcePath, String buildPath, String className, boolean usingProgrammer, List<String> warningsAccumulator) throws Exception {
     // FIXME: Preferences should be reorganized
@@ -96,6 +162,18 @@ public class SerialUploader extends Uploader {
     {
       prefs.put("build.path", buildPath);
       prefs.put("build.project_name", className);
+      if(prefs.get("target_package").compareTo("86duino") == 0) {
+        prefs.put("selected.boardname", get86LibBoardString(BaseNoGui.getTargetBoard().getPreferences().get("name")));
+        // if (exportRobot) {
+        //   prefs.put("command", "22");
+        //   prefs.put("tool.firmware.name", "_f86me.exe");
+        //   prefs.put("tool.firmware.version.filepath", BaseNoGui.getTargetPlatform().getFolder().getAbsolutePath() + "\\libraries\\Servo86\\examples\\MotionEditor\\_86mever.v86");
+        // } else {
+        prefs.put("command", "20");
+        prefs.put("tool.firmware.name", "");
+        prefs.put("tool.firmware.version.filepath", "");
+        //}
+      }
       if (verbose)
         prefs.put("upload.verbose", prefs.getOrExcept("upload.params.verbose"));
       else
@@ -181,6 +259,41 @@ public class SerialUploader extends Uploader {
 
     prefs.put("build.path", buildPath);
     prefs.put("build.project_name", className);
+    if(prefs.get("target_package").compareTo("86duino") == 0) {
+      prefs.put("selected.boardname", get86LibBoardString(BaseNoGui.getTargetBoard().getPreferences().get("name")));
+      //if (exportRobot) {
+      //  prefs.put("command", "22");
+      //  prefs.put("tool.firmware.name", "_f86me.exe");
+      //  prefs.put("tool.firmware.version.filepath", BaseNoGui.getTargetPlatform().getFolder().getAbsolutePath() + "\\libraries\\Servo86\\examples\\MotionEditor\\_86mever.v86");
+      //} else {
+      if (hasResource(sourcePath.getAbsolutePath())) {
+        prefs.put("command", Integer.toString(0x141E2520));
+        prefs.put("tool.resource.path", sourcePath.getAbsolutePath() + "/data/Resource");
+      } else {
+        prefs.put("command", Integer.toString(0x14));
+        prefs.put("tool.resource.path", "");
+      }
+      prefs.put("tool.firmware.name", "");
+      prefs.put("tool.firmware.version.filepath", "");
+      //}
+      if (prefs.get("build.slot") != null) {
+        int idx = prefs.get("build.slot").indexOf("slot");
+        if (idx != -1 && !prefs.get("build.slot").substring(idx + 4).equals("0")) {
+          if (hasResource(sourcePath.getAbsolutePath())) {
+            prefs.put("command", Integer.toString(0x281E2520));
+            prefs.put("tool.resource.path", sourcePath.getAbsolutePath() + "/data/Resource");
+            prefs.put("tool.firmware.name", "_fs" + prefs.get("build.slot").substring(idx + 4) + ".exe");
+            // System.out.println(prefs.get("tool.firmware.name"));
+          } else {
+            prefs.put("command", Integer.toString(0x28));
+            prefs.put("tool.resource.path", "null");
+            prefs.put("tool.firmware.name", "_fs" + prefs.get("build.slot").substring(idx + 4) + ".exe");
+          }
+        }
+      } else {
+        // System.out.println("build.slot = NULL");
+      }
+    }
     if (verbose) {
       prefs.put("upload.verbose", prefs.getOrExcept("upload.params.verbose"));
     } else {
@@ -210,9 +323,9 @@ public class SerialUploader extends Uploader {
 
           // Reuse waitForUploadPort for this task, but this time we are simply waiting
           // for one port to reappear. If no port reappears before the timeout, actualUploadPort is selected
-          finalUploadPort = waitForUploadPort(actualUploadPort, Serial.list(), false);
+          finalUploadPort = waitForUploadPort(actualUploadPort, Serial.list(), false, 5000);
         }
-      } catch (InterruptedException ex) {
+      } catch (RunnerException ex) {
         // noop
       }
     }
@@ -229,13 +342,13 @@ public class SerialUploader extends Uploader {
   }
 
   private String waitForUploadPort(String uploadPort, List<String> before) throws InterruptedException, RunnerException {
-	  return waitForUploadPort(uploadPort, before, verbose);
+	  return waitForUploadPort(uploadPort, before, verbose, 20000);
   }
 
-  private String waitForUploadPort(String uploadPort, List<String> before, boolean verbose) throws InterruptedException, RunnerException {
+  private String waitForUploadPort(String uploadPort, List<String> before, boolean verbose, int timeout) throws InterruptedException, RunnerException {
     // Wait for a port to appear on the list
     int elapsed = 0;
-    while (elapsed < 10000) {
+    while (elapsed < timeout) {
       List<String> now = Serial.list();
       List<String> diff = new ArrayList<>(now);
       diff.removeAll(before);
@@ -266,7 +379,7 @@ public class SerialUploader extends Uploader {
       // On Windows and OS X, it can take a few seconds for the port to disappear and
       // come back, so use a time out before assuming that the selected port is the
       // bootloader (not the sketch).
-      if (elapsed >= 5000 && now.contains(uploadPort)) {
+      if (elapsed >= timeout && now.contains(uploadPort)) {
         if (verbose)
           System.out.println("Uploading using selected port: " + uploadPort);
         return uploadPort;
@@ -301,6 +414,7 @@ public class SerialUploader extends Uploader {
 
     prefs.put("build.path", buildPath);
     prefs.put("build.project_name", className);
+    prefs.put("selected.boardname", get86LibBoardString(BaseNoGui.getTargetBoard().getPreferences().get("name")));
 
     if (verbose)
       prefs.put("program.verbose", prefs.getOrExcept("program.params.verbose"));
@@ -375,7 +489,7 @@ public class SerialUploader extends Uploader {
     return runCommand("bootloader.pattern", prefs);
   }
 
-  public boolean burn86Bootloader() throws Exception {
+  public boolean burn86Bootloader(String _86board) throws Exception {
     // FIXME: Preferences should be reorganized
     TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform();
     PreferencesMap prefs = PreferencesData.getMap();
@@ -460,21 +574,23 @@ public class SerialUploader extends Uploader {
       // if serial port does not contain an iserial field
     }
 
-    prefs.put("build.path", targetPlatform.getFolder().getAbsolutePath() +"/bootloaders/hehuan");
+    String board = null;
+    for (String boardname : _86boardparser.keySet()) { // 86Duino
+        if (_86board.compareTo(boardname) == 0) {
+            board = _86boardparser.get(boardname).toLowerCase();
+            break;
+        }
+    }
+
+    prefs.put("build.path", targetPlatform.getFolder().getAbsolutePath() +"/bootloaders/niitaka/" + board);
 
     String packageName = prefs.get("target_package");
     if(packageName.compareTo("86duino") == 0){
-      String s = prefs.get("board");
-	  if(s.compareTo("EduCake") == 0)
-	  {
-	  	prefs.put("type", "18");
-        prefs.put("build.project_name", "v86boot_educake");
-	  }
-	  else
-	  {
-		prefs.put("type", "18");
-	    prefs.put("build.project_name", "v86boot");
-	  }
+      // String s = prefs.get("board");
+      // System.out.println("board = " + s);
+      prefs.put("type", "18");
+      prefs.put("build.project_name", "v86boot");
+      prefs.put("selected.boardname", get86LibBoardString(BaseNoGui.getTargetBoard().getPreferences().get("name")));
     }
 
 	if (verbose)
@@ -532,7 +648,6 @@ public class SerialUploader extends Uploader {
 
     return uploadResult;
   }
-
   private boolean runCommand(String patternKey, PreferencesMap prefs) throws Exception, RunnerException {
     try {
       String pattern = prefs.getOrExcept(patternKey);

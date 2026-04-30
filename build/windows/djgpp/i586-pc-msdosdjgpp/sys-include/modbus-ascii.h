@@ -22,6 +22,8 @@
 #ifndef __MODBUS_ASCII_H
 #define __MODBUS_ASCII_H
 
+#include "modbus-hal.h"
+
 #define MODBUS_ASCII_MAX_ADU_LENGTH     (513)
 
 #define _MODBUS_ASCII_HEADER_LENGTH     (2)
@@ -31,5 +33,6 @@
 
 modbus_t* modbus_new_ascii(const char *device, int baud, char parity,
                                     int data_bit, int stop_bit);
+modbus_t* modbus_new_ascii_ext(modbus_hal_t *hal);
 
 #endif

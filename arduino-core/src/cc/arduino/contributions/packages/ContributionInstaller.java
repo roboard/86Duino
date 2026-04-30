@@ -62,7 +62,6 @@ import static processing.app.I18n.format;
 import static processing.app.I18n.tr;
 
 public class ContributionInstaller {
-
   private final Platform platform;
   private final SignatureVerifier signatureVerifier;
 
@@ -98,7 +97,7 @@ public class ContributionInstaller {
     // Download all
     try {
       // Download platform
-      downloader.download(contributedPlatform, progress, tr("Downloading boards definitions."), progressListener);
+      downloader.download(contributedPlatform, progress, tr("Downloading boards definitions."), progressListener, false);
       progress.stepDone();
 
       // Download tools
@@ -106,7 +105,7 @@ public class ContributionInstaller {
       for (ContributedTool tool : tools) {
         String msg = format(tr("Downloading tools ({0}/{1})."), i, tools.size());
         i++;
-        downloader.download(tool.getDownloadableContribution(platform), progress, msg, progressListener);
+        downloader.download(tool.getDownloadableContribution(platform), progress, msg, progressListener, false);
         progress.stepDone();
       }
     } catch (InterruptedException e) {
@@ -122,10 +121,10 @@ public class ContributionInstaller {
     // all the temporary folders and abort installation.
 
     List<Map.Entry<ContributedToolReference, ContributedTool>> resolvedToolReferences = contributedPlatform
-        .getResolvedToolReferences().entrySet().stream()
-        .filter((entry) -> !entry.getValue().isInstalled()
-                           || entry.getValue().isBuiltIn())
-        .collect(Collectors.toList());
+      .getResolvedToolReferences().entrySet().stream()
+      .filter((entry) -> !entry.getValue().isInstalled()
+        || entry.getValue().isBuiltIn())
+      .collect(Collectors.toList());
 
     int i = 1;
     for (Map.Entry<ContributedToolReference, ContributedTool> entry : resolvedToolReferences) {
@@ -141,7 +140,7 @@ public class ContributionInstaller {
       assert toolContrib.getDownloadedFile() != null;
       new ArchiveExtractor(platform).extract(toolContrib.getDownloadedFile(), destFolder.toFile(), 1);
       try {
-        findAndExecutePostInstallScriptIfAny(destFolder.toFile(), contributedPlatform.getParentPackage().isTrusted(), PreferencesData.getBoolean(Constants.PREF_CONTRIBUTIONS_TRUST_ALL));
+        findAndExecutePostInstallScriptIfAny(destFolder.toFile(), contributedPlatform.getParentPackage().isTrusted(), PreferencesData.areInsecurePackagesAllowed());
       } catch (IOException e) {
         errors.add(tr("Error running post install script"));
       }
@@ -160,7 +159,7 @@ public class ContributionInstaller {
     contributedPlatform.setInstalled(true);
     contributedPlatform.setInstalledFolder(destFolder);
     try {
-      findAndExecutePostInstallScriptIfAny(destFolder, contributedPlatform.getParentPackage().isTrusted(), PreferencesData.getBoolean(Constants.PREF_CONTRIBUTIONS_TRUST_ALL));
+      findAndExecutePostInstallScriptIfAny(destFolder, contributedPlatform.getParentPackage().isTrusted(), PreferencesData.areInsecurePackagesAllowed());
     } catch (IOException e) {
       e.printStackTrace();
       errors.add(tr("Error running post install script"));
@@ -240,7 +239,7 @@ public class ContributionInstaller {
     }
     List<String> errors = new LinkedList<>();
     try {
-      findAndExecutePreUninstallScriptIfAny(contributedPlatform.getInstalledFolder(), contributedPlatform.getParentPackage().isTrusted(), PreferencesData.getBoolean(Constants.PREF_CONTRIBUTIONS_TRUST_ALL));
+      findAndExecutePreUninstallScriptIfAny(contributedPlatform.getInstalledFolder(), contributedPlatform.getParentPackage().isTrusted(), PreferencesData.areInsecurePackagesAllowed());
     } catch (IOException e) {
       errors.add(tr("Error running post install script"));
     }
@@ -278,13 +277,16 @@ public class ContributionInstaller {
     return errors;
   }
 
-  public synchronized List<String> updateIndex(ProgressListener progressListener) throws Exception {
+  public synchronized void updateIndex(ProgressListener progressListener) {
     MultiStepProgress progress = new MultiStepProgress(1);
 
-    List<String> downloadedPackageIndexFilesAccumulator = new LinkedList<>();
-    downloadIndexAndSignature(progress, downloadedPackageIndexFilesAccumulator, Constants.PACKAGE_INDEX_URL, progressListener);
+    final DownloadableContributionsDownloader downloader = new DownloadableContributionsDownloader(BaseNoGui.indexer.getStagingFolder());
 
-    Set<String> packageIndexURLs = new HashSet<>();
+    final Set<String> packageIndexURLs = new HashSet<>(
+      PreferencesData.getCollection(Constants.PREF_BOARDS_MANAGER_ADDITIONAL_URLS)
+    );
+    packageIndexURLs.add(Constants.PACKAGE_INDEX_URL);
+
     String additionalURLs = PreferencesData.get(Constants.PREF_BOARDS_MANAGER_ADDITIONAL_URLS, "");
     if (!"".equals(additionalURLs)) {
       additionalURLs = additionalURLs + ",https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/package_86Duino_index.json"; // for 86Duino
@@ -293,64 +295,17 @@ public class ContributionInstaller {
     else
       packageIndexURLs.addAll(Arrays.asList("https://raw.githubusercontent.com/acen2009/86Duino_Supports/master/package_86Duino_index.json")); // for 86Duino
 
-    for (String packageIndexURL : packageIndexURLs) {
+    for (String packageIndexURLString : packageIndexURLs) {
       try {
-        downloadIndexAndSignature(progress, downloadedPackageIndexFilesAccumulator, packageIndexURL, progressListener);
+        // Extract the file name from the URL
+        final URL packageIndexURL = new URL(packageIndexURLString);
+
+        downloader.downloadIndexAndSignature(progress, packageIndexURL, progressListener, signatureVerifier);
       } catch (Exception e) {
         System.err.println(e.getMessage());
       }
     }
 
     progress.stepDone();
-
-    return downloadedPackageIndexFilesAccumulator;
-  }
-
-  private void downloadIndexAndSignature(MultiStepProgress progress, List<String> downloadedPackagedIndexFilesAccumulator, String packageIndexUrl, ProgressListener progressListener) throws Exception {
-    File packageIndex = download(progress, packageIndexUrl, progressListener);
-    downloadedPackagedIndexFilesAccumulator.add(packageIndex.getName());
-    try {
-      File packageIndexSignature = download(progress, packageIndexUrl + ".sig", progressListener);
-      boolean signatureVerified = signatureVerifier.isSigned(packageIndex);
-      if (signatureVerified) {
-        downloadedPackagedIndexFilesAccumulator.add(packageIndexSignature.getName());
-      } else {
-        downloadedPackagedIndexFilesAccumulator.remove(packageIndex.getName());
-        Files.delete(packageIndex.toPath());
-        Files.delete(packageIndexSignature.toPath());
-        System.err.println(I18n.format(tr("{0} file signature verification failed. File ignored."), packageIndexUrl));
-      }
-    } catch (Exception e) {
-      //ignore errors
-    }
-  }
-
-  private File download(MultiStepProgress progress, String packageIndexUrl, ProgressListener progressListener) throws Exception {
-    String statusText = tr("Downloading platforms index...");
-    URL url = new URL(packageIndexUrl);
-    String[] urlPathParts = url.getFile().split("/");
-    File outputFile = BaseNoGui.indexer.getIndexFile(urlPathParts[urlPathParts.length - 1]);
-    File tmpFile = new File(outputFile.getAbsolutePath() + ".tmp");
-    DownloadableContributionsDownloader downloader = new DownloadableContributionsDownloader(BaseNoGui.indexer.getStagingFolder());
-    boolean noResume = true;
-    downloader.download(url, tmpFile, progress, statusText, progressListener, noResume);
-
-    Files.deleteIfExists(outputFile.toPath());
-    Files.move(tmpFile.toPath(), outputFile.toPath());
-
-    return outputFile;
-  }
-
-  public synchronized void deleteUnknownFiles(List<String> downloadedPackageIndexFiles) throws IOException {
-    File preferencesFolder = BaseNoGui.indexer.getIndexFile(".").getParentFile();
-    File[] additionalPackageIndexFiles = preferencesFolder.listFiles(new PackageIndexFilenameFilter(Constants.DEFAULT_INDEX_FILE_NAME));
-    if (additionalPackageIndexFiles == null) {
-      return;
-    }
-    for (File additionalPackageIndexFile : additionalPackageIndexFiles) {
-      if (!downloadedPackageIndexFiles.contains(additionalPackageIndexFile.getName())) {
-        Files.delete(additionalPackageIndexFile.toPath());
-      }
-    }
   }
 }

@@ -34,8 +34,8 @@ package cc.arduino.packages;
 
 import processing.app.I18n;
 import processing.app.PreferencesData;
-import processing.app.debug.MessageConsumer;
 import processing.app.debug.MessageSiphon;
+import processing.app.debug.MessageConsumer;
 import processing.app.helpers.ProcessUtils;
 
 import java.io.File;
@@ -97,8 +97,7 @@ public abstract class Uploader implements MessageConsumer {
 
   public abstract boolean burnBootloader() throws Exception;
 
-  public abstract boolean burn86Bootloader() throws Exception;
-
+  public abstract boolean burn86Bootloader(String s) throws Exception;
   public boolean requiresAuthorization() {
     return false;
   }
@@ -130,8 +129,8 @@ public abstract class Uploader implements MessageConsumer {
       }
       Process process = ProcessUtils.exec(command);
       programmerPid = process;
-      new MessageSiphon(process.getInputStream(), this, 100);
-      new MessageSiphon(process.getErrorStream(), this, 100);
+      new MessageSiphon(process.getInputStream(), this, 100, true);
+      new MessageSiphon(process.getErrorStream(), this, 100, false);
 
       // wait for the process to finish, but not forever
       // kill the flasher process after 5 minutes to avoid 100% cpu spinning
@@ -156,12 +155,17 @@ public abstract class Uploader implements MessageConsumer {
 
   @Override
   public void message(String s) {
+  }
+
+  @Override
+  public void message(String s, boolean stdout) {  // 86Duino: add "boolean stdout" for different color
     // selectively suppress a bunch of avrdude output for AVR109/Caterina that should already be quelled but isn't
     if (!verbose && StringUtils.containsAny(s, STRINGS_TO_SUPPRESS)) {
       s = "";
     }
 
-    System.err.print(s);
+    if (stdout) System.out.print(s); // 86Duino
+    else System.err.print(s); // 86Duino
 
     // ignore cautions
     if (s.toLowerCase().contains("error")) {
@@ -178,7 +182,7 @@ public abstract class Uploader implements MessageConsumer {
       return;
     }
     if (StringUtils.containsAny(s, AVRDUDE_PROBLEMS)) {
-      error = tr("Problem uploading to board.  See http://www.arduino.cc/en/Guide/Troubleshooting#upload for suggestions.");
+      error = tr("Problem uploading to board.  See https://support.arduino.cc/hc/en-us/sections/360003198300 for suggestions.");
       return;
     }
     if (s.contains("Expected signature")) {

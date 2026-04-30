@@ -1,9 +1,14 @@
 package processing.app;
 
-import static processing.app.I18n.format;
-import static processing.app.I18n.tr;
+import cc.arduino.Constants;
+import cc.arduino.i18n.Languages;
+import org.apache.commons.compress.utils.IOUtils;
+import processing.app.helpers.PreferencesHelper;
+import processing.app.helpers.PreferencesMap;
+import processing.app.legacy.PApplet;
+import processing.app.legacy.PConstants;
 
-import java.awt.Font;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,13 +18,8 @@ import java.util.Iterator;
 import java.util.MissingResourceException;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.utils.IOUtils;
-
-import cc.arduino.i18n.Languages;
-import processing.app.helpers.PreferencesHelper;
-import processing.app.helpers.PreferencesMap;
-import processing.app.legacy.PApplet;
-import processing.app.legacy.PConstants;
+import static processing.app.I18n.format;
+import static processing.app.I18n.tr;
 
 
 public class PreferencesData {
@@ -49,6 +49,9 @@ public class PreferencesData {
     } catch (Exception e) {
       //ignore
     }
+
+    // Start with a clean slate
+    prefs = new PreferencesMap();
 
     // start by loading the defaults, in case something
     // important was deleted from the user prefs
@@ -93,6 +96,9 @@ public class PreferencesData {
       set("editor.languages.current", "en");
     }
 
+    // set("editor.font", "Inconsolata Medium,bold,15"); // 86duino
+    set("build.verbose", "true"); // 86duino
+    set("upload.verbose", "true"); // 86duino
     // set some other runtime constants (not saved on preferences file)
     set("runtime.os", PConstants.platformNames[PApplet.platform]);
 
@@ -265,11 +271,21 @@ public class PreferencesData {
   }
 
   public static Collection<String> getCollection(String key) {
-    return Arrays.asList(get(key, "").split(","));
+    return Arrays.stream(get(key, "").split(","))
+      // Remove empty strings from the collection
+      .filter((v) -> !v.trim().isEmpty())
+      .collect(Collectors.toList());
   }
 
   public static void setCollection(String key, Collection<String> values) {
     String value = values.stream().collect(Collectors.joining(","));
     set(key, value);
+  }
+
+  public static boolean areInsecurePackagesAllowed() {
+    if (getBoolean(Constants.ALLOW_INSECURE_PACKAGES, false)) {
+      return true;
+    }
+    return getBoolean(Constants.PREF_CONTRIBUTIONS_TRUST_ALL, false);
   }
 }

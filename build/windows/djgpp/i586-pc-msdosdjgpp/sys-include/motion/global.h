@@ -26,6 +26,9 @@
   This header contains only constants for motion controllers.
 */
 
+const int __LOCAL_MACHINE_CNT = 3;
+const int __CUSTOM_MACHINE_CNT = 3;
+const int __TOTAL_MACHINE_CNT = __LOCAL_MACHINE_CNT + __CUSTOM_MACHINE_CNT;
 // Maximum no. of axes in one motion controller
 const int MAX_AXIS = 3;
 

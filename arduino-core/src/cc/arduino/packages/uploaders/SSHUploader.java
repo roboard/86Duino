@@ -241,12 +241,13 @@ public class SSHUploader extends Uploader {
   }
 
   @Override
+  public boolean burn86Bootloader(String s) throws RunnerException {
+    throw new RunnerException("Burning bootloader is not supported via network!");
+  }
+  
+  @Override
   public boolean burnBootloader() throws RunnerException {
     throw new RunnerException("Can't burn bootloader via SSH");
   }
 
-  @Override
-  public boolean burn86Bootloader() throws RunnerException {
-    throw new RunnerException("Can't burn bootloader via SSH");
-  }
 }

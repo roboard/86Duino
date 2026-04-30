@@ -89,7 +89,7 @@ public class SplashScreenHelper {
   }
 
   private void drawText(String str) {
-    splashGraphics.setPaint(Color.white);
+    splashGraphics.setPaint(Color.WHITE);
     FontMetrics metrics = splashGraphics.getFontMetrics();
     splashGraphics.drawString(str, (int) splashTextArea.getX() + 10, (int) splashTextArea.getY() + (TEXTAREA_HEIGHT - metrics.getHeight()) + 5);
   }

@@ -43,6 +43,7 @@ enum pulseMode_t
 
 enum machineMode_t
 {
+  EnvalidMachine = -1,
   MachineOff = 0,
   MachineOn = 1,
   JogMode = 2,
@@ -52,10 +53,11 @@ enum machineMode_t
 
 class MotSetting
 {
-    friend class MotPlanner;
-    friend class MotInterpolator;
+  friend class MotPlanner;
+  friend class MotInterpolator;
 
   public:
+    static bool groupAvalable(int axis_group);
     MotSetting(int axis_group);
 
     void setEMGStatus(bool status) {
@@ -111,7 +113,7 @@ class MotSetting
     void resetDiscardFlag(void) {
       discard_flag = 0;
     };
-    volatile int getDiscardFlag(void) {
+    int getDiscardFlag(void) {
       return discard_flag;
     };
 
@@ -122,31 +124,39 @@ class MotSetting
       return Machine.step_pulse_duty_ratio;
     };
 
-    int SetNcmSamplecycleByPulseSpeed(int pfhz);
-    int GetNcmSamplecycle(void);
+    int SetMcmSamplecycleByPulseSpeed(int pfhz);
+    int GetMcmSamplecycle(void);
 
     void SetAxisStepsPerMM(int axis, double steps_per_mm);
     double GetAxisStepsPerMM(int axis);
 
-    void SetMotorAcceleration(double max_acc);
-    double GetMotorAcceleration(void);
+    void SetMotorAcceleration(int axis, double max_acc);
+    double GetMotorAcceleration(int axis);
+
+    void SetAcceleration(double max_acc);
+    double GetAcceleration(void);
 
     void SetAxisMaxFeedRate(int axis, double max_feedrate_mps);
     double GetAxisMaxFeedRate(int axis);
 
-    double GetDDACycle();
-
+    double GetMotCycle();
+    void SetMotCycle(unsigned long cycle);
+    
     void SetPulseMode(int axis, pulseMode_t mode);
     pulseMode_t GetPulseMode(int axis);
 
+    void SetCrossbarMux(bool enableMCM);
+    unsigned long GetGroupModuleNumber();
+	
     int axis_group_number;
     machineMode_t machineMode;
-    int homeLimit[3];
     double EGearRatio[3] = { 1.0, 1.0, 1.0 };
 
   private:
+    void settingInit();
     unsigned int Used_Axis;
-
+    double mot_cycle;
+    
     int Is_SoftLimit;
 
     double min_pos[MAX_AXIS];
@@ -158,6 +168,8 @@ class MotSetting
 
     pulseMode_t pulseMode[MAX_AXIS];
 
+    unsigned long motor_mc;
+    int group_gpN[6];
     struct
     {
       double steps_per_mm[MAX_AXIS];

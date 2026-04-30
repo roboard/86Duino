@@ -46,15 +46,15 @@ public class SketchFile {
   private File file;
 
   /**
-   * Text of the program text for this tab
-   */
-  private String program;
-
-  /**
    * The sketch this file belongs to.
    */
   private Sketch sketch;
 
+  /**
+   * Text of the program text for this tab
+   */
+  private String program;
+  
   /**
    * Is this the primary file in the sketch?
    */
@@ -64,7 +64,7 @@ public class SketchFile {
    * where this code starts relative to the concat'd code
    */
   private int preprocOffset;
-
+  
   /**
    * Interface for an in-memory storage of text file contents. This is
    * intended to allow a GUI to keep modified text in memory, and allow
@@ -254,7 +254,6 @@ public class SketchFile {
 
     return BaseNoGui.countLines(text);
   }
-
   public boolean isModified() {
     if (storage != null)
       return storage.isModified();
@@ -268,7 +267,7 @@ public class SketchFile {
   public void addPreprocOffset(int extra) {
     preprocOffset += extra;
   }
-
+  
   @Override
   public boolean equals(Object o) {
     return (o instanceof SketchFile) && file.equals(((SketchFile) o).file);
@@ -283,7 +282,6 @@ public class SketchFile {
     String text = BaseNoGui.loadFile(file);
 
     program = text; // for 86Duino
-
     if (text == null) {
       throw new IOException();
     }
