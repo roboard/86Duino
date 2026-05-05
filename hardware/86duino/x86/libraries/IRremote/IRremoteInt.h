@@ -151,6 +151,8 @@ extern volatile irparams_t irparams;
 
 #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
 #define BLINKLED       13
+#elif defined (__86DUINO_DUO)
+#define BLINKLED       13
 #endif
 
 #define BLINKLED_ON()  (digitalWrite(BLINKLED, HIGH))

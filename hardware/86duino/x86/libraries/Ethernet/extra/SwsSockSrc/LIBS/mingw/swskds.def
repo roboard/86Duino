@@ -1,0 +1,71 @@
+LIBRARY swskds
+
+DESCRIPTION 'TCP/IP network library, Copyright (C) 2005-2009 Lawrence Rust.  All Rights Reserved.'
+
+EXPORTS
+    accept=     SWS_accept      @1
+    bind=       SWS_bind        @2
+    closesocket=SWS_close       @3
+    connect=    SWS_connect     @4
+    getpeername=SWS_getpeername @5
+    getsockname=SWS_getsockname @6
+    getsockopt= SWS_getsockopt  @7
+    htonl=      SWS_htonl       @8
+    htons=      SWS_htons       @9
+    ioctlsocket=SWS_ioctl       @10
+    inet_addr=  SWS_inet_addr   @11
+    inet_ntoa=  SWS_inet_ntoa   @12
+    listen=     SWS_listen      @13
+    ntohl=      SWS_ntohl       @14
+    ntohs=      SWS_ntohs       @15
+    recv=       SWS_recv        @16
+    recvfrom=   SWS_recvfrom    @17
+
+    select=     WSAselect       @18
+
+    send=       SWS_send        @19
+    sendto=     SWS_sendto      @20
+    setsockopt= SWS_setsockopt  @21
+
+    shutdown=   WSAshutdown     @22
+
+    socket=     SWS_socket      @23
+
+    gethostbyaddr=    SWS_gethostbyaddr    @51
+    gethostbyname=    SWS_gethostbyname    @52
+    getprotobyname=   SWS_getprotobyname   @53
+    getprotobynumber= SWS_getprotobynumber @54
+    getservbyname=    SWS_getservbyname    @55
+    getservbyport=    SWS_getservbyport    @56
+    gethostname=      SWS_gethostname      @57
+
+    WSAGetLastError=  SWS_WSAGetLastError  @111
+    WSASetLastError=  SWS_WSASetLastError  @112
+    WSAStartup=       SWS_WSAStartup       @115
+    WSACleanup=       SWS_WSACleanup       @116
+
+    __WSAFDIsSet=     WSAFdIsSet           @151
+
+; For mcast
+    WSAJoinLeaf=      SWS_WSAJoinLeaf      @58
+    WSASocketA=       SWS_WSASocket        @78
+    WSASocketW=       SWS_WSASocket        @79
+
+; For IPHLPAPI
+;
+; From NETAPI32
+    WSAAddressToStringA= SWS_WSAAddressToStringA @27
+    WSAAddressToStringW= SWS_WSAAddressToStringW @28
+    WSAStringToAddressW= SWS_WSAStringToAddressW @81
+;
+; From WSOCK32
+    WSARecv=          SWS_WSARecv          @67
+    WSARecvFrom=      SWS_WSARecvFrom      @69
+;
+; From RASMAN
+    WSALookupServiceBeginW= SWS_WSALookupServiceBeginW
+    WSALookupServiceEnd=    SWS_WSALookupServiceEnd
+    WSALookupServiceNextW=  SWS_WSALookupServiceNextW
+;
+; From DHCPSVC
+    WSAIoctl=         SWS_WSAIoctl         @50

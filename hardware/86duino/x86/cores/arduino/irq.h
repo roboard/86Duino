@@ -44,8 +44,9 @@ extern "C" {
         //       are also optimized at -O1 ~ -O3 level.
         #define _IRQ_HANDLER(rtype) rtype __attribute__((optimize("O1")))
 
-        // allocate only one stack to be shared by all hardware interrupts (this works on CWSDPMI, but not on CWSDPR0 and PMODE/DJ)
-        // #define _IRQ_USE_COMMON_STACK
+        // allocate only one stack to be shared by all hardware interrupts (this works on CWSDPMI, but 
+        // not useful on CWSDPR0 and PMODE/DJ because they don't swap interrupt stacks)
+        #define _IRQ_USE_COMMON_STACK
     #else
         #define _IRQ_HANDLER(rtype) rtype
     #endif
@@ -66,6 +67,7 @@ extern "C" {
  */
 #define IRQ_DPC_NONE        (0x00L)
 #define IRQ_DPC_USEFPU      (0x10L)
+#define IRQ_DPC_ALLOW_RETRIG_WHEN_RUNNING    (0x80L)
 DMPAPI(void*) irq_AllocDPC(void (*dpc)(void*), void* dpc_data, unsigned long flags);
 DMPAPI(bool)  irq_FreeDPC(void* dpc_handle);
 

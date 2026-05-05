@@ -46,48 +46,54 @@ BSD license, all text above must be included in any redistribution.
 // For similar reasons, the clock pin is only semi-configurable...it can
 // be specified as any pin within a specific PORT register stated below.
 #if defined (_86DUINO)
- /*********************************************************************
- 86Duino RGB LED Matrix Pinout:
- 
-  Signal     Pin
- ================
-    R1       42
-    G1        9
-    B1       43
-    R2        6
-    G2        5
-    B2       44
-   CLK        8
-    OE        7
-   LAT       10
-    A         2
-    B         3
-	C         4
-    D        11 (option)
- 
- **********************************************************************/
- #define GPIOP4DATA_ADDR    0xF210
- #define GPIOP3DATA_ADDR    0xF20C
- #define GPIOP2DATA_ADDR    0xF208
- 
- void myisr (void);
- 
- void setPort2DIR (uint8_t byte) {
-	 // set GPIO DIR register
-	 outportb(GPIODIRBASE + 8, (inportb(GPIODIRBASE + 8) & 0xC0) | (byte & 0x3F)); // 8 = 4*2
- }
- 
- DMP_INLINE(void) setPort2DATA (uint8_t byte) {
-	 static bool inited = false;
-	 // set GPIO DIR register
-	 outportb(GPIOP2DATA_ADDR, (inportb(GPIOP2DATA_ADDR) & 0xC0) | (byte & 0x3F)); // 8 = 4*2
-	 // set crossbar register to GPIO function (for 8 pins)
-	 if (inited == false)
-	 {
-		 for (int i=0; i<8; i++) outportb(CROSSBARBASE + 0xA0, 0x01);
-		 inited = true;
-	 }
- }
+/*********************************************************************
+    86Duino RGB LED Matrix Pinout:
+    
+     Signal     Pin
+    ================
+       R1       42
+       G1        9
+       B1       43
+       R2        6
+       G2        5
+       B2       44
+      CLK        8
+       OE        7
+      LAT       10
+       A         2
+       B         3
+       C         4
+       D        11 (option)
+
+**********************************************************************/
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+    #define GPIOP4DATA_ADDR    0xF210
+    #define GPIOP3DATA_ADDR    0xF20C
+    #define GPIOP2DATA_ADDR    0xF208
+#elif defined (__86DUINO_DUO)
+    #define GPIOP4DATA_ADDR    0x0DA4
+    #define GPIOP3DATA_ADDR    0x0DA3
+    #define GPIOP2DATA_ADDR    0x0DA2
+#endif
+
+void myisr (void);
+
+void setPort2DIR (uint8_t byte) {
+	// set GPIO DIR register
+	outportb(GPIODIRBASE + 8, (inportb(GPIODIRBASE + 8) & 0xC0) | (byte & 0x3F)); // 8 = 4*2
+}
+
+DMP_INLINE(void) setPort2DATA (uint8_t byte) {
+	static bool inited = false;
+	// set GPIO DIR register
+	outportb(GPIOP2DATA_ADDR, (inportb(GPIOP2DATA_ADDR) & 0xC0) | (byte & 0x3F)); // 8 = 4*2
+	// set crossbar register to GPIO function (for 8 pins)
+	if (inited == false)
+	{
+		for (int i=0; i<8; i++) outportb(CROSSBARBASE + 0xA0, 0x01);
+		inited = true;
+	}
+}
 #elif defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
  // Arduino Mega is now tested and confirmed, with the following caveats:
  // Because digital pins 2-7 don't map to a contiguous port register,

@@ -28,12 +28,13 @@
 
 
 void AudioClass::begin(unsigned long int sampleRate, unsigned long int msPreBuffer)
-{	
+{
 	//Start HD audio
 	if(w_sound_device_init(28, sampleRate) == false)
 	{
-		Serial.print(w_get_error_message());
-		while(1);
+		printf("%s\n", w_get_error_message());
+		// while(1);
+		return;
 	}
 	w_set_device_master_volume(1);
 	
@@ -42,21 +43,35 @@ void AudioClass::begin(unsigned long int sampleRate, unsigned long int msPreBuff
 	w_lock_mixing_buffer(latency_size);
 	w_mixing_zero();
 	w_unlock_mixing_buffer();
+	
+	
+	if (sampleRate == 44100 || sampleRate == 32000 || sampleRate == 24000 ||
+		sampleRate == 22050 || sampleRate == 16000 || sampleRate == 11025 ||
+		sampleRate == 9600 || sampleRate == 8000 || sampleRate == 6000)
+		outSampleRate = sampleRate;
+	else if(sampleRate < 0)
+		outSampleRate = 22050;
+	else
+		outSampleRate = 48000;
+	as_list = NULL;
 }
 
 void AudioClass::end()
 {
+	if (!w_get_device_name()) return;
 	w_sound_device_exit();
 }
 
 void AudioClass::prepare(short int *buffer, int S, int _volume)
 {
+	if (!w_get_device_name()) return;
 	volume = _volume;
 	w_set_device_master_volume(_volume);
 }
 
 unsigned long int AudioClass::write(const unsigned long int *data, unsigned long int size)
 {
+	if (!w_get_device_name()) return 0L;
 	int samples;
 	do
 	{
@@ -65,94 +80,84 @@ unsigned long int AudioClass::write(const unsigned long int *data, unsigned long
 	w_lock_mixing_buffer(size);
 	w_mixing_stereo((short int *)data, size, volume, volume);
 	w_unlock_mixing_buffer();
+    
+    return 0L;
 }
 
-#include <conio.h>
 void AudioClass::update()
 {
+	if (!w_get_device_name()) return;
     static unsigned long t = micros();
-	AudioSample *tmp = as_list;
-	int samples = w_get_buffer_size() - w_get_latency() - latency_size;
-	bool rid = false;
-	
     if ((micros() - t) < 200) return;
-    
-    if(samples > 10240)
-        samples = 10240;
-    if(tmp == NULL)
-    {
-        for (int i=0; i<10240; i++) data[i] = 0;
-    }
-    
-	//get first data
-	while(tmp != NULL)
+	
+	AudioSample *tmp, *tmp2 = NULL;
+	int i;
+	int samples = w_get_buffer_size() - w_get_latency() - latency_size;
+	bool inuse = false;
+    double a, b;
+	
+	for(tmp = as_list; tmp != NULL; tmp = tmp->next)
 	{
 		if(tmp->isPlaying())
 		{
-			for(int i = 0 ; i < samples; ++i)
+			tmp->update();
+			if(tmp->available() < samples)
+				samples = tmp->available();
+		}
+	}
+
+	for (tmp = as_list; tmp != NULL;)
+	{
+		if (tmp->isPlaying())
+		{
+			if (tmp->state < 0 && tmp->available() == 0)
 			{
-				if(tmp->playCursor >= tmp->dataLength)
-				{
-					rid = true;
-					
-					break;
-				}
-				data[i*2+1] = data[i*2] = tmp->data[tmp->playCursor];
-				tmp->playCursor++;
-			}
-			
-			if(rid)
-			{
-				AudioSample *a;
-				a = tmp;
+				tmp2 = tmp;
 				tmp = tmp->next;
-				a->stop();
+				tmp2->stop();
 			}
 			else
-				tmp = tmp->next;
-			
-			break;
-		}		
-		tmp = tmp->next;
-	}
-	
-	
-	for(;tmp != NULL;)
-	{
-		rid = false;
-		if(tmp->isPlaying())
-		{
-			for(int i = 0 ; i < samples; ++i)
 			{
-				if(tmp->playCursor >= tmp->dataLength)
+				for (i = 0 ; i < samples; i++)
 				{
-					rid = true;
-					break;
+					a = tmp->pop() * tmp->volume;
+					if (a > 32767) a = 32767;
+					if (a < -32768) a = -32768;
+					if(inuse)
+					{
+						a = a / 65536.0 + 0.5;
+						b = data[i*2] / 65536.0 + 0.5;
+						data[i*2+1] = data[i*2] = (a < 0.5 && b < 0.5) ? ((2 * (a * b) - 0.5) * 65535)
+														 : ((2 * (a + b) - (2 * a * b) - 1.5) * 65535);
+					}
+					else
+						data[i*2+1] = data[i*2] = a;
 				}
-				double a = tmp->data[tmp->playCursor] / 65536.0 + 0.5;
-				double b = data[i*2] / 65536.0 + 0.5;
-				data[i*2+1] = data[i*2] = (a < 0.5 && b < 0.5) ? ((2 * (a * b) - 0.5) * 65535)
-												 : ((2 * (a + b) - (2 * a * b) - 1.5) * 65535);
-				tmp->playCursor++;
+				tmp = tmp->next;
+				inuse = true;
 			}
-		}
-		if(rid)
-		{
-			AudioSample *a;
-			a = tmp;
-			tmp = tmp->next;
-			a->stop();
 		}
 		else
 			tmp = tmp->next;
 	}
-    
+
+    if (!inuse)
+		memset(data, 0, dataLength*sizeof(short));
 	w_lock_mixing_buffer(samples);
-	w_mixing_stereo((short int *)data, samples, volume, volume);
+	w_mixing_stereo(data, samples, volume, volume);
 	w_unlock_mixing_buffer();
-    
+	
     t = micros();
-    //memset(data, 0, samples);
 }
 
+void AudioClass::stop()
+{
+	if (!w_get_device_name()) return;
+	for(AudioSample* tmp = as_list; tmp != NULL; tmp = tmp->next)
+		if(tmp->isPlaying()) tmp->stop();
+	memset(data, 0, dataLength*sizeof(short));
+	w_lock_mixing_buffer(dataLength*sizeof(short));
+	w_mixing_stereo(data, dataLength*sizeof(short), volume, volume);
+	w_unlock_mixing_buffer();
+}
 AudioClass Audio = AudioClass();

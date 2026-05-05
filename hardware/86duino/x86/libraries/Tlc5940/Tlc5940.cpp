@@ -68,7 +68,7 @@ static void clear_INTSTATUS(int pin, unsigned long used_int) {
 	int mc, md;
 	mc = PIN86[pin].PWMMC;
     md = PIN86[pin].PWMMD;
-    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]);
 }
 
 static void disable_MCINT(int pin, unsigned long used_int) {
@@ -76,15 +76,15 @@ static void disable_MCINT(int pin, unsigned long used_int) {
 	mc = PIN86[pin].PWMMC;
     md = PIN86[pin].PWMMD;
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) | (1L << (mc%4)), mc/4);
 }
 
 // enable_MCINT() only is used in this library
 static void enable_MCINT(int pin, unsigned long used_int) {
 	int mc, md;
 	mc = PIN86[pin].PWMMC;
-    md = PIN86[pin].PWMMD; 
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+    md = PIN86[pin].PWMMD;
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) & ~(1L << (mc%4)), mc/4);
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
@@ -129,9 +129,11 @@ static int Tlc5940_interrupt(int irq, void* data) {
 
 static bool initXLATIRQ(void) {
 	static bool _initXLATIRQ = false;
+    int mc = PIN86[XLAT_PIN].PWMMC;
+    
 	if(_initXLATIRQ == false)
 	{	
-		if(irq_InstallISR(GetMCIRQ(), Tlc5940_interrupt, isrname) == false)
+		if(irq_InstallISR(GetMCIRQ(mc/4), Tlc5940_interrupt, isrname) == false)
 		{
 		    printf("irq_install fail\n"); return false;
 		}

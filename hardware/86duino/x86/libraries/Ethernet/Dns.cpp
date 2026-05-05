@@ -16,33 +16,29 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-  (If you need a commercial license, please contact soc@dmp.com.tw 
+  (If you need a commercial license, please contact soc@dmp.com.tw
    to get more information.)
 */
 
-#include "SwsSock.h"
-#include "EthernetUdp.h"
-
 #include "Dns.h"
-#include <string.h>
-#include "stdint.h"
+#include "sws_sock.h"
 
 DNSClient::DNSClient()
 {
-	iDNSServer = INADDR_NONE;
+    iDNSServer = INADDR_NONE;
 }
 
-void DNSClient::begin(const IPAddress& aDNSServer)
+void DNSClient::begin(const IPAddress &aDNSServer)
 {
     iDNSServer = aDNSServer;
 }
 
-int DNSClient::inet_aton(const char* aIPAddrString, IPAddress& aResult)
+int DNSClient::inet_aton(const char *aIPAddrString, IPAddress &aResult)
 {
     // See if we've been given a valid IP address
-    const char* p =aIPAddrString;
+    const char *p = aIPAddrString;
     while (*p &&
-           ( (*p == '.') || (*p >= '0') || (*p <= '9') ))
+           ((*p == '.') || (*p >= '0') || (*p <= '9')))
     {
         p++;
     }
@@ -51,8 +47,8 @@ int DNSClient::inet_aton(const char* aIPAddrString, IPAddress& aResult)
     {
         // It's looking promising, we haven't found any invalid characters
         p = aIPAddrString;
-        int segment =0;
-        int segmentValue =0;
+        int segment = 0;
+        int segmentValue = 0;
         while (*p && (segment < 4))
         {
             if (*p == '.')
@@ -73,7 +69,7 @@ int DNSClient::inet_aton(const char* aIPAddrString, IPAddress& aResult)
             else
             {
                 // Next digit
-                segmentValue = (segmentValue*10)+(*p - '0');
+                segmentValue = (segmentValue * 10) + (*p - '0');
             }
             p++;
         }
@@ -97,11 +93,11 @@ int DNSClient::inet_aton(const char* aIPAddrString, IPAddress& aResult)
     }
 }
 
-int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult)
+int DNSClient::getHostByName(const char *aHostname, IPAddress &aResult)
 {
-	SWS_u_long result;
-	struct SWS_hostent *Host;
-	
+    SWS_u_long result;
+    struct SWS_hostent *Host;
+
     // See if it's a numeric IP address
     if (inet_aton(aHostname, aResult))
     {
@@ -112,18 +108,18 @@ int DNSClient::getHostByName(const char* aHostname, IPAddress& aResult)
     // Check we've got a valid DNS server to use
     if (iDNSServer == INADDR_NONE)
         return 0;
-	
-    // Find a socket to use
-	Host = SWS_gethostbyname(aHostname);
-	if (Host == NULL)
-		return 0;
-	
-	result = *(SWS_u_long*)Host->h_addr_list[0];
-	
-	aResult[0] = (uint8_t)(result);
-	aResult[1] = (uint8_t)(result >> 8);
-	aResult[2] = (uint8_t)(result >> 16);
-	aResult[3] = (uint8_t)(result >> 24);
 
-	return 1;
+    // Find a socket to use
+    Host = SWS_gethostbyname(aHostname);
+    if (Host == NULL)
+        return 0;
+
+    result = *(SWS_u_long *)Host->h_addr_list[0];
+
+    aResult[0] = (uint8_t)(result);
+    aResult[1] = (uint8_t)(result >> 8);
+    aResult[2] = (uint8_t)(result >> 16);
+    aResult[3] = (uint8_t)(result >> 24);
+
+    return 1;
 }

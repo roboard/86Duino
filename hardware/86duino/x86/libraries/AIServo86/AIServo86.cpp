@@ -162,7 +162,7 @@ bool AIServo::attach(AIServoBus& bus, unsigned char id)
 		if(WDT_Timer_Used == false)
 		{
 			TimerWDT.initialize(10000L);
-			TimerWDT.attachInterrupt(timerwdt_isr_handler);
+			TimerWDT.attachRTInterrupt(timerwdt_isr_handler);
 			WDT_Timer_Used = true;
 		}
 		return true;
@@ -187,6 +187,11 @@ void AIServo::detach()
 		this->nodePtr = NULL;
 		io_RestoreINT();
 	}
+}
+
+AIServo::~AIServo()
+{
+    detach();
 }
 
 double AIServo::read()

@@ -1,6 +1,8 @@
 #ifndef __USBAPI__
 #define __USBAPI__
 
+#include "SerialInterface.h"
+
 //================================================================================
 //================================================================================
 //	USB
@@ -22,8 +24,17 @@ extern USBDevice_ USBDevice;
 //================================================================================
 //================================================================================
 //	Serial over CDC (Serial1 is the physical port)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_AI) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_DUO) || defined (__86DUINO_HMI043T) 
 
-class Serial_ : public Stream
+    #define SerialUSB Serial
+
+#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+
+    // Nothing
+    
+#endif
+
+class Serial_ : public SerialInterface
 {
 private:
 	bool peek_stored;
@@ -34,18 +45,20 @@ public:
 	void begin(unsigned long, uint8_t);
 	void end(void);
 
-	virtual int available(void);
-	virtual void accept(void);
-	virtual int peek(void);
-	virtual int read(void);
-    virtual int availableForWrite(void);
-	virtual void flush(void);
-	virtual size_t write(uint8_t);
-	virtual size_t write(const uint8_t*, size_t);
+	int available(void);
+	void accept(void);
+	int peek(void);
+	int read(void);
+    int availableForWrite(void);
+	void flush(int w=0);
+    void setTimeout(unsigned long rxtimeout, unsigned long txtimeout);
+	size_t write(uint8_t);
+	size_t write(const uint8_t*, size_t);
+    using Stream::setTimeout;
 	using Print::write; // pull in write(str) and write(buf, size) from Print
 	operator bool();
 };
-extern Serial_ Serial;
+extern Serial_ SerialUSB;
 
 //================================================================================
 //================================================================================

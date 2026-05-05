@@ -25,7 +25,7 @@
 unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout) {
 	unsigned long long int _timeout, now_time, width = 0L;
 
-	if(pin >= PINS || PIN86[pin].gpN == NOUSED) return 0x00;
+	if(pin >= PINS || PIN86[pin].gpN == NOUSED || PIN86[pin].gpMode == OUTPUT) return 0x00;
 
 	_timeout = ((unsigned long long int)timeout)*vx86_CpuCLK() + timer_GetClocks64();
 	while(digitalRead(pin) == state)

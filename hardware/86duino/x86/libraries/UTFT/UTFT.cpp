@@ -64,6 +64,23 @@
 static int UseVirtualPort = 1; // this is only available for 86Duino one
 // Include hardware-specific functions for the correct MCU
 static unsigned int pin_p_v[2][5];
+
+static unsigned short getPortBase(int port) {
+    #if defined (__86DUINO_EX)
+    return GPIODATABASE + 4*port;
+    #elif defined (__86DUINO_EX2)
+    return DATA_BA[port];
+    #endif
+}
+
+static unsigned short getDirBase(int port) {
+    #if defined (__86DUINO_EX)
+    return GPIODIRBASE + 4*port;
+    #elif defined (__86DUINO_EX2)
+    return DIR_BA[port];
+    #endif
+}
+
 UTFT::UTFT()
 {
 
@@ -73,7 +90,7 @@ UTFT::UTFT(byte model, int RS, int WR, int CS, int RST, int SER)
 { 
 	word	dsx[] = {239, 239, 239, 239, 239, 239, 175, 175, 239, 127, 127, 239, 271, 479, 239, 239, 239, 239, 239, 239, 479, 319, 239, 175, 127, 239, 239, 319, 319, 799, 127};
 	word	dsy[] = {319, 399, 319, 319, 319, 319, 219, 219, 399, 159, 127, 319, 479, 799, 319, 319, 319, 319, 319, 319, 799, 479, 319, 219, 159, 319, 319, 479, 479, 479, 159};
-	byte	dtm[] = {16, 16, 16, 8, 8, 16, 8, SERIAL_4PIN, 16, SERIAL_5PIN, SERIAL_5PIN, 16, 16, 16, 8, 16, LATCHED_16, 8, 16, 8, 16, 16, 16, 8, SERIAL_5PIN, SERIAL_5PIN, SERIAL_4PIN, 16, 16, 16, SERIAL_5PIN};
+	byte	dtm[] = {16, 16, 16, 8, 8, 16, 8, SERIAL_4PIN, 16, SERIAL_5PIN, SERIAL_5PIN, 16, 16, 16, 8, 16, LATCHED_16, 8, 16, 8, 16, 16, 16, 8, SERIAL_5PIN, SERIAL_5PIN, SERIAL_4PIN, 8, 16, 16, 16, 16};
 
 	disp_x_size =			dsx[model];
 	disp_y_size =			dsy[model];
@@ -91,31 +108,31 @@ UTFT::UTFT(byte model, int RS, int WR, int CS, int RST, int SER)
 	int crossbar_bit;
   
 	crossbar_bit = PIN86[RS].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][0] = port;
 	pin_p_v[1][0] = value;
 	
 	crossbar_bit = PIN86[WR].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][1] = port;
 	pin_p_v[1][1] = value;
 	
 	crossbar_bit = PIN86[CS].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][2] = port;
 	pin_p_v[1][2] = value;
 	
 	crossbar_bit = PIN86[RST].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][3] = port;
 	pin_p_v[1][3] = value;
 	
 	crossbar_bit = PIN86[SER].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	pin_p_v[0][4] = port;
 	pin_p_v[1][4] = value;
@@ -288,6 +305,12 @@ void UTFT::InitLCD(byte orientation)
 #ifndef DISABLE_ILI9341_S5P
 	#include "tft_drivers/ili9341/s5p/initlcd.h"
 #endif
+#ifndef DISABLE_ILI9341_8
+	#include "tft_drivers/ili9341/8/initlcd.h"
+#endif
+#ifndef DISABLE_ILI9341_16
+	#include "tft_drivers/ili9341/16/initlcd.h"
+#endif
 #ifndef DISABLE_R61581
 	#include "tft_drivers/r61581/initlcd.h"
 #endif
@@ -386,6 +409,12 @@ void UTFT::setXY(word x1, word y1, word x2, word y2)
 #endif
 #ifndef DISABLE_ILI9341_S5P
 	#include "tft_drivers/ili9341/s5p/setxy.h"
+#endif
+#ifndef DISABLE_ILI9341_8
+	#include "tft_drivers/ili9341/8/setxy.h"
+#endif
+#ifndef DISABLE_ILI9341_16
+	#include "tft_drivers/ili9341/16/setxy.h"
 #endif
 #ifndef DISABLE_R61581
 	#include "tft_drivers/r61581/setxy.h"
@@ -1616,26 +1645,26 @@ void UTFT::_convert_float(char *buf, double num, int width, byte prec)
 }
 
 void UTFT::port_output_dir(int port, unsigned char vlaue){
-	unsigned short crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
-	int port_base = (GPIODIRBASE + 4*port)&0xffff;
+	//unsigned short crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
+	int port_base = getDirBase(port)&0xffff;
 	
-	if(port <= 3)
+	if(port <= 4)
 	{
 	  for(int i=0; i<8; i++)
-	    io_outpb(crossbar_ioaddr + 0x90 + port*8 + i, 0x01);
+	    io_outpb(CROSSBARBASE + 0x100 + port*8 + i, 0x08);
 	}
-	else if(port == 4)
-	{
-	  for(int i=0; i<8; i++)
-	    io_outpb(crossbar_ioaddr + 0x80 + ((32+i)/8), 0x01);
-	} 
+	// else if(port == 4)
+	// {
+	  // for(int i=0; i<8; i++)
+	    // io_outpb(crossbar_ioaddr + 0x80 + ((32+i)/8), 0x01);
+	// } 
 	io_DisableINT();
 	io_outpb(port_base, vlaue);
 	io_RestoreINT();
 }
  
 void UTFT::port_output_value(int port, unsigned char vlaue) {
-	int port_base = (GPIODATABASE + 4*port)&0xffff;
+	int port_base = getPortBase(port)&0xffff;
 	io_DisableINT();
 	io_outpb(port_base, vlaue);
 	io_RestoreINT();
@@ -1673,14 +1702,14 @@ void UTFT::virtual_port_output_value(int port, unsigned char value) {
 }
                  
 void UTFT::port_output_cport(int port, unsigned char vlaue) {
-	int port_base = (GPIODATABASE + 4*port)&0xffff;
+	int port_base = getPortBase(port)&0xffff;
 	io_DisableINT();
 	io_outpb(port_base, io_inpb(port_base) & vlaue);
 	io_RestoreINT();
 }
 
 void UTFT::port_output_sport(int port, unsigned char vlaue) {
-	int port_base = (GPIODATABASE + 4*port)&0xffff;
+	int port_base = getPortBase(port)&0xffff;
 	io_DisableINT();
 	io_outpb(port_base, io_inpb(port_base) | vlaue);
 	io_RestoreINT();
@@ -1710,18 +1739,18 @@ void UTFT::To_GPIO(uint8_t pin) {
 	unsigned int port;
 	unsigned int value;
 	int crossbar_bit;
-	unsigned short crossbar_ioaddr = 0;
-	crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
+	// unsigned short crossbar_ioaddr = 0;
+	// crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
 	crossbar_bit = PIN86[pin].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
   
-	if(crossbar_bit > 31)
-		io_outpb(crossbar_ioaddr + 0x80 + (crossbar_bit/8), 0x01);
-	else if(crossbar_bit <= 31)
+	if(crossbar_bit > 47)
+		io_outpb(CROSSBARBASE + 0xF0 + (crossbar_bit/8), 0x08);
+	else if(crossbar_bit <= 47 && io_inpb(CROSSBARBASE + 0x100 + crossbar_bit) != 0x08)
 	{
-		io_outpb(crossbar_ioaddr + 0x90 + crossbar_bit, 0x01);
+		io_outpb(CROSSBARBASE + 0x100 + crossbar_bit, 0x08);
 		Close_Pwm(pin);
-	}
+    }
 }
 
 void usePortMode(void) {

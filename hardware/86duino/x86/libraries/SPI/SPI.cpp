@@ -14,9 +14,11 @@
 
 #include "SPI.h"
 
-SPIClass SPI;
+SPIClass SPI = SPIClass(0);
+#if defined (__86DUINO_EX2)
+SPIClass SPI1 = SPIClass(1);
+#endif
 
-uint8_t SPIClass::initialized = 0;
 uint8_t SPIClass::interruptMode = 0;
 uint8_t SPIClass::interruptMask = 0;
 uint8_t SPIClass::interruptSave = 0;
@@ -25,10 +27,7 @@ unsigned long long SPIClass::interrupt_flag = 0LL;
 uint8_t SPIClass::inTransactionFlag = 0;
 #endif
 
-//#define DEBUG_MODE
-
-unsigned SPI_IOaddr = 0;
-int __clockDiv = 64, __bitOrder = MSBFIRST, __dataMode = SPI_MODE0;
+// #define DEBUG_MODE
 
 // we must use internal FIFO, so only view "FIFO enable" option description in the CPU datasheet
 #define SPI_BUSY          (0x80)
@@ -38,48 +37,82 @@ int __clockDiv = 64, __bitOrder = MSBFIRST, __dataMode = SPI_MODE0;
 #define SPI_OFIFOEMPTY    (0x08)
 #define SPI_IFIFOFULL     (0x04)
 
-static void useFIFO(void) {
-	if(SPI_IOaddr == 0) return;
-	io_outpb(SPI_IOaddr + 2, io_inpb(SPI_IOaddr + 2) | 0x10);
+#if defined (__86DUINO_EX)
+    static void useFIFO(void) {
+        if(SPI_IOaddr == 0) return;
+        io_outpb(SPI_IOaddr + 2, io_inpb(SPI_IOaddr + 2) | 0x10);
+    }
+
+    // skip SPI_IOaddr[dev] + 5
+    void WriteCLKDIVR(uint8_t data) {
+        if(SPI_IOaddr == 0) return;
+        io_outpb(SPI_IOaddr + 6, data);
+    }
+
+    void Reset(void) {
+        if(SPI_IOaddr == 0) return;
+        io_outpb(SPI_IOaddr + 7, 0x01);
+        while((io_inpb(SPI_IOaddr + 7)&0x01) != 0); // wait SPI reset for complete
+    }
+
+    void WriteCTRR(uint8_t data) {
+        if(SPI_IOaddr == 0) return;
+        io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) | data);
+    }
+
+    SPIClass::SPIClass(uint8_t dev) {
+        spi_dev = dev;
+        initialized = 0;
+    }
+
+    unsigned short SPI_IOaddr = 0;
+
+#elif defined (__86DUINO_EX2)
+    SPIClass::SPIClass(uint8_t dev) {
+        spi_dev = dev;
+        SPI_IOaddr = 0;
+        initialized = 0;
+    }
+#endif
+
+void SPIClass::SPICS(uint8_t data) {
+#if defined (__86DUINO_EX)
+    if(SPI_IOaddr == 0) return;
+	if(data != 0)
+		io_outpb(SPI_IOaddr + 4, 0x01);
+	else
+		io_outpb(SPI_IOaddr + 4, 0x00);
+#elif defined (__86DUINO_EX2)
+    if(data != 0)
+        Disable_Spi_CS0(spi_dev);
+    else
+        Enable_Spi_CS0(spi_dev);
+#endif
 }
 
-uint8_t ReadStateR(void) {
-	if(SPI_IOaddr == 0) return 0;
-	return io_inpb(SPI_IOaddr + 3);
+void SPIClass::SPICS1(uint8_t data) {
+#if defined (__86DUINO_EX)
+    // Do nothing...
+#elif defined (__86DUINO_EX2)
+    if(data != 0)
+        Disable_Spi_CS1(spi_dev);
+    else
+        Enable_Spi_CS1(spi_dev);
+#endif
 }
 
 void SPIClass::setSS(uint8_t data) {
 	SPICS(data);
 }
 
-void SPIClass::SPICS(uint8_t data) {
-	if(SPI_IOaddr == 0) return;
-	if(data != 0)
-		io_outpb(SPI_IOaddr + 4, 0x01);
-	else
-		io_outpb(SPI_IOaddr + 4, 0x00);
-}
-
-// skip SPI_IOaddr + 5
-void WriteCLKDIVR(uint8_t data) {
-	if(SPI_IOaddr == 0) return;
-	io_outpb(SPI_IOaddr + 6, data);
-}
-
-void Reset(void) {
-    if(SPI_IOaddr == 0) return;
-	io_outpb(SPI_IOaddr + 7, 0x01);
-    while((io_inpb(SPI_IOaddr + 7)&0x01) != 0); // wait SPI reset for complete
-}
-
-void WriteCTRR(uint8_t data) {
-	if(SPI_IOaddr == 0) return;
-	io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) | data);
+void SPIClass::setSS1(uint8_t data) {
+	SPICS1(data);
 }
 
 void SPIClass::begin()
 {
   if (!initialized) {
+#if defined (__86DUINO_EX)
     void *pciDev = NULL;
 
 	// Get SPI device base address
@@ -95,13 +128,64 @@ void SPIClass::begin()
 
 	io_outpb(SPI_IOaddr + 7, FULLDUPEX); // full-dupex
 	io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) & 0xF1 | SPI_MODE0); // set mode
-	io_outpb(SPI_IOaddr + 0x0b, 0x08); // delay clk between two transfers
+	io_outpb(SPI_IOaddr + 0x0b, 0x00); // delay clk between two transfers
     //SOURCE clock/(2 * SPI_CLOCK_DIV)
-	setClockDivider(13); // 100/(2*13) ~= 4MHz
+	setClockDivider(20); // 100/(2*13) ~= 4MHz
 	useFIFO();
 	detachInterrupt();
 
 	io_outpb(SPI_IOaddr + 4, 0x01); // set CS = high
+#elif defined (__86DUINO_EX2)
+    // Get SPI device base address
+    uint32_t SPI_HYBRID_BASE = Get_Hybrid_Control_BaseAddr();
+    #if defined DEBUG_MODE
+    printf("Hybrid_Control_BaseAddr = %lx\n", SPI_HYBRID_BASE);
+    #endif
+    if (spi_dev == 0)
+    {
+        if (_G_SPI[0] == NOTHING)
+            return;
+        
+        SPI_IOaddr = Get_SPI0_Control_BaseAddr();
+        if (SPI_IOaddr == 0L || SPI_IOaddr == 0xFFFFFFFFL)
+        {
+            Set_SPI0_Control_BaseAddr(0xD080, 0x01);
+            SPI_IOaddr = 0xD080;
+        }
+        else
+            SPI_IOaddr = SPI_IOaddr & 0xFFFC;
+        #if defined DEBUG_MODE
+        printf("SPI0_Control_BaseAddr = %lx\n", Get_SPI0_Control_BaseAddr());
+        #endif
+    }
+    else
+    {
+        if (_G_SPI[1] == NOTHING)
+            return;
+        
+        SPI_IOaddr = Get_SPI1_Control_BaseAddr();
+        if (SPI_IOaddr == 0L || SPI_IOaddr == 0xFFFFFFFFL)
+        {
+            Set_SPI1_Control_BaseAddr(0xD0A0, 0x01);
+            SPI_IOaddr = 0xD0A0;
+        }
+        else
+            SPI_IOaddr = SPI_IOaddr & 0xFFFC;
+        #if defined DEBUG_MODE
+        printf("SPI1_Control_BaseAddr = %lx\n", Get_SPI1_Control_BaseAddr());
+        #endif
+    }
+    
+    Spi_Init(spi_dev);
+    Reset_Spi_Module(spi_dev);
+    Set_Spi_Clock_Divided(spi_dev, 10);
+	Set_Spi_CS_Mode(spi_dev, SW_CS);
+    setSS(HIGH); // set CS = high
+    Set_Spi_BitOrder(spi_dev, MSBFIRST);
+    Set_Spi_DataMode(spi_dev, SPI_MODE0);
+    Set_Spi_Char_Length(spi_dev, Char_Length_8);
+    Set_Spi_Transfar_delay(spi_dev, 0);
+#endif
 
 	// Set SS to high so a connected chip will be "deselected" by default
 	pinMode(SS, OUTPUT);
@@ -118,7 +202,95 @@ void SPIClass::end() {
     #ifdef SPI_TRANSACTION_MISMATCH_LED
     inTransactionFlag = 0;
     #endif
+
+    SPICS(1); // set CS = high
   }
+}
+
+// Write to the SPI bus (MOSI pin) and also receive (MISO pin)
+uint8_t SPIClass::transfer(uint8_t data) {
+    if(SPI_IOaddr == 0) return 0;
+#if defined (__86DUINO_EX)
+	io_outpb(SPI_IOaddr, data);
+	while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
+	while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
+	return io_inpb(SPI_IOaddr + 1);
+#elif defined (__86DUINO_EX2)
+    Set_Spi_Char_Length(spi_dev, Char_Length_8);
+    Spi_Write(spi_dev, data);
+    while(Is_Spi_Transmission_Complete(spi_dev) == false);
+    return Spi_Read(spi_dev) & 0xFF;
+#endif
+}
+
+uint16_t SPIClass::transfer16(uint16_t data) {
+    if(SPI_IOaddr == 0) return 0;
+#if defined (__86DUINO_EX)
+    union { uint16_t val; struct { uint8_t lsb; uint8_t msb; }; } in, out;
+    in.val = data;
+
+    if (!(io_inpb(SPI_IOaddr + 7) & 0x20)) {
+      io_outpb(SPI_IOaddr, in.msb);
+      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
+	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
+      out.msb = io_inpb(SPI_IOaddr + 1);
+      io_outpb(SPI_IOaddr, in.lsb);
+      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
+	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
+      out.lsb = io_inpb(SPI_IOaddr + 1);
+    } else {
+      io_outpb(SPI_IOaddr, in.lsb);
+      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
+	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
+      out.lsb = io_inpb(SPI_IOaddr + 1);
+      io_outpb(SPI_IOaddr, in.msb);
+      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
+	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
+      out.msb = io_inpb(SPI_IOaddr + 1);
+    }
+    return out.val;
+#elif defined (__86DUINO_EX2)
+	Set_Spi_Char_Length(spi_dev, Char_Length_16);
+
+    Spi_Write(spi_dev, data);
+    while(Is_Spi_Transmission_Complete(spi_dev) == false);
+    return Spi_Read(spi_dev) & 0xFFFF;
+#endif
+}
+
+void SPIClass::transfer(void *buf, size_t count) {
+    if(SPI_IOaddr == 0 || buf == NULL || count == 0) return;
+#if defined (__86DUINO_EX)
+    uint8_t *p = (uint8_t *)buf;
+    io_outpb(SPI_IOaddr, *p);
+    while (--count > 0) {
+      uint8_t out = *(p + 1);
+      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
+	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
+      uint8_t in = io_inpb(SPI_IOaddr + 1);
+      io_outpb(SPI_IOaddr, out);
+      *p++ = in;
+    }
+    while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
+	while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
+    *p = io_inpb(SPI_IOaddr + 1);
+#elif defined (__86DUINO_EX2)
+    uint8_t *p = (uint8_t *)buf;
+    uint8_t *p2 = (uint8_t *)buf;
+    int c, t = count;
+    Set_Spi_Char_Length(spi_dev, Char_Length_8);
+
+    io_DisableINT();
+    while (t > 0) {
+        if (t > 15) {t -= 16; count = 16;} else {count = t; t = 0;};
+        for (c = count; c > 0; c--, p++)
+            Spi_Write(spi_dev, *p);
+        while (Is_Spi_Transmission_Complete(spi_dev) == false);
+        for (c = count; c > 0; c--, p2++)
+            *p2 = Spi_Read(spi_dev) & 0xFF;
+    }
+    io_RestoreINT();
+#endif
 }
 
 // mapping of interrupt numbers to bits within SPI_AVR_EIMSK
@@ -175,11 +347,18 @@ void SPIClass::notUsingInterrupt(uint8_t interruptNumber)
 
 void SPIClass::setBitOrder(uint8_t bitOrder)
 {
-	if(SPI_IOaddr == 0) return;
+    if(SPI_IOaddr == 0) return;
+#if defined (__86DUINO_EX)
 	if(bitOrder == LSBFIRST)
 		io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) | LSBSHIFT);
 	else
 	  	io_outpb(SPI_IOaddr + 7, io_inpb(SPI_IOaddr + 7) & ~LSBSHIFT);
+#elif defined (__86DUINO_EX2)
+	if(bitOrder == LSBFIRST)
+		Set_Spi_BitOrder(spi_dev, LSBFIRST);
+	else
+	  	Set_Spi_BitOrder(spi_dev, MSBFIRST);
+#endif
 }
 
 /*
@@ -196,8 +375,12 @@ Arduino Atmega328p
 #define SPI_MODE3 0x06 : CPOL = 1, CPHA = 1
 */
 void SPIClass::setDataMode(uint8_t mode) {
-	if(SPI_IOaddr == 0) return;
-	io_outpb(SPI_IOaddr + 7, (io_inpb(SPI_IOaddr + 7) & 0xF1) | mode);
+    if(SPI_IOaddr == 0) return;
+#if defined (__86DUINO_EX)
+    io_outpb(SPI_IOaddr + 7, (io_inpb(SPI_IOaddr + 7) & 0xF1) | mode);
+#elif defined (__86DUINO_EX2)
+    Set_Spi_DataMode(spi_dev, mode);
+#endif
 }
 
 // Vertex86EX has 3 ClockDivider: High, Mid, Low
@@ -226,13 +409,26 @@ it's result is 16MHz/above value, so that the lowest speed is 0.125MHz
 */
 void SPIClass::setClockDivider(uint16_t rate)
 {
-	if(rate == 0 || rate > 4095) return;
-	if(SPI_IOaddr == 0) return;
-	if(rate > 15)
-		io_outpb(SPI_IOaddr + 6, (rate&0x0ff0)>>4);
+#if defined (__86DUINO_EX)
+    if(rate == 0 || rate > 4095) return;
+    if(SPI_IOaddr == 0) return;
+    if(rate > 15)
+        io_outpb(SPI_IOaddr + 6, (rate&0x0ff0)>>4);
     else
         io_outpb(SPI_IOaddr + 6, 0);
 
-	io_outpb(SPI_IOaddr + 2, (io_inpb(SPI_IOaddr + 2) & 0xF0) | (rate%16));
+    io_outpb(SPI_IOaddr + 2, (io_inpb(SPI_IOaddr + 2) & 0xF0) | (rate%16));
+#elif defined (__86DUINO_EX2)
+    if(rate == 0 || rate > 65535) return;
+    Set_Spi_Clock_Divided(spi_dev, rate);
+#endif
+}
+
+void SPIClass::attachInterrupt() {
+	// io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) | 0x01);
+}
+
+void SPIClass::detachInterrupt() {
+	// io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) & 0xFE);
 }
 

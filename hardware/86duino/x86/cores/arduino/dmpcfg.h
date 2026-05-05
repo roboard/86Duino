@@ -30,9 +30,19 @@
 
 #if defined (DJGPP)
     #define DMP_DOS_DJGPP
-    
+
     #define DMP_DOS_DJGPP_NO_VIRMEM  // set this if using a DPMI server that doesn't enable virtual memory
     #define DMP_DOS_DJGPP_NO_EMM386  // set this if using a DOS environment without EMM386 (needed by the DMA buffer allocation codes)
+
+    #ifndef __cplusplus
+        #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199900L)
+            #include <stdbool.h>
+        #else
+            typedef int bool;
+            #define true  (1==1)
+            #define false (1==0)
+        #endif
+    #endif
 #endif
 
 #if (defined (__WATCOMC__) || defined(__WATCOM_CPLUSPLUS__)) && defined(__386__) //&& defined(__i386__)
@@ -41,6 +51,16 @@
 
 #if defined(linux) && defined(__GNUC__)
     #define DMP_LINUX
+
+    #ifndef __cplusplus
+        #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199900L)
+            #include <stdbool.h>
+        #else
+            typedef int bool;
+            #define true  (1==1)
+            #define false (1==0)
+        #endif
+    #endif
 #endif
 
 #if defined(_MSC_VER) //&& defined(_M_IX86)

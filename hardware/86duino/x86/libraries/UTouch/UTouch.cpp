@@ -23,6 +23,22 @@
 
 static unsigned int utouch_pin_p_v[2][5];
 
+static unsigned short getPortBase(int port) {
+    #if defined (__86DUINO_EX)
+    return GPIODATABASE + 4*port;
+    #elif defined (__86DUINO_EX2)
+    return DATA_BA[port];
+    #endif
+}
+
+static unsigned short getDirBase(int port) {
+    #if defined (__86DUINO_EX)
+    return GPIODIRBASE + 4*port;
+    #elif defined (__86DUINO_EX2)
+    return DIR_BA[port];
+    #endif
+}
+
 UTouch::UTouch(byte tclk, byte tcs, byte din, byte dout, byte irq) {
 	T_CLK	= tclk;
 	T_CS	= tcs;
@@ -35,31 +51,31 @@ UTouch::UTouch(byte tclk, byte tcs, byte din, byte dout, byte irq) {
 	int crossbar_bit;
   
 	crossbar_bit = PIN86[tclk].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][0] = port;
 	utouch_pin_p_v[1][0] = value;
 	
 	crossbar_bit = PIN86[tcs].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][1] = port;
 	utouch_pin_p_v[1][1] = value;
 	
 	crossbar_bit = PIN86[din].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][2] = port;
 	utouch_pin_p_v[1][2] = value;
 	
 	crossbar_bit = PIN86[dout].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][3] = port;
 	utouch_pin_p_v[1][3] = value;
 	
 	crossbar_bit = PIN86[irq].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
 	value = 1<<(crossbar_bit%8);
 	utouch_pin_p_v[0][4] = port;
 	utouch_pin_p_v[1][4] = value;
@@ -333,17 +349,17 @@ void UTouch::To_GPIO(uint8_t pin) {
 	unsigned int port;
 	unsigned int value;
 	int crossbar_bit;
-	unsigned short crossbar_ioaddr = 0;
-	crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
+	// unsigned short crossbar_ioaddr = 0;
+	// crossbar_ioaddr = sb_Read16(SB_CROSSBASE) & 0xfffe;
 	crossbar_bit = PIN86[pin].gpN;
-	port = GPIODATABASE + 4*(crossbar_bit/8);
+	port = getPortBase(crossbar_bit/8);
   
-	if(crossbar_bit > 31)
-		io_outpb(crossbar_ioaddr + 0x80 + (crossbar_bit/8), 0x01);
-	else if(crossbar_bit <= 31)
+	if(crossbar_bit > 47)
+		io_outpb(CROSSBARBASE + 0xF0 + (crossbar_bit/8), 0x08);
+	else if(crossbar_bit <= 47 && io_inpb(CROSSBARBASE + 0x100 + crossbar_bit) != 0x08)
 	{
-		io_outpb(crossbar_ioaddr + 0x90 + crossbar_bit, 0x01);
+		io_outpb(CROSSBARBASE + 0x100 + crossbar_bit, 0x08);
 		Close_Pwm(pin);
-	}
+    }
 }
 

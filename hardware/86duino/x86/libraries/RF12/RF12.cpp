@@ -719,7 +719,7 @@ uint8_t rf12_initialize (uint8_t id, uint8_t band, uint8_t g, uint16_t f) {
 */
 
     if ((nodeid & NODE_ID) != 0)
-        attachInterrupt(0, rf12_interrupt, LOW);
+        attachRTInterrupt(0, rf12_interrupt, LOW);
     else
         detachInterrupt(0);
 //#endif

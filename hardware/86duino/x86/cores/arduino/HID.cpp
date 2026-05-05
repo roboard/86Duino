@@ -1,23 +1,31 @@
 #include <stdio.h>
-#include "Arduino.h"
-#include "USBCore.h"
-#include "USBAPI.h"
+#include <conio.h>
 
-Mouse_ Mouse;
+#include "Arduino.h"
+#include "usbdesc.h"
+#include "usbhid.h"
+#include "io.h"
+
+USBHID *hid;
 Keyboard_ Keyboard;
+Mouse_ Mouse;
 
 void HID_SendReport(unsigned char id, const void* data, int len)
 {
 	int i, j = 0;
 	unsigned char senddata[len+1];
 	unsigned char* tmp = (unsigned char*)data;
-	if(USBDEV == NULL) return;
+	if(hid == NULL) return;
 	
 	len += 1;
 	senddata[0] = id;
 	for(i=1; i<len; i++, j++) senddata[i] = tmp[j];
 
-	hid_Send(USBDEV, senddata, len);
+    if (USBHID_CheckReady(hid) && USBHID_WFIFOFree(hid) > 0) {
+        
+        USBHID_WriteInputReport(hid, senddata, len);
+        
+    }
 }
 
 Mouse_::Mouse_(void) : _buttons(0)
@@ -32,7 +40,7 @@ void Mouse_::end(void)
 {
 }
 
-void Mouse_::click(uint8_t b)
+void Mouse_::click(unsigned char b)
 {
 	_buttons = b;
 	move(0,0,0);
@@ -50,7 +58,7 @@ void Mouse_::move(signed char x, signed char y, signed char wheel)
 	HID_SendReport(1, m, 4);
 }
 
-void Mouse_::buttons(uint8_t b)
+void Mouse_::buttons(unsigned char b)
 {
 	if (b != _buttons)
 	{
@@ -59,17 +67,17 @@ void Mouse_::buttons(uint8_t b)
 	}
 }
 
-void Mouse_::press(uint8_t b) 
+void Mouse_::press(unsigned char b) 
 {
 	buttons(_buttons | b);
 }
 
-void Mouse_::release(uint8_t b)
+void Mouse_::release(unsigned char b)
 {
 	buttons(_buttons & ~b);
 }
 
-bool Mouse_::isPressed(uint8_t b)
+bool Mouse_::isPressed(unsigned char b)
 {
 	if ((b & _buttons) > 0) 
 		return true;
@@ -97,10 +105,10 @@ void Keyboard_::sendReport(KeyReport* keys)
 	HID_SendReport(2, keys, sizeof(KeyReport));
 }
 
-extern const uint8_t _asciimap[128];
+extern const unsigned char _asciimap[128];
 
 #define SHIFT 0x80
-const uint8_t _asciimap[128] =
+const unsigned char _asciimap[128] =
 {
 	0x00,             // NUL
 	0x00,             // SOH
@@ -233,15 +241,13 @@ const uint8_t _asciimap[128] =
 	0				// DEL
 };
 
-uint8_t USBPutChar(uint8_t c);
-
 // press() adds the specified key (printing, non-printing, or modifier)
 // to the persistent key report and sends the report.  Because of the way 
 // USB HID works, the host acts like the key remains pressed until we 
 // call release(), releaseAll(), or otherwise clear the report and resend.
-size_t Keyboard_::press(uint8_t k) 
+size_t Keyboard_::press(unsigned char k) 
 {
-	uint8_t i;
+	unsigned char i;
 	if (k >= 136) {			// it's a non-printing key (not a modifier)
 		k = k - 136;
 	} else if (k >= 128) {	// it's a modifier key
@@ -250,7 +256,7 @@ size_t Keyboard_::press(uint8_t k)
 	} else {				// it's a printing key
 		k = *(_asciimap + k);
 		if (!k) {
-			setWriteError();
+			// setWriteError();
 			return 0;
 		}
 		if (k & 0x80) {						// it's a capital letter or other character reached with shift
@@ -272,7 +278,7 @@ size_t Keyboard_::press(uint8_t k)
 			}
 		}
 		if (i == 6) {
-			setWriteError();
+			// setWriteError();
 			return 0;
 		}	
 	}
@@ -283,9 +289,9 @@ size_t Keyboard_::press(uint8_t k)
 // release() takes the specified key out of the persistent key report and
 // sends the report.  This tells the OS the key is no longer pressed and that
 // it shouldn't be repeated any more.
-size_t Keyboard_::release(uint8_t k) 
+size_t Keyboard_::release(unsigned char k) 
 {
-	uint8_t i;
+	unsigned char i;
 	if (k >= 136) {			// it's a non-printing key (not a modifier)
 		k = k - 136;
 	} else if (k >= 128) {	// it's a modifier key
@@ -326,9 +332,109 @@ void Keyboard_::releaseAll(void)
 	sendReport(&_keyReport);
 }
 
-size_t Keyboard_::write(uint8_t c)
+size_t Keyboard_::write(unsigned char c)
 {	
-	uint8_t p = press(c);		// Keydown
+	unsigned char p = press(c);		// Keydown
 	            release(c);		// Keyup
 	return (p);					// just return the result of press() since release() almost always returns 1
+}
+
+unsigned int input_report_bytes = 9;
+unsigned int output_report_bytes = 0;
+unsigned char hidReportDescriptor[] = {
+
+	//	Mouse
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)	// 54
+    0x09, 0x02,                    // USAGE (Mouse)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0x09, 0x01,                    //   USAGE (Pointer)
+    0xa1, 0x00,                    //   COLLECTION (Physical)
+    0x85, 0x01,                    //     REPORT_ID (1)
+    0x05, 0x09,                    //     USAGE_PAGE (Button)
+    0x19, 0x01,                    //     USAGE_MINIMUM (Button 1)
+    0x29, 0x03,                    //     USAGE_MAXIMUM (Button 3)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
+    0x95, 0x03,                    //     REPORT_COUNT (3)
+    0x75, 0x01,                    //     REPORT_SIZE (1)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    0x95, 0x01,                    //     REPORT_COUNT (1)
+    0x75, 0x05,                    //     REPORT_SIZE (5)
+    0x81, 0x03,                    //     INPUT (Cnst,Var,Abs)
+    0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
+    0x09, 0x30,                    //     USAGE (X)
+    0x09, 0x31,                    //     USAGE (Y)
+    0x09, 0x38,                    //     USAGE (Wheel)
+    0x15, 0x81,                    //     LOGICAL_MINIMUM (-127)
+    0x25, 0x7f,                    //     LOGICAL_MAXIMUM (127)
+    0x75, 0x08,                    //     REPORT_SIZE (8)
+    0x95, 0x03,                    //     REPORT_COUNT (3)
+    0x81, 0x06,                    //     INPUT (Data,Var,Rel)
+    0xc0,                          //   END_COLLECTION
+    0xc0,                          // END_COLLECTION
+	
+	//	Keyboard
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)	// 47
+    0x09, 0x06,                    // USAGE (Keyboard)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0x85, 0x02,                    //   REPORT_ID (2)
+    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
+   
+	0x19, 0xe0,                    //   USAGE_MINIMUM (Keyboard LeftControl)
+    0x29, 0xe7,                    //   USAGE_MAXIMUM (Keyboard Right GUI)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                    //   REPORT_SIZE (1)
+    
+	0x95, 0x08,                    //   REPORT_COUNT (8)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+    0x95, 0x01,                    //   REPORT_COUNT (1)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x81, 0x03,                    //   INPUT (Cnst,Var,Abs)
+    
+	0x95, 0x06,                    //   REPORT_COUNT (6)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x25, 0x65,                    //   LOGICAL_MAXIMUM (101)
+    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
+    
+	0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
+    0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
+    0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
+    0xc0                           // END_COLLECTION
+};
+
+bool HID_Reinitialize(struct usb_dev *usb)
+{
+    int usb_class;
+    
+    usb_desc_uninitialize();
+    
+    usb_class = USB_FULL_SPEED | USB_CDC | USB_HID;
+    if (vx86_CpuID() == CPU_VORTEX86EX2_MASTER || vx86_CpuID() == CPU_VORTEX86EX2_SLAVE)
+        usb_class |= USB_HIGH_SPEED;
+    
+    usb_desc_hid_report_descriptor(hidReportDescriptor, sizeof(hidReportDescriptor));
+    
+    if (usb_desc_initialize(usb_class) == false) {
+        
+        printf("ERROR: usb_desc_initialize() failed in %s.\n", __func__);
+        return false;
+        
+    }
+    
+    hid = USBHID_Init(usb->dev, NULL, input_report_bytes, output_report_bytes);
+    if (hid == NULL) {
+        
+        printf("ERROR: USBHID_Init() fail.\n");
+        usb_desc_uninitialize();
+        return false;
+        
+    }
+    return true;
+}
+
+void HID_Uninitialize(struct usb_dev *usb)
+{
+    USBHID_Close(hid);
 }

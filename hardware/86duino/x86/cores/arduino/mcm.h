@@ -25,10 +25,19 @@
 #ifndef __MCEX_H
 #define __MCEX_H
 
-// #include "defines.h"
 #include "dmpcfg.h"
+#include "io.h"
+#ifdef _86DUINO
+    #include "v86board.h"
+#endif
+
 #define SYSCLK    (100)
-#define DEVICE    (0x10)
+
+DMPAPI(void) mc_outp(int mc, unsigned long idx, unsigned long val, int group=999);
+DMPAPI(void) mc_outpb(int mc, unsigned long idx, unsigned char val, int group=999);
+DMPAPI(unsigned long) mc_inp(int mc, unsigned long idx, int group=999);
+DMPAPI(unsigned char) mc_inpb(int mc, unsigned long idx, int group=999);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,12 +48,22 @@ DMPAPI(void) set_PortIO(void);
 DMPAPI(int) mcmInit(void);
 DMPAPI(void) mcmClose(void);
 
+DMPAPI(bool) isAllocThisMCMGroup(int group);
+
 // MC no.
 #define MC_GENERAL          (-1)
 #define MC_MODULE0          (0)
 #define MC_MODULE1          (1)
 #define MC_MODULE2          (2)
 #define MC_MODULE3          (3)
+#define MC_MODULE4          (4)
+#define MC_MODULE5          (5)
+#define MC_MODULE6          (6)
+#define MC_MODULE7          (7)
+#define MC_MODULE8          (8)
+#define MC_MODULE9          (9)
+#define MC_MODULE10         (10)
+#define MC_MODULE11         (11)
 
 // Module no.
 #define MCPWM_MODULEA       (0)
@@ -56,13 +75,10 @@ DMPAPI(void) mcmClose(void);
 #define MCSIF_MODULEA       (0)
 #define MCSIF_MODULEB       (1)
 
-DMPAPI(unsigned long) mc_getbaseaddr(void);
-DMPAPI(int) mc_getIRQ(void);
-
-DMPAPI(void) mc_outp(int mc, unsigned long idx, unsigned long val);
-DMPAPI(void) mc_outpb(int mc, unsigned long idx, unsigned char val);
-DMPAPI(unsigned long) mc_inp(int mc, unsigned long idx);
-DMPAPI(unsigned char) mc_inpb(int mc, unsigned long idx);
+DMPAPI(unsigned long) mc_setbaseaddr(void);
+DMPAPI(unsigned long) mc_getbaseaddr(int group=0);
+DMPAPI(void) Master_DX2();
+DMPAPI(int) mc_getIRQ(int group=0);
 DMPAPI(bool) mc_IsEnabled(int mc);
 
 
@@ -120,9 +136,17 @@ DMPAPI(void) mc_UnlockLDRDY(int mc, int module);
 DMPAPI(void) mc_EnableMulti(unsigned long group1, unsigned long group2, unsigned long group3);
 DMPAPI(void) mc_DisableMulti(unsigned long group1, unsigned long group2, unsigned long group3);
 
-DMPAPI(unsigned long) mc_ReadEnableREG1(void);
-DMPAPI(unsigned long) mc_ReadEnableREG2(void);
+DMPAPI(unsigned long) mc_ReadEnableREG1(int mcg=0);
+DMPAPI(unsigned long) mc_ReadEnableREG2(int mcg=0);
 
+// EX2 New features
+DMPAPI(void) mc_EnableSetMulti(unsigned long group1, unsigned long group2, unsigned long group3);
+DMPAPI(void) mc_EnableClearMulti(unsigned long group1, unsigned long group2, unsigned long group3);
+
+DMPAPI(unsigned long) mc_ReadEnableSetREG1(int mcg);
+DMPAPI(unsigned long) mc_ReadEnableSetREG2(int mcg);
+DMPAPI(unsigned long) mc_ReadEnableClearREG1(int mcg);
+DMPAPI(unsigned long) mc_ReadEnableClearREG2(int mcg);
 
 #define MCNET_MC2SIF_NONE       (0L)
 #define MCNET_MC2SIF_ALL        (0xbfeffbfeL)
@@ -194,6 +218,76 @@ DMPAPI(void) mc_RemoveRouting_MC2SIF(unsigned long group1, unsigned long group2,
 DMPAPI(void) mc_SetRouting_SIF2MC(unsigned long group1, unsigned long group2, unsigned long group3);
 DMPAPI(void) mc_RemoveRouting_SIF2MC(unsigned long group1, unsigned long group2, unsigned long group3);
 
+#define MCADC_TRIGGER_NONE      (0L)
+#define MC0ADC_PWMAEVN_SET      (1L)
+#define MC0ADC_PWMAEVN_CLEAR    (2L)
+#define MC0ADC_PWMAEVN_FLIP     (3L)
+#define MC0ADC_PWMBEVN_NONE     (0L<<2)
+#define MC0ADC_PWMBEVN_SET      (1L<<2)
+#define MC0ADC_PWMBEVN_CLEAR    (2L<<2)
+#define MC0ADC_PWMBEVN_FLIP     (3L<<2)
+#define MC0ADC_PWMCEVN_NONE     (0L<<4)
+#define MC0ADC_PWMCEVN_SET      (1L<<4)
+#define MC0ADC_PWMCEVN_CLEAR    (2L<<4)
+#define MC0ADC_PWMCEVN_FLIP     (3L<<4)
+#define MC0ADC_PWMEXT_NONE      (0L<<6)
+#define MC0ADC_PWMEXT_SET       (1L<<6)
+#define MC0ADC_PWMEXT_CLEAR     (2L<<6)
+#define MC0ADC_PWMEXT_FLIP      (3L<<6)
+
+#define MC1ADC_PWMAEVN_NONE     (0L<<8)
+#define MC1ADC_PWMAEVN_SET      (1L<<8)
+#define MC1ADC_PWMAEVN_CLEAR    (2L<<8)
+#define MC1ADC_PWMAEVN_FLIP     (3L<<8)
+#define MC1ADC_PWMBEVN_NONE     (0L<<10)
+#define MC1ADC_PWMBEVN_SET      (1L<<10)
+#define MC1ADC_PWMBEVN_CLEAR    (2L<<10)
+#define MC1ADC_PWMBEVN_FLIP     (3L<<10)
+#define MC1ADC_PWMCEVN_NONE     (0L<<12)
+#define MC1ADC_PWMCEVN_SET      (1L<<12)
+#define MC1ADC_PWMCEVN_CLEAR    (2L<<12)
+#define MC1ADC_PWMCEVN_FLIP     (3L<<12)
+#define MC1ADC_PWMEXT_NONE      (0L<<14)
+#define MC1ADC_PWMEXT_SET       (1L<<14)
+#define MC1ADC_PWMEXT_CLEAR     (2L<<14)
+#define MC1ADC_PWMEXT_FLIP      (3L<<14)
+
+#define MC2ADC_PWMAEVN_NONE     (0L<<16)
+#define MC2ADC_PWMAEVN_SET      (1L<<16)
+#define MC2ADC_PWMAEVN_CLEAR    (2L<<16)
+#define MC2ADC_PWMAEVN_FLIP     (3L<<16)
+#define MC2ADC_PWMBEVN_NONE     (0L<<18)
+#define MC2ADC_PWMBEVN_SET      (1L<<18)
+#define MC2ADC_PWMBEVN_CLEAR    (2L<<18)
+#define MC2ADC_PWMBEVN_FLIP     (3L<<18)
+#define MC2ADC_PWMCEVN_NONE     (0L<<20)
+#define MC2ADC_PWMCEVN_SET      (1L<<20)
+#define MC2ADC_PWMCEVN_CLEAR    (2L<<20)
+#define MC2ADC_PWMCEVN_FLIP     (3L<<20)
+#define MC2ADC_PWMEXT_NONE      (0L<<22)
+#define MC2ADC_PWMEXT_SET       (1L<<22)
+#define MC2ADC_PWMEXT_CLEAR     (2L<<22)
+#define MC2ADC_PWMEXT_FLIP      (3L<<22)
+
+#define MC3ADC_PWMAEVN_NONE     (0L<<24)
+#define MC3ADC_PWMAEVN_SET      (1L<<24)
+#define MC3ADC_PWMAEVN_CLEAR    (2L<<24)
+#define MC3ADC_PWMAEVN_FLIP     (3L<<24)
+#define MC3ADC_PWMBEVN_NONE     (0L<<26)
+#define MC3ADC_PWMBEVN_SET      (1L<<26)
+#define MC3ADC_PWMBEVN_CLEAR    (2L<<26)
+#define MC3ADC_PWMBEVN_FLIP     (3L<<26)
+#define MC3ADC_PWMCEVN_NONE     (0L<<28)
+#define MC3ADC_PWMCEVN_SET      (1L<<28)
+#define MC3ADC_PWMCEVN_CLEAR    (2L<<28)
+#define MC3ADC_PWMCEVN_FLIP     (3L<<28)
+#define MC3ADC_PWMEXT_NONE      (0L<<30)
+#define MC3ADC_PWMEXT_SET       (1L<<30)
+#define MC3ADC_PWMEXT_CLEAR     (2L<<30)
+#define MC3ADC_PWMEXT_FLIP      (3L<<30)
+DMPAPI(void) mc_SetADCTriggerMulti(unsigned long group1, unsigned long group2, unsigned long group3);
+DMPAPI(void) mc_ClearADCTriggerMulti(unsigned long group1, unsigned long group2, unsigned long group3);
+DMPAPI(unsigned long) mc_ReadADCTriggerMulti(int group);
 /*-----------------------  end of General Settings  --------------------------*/
 
 
@@ -409,6 +503,9 @@ DMPAPI(void) mcsv_SetDIR(int mc, int module, unsigned long dir);
 
 DMPAPI(void) mcsv_SetDIRDeadband(int mc, int module, unsigned long db);
 
+#define PULSEPIN    (1<<28)
+#define DIRPIN      (0<<28)
+DMPAPI(void) mcsv_SetDIRDBPin(int mc, int module, int dbpin);
 
 
 #define MCSV_EVT_DISABLE            (0x00L)
@@ -696,7 +793,7 @@ DMPAPI(bool) mcenc_CheckIDXSTAT(int mc, int module);
 #define MCENC_CAP_IDXCOND_DISABLE    (0x00L << 19)
 #define MCENC_CAP_IDXCOND_ENABLE     (0x01L << 19)
 DMPAPI(void) mcenc_SetCapMode(int mc, int module, unsigned long mode);
-
+DMPAPI(void) mcenc_SetCapINT(int mc, int module, unsigned long val);
 DMPAPI(void) mcenc_SetCapInterval(int mc, int module, unsigned long capivl);
 
 #define MCENC_CAPFIFO_HASDATA        (0x00L)
@@ -1015,8 +1112,8 @@ DMPAPI(unsigned long) mcssi_ReadCtrlREG(int mc, int module);
 #define LDRDY_OCTRL_INT  (0x20L)
 #define PULSE_FB_INT     (0x40L)
 #define DDAFIFO_INT      (0x80L) // for EX
-DMPAPI(unsigned char) GetMCIRQ(void);
-DMPAPI(void) Set_MCIRQ(unsigned char irq);
+DMPAPI(unsigned char) GetMCIRQ(int group=0);
+DMPAPI(void) Set_MCIRQ(unsigned char irq, int group=0);
 
 
 #ifdef __cplusplus

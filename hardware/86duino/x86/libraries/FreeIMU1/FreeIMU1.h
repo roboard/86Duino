@@ -41,7 +41,7 @@ Modified 31 May 2016 by Johnson Hung
 // IMU class:
 //   0    for LSM330DLC
 //   1    for RMG146
-#if defined (__86DUINO_ONE)
+#if defined (__86DUINO_ONE) || defined (__86DUINO_DUO)
     #define IMU_LSM330DLC   (0)
 #elif defined (__86DUINO_AI)
     #define IMU_LSM330DLC   (3)

@@ -1,1 +1,1 @@
--lswsk
+-lswsk -lini

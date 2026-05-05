@@ -58,10 +58,15 @@
 #include "utility/socket.h"
 
 // These are the interrupt and control pins
-#define ADAFRUIT_CC3000_IRQ   42  // MUST be an interrupt pin!
-// These can be any two pins
-#define ADAFRUIT_CC3000_VBAT  44
-#define ADAFRUIT_CC3000_CS    43
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+    #define ADAFRUIT_CC3000_IRQ   42
+    #define ADAFRUIT_CC3000_VBAT  44
+    #define ADAFRUIT_CC3000_CS    43
+#elif defined (__86DUINO_EX2)
+    #define ADAFRUIT_CC3000_IRQ   17
+    #define ADAFRUIT_CC3000_VBAT  18
+    #define ADAFRUIT_CC3000_CS    19
+#endif
 // Use hardware SPI for the remaining pins
 // On an UNO, SCK = 13, MISO = 12, and MOSI = 11
 

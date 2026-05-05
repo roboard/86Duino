@@ -32,36 +32,54 @@
 TimerOne Timer1;
 TimerRealTimeClock TimerRTC;
 
+#define DPC_MODE  (0)
+#define RT_MODE   (1)
+#define HT_MODE   (2)
+static _HelperTask* _task = NULL;
+static _HelperTask* _taskRTC = NULL;
+
+#if defined (__86DUINO_EX2)
+static int mc = 11, md = 2;
+#elif defined (__86DUINO_EX)
 static int mc = 3, md = 2;
+#endif
 
 /*****************/
 /*   Interrupt   */                                                                       
 /*****************/
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(unsigned long used_int) {
-    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]);
 }
 
 static void disable_MCINT(unsigned long used_int) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) | (1L << (mc%4)), mc/4);
 }
 
 static void enable_MCINT(unsigned long used_int) {
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) & ~(1L << (mc%4)), mc/4);
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
 
 // TimerOne ISR
 static char* isrname_one = "TimerOne";
-
+static void* DPCh = NULL; // DPC hadles
+static volatile int rt = DPC_MODE;
+static volatile bool UT_flag = false;
 static int timer1_isr_handler(int irq, void* data) {
-    if((mc_inp(mc, 0x04) & (PULSE_END_INT << mcint_offset[md])) == 0) return ISR_NONE;
+    if ((mc_inp(mc, 0x04) & (PULSE_END_INT << mcint_offset[md])) == 0) return ISR_NONE;
     
 	mc_outp(mc, 0x04, (PULSE_END_INT << mcint_offset[md]));
     
-    if(Timer1.isrCallback != NULL) Timer1.isrCallback();
+    if (rt == RT_MODE) {
+        if (Timer1.isrCallback != NULL) Timer1.isrCallback();
+    } else if (rt == DPC_MODE){
+        if (DPCh != NULL) irq_TriggerDPC(DPCh);
+    } else if (rt == HT_MODE) {
+        UT_flag = true;
+    }
      
     return ISR_HANDLED;
 }
@@ -76,9 +94,12 @@ TimerOne::TimerOne() {
 
 static bool init_mc_irq(void) {
 	static bool timerOneInitInt = false;
-	if(timerOneInitInt == false)
+	if (timerOneInitInt == false)
 	{	
-		if(irq_InstallISR(GetMCIRQ(), timer1_isr_handler, isrname_one) == false)
+        #if defined (__86DUINO_CYF001)
+        mc_SetMode(11, MCMODE_PWM_SIFB);
+        #endif
+		if (irq_InstallISR(GetMCIRQ(mc/4), timer1_isr_handler, isrname_one) == false)
 		{
 		    printf("irq_install fail\n"); return false;
 		}
@@ -104,6 +125,10 @@ void TimerOne::initialize(long microseconds) {
 	setPeriod(microseconds);
 }
 
+static void dpcCallBackFunc(void* data) {
+    if (Timer1.isrCallback != NULL) Timer1.isrCallback();
+}
+
 #define YES    (1)
 #define NO     (2)
 static int mc_md_inuse[PINS];
@@ -112,23 +137,23 @@ void TimerOne::setPeriod(long microseconds)	{ // AR modified for atomic access
 	int mcn, mdn, i;
 	if (timerOneInit == false || microseconds <= 0) return;
 	
-    if (microseconds > 21474836) microseconds = 21474836;
+	if (microseconds > 21474836) microseconds = 21474836;
     
 	_period = (double)(microseconds*SYSCLK);
 	
-	if(timer1Enable == true) // if call attachInterrupt(), timer1Enable is ture
+	if (timer1Enable == true) // if call attachInterrupt(), timer1Enable is ture
 	{
 		mcpwm_SetWidth(mc, md, _period-1.0, 0L);
 	    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	}
 	
-	for(i=0; i<PINS; i++)
+	for (i=0; i<PINS; i++)
 	{
-		if(mc_md_inuse[i] == YES) // if call pwm()...
+		if (mc_md_inuse[i] == YES) // if call pwm()...
 		{
 			mcn = PIN86[i].PWMMC;
 	    	mdn = PIN86[i].PWMMD;
-            if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
+            if (mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[i]-1.0);
 		    mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_PEREND);
 		}
@@ -136,7 +161,7 @@ void TimerOne::setPeriod(long microseconds)	{ // AR modified for atomic access
 }
 
 static void safeClosePwmModule(int mcn, int mdn, double _period) {
-    if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
+    if (mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 	mcpwm_SetWidth(mcn, mdn, _period-1.0, 0L);
 	mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_PEREND);
 	while(mcpwm_ReadReloadPWM(mcn, mdn) != 0L);
@@ -148,16 +173,16 @@ void TimerOne::setPwmDuty(char pin, int duty) {
 	int mcn, mdn;
 	unsigned short crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
 		
-	if(pin < 0 || pin >= PINS || timerOneInit == false) return;
+	if (pin < 0 || pin >= PINS || timerOneInit == false) return;
 	
 	mcn = PIN86[pin].PWMMC;
     mdn = PIN86[pin].PWMMD;
     
-    if(mcn == NOPWM || mdn == NOPWM) return;
+    if (mcn == NOPWM || mdn == NOPWM) return;
 
-	if(duty <= 0)
+	if (duty <= 0)
 	{
-		if(mc_md_inuse[pin] == YES)
+		if (mc_md_inuse[pin] == YES)
 		{
 			safeClosePwmModule(mcn, mdn, _period);
 			mc_md_inuse[pin] = NO;
@@ -168,7 +193,7 @@ void TimerOne::setPwmDuty(char pin, int duty) {
 	}
 	
 	io_DisableINT();
-    if(mc_md_inuse[pin] == 0 || mc_md_inuse[pin] == NO)
+    if (mc_md_inuse[pin] == 0 || mc_md_inuse[pin] == NO)
 	{
 		pwmInit(mcn, mdn);
 		
@@ -182,12 +207,12 @@ void TimerOne::setPwmDuty(char pin, int duty) {
     
     _duty[pin] = _period*duty/1024.0;
     
-    if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
+    if (mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 	mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[pin]-1.0);
 	mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_PEREND);
     io_RestoreINT();
     
-    if(isPwmInit[pin] == 1 && (mc_md_inuse[pin] == 0 || mc_md_inuse[pin] == NO))
+    if (isPwmInit[pin] == 1 && (mc_md_inuse[pin] == 0 || mc_md_inuse[pin] == NO))
     {
     	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08); // Enable PWM pin
 		mcpwm_Enable(mcn, mdn);
@@ -197,15 +222,15 @@ void TimerOne::setPwmDuty(char pin, int duty) {
 
 void TimerOne::pwm(char pin, int duty, long microseconds) { // expects duty cycle to be 10 bit (1024)
 	int mcn, mdn;
-	if(pin < 0 || pin >= PINS || timerOneInit == false) return;
+	if (pin < 0 || pin >= PINS || timerOneInit == false) return;
 	isPwmInit[pin] = 1; // for Arduino compatibility
 	
-	if(microseconds > 0) setPeriod(microseconds);
+	if (microseconds > 0) setPeriod(microseconds);
 	
 	mcn = PIN86[pin].PWMMC;
 	mdn = PIN86[pin].PWMMD;
 	  
-	if(mcn == NOPWM || mdn == NOPWM) return;
+	if (mcn == NOPWM || mdn == NOPWM) return;
   	
   	setPwmDuty(pin, duty);
 }
@@ -214,14 +239,14 @@ void TimerOne::disablePwm(char pin) {
 	unsigned short crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
 	int mcn, mdn;
 	
-	if(pin < 0 || pin >= PINS || timerOneInit == false) return;
+	if (pin < 0 || pin >= PINS || timerOneInit == false) return;
 	
 	mcn = PIN86[pin].PWMMC;
     mdn = PIN86[pin].PWMMD;
     
-    if(mcn == NOPWM || mdn == NOPWM) return;
+    if (mcn == NOPWM || mdn == NOPWM) return;
     
-	if(mc_md_inuse[pin] == YES)
+	if (mc_md_inuse[pin] == YES)
 	{
 		safeClosePwmModule(mcn, mdn, _period);
 		mc_md_inuse[pin] = NO;
@@ -229,15 +254,22 @@ void TimerOne::disablePwm(char pin) {
 		io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x01); // Disable PWM pin (To be GPIO)
 	}
 }
- 
-void TimerOne::attachInterrupt(void (*isr)(void), long microseconds) {
-	int i;
-	if(timerOneInit == false || isr == NULL) return;
+
+static void UT_LOOP(void) {
+    if (UT_flag) {
+        if (Timer1.isrCallback != NULL) Timer1.isrCallback();
+        UT_flag = false;
+        helperYield();
+    }
+}
+
+void TimerOne::attachInterrupt(void (*isr)(void), long microseconds, int _rt) {
+	if (timerOneInit == false || isr == NULL) return;
 	mcpwm_Disable(mc, md);
 	
-	if(microseconds > 0)                       
+	if (microseconds > 0)                       
 	{
-		//if(microseconds < 50L) microseconds = 50L;
+		//if (microseconds < 50L) microseconds = 50L;
 		setPeriod(microseconds);
 	} 
 	
@@ -245,7 +277,7 @@ void TimerOne::attachInterrupt(void (*isr)(void), long microseconds) {
 	disable_MCINT(PULSE_END_INT);
     
 	clear_INTSTATUS(PULSE_END_INT);
-	if(init_mc_irq() == false)
+	if (init_mc_irq() == false)
 	{
 		printf("Init MC IRQ fail\n");
 		return;
@@ -256,14 +288,42 @@ void TimerOne::attachInterrupt(void (*isr)(void), long microseconds) {
 	
 	io_DisableINT();
 	isrCallback = isr; // register the user's callback with the real ISR
+    rt = _rt;
+    if (_rt == DPC_MODE) {
+        if (DPCh == NULL) {
+            DPCh = irq_AllocDPC(dpcCallBackFunc, NULL, IRQ_DPC_USEFPU);
+            if (DPCh == NULL)
+                printf("We get NULL retrun from irq_AllocDPC()\n");
+        } // We just alloc DPC once
+    } else if (_rt == HT_MODE) {
+        _task = myHelper.startLoop(10 * 1024);
+        if (_task == NULL) {
+            printf("WInterrupt: myHelper init fail\n");
+            return;
+        }
+        _task->registerFunc(UT_LOOP);
+        _task->start();
+    }
 	io_RestoreINT();
 	
 	mcpwm_Enable(mc, md);
 	timer1Enable = true;												
 }
 
+void TimerOne::attachInterrupt(void (*isr)(void), long microseconds) {
+    attachInterrupt(isr, microseconds, DPC_MODE);
+}
+
+void TimerOne::attachRTInterrupt(void (*isr)(void), long microseconds) {
+    attachInterrupt(isr, microseconds, RT_MODE);
+}
+
+void TimerOne::attachHTInterrupt(void (*isr)(void), long microseconds) {
+    attachInterrupt(isr, microseconds, HT_MODE);
+}
+
 void TimerOne::detachInterrupt() {
-	if(timerOneInit == false || timer1Enable == false) return;
+	if (timerOneInit == false || timer1Enable == false) return;
 	disable_MCINT(PULSE_END_INT); // timer continues to count without calling the isr
 }
 
@@ -278,24 +338,24 @@ void TimerOne::restart() { // Depricated - Public interface to start at zero - L
 void TimerOne::start() { // AR addition, renamed by Lex to reflect it's actual role
 	int mcn, mdn, i;
     
-    if(timerOneInit == false) return;
+    if (timerOneInit == false) return;
     
-	if(timer1Enable == false)
+	if (timer1Enable == false)
 	{
-		//if(isrCallback != NULL) disable_MCINT();        // AR added 
+		//if (isrCallback != NULL) disable_MCINT();        // AR added 
 	    mcpwm_SetWidth(mc, md, _period-1.0, 0L);
 		mcpwm_Enable(mc, md);
-		//if(isrCallback != NULL) enable_MCINT(PULSE_END_INT);
+		//if (isrCallback != NULL) enable_MCINT(PULSE_END_INT);
 		timer1Enable = true;
 	}
 	
-	for(i=0; i<PINS; i++)
+	for (i=0; i<PINS; i++)
 	{
-		if(mc_md_inuse[i] == NO)
+		if (mc_md_inuse[i] == NO)
 		{
 			mcn = PIN86[i].PWMMC;
 			mdn = PIN86[i].PWMMD;
-            if(mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
+            if (mcpwm_ReadReloadPWM(mcn, mdn) != 0) mcpwm_ReloadPWM(mcn, mdn, MCPWM_RELOAD_CANCEL);
 			mcpwm_SetWidth(mcn, mdn, _period-1.0, _duty[i]-1.0);
 			mcpwm_Enable(mcn, mdn);
 			mc_md_inuse[i] = YES;
@@ -305,15 +365,15 @@ void TimerOne::start() { // AR addition, renamed by Lex to reflect it's actual r
 
 void TimerOne::stop() {
 	int mcn, mdn, i;
-	if(timer1Enable == true)
+	if (timer1Enable == true)
 	{
 		mcpwm_Disable(mc, md);
 		timer1Enable = false;
 	}
 	
-	for(i=0; i<PINS; i++)
+	for (i=0; i<PINS; i++)
 	{
-		if(mc_md_inuse[i] == YES)
+		if (mc_md_inuse[i] == YES)
 		{
 			mcn = PIN86[i].PWMMC;
 			mdn = PIN86[i].PWMMD;
@@ -348,13 +408,25 @@ TimerRealTimeClock::TimerRealTimeClock() {
 }
 
 static char* isrname_rtc = "TimerRTC";
+static void* DPCh_rtc = NULL;
+static volatile int rt_rtc = DPC_MODE;
+static volatile bool UT_RTC_flag = false;
 static int timerrtc_isr_handler(int irq, void* data) {
 	unsigned char tmp;
 	io_outpb(0x70, 0x0C); // enable NMI and read RTC register C 
 	tmp = io_inpb(0x71); // clear RTC interrupt state
 
-	if((tmp & 0x40) > 0 && TimerRTC.isrCallback != NULL) TimerRTC.isrCallback();
-    if((tmp & 0x70) == 0) return ISR_NONE;
+	if ((tmp & 0x40) > 0) {
+        if (rt_rtc == RT_MODE) {
+            if (TimerRTC.isrCallback != NULL) TimerRTC.isrCallback();
+        } else if (rt_rtc == DPC_MODE) {
+            if (DPCh_rtc != NULL) irq_TriggerDPC(DPCh_rtc);
+        } else if (rt_rtc == HT_MODE) {
+            UT_RTC_flag = true;
+        }
+    }
+    
+    if ((tmp & 0x70) == 0) return ISR_NONE;
 
     return ISR_HANDLED;
 }
@@ -385,27 +457,55 @@ void TimerRealTimeClock::initialize(long microseconds) {
     outpb_cmos(0x0A, (tmp & 0xF0) | _freq);
 }
 
-void TimerRealTimeClock::attachInterrupt(void (*isr)(void), long microseconds) {
+static void dpcCallBackFunc_rtc(void* data) {
+    if (TimerRTC.isrCallback != NULL) TimerRTC.isrCallback();
+}
+
+static void UT_RTC_LOOP(void) {
+    if (UT_RTC_flag) {
+        if (TimerRTC.isrCallback != NULL) TimerRTC.isrCallback();
+        UT_RTC_flag = false;
+        helperYield();
+    }
+}
+
+void TimerRealTimeClock::attachInterrupt(void (*isr)(void), long microseconds, int _rt) {
     unsigned char tmp;
     
-    if(timerRTCInit == false || isr == NULL) return;
+    if (timerRTCInit == false || isr == NULL) return;
     
-    if(timerRTCEnable == false)
+    if (timerRTCEnable == false)
 	{
-		if(irq_Setting(RTCIRQ, IRQ_EDGE_TRIGGER) == false)
+		if (irq_Setting(RTCIRQ, IRQ_EDGE_TRIGGER) == false)
 	    {
 	        printf("MCM IRQ Setting fail\n"); return;
 	    }
-		if(irq_InstallISR(RTCIRQ, timerrtc_isr_handler, isrname_rtc) == false)
+		if (irq_InstallISR(RTCIRQ, timerrtc_isr_handler, isrname_rtc) == false)
 		{
 		    printf("irq_install fail\n"); return;
 		}
 	}
 	
-    if(microseconds > 0) setPeriod(microseconds);
+    if (microseconds > 0) setPeriod(microseconds);
     
     io_DisableINT();
     isrCallback = isr;
+    rt_rtc = _rt;
+    if (_rt == DPC_MODE) {
+        if (DPCh_rtc == NULL) {
+            DPCh_rtc = irq_AllocDPC(dpcCallBackFunc_rtc, NULL, IRQ_DPC_USEFPU);
+            if (DPCh_rtc == NULL)
+                printf("We get NULL retrun from irq_AllocDPC()\n");
+        } // We just alloc DPC once
+    } else if (_rt == HT_MODE) {
+        _taskRTC = myHelper.startLoop(10 * 1024);
+        if (_taskRTC == NULL) {
+            printf("WInterrupt: myHelper init fail\n");
+            return;
+        }
+        _taskRTC->registerFunc(UT_RTC_LOOP);
+        _taskRTC->start();
+    }
     io_RestoreINT();
     
 	tmp = inpb_cmos(0x0B);
@@ -413,34 +513,55 @@ void TimerRealTimeClock::attachInterrupt(void (*isr)(void), long microseconds) {
     timerRTCEnable = true;
 }
 
+void TimerRealTimeClock::attachInterrupt(void (*isr)(void), long microseconds) {
+    attachInterrupt(isr, microseconds, DPC_MODE);
+}
+
+void TimerRealTimeClock::attachRTInterrupt(void (*isr)(void), long microseconds) {
+    attachInterrupt(isr, microseconds, RT_MODE);
+}
+
+void TimerRealTimeClock::attachHTInterrupt(void (*isr)(void), long microseconds) {
+    attachInterrupt(isr, microseconds, HT_MODE);
+}
+
 void TimerRealTimeClock::detachInterrupt() {
     unsigned char tmp;
-    if(timerRTCInit == false || timerRTCEnable == false) return;
+    if (timerRTCInit == false || timerRTCEnable == false) return;
     
 	tmp = inpb_cmos(0x0B);
     outpb_cmos(0x0B, tmp & ~(0x40));
     
+    if (DPCh_rtc != NULL) {
+        if (irq_FreeDPC(DPCh_rtc) == false)
+            printf("We free the DPC handle fail\n");
+        else
+            DPCh_rtc = NULL;
+        rt_rtc = false;
+    }
+        
     irq_UninstallISR(RTCIRQ, (void*)isrname_rtc);
     timerRTCEnable = false;
 }
 
 void TimerRealTimeClock::setPeriod(long microseconds) {
 	unsigned char tmp;
-    if(timerRTCInit == false || microseconds <= 0) return;
+    
+    if (timerRTCInit == false || microseconds <= 0) return;
 	
 	if     (microseconds < 183L)    _freq = 3;
-	else if(microseconds < 366L)    _freq = 4;
-	else if(microseconds < 732L)    _freq = 5;
-	else if(microseconds < 1464L)   _freq = 6;
-	else if(microseconds < 2929L)   _freq = 7;
-	else if(microseconds < 5859L)   _freq = 8;
-	else if(microseconds < 11718L)  _freq = 9;
-	else if(microseconds < 23437L)  _freq = 10;
-	else if(microseconds < 46875L)  _freq = 11;
-	else if(microseconds < 93750L)  _freq = 12;
-	else if(microseconds < 187500L) _freq = 13;
-	else if(microseconds < 375000L) _freq = 14;
-	else if(microseconds < 500000L) _freq = 15;
+	else if (microseconds < 366L)    _freq = 4;
+	else if (microseconds < 732L)    _freq = 5;
+	else if (microseconds < 1464L)   _freq = 6;
+	else if (microseconds < 2929L)   _freq = 7;
+	else if (microseconds < 5859L)   _freq = 8;
+	else if (microseconds < 11718L)  _freq = 9;
+	else if (microseconds < 23437L)  _freq = 10;
+	else if (microseconds < 46875L)  _freq = 11;
+	else if (microseconds < 93750L)  _freq = 12;
+	else if (microseconds < 187500L) _freq = 13;
+	else if (microseconds < 375000L) _freq = 14;
+	else if (microseconds < 500000L) _freq = 15;
 	else                            _freq = 15;
     
     tmp = inpb_cmos(0x0A);

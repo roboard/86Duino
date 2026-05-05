@@ -1,0 +1,15 @@
+100,70
+IDE Version
+-------------------------------------------
+  Coding 501 (base on Arduino IDE 1.8.19)
+
+Included Firmware Packages
+-------------------------------------------
+  86Duino Board Firmaware Package : 1.0.0
+  QEC Board Firmware Package      : 1.0.2
+
+Included Plug-ins
+-------------------------------------------
+  86HMI      : 1.5.0.1
+  86EVA      : 0.9.5.0
+  ArduBlock  : Modified@20260428

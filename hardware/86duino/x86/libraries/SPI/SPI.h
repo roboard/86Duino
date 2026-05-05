@@ -17,11 +17,16 @@
 
 #include <Arduino.h>
 
-#ifndef LSBFIRST
-#define LSBFIRST 0
-#endif
-#ifndef MSBFIRST
-#define MSBFIRST 1
+#if defined (__86DUINO_EX)
+    #ifndef LSBFIRST
+		#define LSBFIRST 0
+	#endif
+	#ifndef MSBFIRST
+		#define MSBFIRST 1
+	#endif
+    extern unsigned short SPI_IOaddr;
+#elif defined (__86DUINO_EX2)
+	#include "SPIreg.h"
 #endif
 
 // For Arduino compatibility (it is 16MHz ex: ATmega328p)
@@ -56,9 +61,6 @@
 #define CPHA         (0x02) // 0xFD is disable it
 #define RESET        (0x01) // it will be clear when out of reset state
 
-extern unsigned SPI_IOaddr;
-extern int __clockDiv, __bitOrder, __dataMode;
-
 class SPISettings {
 public:
   SPISettings(uint32_t clock, uint8_t bitOrder, uint8_t dataMode) {
@@ -77,38 +79,18 @@ private:
   }
   void init_AlwaysInline(uint32_t clock, uint8_t bitOrder, uint8_t dataMode)
     __attribute__((__always_inline__)) {
-
     uint8_t clockDiv;
-
-    if (__builtin_constant_p(clock)) {
-      if (clock >= PCI_CLOCK / 2) {
-        clockDiv = 1;
-      } else if (clock >= PCI_CLOCK / 4) {
-        clockDiv = 2;
-      } else if (clock >= PCI_CLOCK / 8) {
-        clockDiv = 4;
-      } else if (clock >= PCI_CLOCK / 16) {
-        clockDiv = 8;
-      } else if (clock >= PCI_CLOCK / 32) {
-        clockDiv = 16;
-      } else if (clock >= PCI_CLOCK / 64) {
-        clockDiv = 32;
-      } else {
-        clockDiv = 64;
-      }
-    } else {
-      uint32_t clockSetting = PCI_CLOCK / 2;
-      clockDiv = 1;
-      while (clockDiv < 128 && clock < clockSetting) {
-        clockSetting /= 2;
-        clockDiv *= 2;
-      }
-    }
+    
+    if (clock == 0) clock = 1;
+    clockDiv = PCI_CLOCK / (2 * clock);
 
 	__clockDiv = clockDiv;
 	__bitOrder = bitOrder;
 	__dataMode = dataMode;
   }
+  int __clockDiv;
+  int __bitOrder;
+  int __dataMode;
   friend class SPIClass;
 };
 
@@ -116,7 +98,12 @@ private:
 class SPIClass {
 public:
   // Initialize the SPI library
-  static void begin();
+  SPIClass(uint8_t dev);
+  
+  void begin();
+  uint8_t transfer(uint8_t data);
+  uint16_t transfer16(uint16_t data);
+  void transfer(void *buf, size_t count);
 
   // If SPI is used from within an interrupt, this function registers
   // that interrupt with the SPI library, so beginTransaction() can
@@ -135,14 +122,14 @@ public:
   // Before using SPI.transfer() or asserting chip select pins,
   // this function is used to gain exclusive access to the SPI bus
   // and configure the correct settings.
-  inline static void beginTransaction(SPISettings settings) {
+  inline void beginTransaction(SPISettings settings) {
     if (interrupt_flag > 0) {
 	  io_DisableINT();
     }
 
-    setBitOrder(__bitOrder);
-	setDataMode(__dataMode);
-    setClockDivider(__clockDiv);
+    setBitOrder(settings.__bitOrder);
+	setDataMode(settings.__dataMode);
+    setClockDivider(settings.__clockDiv);
 
     #ifdef SPI_TRANSACTION_MISMATCH_LED
     if (inTransactionFlag) {
@@ -153,61 +140,9 @@ public:
     #endif
   }
 
-  // Write to the SPI bus (MOSI pin) and also receive (MISO pin)
-  inline static uint8_t transfer(uint8_t data) {
-    if(SPI_IOaddr == 0) return 0;
-	io_outpb(SPI_IOaddr, data);
-	while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-	while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-	return io_inpb(SPI_IOaddr + 1);
-  }
-  inline static uint16_t transfer16(uint16_t data) {
-    union { uint16_t val; struct { uint8_t lsb; uint8_t msb; }; } in, out;
-    if(SPI_IOaddr == 0) return 0;
-    in.val = data;
-
-    if (!(io_inpb(SPI_IOaddr + 7) & 0x20)) {
-      io_outpb(SPI_IOaddr, in.msb);
-      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-      out.msb = io_inpb(SPI_IOaddr + 1);
-      io_outpb(SPI_IOaddr, in.lsb);
-      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-      out.lsb = io_inpb(SPI_IOaddr + 1);
-    } else {
-      io_outpb(SPI_IOaddr, in.lsb);
-      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-      out.lsb = io_inpb(SPI_IOaddr + 1);
-      io_outpb(SPI_IOaddr, in.msb);
-      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-      out.msb = io_inpb(SPI_IOaddr + 1);
-    }
-    return out.val;
-  }
-  inline static void transfer(void *buf, size_t count) {
-    if(SPI_IOaddr == 0 || count == 0) return;
-
-    uint8_t *p = (uint8_t *)buf;
-    io_outpb(SPI_IOaddr, *p);
-    while (--count > 0) {
-      uint8_t out = *(p + 1);
-      while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-	  while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-      uint8_t in = io_inpb(SPI_IOaddr + 1);
-      io_outpb(SPI_IOaddr, out);
-      *p++ = in;
-    }
-    while((io_inpb(SPI_IOaddr + 3) & 0x08) == 0);
-	while((io_inpb(SPI_IOaddr + 3) & 0x20) == 0);
-    *p = io_inpb(SPI_IOaddr + 1);
-  }
-
   // After performing a group of transfers and releasing the chip select
   // signal, this function allows others to access the SPI bus
-  inline static void endTransaction(void) {
+  inline void endTransaction(void) {
     #ifdef SPI_TRANSACTION_MISMATCH_LED
     if (!inTransactionFlag) {
       pinMode(SPI_TRANSACTION_MISMATCH_LED, OUTPUT);
@@ -222,22 +157,26 @@ public:
   }
 
   // Disable the SPI bus
-  static void end();
+  void end();
 
   // These undocumented functions should not be used.  SPI.transfer()
   // polls the hardware flag which is automatically cleared as the
   // AVR responds to SPI's interrupt
-  inline static void attachInterrupt();
-  inline static void detachInterrupt(); // Default
+  void attachInterrupt();
+  void detachInterrupt(); // Default
 
-  static void setBitOrder(uint8_t);
-  static void setDataMode(uint8_t);
-  static void setClockDivider(uint16_t);
-  static void SPICS(uint8_t data);
-  static void setSS(uint8_t data);
-
+  void setBitOrder(uint8_t);
+  void setDataMode(uint8_t);
+  void setClockDivider(uint16_t);
+  void SPICS(uint8_t data);
+  void setSS(uint8_t data);
+  void SPICS1(uint8_t data);
+  void setSS1(uint8_t data);
 private:
-  static uint8_t initialized;
+  uint8_t spi_dev;
+  unsigned SPI_IOaddr;
+  
+  uint8_t initialized;
   static uint8_t interruptMode; // 0=none, 1=mask, 2=global
   static uint8_t interruptMask; // which interrupts to mask
   static uint8_t interruptSave; // temp storage, to restore state
@@ -248,15 +187,8 @@ private:
 };
 
 extern SPIClass SPI;
-
-void SPIClass::attachInterrupt() {
-	if(SPI_IOaddr == 0) return;
-	io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) | 0x01);
-}
-
-void SPIClass::detachInterrupt() {
-	if(SPI_IOaddr == 0) return;
-	io_outpb(SPI_IOaddr + 8, io_inpb(SPI_IOaddr + 8) & 0xFE);
-}
+#if defined (__86DUINO_EX2)
+extern SPIClass SPI1;
+#endif
 
 #endif

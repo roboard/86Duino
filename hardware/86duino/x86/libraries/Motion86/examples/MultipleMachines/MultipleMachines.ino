@@ -29,7 +29,7 @@
 Machine *machine[3];
 
 // Stepper driver enable pin.
-int EnablePin = 4;
+int EnablePin = 12;
 
 // The specific gocde files for each machine in the SD card storage.
 File gfile[3];

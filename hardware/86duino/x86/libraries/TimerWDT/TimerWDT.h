@@ -23,12 +23,16 @@
 #ifndef TIMERWDT_h
 #define TIMERWDT_h
 
+#include "v86board.h"
+
 class TimerWatchdogTimer {
 	public:
-		TimerWatchdogTimer(void);
+		TimerWatchdogTimer(int);
         ~TimerWatchdogTimer(void);
 		void initialize(long microseconds=500000L,bool type=false);
-		void attachInterrupt(void (*isr)(), long microseconds=-1, bool usingFPU=false);
+		void attachInterrupt(void (*isr)(), long microseconds=-1);
+        void attachRTInterrupt(void (*isr)(), long microseconds=-1);
+        void attachHTInterrupt(void (*isr)(), long microseconds=-1);
 		void detachInterrupt();
 		void setPeriod(long microseconds);
         void (*isrCallback)(); // isrCallback will be called in ISR (this behavior is same as TimerOne lib)
@@ -36,7 +40,23 @@ class TimerWatchdogTimer {
 		bool isResetByWDT();
 		void stop();
 		// unsigned int readTestCount();
+    private:
+        int selectedWDT;
+        bool timerWDTInit;
+        bool timerWDTIntEnable;
+        int wdt_mode;
+        void save_WDT_registers();
+        void restore_WDT_registers();
+        
+        void attachInterrupt(void (*isr)(), long microseconds, int _rt);
 };
 
+
+#if defined (__86DUINO_EX2)
 extern TimerWatchdogTimer TimerWDT;
+extern TimerWatchdogTimer TimerWDT1;
+#else
+extern TimerWatchdogTimer TimerWDT;
+#endif
+
 #endif

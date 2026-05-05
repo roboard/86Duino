@@ -110,11 +110,11 @@ bool RH_RF22::init()
     // yourself based on knowledge of what Arduino board you are running on.
     _deviceForInterrupt[_interruptCount] = this;
     if (_interruptCount == 0)
-		attachInterrupt(interruptNumber, isr0, FALLING);
+		attachRTInterrupt(interruptNumber, isr0, FALLING);
     else if (_interruptCount == 1)
-		attachInterrupt(interruptNumber, isr1, FALLING);
+		attachRTInterrupt(interruptNumber, isr1, FALLING);
     else if (_interruptCount == 2)
-		attachInterrupt(interruptNumber, isr2, FALLING);
+		attachRTInterrupt(interruptNumber, isr2, FALLING);
     else
 		return false; // Too many devices, not enough interrupt vectors
     _interruptCount++;

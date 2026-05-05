@@ -16,9 +16,9 @@ void setup()
     bus.begin(MODBUS_RTU, Serial485);
     
     /* Slave node 1 with ID 11. */
-    node1.begin(11, bus);
+    node1.attach(11, bus);
     /* Slave node 2 with ID 12. */
-    node2.begin(12, bus);
+    node2.attach(12, bus);
 }
 
 void loop()

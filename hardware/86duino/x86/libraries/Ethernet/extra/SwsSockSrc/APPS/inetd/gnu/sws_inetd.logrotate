@@ -1,0 +1,14 @@
+/var/log/sws_inetd.log {
+	daily
+	rotate 30
+	compress
+	delaycompress
+	missingok
+	notifempty
+	sharedscripts
+	postrotate
+    if [ -f /var/run/sws_inetd.pid ]; then
+      /etc/init.d/sws_inetd.d reload > /dev/null
+    fi
+	endscript
+}

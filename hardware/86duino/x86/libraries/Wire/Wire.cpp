@@ -27,12 +27,12 @@
 
 // Initialize Class Variables //////////////////////////////////////////////////
 
-uint8_t TwoWire::rxBuffer[BUFFER_LENGTH];
+uint8_t* TwoWire::rxBuffer = NULL;
 uint8_t TwoWire::rxBufferIndex = 0;
 uint8_t TwoWire::rxBufferLength = 0;
 
 uint8_t TwoWire::txAddress = 0;
-uint8_t TwoWire::txBuffer[BUFFER_LENGTH];
+uint8_t* TwoWire::txBuffer = NULL;
 uint8_t TwoWire::txBufferIndex = 0;
 uint8_t TwoWire::txBufferLength = 0;
 
@@ -42,11 +42,15 @@ void (*TwoWire::user_onReceive)(int) = NULL;
 
 // Constructors ////////////////////////////////////////////////////////////////
 
-TwoWire::TwoWire()
-{
+TwoWire::TwoWire(uint8_t dev) : i2c_dev(dev) {
+  i2c_buflen = BUFFER_LENGTH;
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
+
+void TwoWire::changeBufferLength(uint8_t buffsize) {
+  i2c_buflen = buffsize;
+}
 
 void TwoWire::begin(void)
 {
@@ -56,15 +60,35 @@ void TwoWire::begin(void)
   txBufferIndex = 0;
   txBufferLength = 0;
 
-  twi_init();
+  if (rxBuffer == NULL) rxBuffer = (uint8_t*) malloc(sizeof(uint8_t) * i2c_buflen);
+  if (txBuffer == NULL) txBuffer = (uint8_t*) malloc(sizeof(uint8_t) * i2c_buflen);
+  
+  twi_init(i2c_dev);
+  twi_wait_mode(1, 1);
+}
+
+void TwoWire::begin(bool wait)
+{
+  rxBufferIndex = 0;
+  rxBufferLength = 0;
+
+  txBufferIndex = 0;
+  txBufferLength = 0;
+
+  if (rxBuffer == NULL) rxBuffer = (uint8_t*) malloc(sizeof(uint8_t) * i2c_buflen);
+  if (txBuffer == NULL) txBuffer = (uint8_t*) malloc(sizeof(uint8_t) * i2c_buflen);
+  
+  twi_init(i2c_dev);
+  twi_wait_mode(wait, wait);
 }
 
 void TwoWire::begin(uint8_t address)
 {
   begin();
-  twi_setAddress(address);
-  twi_attachSlaveTxEvent(onRequestService);
-  twi_attachSlaveRxEvent(onReceiveService);
+  twi_setAddress(i2c_dev, address);
+  twi_attachSlaveTxEvent(i2c_dev, onRequestService);
+  twi_attachSlaveRxEvent(i2c_dev, onReceiveService);
+  twi_wait_mode(1, 1);
 }
 
 void TwoWire::begin(uint32_t speed, uint8_t address)
@@ -75,18 +99,47 @@ void TwoWire::begin(uint32_t speed, uint8_t address)
   txBufferIndex = 0;
   txBufferLength = 0;
 
-  twi_init(speed);
-  twi_setAddress(address);
-  twi_attachSlaveTxEvent(onRequestService);
-  twi_attachSlaveRxEvent(onReceiveService);
+  if (rxBuffer == NULL) rxBuffer = (uint8_t*) malloc(sizeof(uint8_t) * i2c_buflen);
+  if (txBuffer == NULL) txBuffer = (uint8_t*) malloc(sizeof(uint8_t) * i2c_buflen);
+  
+  twi_init(i2c_dev, speed);
+  twi_setAddress(i2c_dev, address);
+  twi_attachSlaveTxEvent(i2c_dev, onRequestService);
+  twi_attachSlaveRxEvent(i2c_dev, onReceiveService);
+  twi_wait_mode(1, 1);
 }
 
 void TwoWire::begin(int address)
 {
-  begin((uint8_t)address);
+    begin((uint8_t)address);
 }
 
-uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop)
+void TwoWire::end(void)
+{
+    twi_disable(i2c_dev);
+}
+
+void TwoWire::setClock(uint32_t speed)
+{
+    twi_setFrequency(i2c_dev, speed);
+}
+
+void TwoWire::setWireTimeout(uint32_t timeout, bool reset_with_timeout)
+{
+    twi_setTimeoutInMicros(i2c_dev, timeout, reset_with_timeout);
+}
+
+bool TwoWire::getWireTimeoutFlag(void)
+{
+    return (twi_manageTimeoutFlag(i2c_dev, false));
+}
+
+void TwoWire::clearWireTimeoutFlag(void)
+{
+    twi_manageTimeoutFlag(i2c_dev, true);
+}
+    
+uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop, uint8_t wait)
 {
   if(quantity == 0) return 0;
   
@@ -94,8 +147,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop
   if(quantity > BUFFER_LENGTH){
     quantity = BUFFER_LENGTH;
   }
+  
   // perform blocking read into buffer
-  uint8_t read = twi_readFrom(address, rxBuffer, quantity, sendStop);
+  uint8_t read = twi_readFrom(i2c_dev, address, rxBuffer, quantity, sendStop, wait);
 
   // set rx buffer iterator vars
   rxBufferIndex = 0;
@@ -104,22 +158,12 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop
   return read;
 }
 
-uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity)
+uint8_t TwoWire::requestFrom(int address, int quantity, int sendStop, int wait)
 {
-  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)true);
+  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)sendStop, (uint8_t)wait);
 }
 
-uint8_t TwoWire::requestFrom(int address, int quantity)
-{
-  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)true);
-}
-
-uint8_t TwoWire::requestFrom(int address, int quantity, int sendStop)
-{
-  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)sendStop);
-}
-
-void TwoWire::beginTransmission(uint8_t address)
+void TwoWire::beginTransmission(uint8_t address, uint8_t wait)
 {
   // indicate that we are transmitting
   transmitting = 1;
@@ -128,11 +172,17 @@ void TwoWire::beginTransmission(uint8_t address)
   // reset tx buffer iterator vars
   txBufferIndex = 0;
   txBufferLength = 0;
+  
+  twi_write_wait(wait);
 }
 
-void TwoWire::beginTransmission(int address)
+void TwoWire::beginTransmission(int address, int wait)
 {
-  beginTransmission((uint8_t)address);
+  beginTransmission((uint8_t)address, (uint8_t)wait);
+}
+
+bool TwoWire::isBusy() {
+  return twi_isBusy(i2c_dev);
 }
 
 //
@@ -152,7 +202,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 {
   //if(txBufferLength == 0) return 0;
   // transmit buffer (blocking)
-  int8_t ret = twi_writeTo(txAddress, txBuffer, txBufferLength, 1, sendStop);
+  int8_t ret = twi_writeTo(i2c_dev, txAddress, txBuffer, txBufferLength, 1, sendStop);
 
   // reset tx buffer iterator vars
   txBufferIndex = 0;
@@ -198,7 +248,7 @@ size_t TwoWire::write(uint8_t data)
   }else{
   // in slave send mode
     // reply to master
-    twi_transmit(&data, 1);
+    twi_transmit(i2c_dev, &data, 1);
   }
   return 1;
 }
@@ -220,7 +270,7 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
   }else{
   // in slave send mode
     // reply to master
-    twi_transmit(data, quantity);
+    twi_transmit(i2c_dev, data, quantity);
   }
   return quantity;
 }
@@ -269,7 +319,7 @@ void TwoWire::flush(void)
 }
 
 // behind the scenes function that is called when data is received
-void TwoWire::onReceiveService(uint8_t* inBytes, int numBytes)
+void TwoWire::onReceiveService(volatile uint8_t* inBytes, int numBytes)
 {
   // don't bother if user hasn't registered a callback
   if(user_onReceive == NULL){
@@ -321,9 +371,6 @@ void TwoWire::onRequest( void (*function)(void) )
 }
 
 
-
-
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 // Initialize Class Variables //////////////////////////////////////////////////
 
 uint8_t TwoWireLEGO::rxBuffer[BUFFER_LENGTH];
@@ -339,8 +386,7 @@ uint8_t TwoWireLEGO::transmitting = 0;
 
 // Constructors ////////////////////////////////////////////////////////////////
 
-TwoWireLEGO::TwoWireLEGO()
-{
+TwoWireLEGO::TwoWireLEGO(int dev) : i2c_dev(dev) {
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
@@ -357,7 +403,7 @@ void TwoWireLEGO::begin(unsigned long nHz)
   unsigned long _delay = 1000000L/nHz; // us
   if(_delay < 10L) _delay = 10L; // up to 50KHz
 
-  twisw_init(0, I2CSW_LEGO, _delay/2L, I2CSW_LEGO, _delay/2L);
+  twisw_init(i2c_dev, I2CSW_LEGO, _delay/2L, I2CSW_LEGO, _delay/2L);
 }
 
 uint8_t TwoWireLEGO::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop)
@@ -369,7 +415,7 @@ uint8_t TwoWireLEGO::requestFrom(uint8_t address, uint8_t quantity, uint8_t send
     quantity = BUFFER_LENGTH;
   }
 
-  uint8_t read = twisw_readFrom(address, rxBuffer, quantity, sendStop);
+  uint8_t read = twisw_readFrom(i2c_dev, address, rxBuffer, quantity, sendStop);
 
   rxBufferIndex = 0;
   rxBufferLength = read;
@@ -408,7 +454,7 @@ void TwoWireLEGO::beginTransmission(int address)
 
 uint8_t TwoWireLEGO::endTransmission(uint8_t sendStop)
 {
-  int8_t ret = twisw_writeTo(txAddress, txBuffer, txBufferLength, sendStop);
+  int8_t ret = twisw_writeTo(i2c_dev, txAddress, txBuffer, txBufferLength, sendStop);
 
   txBufferIndex  = 0;
   txBufferLength = 0;
@@ -484,7 +530,10 @@ void TwoWireLEGO::flush(void)
 
 
 // Preinstantiate Objects //////////////////////////////////////////////////////
-TwoWireLEGO WireLEGO = TwoWireLEGO();
-#endif
+TwoWireLEGO WireLEGO = TwoWireLEGO(0);
+TwoWire Wire = TwoWire(0);
 
-TwoWire Wire = TwoWire();
+#if defined (__86DUINO_EX2)
+TwoWire Wire1 = TwoWire(1);
+TwoWireLEGO Wire1LEGO = TwoWireLEGO(1);
+#endif

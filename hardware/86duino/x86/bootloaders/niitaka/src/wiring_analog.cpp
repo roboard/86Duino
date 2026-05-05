@@ -1,0 +1,289 @@
+/*
+  wanalog.cpp - analog input and output for 86duino
+  Copyright (c) 2013 Android Lin <acen@dmp.com.tw>. All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <conio.h>
+
+#include "Arduino.h"
+#include "io.h"
+#include "dmpcfg.h"
+#include "mcm.h"
+
+#define TimeOut		(1000)
+#define MCM_MC      (0)
+#define MCM_MD      (1)
+static int mc_md_inuse[PINS];
+
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+    #define BaseAddress (0xfe00)
+    #define ADC_RESOLUTION    (11) // for 86Duino EX
+#elif defined (__86DUINO_EX2)
+	static unsigned short ADC_BASEADDR[2] = {0, 0};
+	#define ADC_RESOLUTION    (12) // for 86Duino EX2
+#endif
+
+#define PWM_RESOLUTION    (13) // for 86duino
+
+void analogReference(uint8_t mode) {
+	return;
+}
+
+static int _readResolution = 10; // Arduino compatibility
+static int _writeResolution = 8; // Arduino compatibility
+void analogReadResolution(int res) {
+	_readResolution = res;
+}
+
+void analogWriteResolution(int res) {
+	_writeResolution = res;
+}
+
+static unsigned long mapResolution(unsigned long value, unsigned long from, unsigned long to) {
+	if (from == to)
+		return value;
+	if (from > to)
+		return value >> (from-to);
+	else
+		return value << (to-from);
+}
+
+
+void Close_Pwm(uint8_t pin) {
+	int mc, md;
+	if(pin >= PINS || PIN86[pin].gpN == NOUSED || mc_md_inuse[pin] == 0) return;
+
+	mc = PIN86[pin].PWMMC;
+	md = PIN86[pin].PWMMD;
+
+    io_DisableINT();
+    mcpwm_Disable(mc, md);
+    mc_md_inuse[pin] = 0;
+    io_RestoreINT();
+}
+
+#if defined (__86DUINO_EX2)
+void init_ADC(void) {
+    int i;
+    void* handle;
+    unsigned short ADC_Addr;
+    
+    handle = pci_Alloc(0, 7, 1);
+	pci_Out8(handle, 0xde,0x03);  // Not Available for 8051A Access ADC0 & ADC1
+	pci_Free(handle);
+	
+	if (io_inpdw(HYB_BASEADDRESS + 0x18L) != 0xFFFFFFFF)
+    {
+        ADC_Addr = io_inpw(HYB_BASEADDRESS + 0x18L) & 0xfff0;  // Read base address1
+        if (ADC_Addr == 0)
+        {
+            io_outpdw(HYB_BASEADDRESS + 0x18L, 0x7010fe01);
+            ADC_BASEADDR[0] = 0xfe00;
+        }
+        else
+            ADC_BASEADDR[0] = ADC_Addr;
+    }
+    
+    if (io_inpdw(HYB_BASEADDRESS + 0x1cL) != 0xFFFFFFFF)
+    {
+        ADC_Addr = io_inpw(HYB_BASEADDRESS + 0x1cL) & 0xfff0;  // Read base address1
+        if (ADC_Addr == 0)
+        {
+            io_outpdw(HYB_BASEADDRESS + 0x1cL, 0x7010fe11);
+            ADC_BASEADDR[1] = 0xfe10;
+        }
+        else
+            ADC_BASEADDR[1] = ADC_Addr;
+    }
+    
+    if (ADC_BASEADDR[0] != 0) for(i=0; (io_inpb(ADC_BASEADDR[0] + 0x02) & 0x01) != 0 && i<16; i++) io_inpb(ADC_BASEADDR[0] + 0x04); // clear ADC FIFO
+    if (ADC_BASEADDR[1] != 0) for(i=0; (io_inpb(ADC_BASEADDR[1] + 0x02) & 0x01) != 0 && i<16; i++) io_inpb(ADC_BASEADDR[1] + 0x04); // clear ADC FIFO
+    
+    for(i=0; i<PINS; i++) mc_md_inuse[i] = 0;
+}
+#endif
+
+int analogRead(uint8_t adpin) {
+	unsigned long d, t;
+	uint8_t pin;
+    int ad_index = 0;
+	
+	if(adpin >= PINS || PIN86[adpin].AD == NOAD) return 0xffff;
+	pin = PIN86[adpin].AD;
+
+#if defined (__86DUINO_EX2)
+    if (pin > 3) 
+    {
+        ad_index = 1;
+        pin = pin - 4;
+    }
+    if (ADC_BASEADDR[ad_index] == 0) return 0xffff;
+    
+	io_outpb(CROSSBARBASE + 0x120 + (ad_index*8) + pin, 0x10);
+
+    io_DisableINT();
+
+	io_outpb(ADC_BASEADDR[ad_index] + 0, (0x01<<pin));
+	io_outpb(ADC_BASEADDR[ad_index] + 1, 0x01); // enable ADC_ST
+	for(t=timer_NowTime();(io_inpb(ADC_BASEADDR[ad_index] + 2) & 0x01) == 0;)
+    {
+		if((timer_NowTime() - t) >= 1000L)
+        {
+			io_RestoreINT();
+			return 0xffff;
+		}
+    }
+    d = io_inpw(ADC_BASEADDR[ad_index] + 4);
+    //printf("pin = %d\n", (d&0xE000)>>13);
+    io_RestoreINT();
+    while(io_inpb(ADC_BASEADDR[ad_index] + 1) & 0x01 > 0);
+
+	d = mapResolution((d&0x0fffL), ADC_RESOLUTION, _readResolution);
+#elif defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+    io_DisableINT();
+
+	io_outpb(BaseAddress + 1, 0x08); // disable ADC
+	io_outpb(BaseAddress + 0, (0x01<<pin));
+	io_outpb(BaseAddress + 1, 0x01); // enable ADC_ST
+	for(t=timer_NowTime();(io_inpb(BaseAddress + 2) & 0x01) == 0;)
+    {
+		if((timer_NowTime() - t) >= 1000L)
+        {
+			io_RestoreINT();
+			return 0xffff;
+		}
+    }
+    d = io_inpw(BaseAddress + 4);
+
+    io_RestoreINT();
+
+	d = mapResolution((d&0x7ffL), ADC_RESOLUTION, _readResolution);
+#endif
+
+	return d;
+}
+
+#define MAX_RESOLUTION    (100000L)
+void analogWrite(uint8_t pin, uint32_t val) {
+	float unit;
+	int mc, md;
+
+	if(pin >= PINS || PIN86[pin].gpN == NOUSED) return;
+	pinMode(pin, OUTPUT);
+
+	if (val == 0L)
+		digitalWrite(pin, LOW);
+	else if (val >= ((0x00000001L<<_writeResolution)-1))
+		digitalWrite(pin, HIGH);
+	else
+	{
+	    mc = PIN86[pin].PWMMC;
+	    md = PIN86[pin].PWMMD;
+
+	    if(mc == NOPWM || md == NOPWM)
+		{
+			if (val < (0x00000001L<<(_writeResolution-1)))
+				digitalWrite(pin, LOW);
+			else
+				digitalWrite(pin, HIGH);
+			return;
+	    }
+
+	    // Init H/W PWM
+        io_DisableINT();
+
+	    if(mc_md_inuse[pin] == 0)
+		{
+			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
+			mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
+			mcpwm_SetOutPolarity(mc, md, MCPWM_HPOL_NORMAL + MCPWM_LPOL_NORMAL);
+			mcpwm_SetDeadband(mc, md, 0L);
+			mcpwm_ReloadOUT_Unsafe(mc, md, MCPWM_RELOAD_NOW);
+
+			mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
+			mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
+	    }
+
+	    val = mapResolution(val, _writeResolution, PWM_RESOLUTION);
+	    unit = ((float)MAX_RESOLUTION)/((float)(0x00000001L<<PWM_RESOLUTION));
+
+        if(mcpwm_ReadReloadPWM(mc, md) != 0) mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
+        mcpwm_SetWidth(mc, md, 1000L*SYSCLK, ((float)val)*unit);
+	    mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
+	    if(mc_md_inuse[pin] == 0)
+		{
+			mcpwm_Enable(mc, md);
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+			io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+#elif defined (__86DUINO_EX2)
+            io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+#endif
+			mc_md_inuse[pin] = 1;
+	    }
+
+        io_RestoreINT();
+	}
+}
+
+double cpuTemperature(void) {
+    return cpuTemperature(DEGREE_C);
+}
+
+double cpuTemperature(uint8_t unit) {
+	unsigned long d;
+	double temperature;
+
+    io_DisableINT();
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+    sb1_Write(0xe0, sb1_Read(0xe0) | (0x01L<<21));
+	io_outpb(BaseAddress + 1, 0x08); // disable ADC
+	io_outpb(BaseAddress + 0, 0x80); // ex: any pin is temperature pin
+	io_outpb(BaseAddress + 1, 0x01); // enable ADC_ST
+	for(int i=0; i<20; i++) io_inpb(BaseAddress + 2);
+	if((io_inpb(BaseAddress + 2) & 0x01) == 0)
+    {
+        io_RestoreINT();
+        return 0xffff;
+    }
+    d = io_inpw(BaseAddress + 4);
+	sb1_Write(0xe0, sb1_Read(0xe0) & ~(0x01L<<21));
+#elif defined (__86DUINO_EX2)
+	io_outpb(HYB_BASEADDRESS + 0x1a, 0x30);
+	io_outpb(ADC_BASEADDR[0] + 1, 0x08); // disable ADC
+	io_outpb(ADC_BASEADDR[0] + 0, 0x80); // ex: any pin is temperature pin
+	io_outpb(ADC_BASEADDR[0] + 1, 0x01); // enable ADC_ST
+	for(int i=0; i<20; i++) io_inpb(ADC_BASEADDR[0] + 2);
+	if((io_inpb(ADC_BASEADDR[0] + 2) & 0x01) == 0)
+    {
+        io_RestoreINT();
+        return 0xffff;
+    }
+    d = io_inpw(ADC_BASEADDR[0] + 4);
+	io_outpb(HYB_BASEADDRESS + 0x1a, 0x10);
+#endif
+	io_RestoreINT();
+
+	temperature = 0.2173913*(d&0x7ffL)-66.0;
+
+	if(unit == DEGREE_F) temperature = (temperature * 1.8) + 32.0;
+
+	return temperature;
+}
+

@@ -67,13 +67,13 @@ bool RH_RF95::init()
     // yourself based on knwledge of what Arduino board you are running on.
     _deviceForInterrupt[_interruptCount] = this;
     if (_interruptCount == 0)
-	attachInterrupt(interruptNumber, isr0, RISING);
+	   attachRTInterrupt(interruptNumber, isr0, RISING);
     else if (_interruptCount == 1)
-	attachInterrupt(interruptNumber, isr1, RISING);
+	   attachRTInterrupt(interruptNumber, isr1, RISING);
     else if (_interruptCount == 2)
-	attachInterrupt(interruptNumber, isr2, RISING);
+	   attachRTInterrupt(interruptNumber, isr2, RISING);
     else
-	return false; // Too many devices, not enough interrupt vectors
+	   return false; // Too many devices, not enough interrupt vectors
     _interruptCount++;
 
 

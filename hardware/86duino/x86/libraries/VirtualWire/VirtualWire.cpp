@@ -294,23 +294,23 @@ void vw_pll()
 static char* isrname_one = "VirtualWire";
 static int virtualwire_isr_handler(int irq, void* data);
 static bool virtualWireInit = false;
-static int mc = 3, md = 2;
+static int mc = 7, md = 2;
 
 /*****************/
 /*   Interrupt   */                                                                       
 /*****************/
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(unsigned long used_int) {
-    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]);
 }
 
 static void disable_MCINT(unsigned long used_int) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) | (1L << (mc%4)), mc/4);
 }
 
 static void enable_MCINT(unsigned long used_int) {
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) & ~(1L << (mc%4)), mc/4);
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
@@ -329,7 +329,7 @@ static bool init_mc_irq(void) {
 	static bool VirtualWireInitInt = false;
 	if(VirtualWireInitInt == false)
 	{	
-		if(irq_InstallISR(GetMCIRQ(), virtualwire_isr_handler, isrname_one) == false)
+		if(irq_InstallISR(GetMCIRQ(mc/4), virtualwire_isr_handler, isrname_one) == false)
 		{
 		    printf("irq_install fail\n");
 			return false;

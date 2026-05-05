@@ -130,7 +130,7 @@ void FirmataClass::beginBlueTooth(HardwareSerial &s, unsigned long speed)
     Serial.println("Serial port setting error\n");
     return;
   }
-  #elif defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+  #elif defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
   if (s == Serial1 || s == Serial2 || s == Serial3)
     s.begin(speed);
   else

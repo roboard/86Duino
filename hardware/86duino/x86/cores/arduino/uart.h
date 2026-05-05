@@ -1,6 +1,6 @@
 /*
   uart.h - DM&P Vortex86 UART library
-  Copyright (c) 2013 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
+  Copyright (c) 2018 Johnson Hung <Dyhung@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -110,6 +110,18 @@ typedef volatile struct serial_port
 	// -------------------------------- //
 	int (*recv)(volatile struct serial_port *port, unsigned char* buf, int bsize);
 	int (*send)(volatile struct serial_port *port, unsigned char* buf, int bsize);
+    
+	// -------------------------------- //
+	//           TX/RX Handler          //
+	// -------------------------------- //
+    void (*tx_handler)(volatile struct serial_port *port);
+    void (*rx_handler)(volatile struct serial_port *port);
+    
+    unsigned long fabase;
+    unsigned long gibase;
+    
+    unsigned char RxHwBuf[4];
+    
 	 
 } SerialPort;
 
@@ -135,33 +147,34 @@ DMPAPI(void) uart_Close(void *vport);
 // #define MAX_BAUD_115200B			(5)
 
 DMPAPI(bool) uart_SetBaud(void *vport, unsigned long baud);
-#define UARTBAUD_6000000BPS         (0xC001FFFFUL)
-#define UARTBAUD_3000000BPS         (0xC002FFFFUL)
-#define UARTBAUD_2000000BPS         (0xC003FFFFUL)
-#define UARTBAUD_1500000BPS         (0xC004FFFFUL)
-#define UARTBAUD_1000000BPS         (0xC006FFFFUL)
-#define UARTBAUD_750000BPS          (0xC0088002UL)
-#define UARTBAUD_500000BPS          (0xC00C8003UL)
-#define UARTBAUD_461538BPS          (0xC00DFFFFUL)
-#define UARTBAUD_333333BPS          (0xC012FFFFUL)
-#define UARTBAUD_300000BPS          (0xC0148005UL)
-#define UARTBAUD_250000BPS          (0x800C8006UL)
-#define UARTBAUD_200000BPS          (0x800FFFFFUL)
-#define UARTBAUD_150000BPS          (0x8014800AUL)
-#define UARTBAUD_125000BPS          (0x8018800CUL)
-#define UARTBAUD_115200BPS          (0x00010001UL)
-#define UARTBAUD_57600BPS           (0x00020002UL)
-#define UARTBAUD_38400BPS           (0x00030003UL)
-#define UARTBAUD_28800BPS           (0x00040004UL)
-#define UARTBAUD_19200BPS           (0x00060006UL)
-#define UARTBAUD_14400BPS           (0x00080008UL)
-#define UARTBAUD_9600BPS            (0x000C000CUL)
-#define UARTBAUD_4800BPS            (0x00180018UL)
-#define UARTBAUD_2400BPS            (0x00300030UL)
-#define UARTBAUD_1200BPS            (0x00600060UL)
-#define UARTBAUD_600BPS             (0x00C000C0UL)
-#define UARTBAUD_300BPS             (0x01800180UL)
-#define UARTBAUD_50BPS              (0x09000900UL)
+#define UARTBAUD_6000000BPS         (6000000UL)
+#define UARTBAUD_3000000BPS         (3000000UL)
+#define UARTBAUD_2000000BPS         (2000000UL)
+#define UARTBAUD_1500000BPS         (1500000UL)
+#define UARTBAUD_1000000BPS         (1000000UL)
+#define UARTBAUD_750000BPS          (750000UL)
+#define UARTBAUD_500000BPS          (500000UL)
+#define UARTBAUD_461538BPS          (461538UL)
+#define UARTBAUD_333333BPS          (333333UL)
+#define UARTBAUD_300000BPS          (300000UL)
+#define UARTBAUD_250000BPS          (250000UL)
+#define UARTBAUD_230400BPS          (230400UL)
+#define UARTBAUD_200000BPS          (200000UL)
+#define UARTBAUD_150000BPS          (150000UL)
+#define UARTBAUD_125000BPS          (125000UL)
+#define UARTBAUD_115200BPS          (115200UL)
+#define UARTBAUD_57600BPS           (57600UL)
+#define UARTBAUD_38400BPS           (38400UL)
+#define UARTBAUD_28800BPS           (28800UL)
+#define UARTBAUD_19200BPS           (19200UL)
+#define UARTBAUD_14400BPS           (14400UL)
+#define UARTBAUD_9600BPS            (9600UL)
+#define UARTBAUD_4800BPS            (4800UL)
+#define UARTBAUD_2400BPS            (2400UL)
+#define UARTBAUD_1200BPS            (1200UL)
+#define UARTBAUD_600BPS             (600UL)
+#define UARTBAUD_300BPS             (300UL)
+#define UARTBAUD_50BPS              (50UL)
 DMPAPI(void) uart_SetFormat(void *vport, unsigned char format);
 #define BYTESIZE5          (0x00)
 #define BYTESIZE6          (0x01)
@@ -177,15 +190,14 @@ DMPAPI(void) uart_SetFlowControl(void *vport, int control);
 #define RTS_CTS            (1)
 #define XON_XOFF           (2)
 DMPAPI(void) uart_SetTimeOut(void *vport, unsigned long rx_timeout, unsigned long tx_timeout);
-#define UART_NO_TIMEOUT         (-1)
+#define UART_NO_TIMEOUT         (~0UL)
 DMPAPI(unsigned char) uart_GetLSR(void *vport);
 DMPAPI(unsigned char) uart_GetMSR(void *vport);
 
 DMPAPI(void) uart_SetHWFIFO(void *vport, int fifo);
-#define DISABLE_HW_FIFO		(1)
-#define ENABLE_HW_FIFO_16	(16)
-#define ENABLE_HW_FIFO_32	(32)
-#define ENABLE_HW_FIFO_128	(128)
+#define DISABLE_HW_FIFO		    (0)
+#define ENABLE_HW_NORMAL_FIFO	(1)
+#define ENABLE_HW_TURBO_FIFO	(2)
 DMPAPI(bool) uart_SetWFIFOSize(void *vport, int size); // setup after enable/disable fifo
 
 DMPAPI(void) uart_ClearRFIFO(void *vport);
@@ -229,6 +241,9 @@ DMPAPI(void) uart_EnableFullDuplex(void *vport);
 
 DMPAPI(void) uart_EnableDebugMode(void *vport);
 DMPAPI(void) uart_DisableDebugMode(void *vport);
+
+DMPAPI(void) uart_CheckGlobalInterruptEnable(void *vport);
+DMPAPI(void) uart_CheckGlobalInterruptDisable(void *vport);
 
 #ifdef __cplusplus
 }

@@ -65,6 +65,8 @@ class KeyboardController : public USBHost, public USBDeviceConfig
 		uint8_t getKey()       { return keyascii; };
 		uint8_t getModifiers() { return modifiers; };
 		uint8_t getOemKey()    { return keyOem; };
+        int getScode()         { return ex2SlaveCode; };
+        uint8_t getMod()       { return mod; };
 		void handleEvent(void);
 		
 	protected:
@@ -72,7 +74,8 @@ class KeyboardController : public USBHost, public USBDeviceConfig
 		void OnKeyUp(uint8_t mod, uint8_t key);
 		
 	private:
-		uint8_t keyascii, keyOem, modifiers;
+        int ex2SlaveCode;
+		uint8_t keyascii, keyOem, modifiers, mod;
 		void handleLockingKeys(int scode);
 		void KeyboardEvent(bool press, int scode);
 		uint8_t OemToAscii(uint8_t mod, uint8_t key);
@@ -93,6 +96,9 @@ class MouseController : public USBHost, public USBDeviceConfig
 		int getXChange();
 		int getYChange();
 		void handleEvent(void);
+        unsigned char getMouseB() { return ex2SlaveData1; };
+        int getMsDx() { return ex2SlaveData2; };
+        int getMsDy() { return ex2SlaveData3; };
 
 	protected:
 		void OnMouseMove(int msdx, int msdy);
@@ -104,8 +110,9 @@ class MouseController : public USBHost, public USBDeviceConfig
 		void OnRightButtonDown(void);
 
 	private:
-		int dx, dy;
+		int dx, dy, ex2SlaveData2, ex2SlaveData3;
 		int buttons;
+        unsigned char ex2SlaveData1;
 };
 
 #endif

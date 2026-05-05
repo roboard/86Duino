@@ -27,23 +27,23 @@
 void (*MsTimer2::func)();
 
 #define TIMER_PIN    (32) // It is a PWM pin (like analogWrite), but it is used as a timer here.
-static int mc = 3;
+static int mc = 7;
 static int md = 1;
 /*****************/
 /*   Interrupt   */                                                                       
 /*****************/
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(unsigned long used_int) {
-    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]);
 }
 
 static void disable_MCINT(unsigned long used_int) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) | (1L << (mc%4)), mc/4);
 }
 
 static void enable_MCINT(unsigned long used_int) {
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) & ~(1L << (mc%4)), mc/4);
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
@@ -64,7 +64,7 @@ static bool init_mc_irq(void) {
 	static bool timerTwoInitInt = false;
 	if(timerTwoInitInt == false)
 	{	
-		if(irq_InstallISR(GetMCIRQ(), timer2_isr_handler, isrname_one) == false)
+		if(irq_InstallISR(GetMCIRQ(mc/4), timer2_isr_handler, isrname_one) == false)
 		{
 		    printf("irq_install fail\n"); return false;
 		}

@@ -26,8 +26,8 @@
 #ifndef ModbusMaster_h
 #define ModbusMaster_h
 
-#include "HardwareSerial.h"
-#include "IPAddress.h"
+#include "SerialInterface.h"
+#include "Ethernet.h"
 #include "ModbusCommon.h"
 
 #ifndef lowWord
@@ -44,96 +44,98 @@
 
 class ModbusGateway;
 
-class ModbusMaster {
-    public:
-        ModbusMaster();
-        
-        bool begin(int mode, HardwareSerial &serial);
-        bool begin(int mode, IPAddress &modbus_server_ip);
-        
-        void setTimeout(uint32_t milliseconds);
-        
-        uint8_t readCoils(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
-        uint8_t readDiscreteInputs(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
-        uint8_t readHoldingRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
-        uint8_t readInputRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
-        uint8_t writeSingleCoil(uint8_t slave_id, uint16_t address, uint16_t value);
-        uint8_t writeSingleRegister(uint8_t slave_id, uint16_t address, uint16_t value);
-        uint8_t writeMultipleCoils(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
-        uint8_t writeMultipleRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
-        uint8_t maskWriteRegister(uint8_t slave_id, uint16_t address, uint16_t and_mask, uint16_t or_mask);
-        uint8_t readWriteMultipleRegisters(uint8_t slave_id,
-                                           uint16_t write_address, uint16_t write_size, uint16_t *write_data,
-                                           uint16_t read_address, uint16_t read_size, uint16_t *read_data);
-        
-    private:
-        enum { MODBUS_BIT_BUFFER_SIZE = 0x7B0 };
-        
-        unsigned long timeout;
-        
-        ModbusGateway *gateway;
-        
-        int _mode;
-        void *mbus;
-        uint8_t bitData[MODBUS_BIT_BUFFER_SIZE];
-        
-        uint8_t getErrorNumber(int err);
-        
-        friend class ModbusMasterNode;
-        friend class ModbusGateway;
+class ModbusMaster
+{
+public:
+    ModbusMaster();
+    ~ModbusMaster();
+
+    bool begin(int mode, SerialInterface &serial);
+    bool begin(int mode, IPAddress &modbus_server_ip, uint16_t modbus_server_port = 502);
+    bool begin(int mode, IPAddress &modbus_server_ip, uint16_t modbus_server_port, EthernetClass &ethernet);
+    void end();
+
+    void setTimeout(uint32_t milliseconds);
+
+    uint8_t readCoils(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
+    uint8_t readDiscreteInputs(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
+    uint8_t readHoldingRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
+    uint8_t readInputRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
+    uint8_t writeSingleCoil(uint8_t slave_id, uint16_t address, uint16_t value);
+    uint8_t writeSingleRegister(uint8_t slave_id, uint16_t address, uint16_t value);
+    uint8_t writeMultipleCoils(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
+    uint8_t writeMultipleRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data);
+    uint8_t maskWriteRegister(uint8_t slave_id, uint16_t address, uint16_t and_mask, uint16_t or_mask);
+    uint8_t readWriteMultipleRegisters(uint8_t slave_id,
+                                       uint16_t write_address, uint16_t write_size, uint16_t *write_data,
+                                       uint16_t read_address, uint16_t read_size, uint16_t *read_data);
+
+private:
+    ModbusGateway *gateway;
+
+    void *_privateData;
+    void *getModbusHandle();
+    int getModbusMode();
+    uint32_t getTimeout();
+    uint8_t getErrorNumber(int err);
+
+    friend class ModbusMasterNode;
+    friend class ModbusGateway;
 };
 
-class ModbusMasterNode {
-    public:
-        ModbusMasterNode();
-        
-        bool begin(ModbusMaster &bus);
-        bool begin(uint8_t slave_id, ModbusMaster &bus);
-        
-        uint16_t getResponseBuffer(uint8_t, int mode = MODBUS_DATAMODE_UINT16);
-        void     clearResponseBuffer();
-        uint8_t  setTransmitBuffer(uint8_t, uint16_t, int mode = MODBUS_DATAMODE_UINT16);
-        void     clearTransmitBuffer();
+class ModbusMasterNode
+{
+public:
+    ModbusMasterNode();
 
-        void beginTransmission(uint16_t);
-        void sendBit(bool);
-        void send(uint8_t);
-        void send(uint16_t);
-        void send(uint32_t);
-        uint8_t available(void);
-        uint16_t receive(void);
+    bool attach(ModbusMaster &bus);
+    bool attach(uint8_t slave_id, ModbusMaster &bus);
+    bool begin(ModbusMaster &bus);
+    bool begin(uint8_t slave_id, ModbusMaster &bus);
 
-        uint8_t readCoils(uint16_t, uint16_t);
-        uint8_t readDiscreteInputs(uint16_t, uint16_t);
-        uint8_t readHoldingRegisters(uint16_t, uint16_t);
-        uint8_t readInputRegisters(uint16_t, uint16_t);
-        uint8_t writeSingleCoil(uint16_t, uint16_t);
-        uint8_t writeSingleRegister(uint16_t, uint16_t);
-        uint8_t writeMultipleCoils(uint16_t, uint16_t);
-        uint8_t writeMultipleCoils();
-        uint8_t writeMultipleRegisters(uint16_t, uint16_t);
-        uint8_t writeMultipleRegisters();
-        uint8_t maskWriteRegister(uint16_t, uint16_t, uint16_t);
-        uint8_t readWriteMultipleRegisters(uint16_t, uint16_t, uint16_t, uint16_t);
-        uint8_t readWriteMultipleRegisters(uint16_t, uint16_t);
+    uint16_t getResponseBuffer(int, int mode = MODBUS_DATAMODE_UINT16);
+    void clearResponseBuffer();
+    uint8_t setTransmitBuffer(int, uint16_t, int mode = MODBUS_DATAMODE_UINT16);
+    void clearTransmitBuffer();
 
-    private:
-        enum { MODBUS_BUFFER_SIZE = 0x7B };
-    
-        ModbusMaster *master;
-        uint8_t slaveID;
+    void beginTransmission(uint16_t);
+    void sendBit(bool);
+    void send(uint8_t);
+    void send(uint16_t);
+    void send(uint32_t);
+    uint8_t available(void);
+    uint16_t receive(void);
 
-        uint16_t readData[MODBUS_BUFFER_SIZE];
-        uint8_t  readSize;
-        uint8_t  readIndex;
-        
-        uint16_t writeData[MODBUS_BUFFER_SIZE];
-        uint16_t writeAddress;
-        uint8_t  writeSize;
-        uint8_t  writeCoilSize;
-        
-        friend class ModbusMaster;
-        friend class ModbusGateway;
+    uint8_t readCoils(uint16_t, uint16_t);
+    uint8_t readDiscreteInputs(uint16_t, uint16_t);
+    uint8_t readHoldingRegisters(uint16_t, uint16_t);
+    uint8_t readInputRegisters(uint16_t, uint16_t);
+    uint8_t writeSingleCoil(uint16_t, uint16_t);
+    uint8_t writeSingleRegister(uint16_t, uint16_t);
+    uint8_t writeMultipleCoils(uint16_t, uint16_t);
+    uint8_t writeMultipleCoils();
+    uint8_t writeMultipleRegisters(uint16_t, uint16_t);
+    uint8_t writeMultipleRegisters();
+    uint8_t maskWriteRegister(uint16_t, uint16_t, uint16_t);
+    uint8_t readWriteMultipleRegisters(uint16_t, uint16_t, uint16_t, uint16_t);
+    uint8_t readWriteMultipleRegisters(uint16_t, uint16_t);
+
+private:
+    enum { MODBUS_BUFFER_SIZE = 250 };
+
+    ModbusMaster *master;
+    uint8_t slaveID;
+
+    uint16_t readData[MODBUS_BUFFER_SIZE];
+    uint8_t  readSize;
+    uint8_t  readIndex;
+
+    uint16_t writeData[MODBUS_BUFFER_SIZE];
+    uint16_t writeAddress;
+    uint8_t  writeSize;
+    uint8_t  writeCoilSize;
+
+    friend class ModbusGateway;
 };
 
 #endif

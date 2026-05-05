@@ -120,7 +120,7 @@ DMPAPI(unsigned long) timer_NowTime(void) {
         for (i=3; i>=0; i--)
         {
             nowclocks_h = (nowclocks_h << 8) + (unsigned long)((unsigned char*)&nowclocks_l)[i];
-            nowtime     = nowtime << 8 + nowclocks_h / clocks_per_ms;
+            nowtime     = (nowtime << 8) + nowclocks_h / clocks_per_ms;
             nowclocks_h = nowclocks_h % clocks_per_ms;
         }
 

@@ -47,6 +47,7 @@
 
 #include "Arduino.h"
 #include "ccspi.h"
+#include "mcm.h"
 #include "utility/hci.h"
 #include "utility/netapp.h"
 #include "utility/evnt_handler.h"
@@ -547,7 +548,7 @@ void SpiResumeSpi(void)
   DEBUGPRINT_F("\tCC3000: SpiResumeSpi\n\r");
 
   ccspi_int_enabled = 1;
-  attachInterrupt(g_IRQnum, SPI_IRQ, FALLING);
+  attachRTInterrupt(g_IRQnum, SPI_IRQ, FALLING);
 }
 
 /**************************************************************************/
@@ -644,7 +645,7 @@ void WlanInterruptEnable()
   DEBUGPRINT_F("\tCC3000: WlanInterruptEnable.\n\r");
   // delay(100);
   ccspi_int_enabled = 1;
-  attachInterrupt(g_IRQnum, SPI_IRQ, FALLING);
+  attachRTInterrupt(g_IRQnum, SPI_IRQ, FALLING);
 }
 
 /**************************************************************************/

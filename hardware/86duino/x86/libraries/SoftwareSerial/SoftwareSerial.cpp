@@ -43,26 +43,38 @@ typedef struct _DELAY_TABLE
 #define pgm_read_word(word)   (*(unsigned short*)(word))
 #define pgm_read_dword(dword) (*(unsigned long*)(dword))
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
-// time unit is microseconds
-static const DELAY_TABLE table[] = 
-{
-	//  baud    rxcenter   rxintra    rxstop    tx
-	{ 19200,     0,        50,        50,       49,   },
-	{ 14400,     9,        67,        67,       66,   },
-	{ 9600,     26,        100,       100,      100,  },
-	{ 4800,     78,        204,       204,      204,  },
-	{ 2400,     182,       410,       410,      412,  },
-	{ 1200,     390,       826,       826,      828,  },
-	{ 600,      806,       1654,      1654,     1660, },
-	{ 300,      1638,      3308,      3308,     3324, },
-};
-
-// static int pinMap2[EXTERNAL_NUM_INTERRUPTS] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38};
-
+#if defined (__86DUINO_EX)
+	// time unit is microseconds
+	static const DELAY_TABLE table[] =
+	{
+		//  baud    rxcenter   rxintra    rxstop    tx
+		{ 19200,     0,        50,        50,       49,   },
+		{ 14400,     9,        67,        67,       66,   },
+		{ 9600,     26,        100,       100,      100,  },
+		{ 4800,     78,        204,       204,      204,  },
+		{ 2400,     182,       410,       410,      412,  },
+		{ 1200,     390,       826,       826,      828,  },
+		{ 600,      806,       1654,      1654,     1660, },
+		{ 300,      1638,      3308,      3308,     3324, },
+	};
+#elif defined (__86DUINO_EX2)
+	static const DELAY_TABLE table[] =
+	{
+		//  baud    rxcenter   rxintra    rxstop    tx
+		{ 19200,    5,         50,        50,       49,   },
+		{ 14400,    15,        67,        67,       66,   },
+		{ 9600,     30,        100,       100,      100,  },
+		{ 4800,     78,        204,       204,      204,  },
+		{ 2400,     182,       410,       410,      412,  },
+		{ 1200,     390,       826,       826,      828,  },
+		{ 600,      806,       1654,      1654,     1660, },
+		{ 300,      1638,      3308,      3308,     3324, },
+	};
 #else
 	#error This version of SoftwareSerial supports only 20, 16 and 8MHz processors
 #endif
+
+// static int pinMap2[EXTERNAL_NUM_INTERRUPTS] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38};
 
 //
 // Statics
@@ -96,7 +108,7 @@ bool SoftwareSerial::listen()
 		for(i=0; i<EXTERNAL_NUM_INTERRUPTS; i++)
 			if(INTPINSMAP[i] == _receivePin) break;
 		if(i == EXTERNAL_NUM_INTERRUPTS) i = 0;
-		attachInterrupt(i, SoftwareSerial::handle_interrupt, FALLING);
+		attachRTInterrupt(i, SoftwareSerial::handle_interrupt, FALLING);
 		return true;
 	}
 	
@@ -109,7 +121,11 @@ bool SoftwareSerial::listen()
 void SoftwareSerial::recv()
 {
 	uint8_t d = 0;
-	io_outpb(CROSSBARBASE + 0x90 + PIN86[_receivePin].gpN, 0x01); // switch to GPIO
+#if defined (__86DUINO_EX)
+    io_outpb(CROSSBARBASE + 0x90 + PIN86[_receivePin].gpN, 0x01); // switch to GPIO
+#elif defined (__86DUINO_EX2)
+	io_outpb(CROSSBARBASE + 0x100 + PIN86[_receivePin].gpN, 0x08); // switch to GPIO
+#endif
 	// If RX line is high, then we don't see any start bit
 	// so interrupt is probably not for us
 	if (_inverse_logic ? rx_pin_read() : !rx_pin_read())
@@ -149,7 +165,11 @@ void SoftwareSerial::recv()
 			_buffer_overflow = true;
 		}
 	}
-	io_outpb(CROSSBARBASE + 0x90 + PIN86[_receivePin].gpN, 0x08); // switch to Encoder
+#if defined (__86DUINO_EX)
+    io_outpb(CROSSBARBASE + 0x90 + PIN86[_receivePin].gpN, 0x08); // switch to Encoder
+#elif defined (__86DUINO_EX2)
+	io_outpb(CROSSBARBASE + 0x100 + PIN86[_receivePin].gpN, 0x01); // switch to Encoder
+#endif
 }
 
 void SoftwareSerial::tx_pin_write(uint8_t pin_state)

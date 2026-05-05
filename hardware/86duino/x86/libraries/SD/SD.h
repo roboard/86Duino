@@ -4,9 +4,16 @@
 #include <Arduino.h>
 #include <dirent.h>
 
-#define FILE_READ O_READ
-#define FILE_WRITE (O_READ | O_WRITE | O_CREAT)
+enum {
+    SDCARD = 1,
+    USBDISK,
+    EMMCDISK,
+    UNKNOWN
+};
 
+#define FILE_READ        (O_READ)
+#define FILE_WRITE       (O_READ | O_WRITE | O_CREAT)
+#define FILE_WRITE_TRUNC (O_WRITE | O_TRUNC)
 
 // use the gnu style oflag in open()
 /** open() oflag for reading */
@@ -36,17 +43,19 @@ uint8_t const O_TRUNC = 0X40;
 class File : public Stream{
 
 private:
-  char _name[13]; // our name
+  char _name[256]; // our name
   FILE *_file;  // underlying file pointer
   DIR  *_dir;   // dir pointer
   int  _type;   // file type
   char _parent[1024]; //parent path
-  
+  bool _wtflush;
 
 public:
   
-  
   File(File f, const char *name);     // wraps an underlying SdFile
+#if defined (SD_REMOTE)
+  File(char* s, int size);
+#endif
   File(void);      // 'empty' constructor
   ~File(void);     // destructor
   virtual size_t write(uint8_t);
@@ -57,12 +66,16 @@ public:
   virtual void flush();
   int read(void *buf, uint16_t nbyte);
   bool seek(uint32_t pos);
+  unsigned long seekLineNumber(uint32_t index, uint32_t maxlength);
   uint32_t position();
   uint32_t size();
+  void setWriteFileFlush(bool);
   void close();
   operator bool();
-  File& operator=(File);
+  // File& operator=(File);
   char * name();
+  char * parent();
+  int eof();
 
   bool isDirectory(void);
   File openNextFile(uint8_t mode = O_RDONLY);
@@ -70,6 +83,7 @@ public:
   
   bool open(const char *parent, const char *name, int type, bool dir);
   bool isOpen();
+  bool remove();
   
   using Print::write;
 };
@@ -86,6 +100,11 @@ private:
   File getParentDir(const char *filepath, int *indx);
   
 public:
+  SDClass();
+  
+  void setBank(int bank);
+  int getBank(void);
+  
   // This needs to be called to set up the connection to the SD card
   // before other methods are used.
   bool begin(uint8_t csPin = 0);
@@ -94,6 +113,7 @@ public:
   // write, etc). Returns a File object for interacting with the file.
   // Note that currently only one file can be open at a time.
   File open(const char *filename, uint8_t mode = FILE_READ);
+  File open(char *filename, uint8_t mode = FILE_READ);
 
   // Methods to determine if the requested file path exists.
   bool exists(char *filepath);
@@ -108,6 +128,8 @@ public:
   
   bool rmdir(char *filepath);
 
+  char* getDiskPath(int mybank, char* buf = NULL);
+  
 private:
 
   // This is used to determine the mode used to open a file
@@ -116,6 +138,13 @@ private:
   // it's probably not the best place for it.
   // It shouldn't be set directly--it is set via the parameters to `open`.
   int fileOpenMode;
+  int _bank;
+  char path_sdcard[10];
+  char path_usb[10];
+  char path_emmc[10];
+  char _buf[10];
+  
+  void initPath(void);
   
   friend class File;
   friend bool callback_openPath(File&, char *, bool, void *); 

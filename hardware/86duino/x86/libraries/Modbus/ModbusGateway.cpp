@@ -22,81 +22,174 @@
 */
 
 #include "Modbus.h"
+#include "ModbusSerialHAL.h"
+#include "ModbusEtherHAL.h"
 #include "modbus-core.h"
 #include "io.h"
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX_CLIENT_NUM  (128)
 #define TIME_SEC        (0)
 #define TIME_USEC       (500000)
 
+#define MODBUS_MAX_GATEWAY_NODE     (256)
+#define MODBUS_MAX_MESSAGE_LENGTH   (513)
+
+struct modbus_gateway_t
+{
+    modbus_hal_t hal;
+    modbus_t *ctx;
+    int mode;
+
+    uint8_t req[MODBUS_MAX_MESSAGE_LENGTH];
+    uint8_t rsp[MODBUS_MAX_MESSAGE_LENGTH];
+    int req_length;
+    int rsp_length;
+
+    uint8_t node_req[MODBUS_MAX_MESSAGE_LENGTH];
+    uint8_t node_rsp[MODBUS_MAX_MESSAGE_LENGTH];
+    int node_req_length;
+    int node_rsp_length;
+
+    ModbusMasterNode *nodes[MODBUS_MAX_GATEWAY_NODE];
+    ModbusMasterNode *node;
+    int nodeNum;
+    int pollState;
+    int nodePollState;
+
+    unsigned long timeout;
+    unsigned long recvTime;
+};
+
 ModbusGateway::ModbusGateway()
 {
-    nodeNum = 0;
-    pollState = 0;
-    nodePollState = 0;
-    timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
+    this->_privateData = NULL;
 }
 
-bool ModbusGateway::begin(int mode, HardwareSerial &serial)
+ModbusGateway::~ModbusGateway()
 {
-    modbus_t *ctx = NULL;
-    int rc;
-    
-    if (serial.handle == NULL)
+    end();
+}
+
+bool ModbusGateway::begin(int mode, SerialInterface &serial)
+{
+    modbus_gateway_t *gateway;
+
+    if (mode != MODBUS_RTU && mode != MODBUS_ASCII)
         return false;
-    
-    if (mode == MODBUS_RTU)
-        ctx = modbus_new_rtu("USB_COM", 115200, 'N', 8, 1);
-    else if (mode == MODBUS_ASCII)
-        ctx = modbus_new_ascii("USB_COM", 115200, 'N', 8, 1);
-    
-    if (ctx == NULL)
+
+    if ((gateway = (modbus_gateway_t *)malloc(sizeof(*gateway))) == NULL)
         return false;
-    
-    modbus_skip_slave(ctx, TRUE);
-    rc = modbus_connect_assign(ctx, serial.handle);
-    if (rc == -1) {
-        modbus_free(ctx);
+    memset(gateway, 0, sizeof(*gateway));
+    gateway->mode = mode;
+    gateway->timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
+    gateway->hal.available = modbus_serial_hal_available;
+    gateway->hal.flush = modbus_serial_hal_flush;
+    gateway->hal.write = modbus_serial_hal_write;
+    gateway->hal.read = modbus_serial_hal_read;
+    gateway->hal.user_data = &serial;
+
+    switch (gateway->mode) {
+    case MODBUS_RTU:
+        gateway->ctx = modbus_new_rtu_ext(&gateway->hal);
+        break;
+    case MODBUS_ASCII:
+        gateway->ctx = modbus_new_ascii_ext(&gateway->hal);
+        break;
+    }
+    if (gateway->ctx == NULL) {
+        free(gateway);
         return false;
     }
-    modbus_set_response_timeout(ctx, TIME_SEC, TIME_USEC);
-    
-    _mode = mode;
-    mbus = (void *)ctx;
+    modbus_skip_slave(gateway->ctx, TRUE);
+    modbus_set_response_timeout(gateway->ctx, TIME_SEC, TIME_USEC);
+    serial.setTimeout(0, 0);
+    this->_privateData = gateway;
 
     return true;
 }
 
-bool ModbusGateway::begin(int mode)
+bool ModbusGateway::begin(int mode, uint16_t port)
 {
-    modbus_t *ctx = NULL;
-    int rc;
-    
-    if (mode == MODBUS_TCP)
-        ctx = modbus_new_tcp(NULL, 502);
-    
-    if (ctx == NULL)
+    return begin(mode, port, Ethernet);
+}
+
+bool ModbusGateway::begin(int mode, uint16_t port, EthernetClass &ethernet)
+{
+    modbus_gateway_t *gateway;
+    modbus_ether_hal_t *ether;
+
+    if (mode != MODBUS_TCP)
         return false;
 
-    modbus_skip_slave(ctx, TRUE);
-    modbus_tcp_listen(ctx, MAX_CLIENT_NUM);
-    modbus_set_response_timeout(ctx, TIME_SEC, TIME_USEC);
-    
-    _mode = mode;
-    mbus = (void *)ctx;
+    if ((ether = new modbus_ether_hal_t(port, ethernet)) == NULL)
+        return false;
+    ether->pClient = NULL;
+
+    if ((gateway = (modbus_gateway_t *)malloc(sizeof(*gateway))) == NULL) {
+        delete ether;
+        return false;
+    }
+    memset(gateway, 0, sizeof(*gateway));
+    gateway->mode = mode;
+    gateway->timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
+    gateway->hal.user_data = ether;
+    gateway->hal.connect = modbus_ether_hal_connect;
+    gateway->hal.disconnect = modbus_ether_hal_disconnect;
+    gateway->hal.available = modbus_ether_hal_available;
+    gateway->hal.flush = modbus_ether_hal_flush;
+    gateway->hal.write = modbus_ether_hal_write;
+    gateway->hal.read = modbus_ether_hal_read;
+    gateway->hal.server_begin = modbus_ether_hal_server_begin;
+    gateway->hal.server_available = modbus_ether_hal_server_available;
+
+    if ((gateway->ctx = modbus_new_tcp_ext(&gateway->hal, NULL, port)) == NULL) {
+        free(gateway);
+        delete ether;
+        return false;
+    }
+    modbus_skip_slave(gateway->ctx, TRUE);
+    modbus_tcp_listen2(gateway->ctx, MAX_CLIENT_NUM);
+    modbus_set_response_timeout(gateway->ctx, TIME_SEC, TIME_USEC);
+    this->_privateData = gateway;
 
     return true;
+}
+
+void ModbusGateway::end()
+{
+    modbus_gateway_t *gateway = (modbus_gateway_t *)this->_privateData;
+
+    if (gateway == NULL)
+        return;
+
+    modbus_close(gateway->ctx);
+    modbus_free(gateway->ctx);
+    switch (gateway->mode) {
+    case MODBUS_RTU:
+    case MODBUS_ASCII:
+        break;
+    case MODBUS_TCP:
+        delete (modbus_ether_hal_t *)gateway->hal.user_data;
+        break;
+    }
+    free(gateway);
+    this->_privateData = NULL;
 }
 
 bool ModbusGateway::connect(ModbusMasterNode &mNode)
 {
-    int i;
-    
-    for (i = 0; i < nodeNum; i++) {
-        if (mNode.slaveID == nodes[i]->slaveID)
+    modbus_gateway_t *gateway = (modbus_gateway_t *)this->_privateData;
+
+    if (gateway == NULL)
+        return false;
+
+    for (int i = 0; i < gateway->nodeNum; i++) {
+        if (mNode.slaveID == gateway->nodes[i]->slaveID)
             return false;
     }
-    nodes[nodeNum++] = &mNode;
+    gateway->nodes[gateway->nodeNum++] = &mNode;
     mNode.master->setTimeout(1000 * TIME_SEC + TIME_USEC / 1000);
     
     return true;
@@ -104,58 +197,43 @@ bool ModbusGateway::connect(ModbusMasterNode &mNode)
 
 void ModbusGateway::setTimeout(uint32_t milliseconds)
 {
-    timeout = milliseconds;
+    modbus_gateway_t *gateway = (modbus_gateway_t *)this->_privateData;
+    if (gateway == NULL)
+        return;
+    gateway->timeout = milliseconds;
 }
 
 int ModbusGateway::nodePoll()
 {
-    modbus_t *ctx = (modbus_t *)node->master->mbus;
-    unsigned long nowTime;
+    modbus_gateway_t *gateway = (modbus_gateway_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)gateway->node->master->getModbusHandle();
+    unsigned long nowtime;
     
-    if (node->master->gateway != NULL && node->master->gateway != this)
+    if (gateway->node->master->gateway != NULL && gateway->node->master->gateway != this)
         return 0;
     
-    if (nodePollState == 0) {
-        // Serial.println("Node Request");
-        // for (int i = 0; i < node_req_length; i++) {
-            // Serial.print(node_req[i], HEX);
-            // Serial.print(" ");
-        // }
-        // Serial.println();
-        modbus_set_slave(ctx, node->slaveID);
-        modbus_send_raw_request(ctx, node_req, node_req_length);
-        nodePollState = 1;
-        node->master->gateway = this;
-        recvTime = timer_NowTime();
+    if (gateway->nodePollState == 0) {
+        modbus_set_slave(ctx, gateway->node->slaveID);
+        modbus_send_raw_request(ctx, gateway->node_req, gateway->node_req_length);
+        gateway->nodePollState = 1;
+        gateway->node->master->gateway = this;
+        gateway->recvTime = timer_NowTime();
     }
     
-    if (nodePollState == 1) {
-        nowTime = timer_NowTime();
-        node_rsp_length = _modbus_receive_msg_nowait(ctx, node_rsp, MSG_CONFIRMATION);
-        if (node_rsp_length < 0 || nowTime - recvTime > node->master->timeout) {
-            nodePollState = 0;
-            node->master->gateway = NULL;
-            // Serial.print("Node Response Error:");
-            // Serial.println(node_rsp_length);
-            // for (int i = 0; i < 10; i++) {
-                // Serial.print(node_rsp[i], HEX);
-                // Serial.print(" ");
-            // }
-            // Serial.println();
+    if (gateway->nodePollState == 1) {
+        nowtime = timer_NowTime();
+        gateway->node_rsp_length = _modbus_receive_msg_nowait(ctx, gateway->node_rsp, MSG_CONFIRMATION);
+        if (gateway->node_rsp_length < 0 || nowtime - gateway->recvTime > gateway->node->master->getTimeout()) {
+            gateway->nodePollState = 0;
+            gateway->node->master->gateway = NULL;
             modbus_flush(ctx);
             return -1;
         }
-        if (node_rsp_length > 0) {
-            nodePollState = 0;
-            node->master->gateway = NULL;
-            // Serial.println("Node Response");
-            // for (int i = 0; i < node_rsp_length; i++) {
-                // Serial.print(node_rsp[i], HEX);
-                // Serial.print(" ");
-            // }
-            // Serial.println();
-            rsp_length = modbus_shrink_data_unit(ctx, node_rsp, node_rsp_length, rsp);
-            return rsp_length;
+        if (gateway->node_rsp_length > 0) {
+            gateway->nodePollState = 0;
+            gateway->node->master->gateway = NULL;
+            gateway->rsp_length = modbus_shrink_data_unit(ctx, gateway->node_rsp, gateway->node_rsp_length, gateway->rsp);
+            return gateway->rsp_length;
         }
     }
     
@@ -164,66 +242,58 @@ int ModbusGateway::nodePoll()
 
 int ModbusGateway::poll()
 {
-    modbus_t *ctx = (modbus_t *)mbus;
-    int i, slave, rc, s;
-    unsigned long nowTime;
-    
-    if (pollState < 2 && _mode == MODBUS_TCP) {
-        s = modbus_tcp_select(ctx);
+    modbus_gateway_t *gateway = (modbus_gateway_t *)this->_privateData;
+    unsigned long nowtime;
+
+    if (gateway == NULL)
+        return 0;
+
+    if (gateway->pollState < 2 && gateway->mode == MODBUS_TCP) {
+        int s = modbus_tcp_available2(gateway->ctx);
         if (s == -1)
             return 0;
-        modbus_set_socket(ctx, s);
+        modbus_set_socket(gateway->ctx, s);
     }
-    
-    nowTime = timer_NowTime();
-    
-    if (pollState == 0 && modbus_receive_available(ctx) > 0) {
-        pollState = 1;
-        recvTime = nowTime;
+
+    nowtime = timer_NowTime();
+
+    if (gateway->pollState == 0 && modbus_receive_available(gateway->ctx) > 0) {
+        gateway->pollState = 1;
+        gateway->recvTime = nowtime;
     }
-    
-    if (pollState == 1) {
-        req_length = modbus_receive_nowait(ctx, req);
-        if (req_length > 0) {
-            slave = modbus_query_slave(ctx, req, req_length);
-            pollState = 0;
-            for (i = 0; i < nodeNum; i++) {
-                if (slave == nodes[i]->slaveID) {
-                    node = nodes[i];
-                    // for (i = 0; i < req_length; i++) {
-                        // Serial.print(req[i], HEX);
-                        // Serial.print(" ");
-                    // }
-                    // Serial.println("==> Request");
-                    node_req_length = modbus_shrink_data_unit(ctx, req, req_length, node_req);
-                    pollState = 2;
+
+    if (gateway->pollState == 1) {
+        gateway->req_length = modbus_receive_nowait(gateway->ctx, gateway->req);
+        if (gateway->req_length > 0) {
+            int slave = modbus_query_slave(gateway->ctx, gateway->req, gateway->req_length);
+            gateway->pollState = 0;
+            for (int i = 0; i < gateway->nodeNum; i++) {
+                if (slave == gateway->nodes[i]->slaveID) {
+                    gateway->node = gateway->nodes[i];
+                    gateway->node_req_length = modbus_shrink_data_unit(gateway->ctx, gateway->req, gateway->req_length, gateway->node_req);
+                    gateway->pollState = 2;
                     break;
                 }
             }
-            if (pollState == 0)
-                modbus_ignore_confirmation(ctx);
-        } else if (req_length < 0 || nowTime - recvTime > timeout) {
-            modbus_flush(ctx);
-            modbus_receive_reset(ctx);
-            pollState = 0;
+            if (gateway->pollState == 0)
+                modbus_ignore_confirmation(gateway->ctx);
+        } else if (gateway->req_length < 0 || nowtime - gateway->recvTime > gateway->timeout) {
+            modbus_flush(gateway->ctx);
+            modbus_receive_reset(gateway->ctx);
+            gateway->pollState = 0;
         }
     }
-    
-    if (pollState == 2) {
-        rc = nodePoll();
+
+    if (gateway->pollState == 2) {
+        int rc = nodePoll();
         if (rc < 0) {
-            pollState = 0;
-            modbus_reply_exception(ctx, req, MODBUS_EXCEPTION_GATEWAY_TARGET);
+            gateway->pollState = 0;
+            modbus_reply_exception(gateway->ctx, gateway->req, MODBUS_EXCEPTION_GATEWAY_TARGET);
         } else if (rc > 0) {
-            pollState = 0;
-            // for (i = 0; i < rsp_length; i++) {
-                // Serial.print(rsp[i], HEX);
-                // Serial.print(" ");
-            // }
-            // Serial.println("==> Response");
-            return modbus_send_raw_response(ctx, rsp, rsp_length, req, req_length);
+            gateway->pollState = 0;
+            return modbus_send_raw_response(gateway->ctx, gateway->rsp, gateway->rsp_length, gateway->req, gateway->req_length);
         }
     }
-    
+
     return 0;
 }

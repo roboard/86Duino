@@ -671,10 +671,10 @@ writePort(port, value, bitmask):  Write an 8 bit port.
 #elif defined (__86DUINO_ONE) || defined (__86DUINO_ZERO) || defined (__86DUINO_EDUCAKE)
 #define TOTAL_ANALOG_PINS       7
 #define TOTAL_PINS              54
-#define VERSION_BLINK_PIN 		13
-#define IS_PIN_DIGITAL(p)  		((p) >= 2 && (p) < (TOTAL_PINS - 9))     
+#define VERSION_BLINK_PIN 	  13
+#define IS_PIN_DIGITAL(p)  	  ((p) >= 2 && (p) < (TOTAL_PINS - 9))     
 #define IS_PIN_ANALOG(p)        ((p) >= 45 && (p) < (TOTAL_PINS-2))
-#define IS_PIN_PWM(p)          	(((0x00000001 << (p)) & 0xE0002E68) || (p) == 32)
+#define IS_PIN_PWM(p)           (((0x00000001 << (p)) & 0xE0002E68) || (p) == 32)
 #define IS_PIN_SERVO(p)         IS_PIN_DIGITAL(p)
 #define IS_PIN_I2C(p)           ((p) == 52 || (p) == 53)
 #define PIN_TO_DIGITAL(p)       (p)
@@ -685,10 +685,10 @@ writePort(port, value, bitmask):  Write an 8 bit port.
 #elif defined (__86DUINO_PLC)
 #define TOTAL_ANALOG_PINS       7
 #define TOTAL_PINS              23
-#define VERSION_BLINK_PIN 		13
-#define IS_PIN_DIGITAL(p)  		((p) >= 0 && (p) < 8)
+#define VERSION_BLINK_PIN 	  13
+#define IS_PIN_DIGITAL(p)  	  ((p) >= 0 && (p) < 8)
 #define IS_PIN_ANALOG(p)        ((p) >= 14 && (p) < (TOTAL_PINS-2))
-#define IS_PIN_PWM(p)          	((p) == 1 || (p) == 3 || (p) == 4 || (p) == 7)
+#define IS_PIN_PWM(p)           ((p) == 1 || (p) == 3 || (p) == 4 || (p) == 7)
 #define IS_PIN_SERVO(p)         IS_PIN_PWM(p)
 #define IS_PIN_I2C(p)           ((p) == 21 || (p) == 22)
 #define PIN_TO_DIGITAL(p)       (p)
@@ -699,14 +699,73 @@ writePort(port, value, bitmask):  Write an 8 bit port.
 #elif defined (__86DUINO_AI)
 #define TOTAL_ANALOG_PINS       2
 #define TOTAL_PINS              40
-#define VERSION_BLINK_PIN 		13
-#define IS_PIN_DIGITAL(p)  		((p) >= 0 && (p) < 38)
+#define VERSION_BLINK_PIN 	  13
+#define IS_PIN_DIGITAL(p)  	  ((p) >= 0 && (p) < 38)
 #define IS_PIN_ANALOG(p)        ((p) == 38 || (p) == 39)
-#define IS_PIN_PWM(p)          	(((0x00000001 << (p)) & 0x0080E38FL))
+#define IS_PIN_PWM(p)           (((0x00000001 << (p)) & 0x0080E38FL))
 #define IS_PIN_SERVO(p)         IS_PIN_DIGITAL(p)
 #define IS_PIN_I2C(p)           ((p) == 40 || (p) == 41)
 #define PIN_TO_DIGITAL(p)       (p)
 #define PIN_TO_ANALOG(p)        (p-38)
+#define PIN_TO_PWM(p)           (p)
+#define PIN_TO_SERVO(p)         (p)
+
+#elif defined (__86DUINO_DUO)
+#define TOTAL_ANALOG_PINS       12
+#define TOTAL_PINS              54
+#define VERSION_BLINK_PIN 	  13
+#define IS_PIN_DIGITAL(p)  	  ((p) >= 2 && (p) < (TOTAL_PINS))     
+#define IS_PIN_ANALOG(p)        ((p) >= 42 && (p) < (TOTAL_PINS))
+#define IS_PIN_PWM(p)           (((0x00000001 << (p)) & 0x30300E68) || ((p) >= 33 && (p) <= 38))
+#define IS_PIN_SERVO(p)         IS_PIN_DIGITAL(p)
+#define IS_PIN_I2C(p)           ((p) == 52 || (p) == 53)
+#define PIN_TO_DIGITAL(p)       (p)
+#define PIN_TO_ANALOG(p)        (p-42)
+#define PIN_TO_PWM(p)           (p)
+#define PIN_TO_SERVO(p)         (p)
+
+#elif defined (__86DUINO_QEC) // no used, if need to use, please modify it
+#define TOTAL_ANALOG_PINS       4
+#define TOTAL_PINS              9
+#define VERSION_BLINK_PIN 	  0
+#define IS_PIN_DIGITAL(p)  	  ((p) >= 0 && (p) < (TOTAL_PINS))     
+#define IS_PIN_ANALOG(p)        ((p) >= 0 && (p) < (TOTAL_PINS))
+#define IS_PIN_PWM(p)           (false)
+#define IS_PIN_SERVO(p)         IS_PIN_DIGITAL(p)
+#define IS_PIN_TONE(p)          IS_PIN_DIGITAL(p)    // any pin can be used for tone
+#define IS_PIN_I2C(p)           (false)
+#define PIN_TO_DIGITAL(p)       (p)
+#define PIN_TO_ANALOG(p)        (p)
+#define PIN_TO_PWM(p)           (p)
+#define PIN_TO_SERVO(p)         (p)
+
+#elif defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) // no used, if need to use, please modify it
+#define TOTAL_ANALOG_PINS       0
+#define TOTAL_PINS              0
+#define VERSION_BLINK_PIN 	  0
+#define IS_PIN_DIGITAL(p)  	  ((p) >= 0 && (p) < (TOTAL_PINS))     
+#define IS_PIN_ANALOG(p)        ((p) >= 0 && (p) < (TOTAL_PINS))
+#define IS_PIN_PWM(p)           (false)
+#define IS_PIN_SERVO(p)         IS_PIN_DIGITAL(p)
+#define IS_PIN_TONE(p)          IS_PIN_DIGITAL(p)    // any pin can be used for tone
+#define IS_PIN_I2C(p)           (false)
+#define PIN_TO_DIGITAL(p)       (p)
+#define PIN_TO_ANALOG(p)        (p)
+#define PIN_TO_PWM(p)           (p)
+#define PIN_TO_SERVO(p)         (p)
+
+#elif defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S) // no used, if need to use, please modify it
+#define TOTAL_ANALOG_PINS       6
+#define TOTAL_PINS              26
+#define VERSION_BLINK_PIN 	  13
+#define IS_PIN_DIGITAL(p)  	  ((p) >= 2 && (p) < (TOTAL_PINS - 1))     
+#define IS_PIN_ANALOG(p)        ((p) >= 14 && (p) < 20)
+#define IS_PIN_PWM(p)           (((0x00000001 << (p)) & 0xE0002E68) || (p) == 32)
+#define IS_PIN_SERVO(p)         IS_PIN_DIGITAL(p)
+#define IS_PIN_TONE(p)          IS_PIN_DIGITAL(p)    // any pin can be used for tone
+#define IS_PIN_I2C(p)           ((p) == 52 || (p) == 53)
+#define PIN_TO_DIGITAL(p)       (p)
+#define PIN_TO_ANALOG(p)        (p-45)
 #define PIN_TO_PWM(p)           (p)
 #define PIN_TO_SERVO(p)         (p)
 

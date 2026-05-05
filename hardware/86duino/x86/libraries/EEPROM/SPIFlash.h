@@ -25,8 +25,10 @@
 class SPIFlash
 {
 public:
-  SPIFlash(unsigned int in_offset);
+  SPIFlash(unsigned int in_offset, unsigned int start_addr=0);
   ~SPIFlash();
+  
+  unsigned long sectorBias();
   
   //operations
   void write(unsigned short int in_addr, unsigned char in_value);
@@ -34,5 +36,5 @@ public:
   void reset();
   
 private:
-  int _sector_offset;
+  unsigned int _sector_offset;
 };

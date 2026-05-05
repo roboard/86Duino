@@ -20,8 +20,8 @@ void setup()
 
     bus.begin(MODBUS_RTU, Serial485);
     
-    node1.begin(11, bus);
-    node2.begin(12, bus);
+    node1.attach(11, bus);
+    node2.attach(12, bus);
     
     gateway.connect(node1);
     gateway.connect(node2);

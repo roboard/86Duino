@@ -1,0 +1,5 @@
+#!/bin/sh
+test -n "$1" || { echo "Missing host name" >&2 ; exit 1 ; }
+
+#dns -v -p137 CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA -q33 -c0x10 -n$@
+dns -d2 '*' -q33 -c0x10 -n$@

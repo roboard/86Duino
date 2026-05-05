@@ -2157,6 +2157,7 @@ static int optspeak = 0;
 #define SET_CVT_STRM	0x706
 #define SET_PIN_CTRL	0x707
 #define SET_PIN_SENSE	0x709
+#define SET_BEEP_GEN	0x70A
 #define SET_PIN_EAPDBTL	0x70c
 #define SET_GPIO_DATA	0x715
 #define SET_GPIO_MASK	0x716
@@ -2909,6 +2910,16 @@ static void hda_run(void)
 	
 static void hda_exit(void)
 {
+    // Acen: switch to external beep channel
+    hda_send_codec_cmd(HDAPARAM1(1, 0x14, 0x70C, 0), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x0B, 0x03, 0x7514), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x0C, 0x03, 0xF014), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x0C, 0x03, 0xF100), FALSE);
+    hda_send_codec_cmd(HDAPARAM1(1, 0x14, 0x707, 0x40), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x14, 0x03, 0xB000), FALSE);
+    hda_send_codec_cmd(HDAPARAM1(1, 0x14, 0x70C, 0x02), FALSE);
+    // hda_send_codec_cmd(HDAPARAM1(1, 0x01, SET_BEEP_GEN, 0x0C), FALSE); // 1KHz
+    
 	hda_stop();
 	hda_free_dma_mem();
 	hda_remove_mapping();
@@ -3011,6 +3022,15 @@ static BOOL hda_start(int rate)
 	wd.get_current_pos = hda_current_pos;
 	wd.initialized = TRUE;
 
+    // open BEEP channel, but the audio's volume will be small
+    hda_send_codec_cmd(HDAPARAM1(1, 0x14, 0x70C, 0), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x0B, 0x03, 0x7514), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x0C, 0x03, 0xF014), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x0C, 0x03, 0xF100), FALSE);
+    hda_send_codec_cmd(HDAPARAM1(1, 0x14, 0x707, 0x40), FALSE);
+    hda_send_codec_cmd(HDAPARAM2(1, 0x14, 0x03, 0xB000), FALSE);
+    hda_send_codec_cmd(HDAPARAM1(1, 0x14, 0x70C, 0x02), FALSE);
+    
 	return TRUE;
 }
 

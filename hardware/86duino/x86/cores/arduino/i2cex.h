@@ -27,14 +27,13 @@
 
 #include "dmpcfg.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 DMPAPI(void) i2c_SetBaseAddress(unsigned baseaddr);
 DMPAPI(unsigned) i2c_SetDefaultBaseAddress(void);
-
+DMPAPI(void) i2c01_SetBaseAddress(unsigned baseaddr0, unsigned baseaddr1);
 DMPAPI(void) i2c_SetIRQ(int i2c0irq, int i2c1irq);
 //-- values for the "i2c0irq" and "i2c1irq" argument
      #define I2CIRQ1         (8)   //don't want to use enum:p
@@ -52,7 +51,6 @@ DMPAPI(void) i2c_SetIRQ(int i2c0irq, int i2c1irq);
      #define I2CIRQ_DISABLE  (0)
 
 
-
 /******************  General Functions for Individual Module *****************/
 DMPAPI(bool) i2c_Reset(int dev);
 //-- if the above function return false, roboio_GetErrCode() may return:
@@ -63,6 +61,8 @@ DMPAPI(void) i2c_DisableNoiseFilter(int dev);
 
 DMPAPI(void) i2c_EnableStandardHSM(int dev);
 DMPAPI(void) i2c_DisableStandardHSM(int dev);
+
+DMPAPI(unsigned char) i2c_ReadCtrlREG(int dev);
 
 DMPAPI(void) i2c_EnableINT(int dev, unsigned char i2cints);
 DMPAPI(void) i2c_DisableINT(int dev, unsigned char i2cints);

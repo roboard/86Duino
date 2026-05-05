@@ -72,7 +72,7 @@ void setup()
     bus.begin(MODBUS_TCP);
     
     /* Slave node initialize. */
-    node.begin(11, bus);
+    node.attach(11, bus);
 
     /* Set the callback function of Read Holding Registers (0x03). */
     node.cbFunc[MODBUS_CB_READ_HOLDING_REGISTERS] = read_holding_registers;

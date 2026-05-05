@@ -41,6 +41,9 @@ https://github.com/BlueVia/Official-Arduino
 #elif defined (__86DUINO_AI)
 	#define __TXPIN__ 3
 	#define __RXPIN__ 4
+#elif defined (__86DUINO_DUO)
+	#define __TXPIN__ 3
+	#define __RXPIN__ 19
 #endif
 
 #define __XON__ 0x11
@@ -85,7 +88,19 @@ static const DELAY_TABLE table[] =
 };
 
 // static int pinMap2[EXTERNAL_NUM_INTERRUPTS] = {42, 43, 44, 18, 19, 20, 33, 34, 35, 36, 37, 38};
-
+#elif defined (__86DUINO_DUO)
+static const DELAY_TABLE table[] = 
+{
+	//  baud    rxcenter   rxintra    rxstop    tx
+	{ 19200,    5,         50,        50,       49,   },
+	{ 14400,    15,        67,        67,       66,   },
+	{ 9600,     30,        100,       100,      100,  },
+	{ 4800,     78,        204,       204,      204,  },
+	{ 2400,     182,       410,       410,      412,  },
+	{ 1200,     390,       826,       826,      828,  },
+	{ 600,      806,       1654,      1654,     1660, },
+	{ 300,      1638,      3308,      3308,     3324, },
+};
 #else
 
 #error This version of GSM3SoftSerial supports only 20, 16 and 8MHz processors
@@ -225,11 +240,11 @@ void GSM3SoftSerial::setRX()
 	pinMode(__RXPIN__, INPUT);
 	digitalWrite(__RXPIN__, HIGH);
 		
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) 
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO) 
 	for(i=0; i<EXTERNAL_NUM_INTERRUPTS; i++)
 		if(INTPINSMAP[i] == __RXPIN__) break;
 	if(i == EXTERNAL_NUM_INTERRUPTS) i = 0;
-	attachInterrupt(i, GSM3SoftSerial::handle_interrupt, FALLING);
+	attachRTInterrupt(i, GSM3SoftSerial::handle_interrupt, FALLING);
 #endif
 	// This line comes from the High Middle Ages...
 	// attachInterrupt(__RXINT__, GSM3SoftSerial::handle_interrupt, FALLING);
@@ -262,7 +277,11 @@ void GSM3SoftSerial::recv()
 
   // If RX line is high, then we don't see any start bit
   // so interrupt is probably not for us
-  io_outpb(CROSSBARBASE + 0x90 + PIN86[__RXPIN__].gpN, 0x01); // switch to GPIO
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+    io_outpb(CROSSBARBASE + 0x90 + PIN86[__RXPIN__].gpN, 0x01); // switch to GPIO
+#elif defined (__86DUINO_DUO)
+	io_outpb(CROSSBARBASE + 0x100 + PIN86[__RXPIN__].gpN, 0x08); // switch to GPIO
+#endif
   if (!rx_pin_read())
   {
 	do
@@ -362,7 +381,11 @@ void GSM3SoftSerial::recv()
 			mgr->manageMsg(thisHead, cb.getTail());
 	}
   }
-  io_outpb(CROSSBARBASE + 0x90 + PIN86[__RXPIN__].gpN, 0x08); // switch to Encoder
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+    io_outpb(CROSSBARBASE + 0x90 + PIN86[__RXPIN__].gpN, 0x08); // switch to Encoder
+#elif defined (__86DUINO_DUO)
+	io_outpb(CROSSBARBASE + 0x100 + PIN86[__RXPIN__].gpN, 0x01); // switch to Encoder
+#endif
 }
 
 bool GSM3SoftSerial::keepThisChar(uint8_t* c)

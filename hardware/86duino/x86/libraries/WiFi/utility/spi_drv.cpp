@@ -21,7 +21,7 @@
 
 #include <math.h>
 #include "Arduino.h"
-#include "wSPI.h"
+#include "SPI.h"
 #include "utility/spi_drv.h"                   
 #include "pins_arduino.h"
 //#define _DEBUG_
@@ -49,7 +49,7 @@ extern "C" {
 
 void SpiDrv::begin()
 {
-	  wSPI.begin();
+	  SPI.begin();
 	  pinMode(SLAVESELECT, OUTPUT);
 	  pinMode(SLAVEREADY, INPUT);
 	  pinMode(WIFILED, OUTPUT);
@@ -66,7 +66,7 @@ void SpiDrv::begin()
 }
 
 void SpiDrv::end() {
-    wSPI.end();
+    SPI.end();
 }
 
 void SpiDrv::spiSlaveSelect()
@@ -83,7 +83,7 @@ void SpiDrv::spiSlaveDeselect()
 
 char SpiDrv::spiTransfer(volatile char data)
 {
-    char result = wSPI.transfer(data);
+    char result = SPI.transfer(data);
     DELAY_TRANSFER();
 
     return result;                    // return the received byte

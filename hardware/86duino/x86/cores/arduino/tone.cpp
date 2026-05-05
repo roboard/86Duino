@@ -23,8 +23,14 @@
 #include "irq.h"
 #include <pc.h>
 
-#define TIMER_PIN    (32)  // It is a PWM pin (like analogWrite), but it is used as a timer here.
-static int mc = 3, md = 1;
+#if defined (__86DUINO_EX) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02)
+	#define TIMER_PIN    (32)  // It is a PWM pin (like analogWrite), but it is used as a timer here.
+	static int mc = 3, md = 1;
+#elif defined (__86DUINO_DUO) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_CYF001) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+    static int mc = 11, md = 1;
+#elif defined (__86DUINO_MOTION9D) || defined (__86DUINO_3DPCOLOR)
+    static int mc = 99, md = 99; // no use
+#endif
 
 static volatile int use_pin_tone  = 255;
 static volatile int use_pin_times = 0;
@@ -41,7 +47,7 @@ static bool findToneTimer(int* mc_tone, int* md_tone) {
     {
     	for(j=0; j<3; j++)
     	{
-    		if(i == 3 && j == 2) return false;
+    		if (i == 3 && j == 2) return false;
     		timer = i*3 + j;
 			if ((reg & (0x01L << timer)) == 0L)
 			{
@@ -63,13 +69,13 @@ static void clear_INTSTATUS(void) {
     mc_outp(mc, 0x04, 0xffL << mcint_offset[md]); //for EX
 }
 
-static void disable_MCINT(void) {
+static void disable_MCINT(int group) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(0xffL << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, group) | (1L << (mc%4)), group);
 }
 
-static void enable_MCINT(unsigned long used_int) {
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+static void enable_MCINT(unsigned long used_int, int group) {
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, group) & ~(1L << (mc%4)), group);
 	mc_outp(mc, 0x00, (mc_inp(mc, 0x00) & ~(0xffL<<mcint_offset[md])) | (used_int << mcint_offset[md]));
 }
 
@@ -77,7 +83,7 @@ static void enable_MCINT(unsigned long used_int) {
 static bool toneInitInt = false;
 static const char* name = "Tone";
 void noTone(uint8_t _pin) {
-	if(_pin == PCSPEAKER) nosound();
+	if (_pin == PCSPEAKER) nosound();
 
 	io_DisableINT();
 	use_pin_times = 0;
@@ -88,7 +94,7 @@ void noTone(uint8_t _pin) {
 	//disable_MCINT();
 	mcpwm_Disable(mc, md);
 	digitalWrite(_pin, LOW);
-	//if(toneInitInt == true)
+	//if (toneInitInt == true)
 		//irq_UninstallISR(GetMCIRQ(), name);
 	//toneInitInt = false;
 }
@@ -97,22 +103,22 @@ void noTone(uint8_t _pin) {
 static int h_l = 0;
 static int isr_handler(int irq, void* data) {
     unsigned long toneintmask = PULSE_END_INT << mcint_offset[md];
-    if((mc_inp(mc, 0x04) & toneintmask) == 0L) return ISR_NONE;
+    if ((mc_inp(mc, 0x04) & toneintmask) == 0L) return ISR_NONE;
 
 	mc_outp(mc, 0x04, toneintmask);
 
-    if(use_pin_times != 0)
+    if (use_pin_times != 0)
 	{
-		if(h_l == 0)
+		if (h_l == 0)
 		{
-			if(use_pin_tone != PCSPEAKER) digitalWrite(use_pin_tone, HIGH);
-			if(use_pin_times > 0) use_pin_times--;
+			if (use_pin_tone != PCSPEAKER) digitalWrite(use_pin_tone, HIGH);
+			if (use_pin_times > 0) use_pin_times--;
 			h_l = 1;
 		}
 		else
 		{
-        	if(use_pin_tone != PCSPEAKER) digitalWrite(use_pin_tone, LOW);
-        	if(use_pin_times > 0) use_pin_times--;
+        	if (use_pin_tone != PCSPEAKER) digitalWrite(use_pin_tone, LOW);
+        	if (use_pin_times > 0) use_pin_times--;
         	h_l = 0;
 		}
     }
@@ -123,19 +129,22 @@ static int isr_handler(int irq, void* data) {
 }
 
 bool timer1_pin32_isUsed = false;
-static bool init_mc_irq(void) {
-	if(toneInitInt == false)
+static bool init_mc_irq(int group) {
+	if (toneInitInt == false)
 	{
-		if(irq_InstallISR(GetMCIRQ(), isr_handler, (void*)name) == false)
+		if (irq_InstallISR(GetMCIRQ(group), isr_handler, (void*)name) == false)
 		{
 		    printf("irq_install fail\n"); return false;
 		}
 
-		if(timer1_pin32_isUsed == false)
-		{
-			pinMode(TIMER_PIN, INPUT);
-			digitalWrite(TIMER_PIN, LOW);
-		}
+    #if defined (__86DUINO_EX)
+        if (timer1_pin32_isUsed == false)
+        {
+            pinMode(TIMER_PIN, INPUT);
+            digitalWrite(TIMER_PIN, LOW);
+        }
+    #endif
+
 		toneInitInt = true;
 	}
     return true;
@@ -143,7 +152,7 @@ static bool init_mc_irq(void) {
 
 
 void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
-    if(_pin >= PINS || PIN86[_pin].gpN == NOUSED) return;
+    if ((_pin != PCSPEAKER) && (_pin >= PINS || PIN86[_pin].gpN == NOUSED) || PIN86[_pin].gpMode == INPUT) return;
 	
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_CANCEL);
     mcpwm_SetOutMask(mc, md, MCPWM_HMASK_NONE + MCPWM_LMASK_NONE);
@@ -156,18 +165,18 @@ void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
     mcpwm_SetDeadband(mc, md, 0L);
     mcpwm_ReloadOUT_Unsafe(mc, md, MCPWM_RELOAD_NOW);
 
-    disable_MCINT();
+    disable_MCINT(mc/4);
     clear_INTSTATUS();
-	if(init_mc_irq() == false)
+	if (init_mc_irq(mc/4) == false)
 	{
 		printf("Init MC IRQ fail\n");
 		return;
     }
-    enable_MCINT(PULSE_END_INT);
+    enable_MCINT(PULSE_END_INT, mc/4);
 
-	if(_pin != PCSPEAKER) pinMode(_pin, OUTPUT);
+	if (_pin != PCSPEAKER) pinMode(_pin, OUTPUT);
 
-    if(frequency <= 0)
+    if (frequency <= 0)
 		mcpwm_SetWidth(mc, md, (duration*1000) * SYSCLK, (duration*1000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms
     else
 		mcpwm_SetWidth(mc, md, ((1.0/frequency)*1000000)/2 * SYSCLK, ((1.0/frequency)*500000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms
@@ -177,29 +186,29 @@ void tone_INIT(uint8_t _pin, unsigned int frequency, unsigned long duration){
     use_pin_tone = _pin;
 	io_RestoreINT();
 
-	if(_pin == PCSPEAKER) sound(frequency);
+	if (_pin == PCSPEAKER) sound(frequency);
 	mcpwm_Enable(mc, md);
 }
 
 void tone_UPDATE(uint8_t _pin, unsigned int frequency, unsigned long duration) {
-	if(frequency <= 0)
+	if (frequency <= 0)
 		mcpwm_SetWidth(mc, md, (duration*1000) * SYSCLK,(duration*1000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms 單位ms
     else
 		mcpwm_SetWidth(mc, md, ((1.0/frequency)*1000000)/2 * SYSCLK, ((1.0/frequency)*500000)/2 * SYSCLK);  // period: (1.0/frequency)*1000000)ms
 
-	if(_pin == PCSPEAKER) sound(frequency);
+	if (_pin == PCSPEAKER) sound(frequency);
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 }
 
 void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
-	if(_pin >= PINS || PIN86[_pin].gpN == NOUSED) return;
-	if(use_pin_tone != 255 && use_pin_tone !=_pin) return; // tone() has been used before.
+	if ((_pin != PCSPEAKER) && (_pin >= PINS || PIN86[_pin].gpN == NOUSED) || PIN86[_pin].gpMode == INPUT) return;
+	if (use_pin_tone != 255 && use_pin_tone != _pin) return; // tone() has been used before.
 
 	io_DisableINT();
-	if(frequency >= 10000) frequency = 10000;
-	if(frequency > 0)
+	if (frequency >= 10000) frequency = 10000;
+	if (frequency > 0)
 	{
-		if(duration == 0L)
+		if (duration == 0L)
 			use_pin_times = -1;
 		else
 			use_pin_times = duration / (((1.0/(float)frequency)*1000.0)/2.0);
@@ -208,19 +217,26 @@ void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
 		use_pin_times = 0;
 	io_RestoreINT();
 
-    if(use_pin_tone == 255)
+    if (use_pin_tone == 255)
 	{
 		tone_INIT(_pin, frequency, duration);
 		return;
     }
 
-    if(use_pin_tone ==_pin)
+    if (use_pin_tone == _pin)
 	{
 		tone_UPDATE(_pin, frequency, duration);
 		return;
     }
 }
 
+void tones(uint8_t _pin, unsigned int frequency, unsigned long duration) {
+    int pauseBetweenNotes;
+    tone(_pin, frequency, duration);
+    pauseBetweenNotes = duration * 1.30;
+    delay(pauseBetweenNotes);
+    noTone(_pin);
+}
 
 // XXX: this function only works properly for timer 2 (the only one we use
 // currently).  for the others, it should end the tone, but won't restore

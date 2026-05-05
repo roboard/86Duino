@@ -1,0 +1,253 @@
+SwsSock - A TCP/IP network communications library
+=================================================
+
+Author: Lawrence Rust (lvr@softsystem.co.uk)
+Last Modified: 02-Feb-10
+
+Introduction
+------------
+
+The SwsSock library provides a cross platform, BSD 4.2 compatible sockets API
+and a TCP/IP protocol stack.
+
+The library consists of the following parts:
+
+- The sockets API layer.  These functions mimic the BSD sockets API but have an
+SWS_ prefix.
+
+- The transport protocol interface.  This provides the glue between the
+transport protocols and the sockets API.
+
+- The TCP, UDP and raw IP transport protocols.
+
+- The IP, ICMP and IGMP protocols.
+
+- The datalink adapter interface.  This provides an abstract interface to the
+network hardware.
+
+- An Ethernet (II & 802.3) datalink adapter that includes an implementation of
+ARP.
+
+- A SLIP (RFC 1055) datalink for serial comms.
+
+- A DHCP (RFC 2131) client.
+
+- Fully thread safe, including a plaform independent threading model.
+Co-operative threads are provided for platforms without native thread support.
+
+- Support modules such as buffer management, timers, events, message queues and
+ an IP/ethernet packet dumper.
+
+- Platform adaptation modules.  Currently there are implementations for Win32
+(Microsoft VC++6) and DOS (DJGPP, BorlandC 3.1 and Microsoft VC++ 1.52c).
+
+
+
+SwsSock Library Architecture
+----------------------------
+
+The library is loosely modelled after the OSI network model:
+
+- At the bottom level is the physical network which, for instance, may be
+driven by an Ethernet adapter.
+
+- Above this sits the hardware driver module.  The driver exports an interface
+appropriate to the hardware family, for instance Ethernet, SLIP PPP etc.
+
+- Above the driver sits a datalink adaptation module for the hardware family.
+The library currently only supports Ethernet but more may be added.
+
+- Above the datalink module sits the TCP/IP stack.  The IP layer handles the
+datalink interface and provides a defined set of services to higher level
+protocols.  The IP layer also implements ICMP.
+
+- At the top sits the sockets API which dispatches calls to the appropriate
+protocol module.
+
+Initialisation.
+
+The library is a dynamically linked set of modules.  During initialisation in
+SWS_SockStartup() each protocol (e.g TCP and UDP) registers with the transport
+manager, which is part of the sockets module. Registration enables the sockets
+layer to dispatch calls such as socket() and close() to the appropriate
+protocol provider.  In addition each protocol registers with lower level
+services, for instance IP, to ensure that they receive notification of network
+events such as received packets and/or errors.
+
+Device drivers must also register with their datalink adaptation module.  For
+instance all Ethernet drivers register with the Ethernet module, which in turn
+then registers the device with the datalink manager.  The datalink manager is
+implemented in the IP module which is therefore ideally suited to act as a
+central exchange to connect protocols with network hardware.
+
+Configuration.
+
+Each module may provide many configurable options.  To manage these options a
+central configuration file is maintained (config.h) that contains all
+build options and default values.  In addition many of these values can be
+overriden at runtime by reading values from an initialisation file, typically
+sws_sock.ini. Each platform adaptation module provides a set of calls to read
+and write to an initialisation file.
+
+Operation.
+
+The library may be safely operated in a multi-threaded environment but will
+work quite happily when single threaded.  This is ensured by accessing all
+shared resources in 'critical section'.  The platform adaptation layer is
+required to provide a means of executing a function in critical section.  On
+single thread platforms this function is a no-op.
+
+The library makes heavy use of asynchronous call intefaces and deferred
+procedure calls.  Using these two mechanisms allows a single threaded system to
+simulate a background thread that solely processes network events.
+
+The library queues all incoming asynchronous events on a deferred procedure
+call queue and when the library client next returns from an API call all
+deferred procedures are executed.  This ensures events like interrupts are
+executed in an environment suitable for C code.
+
+The library uses asynchronous call interfaces for all output.  This enables
+device drivers to queue any output that cannot be handle immediately and avoids
+'blocking'.  The device must then make an asynchrous call into the library to
+indicate when the operation is completed.
+
+To ensure timely processing of network events on systems that are not
+pre-emptively threaded, the library client must either make regular sockets API
+calls or call SWS_SockSleep( 1) at intervals < 20 milliseconds.
+
+
+Source Layout
+-------------
+
+The C callable client API is defined in .\include\sws_sock.h.  All public
+identifiers in this file are prefixed with 'SWS_'.  However, if the macro
+SWS_SOCK_COMPAT is defined before inclusion of this file then macros are
+defined to map the standard BSD sockets API names to SwsSock names.
+
+Further public API's are also defined in the header files in .\include.
+These include the datalink and transport managers, IP packet operations,
+utilities such as buffer management and timer handling and the interface to the
+Ethernet datalink provider.  These are not intended to be used by sockets
+clients but for implementors of new protocols or datalinks.
+
+Common sources and private headers are to be found in .\src:
+
+SOCKETS.C: The 'sockets' API and transport manager.
+
+BUFFER.C: The buffer manager.
+
+CFG.C: Configuration file management.
+
+CONFIG.H: Central build & configuration registry.
+
+DEBUG.H: Macros for logging and assertion testing.
+
+DEQUE.H: Double ended queue.
+
+DHCP.C: DHCP client.
+
+DNS.C: DNS client resolver.
+
+ENETDUMP.C: Ethernet packet dumper.
+
+ETHERNET.C: The Ethernet datalink adapter.  Contains an ARP implementation.
+
+FAKENIC.C/H: A minimal Ethernet driver.
+
+FAKESLIP.C/H: A minimal SLIP driver.
+
+ICMP.C: ICMP support functions.
+
+IGMP.C: IGMP support functions.
+
+IP.C/H: The IP module.
+
+IPDUMP.C: A TCP/IP packet dumper.
+
+LOOPBACK.C/H: The loopback adapter.
+
+MESSAGEQ.C: Generic circular message queues.  These are also IRQ/thread safe.
+
+PLATFORM.H: Defines functions to be implemented all platform adaptation
+modules.
+
+RAWIP.C/H: The raw IP transport protocol.  Useful for roll your own protocols
+and ICMP ping.
+
+SLIP.C: The SLIP datalink.
+
+STARTUP.C: This file controls library initialisation.
+
+TCP.C: The TCP transport protocol.
+
+THREAD.C/H: Cooperatively scheduled threads.
+
+TIMER.C: Timer operations.
+
+UDP.C: The UDP transport protocol.
+
+
+Platform specific project files, makefiles and sources are to be found in
+.\src\<platform>.  Implementations are provided for Cygwin, DJGPP, DOS and
+Win32.  The DJGPP version provides an Ethernet driver that in turn calls a
+standard DOS packet driver.
+
+
+Performance
+-----------
+
+Profiling the library shows that the highest use of CPU time comes in the IP
+checksum function (SWS_IpChecksum) which is implemented in IP.C.  This can
+consume almost 40% of CPU time.  The function is quite optimally coded in C but
+may benefit from coding in the platform native assembler.
+
+The key to performance in general is to minimise the number of data copies.
+For this reason the buffer manager provides a linked list of linear buffers
+that permit multiple headers or trailers to be inserted or removed without
+copying.  In addition, where possible, send operations from the UDP or raw IP
+protocols occur directly from the client's buffer without any copies.
+
+
+Building
+--------
+
+Makefiles are provided for Cygwin (win32) and DJGPP (DOS).  There are projects
+for Microsoft Visual C++ 6.01 (Win32), 1.52c (DOS) and for BorlandC 3.1 (DOS).
+
+
+Testing
+-------
+
+The library was largely developed and tested on Windows 2000 & 98.  The Win32
+adaptation module includes a winsock2 client that reads and writes all data to
+a raw IP socket.  To enable transparent end to end transport of UDP and TCP
+datagrams the standard protocol numbers must be re-mapped to prevent winsock2
+from intercepting these packets.  This mapping is enabled by defining
+SWS_SOCK_TUNNEL on the compiler command line.  This is the normal setting for
+Win32 projects.  When testing with applications built with DJGPP it is
+important that this macro be set correctly at both ends.
+
+The Win32 client does not use the Ethernet module so it is important to test
+thoroughly on a DOS system.  I used the rawhide IDE for this purpose, which
+resembles the Borland C IDE.  Rawhide is largely stable but I found that
+logging trace output to a file and using the uclock() function can cause it to
+freeze, so DEBUG builds disable these operations.
+
+Configuration data is read from the file sws_sock.ini during startup.  The
+section [log] contains useful values for testing that can set the trace level
+(trace=2) enable packet dumping (pdump=1) and set the logfile desination
+(file=stderr).
+
+
+Applications
+------------
+
+Example library clients are to be found in .\apps.  These include a
+telnet server, a very simple web server, a combined TCP/UDP echo server and
+client that's very useful for testing, a TCP/UDP discard port server and
+client that's useful for unidirectional throughput measurement, ping, a UDP
+test program and an IP loopback testbed.
+
+
+Lawrence Rust (lvr@softsystem.co.uk)
+Software Systems, +33 5 49 72 79 63, www.softsystem.co.uk

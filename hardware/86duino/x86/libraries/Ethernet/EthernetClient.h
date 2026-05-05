@@ -1,48 +1,55 @@
 #ifndef ethernetclient_h
 #define ethernetclient_h
 
-#include "Arduino.h"	
-#include "Print.h"
 #include "Client.h"
-#include "IPAddress.h"
 
-#define BUFFER_SIZE (512)
-
+class EthernetClass;
+class EthernetServer;
 class EthernetClient : public Client
 {
 public:
-  EthernetClient();
+    EthernetClient();
+    EthernetClient(EthernetClass &ethernet);
+    EthernetClient(const EthernetClient &other);
+    virtual ~EthernetClient();
 
-  uint8_t status();
-  virtual int connect(IPAddress ip, uint16_t port);
-  virtual int connect(const char *host, uint16_t port);
-  virtual size_t write(uint8_t);
-  virtual size_t write(const uint8_t *buf, size_t size);
-  virtual int writeNB(uint8_t);
-  virtual int writeNB(const uint8_t *buf, size_t size);
-  virtual int available();
-  virtual int read();
-  virtual int read(uint8_t *buf, size_t size);
-  virtual int peek();
-  virtual void flush();
-  virtual void stop();
-  virtual uint8_t connected();
-  virtual operator bool();
+    uint8_t status();
+    virtual int connect(IPAddress ip, uint16_t port);
+    virtual int connect(const char *host, uint16_t port);
+    virtual size_t write(uint8_t);
+    virtual size_t write(const uint8_t *buf, size_t size);
+    virtual int writeNB(uint8_t);
+    virtual int writeNB(const uint8_t *buf, size_t size);
+    virtual int available();
+    virtual int read();
+    virtual int read(uint8_t *buf, size_t size);
+    virtual int peek();
+    virtual void flush();
+    virtual void stop();
+    virtual uint8_t connected();
+    virtual operator bool();
+    virtual bool operator==(const bool value) { return bool() == value; }
+    virtual bool operator!=(const bool value) { return bool() != value; }
+    virtual bool operator==(const EthernetClient &);
+    virtual bool operator!=(const EthernetClient &rhs) { return !this->operator==(rhs); }
+    int getSocketNumber();
+    virtual uint16_t localPort();
+    virtual IPAddress remoteIP();
+    virtual uint16_t remotePort();
+    virtual void setConnectionTimeout(uint16_t timeout) { _connectionTimeout = timeout; }
 
-  friend class EthernetServer;
-  
-  using Print::write;
-  
-  class EthernetServer *pServer;
-  
+    friend class EthernetServer;
+    using Print::write;
+
 private:
-  struct SwsSockInfo *sws;
-  EthernetClient(struct SwsSockInfo *info);
-  
-  int _id;
-  
-  uint8_t _RegBuf;
-  uint8_t _RegLen;
+    EthernetClass *_ethernet;
+    EthernetServer *_server;
+    int _serverIndex;
+    void *_sock;
+    IPAddress _remoteIP;
+    uint16_t _remotePort;
+    uint16_t _connectionTimeout;
+    bool _isCopy;
 };
 
 #endif

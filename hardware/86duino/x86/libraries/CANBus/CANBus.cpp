@@ -22,10 +22,14 @@
 
 #include "CANBus.h"
 
-Vortex86CAN CAN;
+Vortex86CAN CAN = Vortex86CAN(CANBUS0);
+#if defined (__86DUINO_EX2)
+Vortex86CAN CAN1 = Vortex86CAN(CANBUS1);
+#endif
 
-Vortex86CAN::Vortex86CAN()
+Vortex86CAN::Vortex86CAN(int candev)
 {
+    dev = candev;
 	can = NULL;
 	_remoteExt = CAN_STDID;
 	_remoteID = 0UL;
@@ -44,10 +48,11 @@ void Vortex86CAN::begin(uint32_t speed)
 {
 	if (can != NULL) com_Close(can);
 	
-	if ((can = com_Init(CAN_BUS)) == NULL) return;
+	if ((can = com_Init(dev)) == NULL) return;
 	com_SetBPS(can, speed);
 	com_SetTimeOut(can, 0L, 500L);
 	com_EnableBypass(can);
+    printf("Init CANBus OK\n");
 }
 
 void Vortex86CAN::beginTransmission(uint32_t id, uint8_t ext)

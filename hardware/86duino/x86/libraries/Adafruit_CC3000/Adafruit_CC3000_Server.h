@@ -47,6 +47,7 @@ class Adafruit_CC3000_ClientRef : public Client {
 
   uint8_t connected(void);
   size_t write(uint8_t c);
+  int writeNB(uint8_t c);
 
   size_t fastrprint(const char *str);
   size_t fastrprintln(const char *str);
@@ -63,6 +64,7 @@ class Adafruit_CC3000_ClientRef : public Client {
 
   int read(uint8_t *buf, size_t size);
   size_t write(const uint8_t *buf, size_t size);
+  int writeNB(const uint8_t *buf, size_t size);
   int peek();
   void flush();
   void stop();

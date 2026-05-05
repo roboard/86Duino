@@ -24,6 +24,7 @@
 #define __ENC86_H__
 
 #include <Arduino.h>
+#include "EncoderInterface.h"
 
 // Encoder mode
 #ifndef PulseMode_t
@@ -54,7 +55,7 @@
 #define INTR_Z_PULSE_LOW    (0x84)
 #define INTR_Z_PULSE_HIGH   (0x85)
 
-class Encoder
+class Encoder : public _Encoder_Interface
 {
 	private:
 		int mcn;
@@ -68,6 +69,7 @@ class Encoder
 		void _ssiInit(unsigned long bits, unsigned long clk, unsigned long wtime, bool gray2bin);
 
 		unsigned long long int _pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
+        void attachInterrupt(void (*callback)(int), int _rt);
 		
 		bool _setZPol;
 		int _dir;
@@ -95,7 +97,9 @@ class Encoder
 		unsigned long pulseIn(uint8_t pin, uint8_t state); // no timeout
 
 		void attachInterrupt(void (*callback)(int)); // for Pulse/DIR and CW/CCW and Pulse A/B 
-		void detachInterrupt();
+		void attachRTInterrupt(void (*callback)(int));
+        void attachHTInterrupt(void (*callback)(int));
+        void detachInterrupt();
 		
 		//unsigned long readtestcount(); //for debugging
 };
@@ -104,5 +108,8 @@ extern Encoder Enc0;
 extern Encoder Enc1;
 extern Encoder Enc2;
 extern Encoder Enc3;
+#if defined (__86DUINO_DUO)
+extern Encoder Enc4;
+#endif
 
 #endif

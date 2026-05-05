@@ -59,6 +59,11 @@ size_t Adafruit_CC3000_ClientRef::write(uint8_t c) {
   return _client->write(c);
 }
 
+int Adafruit_CC3000_ClientRef::writeNB(uint8_t c) {
+  HANDLE_NULL(_client, 0);
+  return _client->write(c);
+}
+
 size_t Adafruit_CC3000_ClientRef::fastrprint(const char *str) {
   HANDLE_NULL(_client, 0);
   return _client->fastrprint(str);
@@ -122,6 +127,11 @@ int Adafruit_CC3000_ClientRef::read(uint8_t *buf, size_t size) {
 size_t Adafruit_CC3000_ClientRef::write(const uint8_t *buf, size_t size) {
   HANDLE_NULL(_client, 0);
   return _client->write(buf, size);
+}
+
+int Adafruit_CC3000_ClientRef::writeNB(const uint8_t *buf, size_t size) {
+  HANDLE_NULL(_client, 0);
+  return _client->writeNB(buf, size);
 }
 
 int Adafruit_CC3000_ClientRef::peek() {

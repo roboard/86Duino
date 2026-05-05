@@ -26,6 +26,7 @@
 #include "io.h"
 #include "irq.h"
 #include "pins_arduino.h"
+#include "mcm.h"
 
 /* RTC */   
 #define RTCIRQ    (8)
@@ -104,23 +105,32 @@ static volatile bool pwm_IsEnable = false;
 
 #define SERVO_MIN() (this->min)  // minimum value in uS for this servo
 #define SERVO_MAX() (this->max)  // maximum value in uS for this servo 
-static int mc = 3;
-static int md = 2;
+
+#if defined (__86DUINO_EX)
+    static int mc = 3;
+    static int md = 2;
+    #define MAGIC_NUM (80L)
+#elif defined (__86DUINO_EX2)
+    static int mc = 11;
+    static int md = 2;
+    #define MAGIC_NUM (20L)
+#endif
+
 #define EVTPOINT    (5000L)
 
 /************************************ MCM ************************************/
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(unsigned long used_int) {
-    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]);
 }
 
 static void disable_MCINT(unsigned long used_int) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) | (1L << (mc%4)), mc/4);
 }
 
 static void enable_MCINT(unsigned long used_int) {
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) & ~(1L << (mc%4)), mc/4);
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
@@ -170,7 +180,7 @@ static int isr_handler(int irq, void* data) {
     
     do
     	val = mcpwm_ReadSTATREG2(mc, md);
-    while(val>=80L && val<EVTPOINT);
+    while(val>=MAGIC_NUM && val<EVTPOINT);
 	
 	
 	if (evtnumber > 0)
@@ -384,14 +394,14 @@ static bool initServoIRQ(void) {
 	        printf("irq_init fail\n"); return false;
 	    }
 	    
-	    if (irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
+	    if (irq_Setting(GetMCIRQ(mc/4), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
 	    {
 	        printf("%s\n", __FUNCTION__); return false;
 	    }
 	    Global_irq_Init = true;
 	}
     
-    if (irq_InstallISR(GetMCIRQ(), isr_handler, (void*)name) == false)
+    if (irq_InstallISR(GetMCIRQ(mc/4), isr_handler, (void*)name) == false)
     {
         printf("irq_install fail\n"); return false;
     }
@@ -400,7 +410,7 @@ static bool initServoIRQ(void) {
 }
 
 static bool closeServoIRQ(void) {
-    irq_UninstallISR(GetMCIRQ(), (void*)name);
+    irq_UninstallISR(GetMCIRQ(mc/4), (void*)name);
 }
 
 static bool isPWMPin(uint8_t pin) {
@@ -645,7 +655,7 @@ double Servo::read() {
 	x = this->readMicroseconds();
 	in_min = SERVO_MIN();
 	in_max = SERVO_MAX();
-	out_min = _min,
+	out_min = _min;
 	out_max = _max;
 	return ((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);     
 }
@@ -1339,11 +1349,11 @@ bool ServoFrame::load(const char* dir) {
 	char _line[256] = {'\0'};
 	long tmp[45] = {0L}, value;
 	
-	if (dir == NULL) {Serial.println("Fail : the path of frame file is NULL"); return false;}
+	if (dir == NULL) {printf("Fail : the path of frame file is NULL"); return false;}
 
 	get_real_path(dir, path);
 
-	if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+	if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 
 	while(fgets(_line, 256, fp))
 	{
@@ -1357,7 +1367,7 @@ bool ServoFrame::load(const char* dir) {
 		else
 		{
 			fclose(fp);
-            Serial.println("Not find correct format in the frame file");
+            printf("Not find correct format in the frame file");
 			return false;
 		}
 	}
@@ -2043,11 +2053,11 @@ bool ServoOffset::load(const char* dir) {
 	char _line[256] = {'\0'};
 	long tmp[45] = {0L}, value;
 	
-	if (dir == NULL) {Serial.println("Fail : the path of offset file is NULL"); return false;}
+	if (dir == NULL) {printf("Fail : the path of offset file is NULL"); return false;}
 
 	get_real_path(dir, path);
 
-	if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+	if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 
 	while(fgets(_line, 256, fp))
 	{
@@ -2061,7 +2071,7 @@ bool ServoOffset::load(const char* dir) {
 		else
 		{
 			fclose(fp);
-            Serial.println("Not find correct format in the offset file");
+            printf("Not find correct format in the offset file");
 			return false;
 		}
 	}
@@ -2361,36 +2371,36 @@ bool ServoFrameInno::load(const char* dir) {
 	char _line[256] = {'\0'}, tmp_mode[45][10] = {'\0'}, tmp_ch[256] = {'\0'}, _mode[10] = {'\0'};
 	long tmp_pos[45] = {0L}, tmp_time[45] = {0L}, tmp_speed[45] = {0L}, _pos, _time, _speed;
 	
-	if (dir == NULL) {Serial.println("Fail : the path of frame file is NULL"); return false;}
+	if (dir == NULL) {printf("Fail : the path of frame file is NULL"); return false;}
 
 	get_real_path(dir, path);
 	
 	if ((exten = strstr(path, ".frm")) != NULL && exten[4] == '\0')
     {
 		is_frmfile = 1;
-    	if ((fp = fopen(path, "rb")) == NULL) {Serial.println("Opening file fail"); return false;}
+    	if ((fp = fopen(path, "rb")) == NULL) {printf("Opening file fail"); return false;}
     }
     else if ((exten = strstr(path, ".FRM")) != NULL && exten[4] == '\0')
     {
 		is_frmfile = 1;
-    	if ((fp = fopen(path, "rb")) == NULL) {Serial.println("Opening file fail"); return false;}
+    	if ((fp = fopen(path, "rb")) == NULL) {printf("Opening file fail"); return false;}
     }
 	else if ((exten = strstr(path, ".ftxt")) != NULL && exten[5] == '\0')
 	{
 		is_ftxtfile = 1;
-		if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+		if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 	}
 	else if ((exten = strstr(path, ".FTXT")) != NULL && exten[5] == '\0')
 	{
 		is_ftxtfile = 1;
-		if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+		if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 	}
 	else // the file is not supported
-        {Serial.println("the file is not supported"); return false;}
+        {printf("the file is not supported"); return false;}
 	
 	if (is_ftxtfile == 1)
 	{
-		if (is_innoFrameFile(_line, fp, &frameno, &M1ID, &M2ID) == false) {fclose(fp); Serial.println("the file format is incorrect"); return false;}
+		if (is_innoFrameFile(_line, fp, &frameno, &M1ID, &M2ID) == false) {fclose(fp); printf("the file format is incorrect"); return false;}
 
 		while(fgets(_line, 256, fp))
 		{
@@ -2414,7 +2424,7 @@ bool ServoFrameInno::load(const char* dir) {
 				else
 				{
 					fclose(fp);
-                    Serial.println("Not find correct format in the frame file");
+                    printf("Not find correct format in the frame file");
 					return false;
 				}
 			}
@@ -2550,36 +2560,36 @@ bool ServoOffsetInno::load(const char* dir) {
 	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
 	long tmp_offset[45] = {0L}, offset;
 	
-	if (dir == NULL) {Serial.println("Fail : the path of offset file is NULL"); return false;}
+	if (dir == NULL) {printf("Fail : the path of offset file is NULL"); return false;}
 
 	get_real_path(dir, path);
 	
 	if ((exten = strstr(path, ".ofs")) != NULL && exten[4] == '\0')
     {
 		is_ofsfile = 1;
-    	if ((fp = fopen(path, "rb")) == NULL) {Serial.println("Opening file fail"); return false;}
+    	if ((fp = fopen(path, "rb")) == NULL) {printf("Opening file fail"); return false;}
     }
     else if ((exten = strstr(path, ".OFS")) != NULL && exten[4] == '\0')
     {
 		is_ofsfile = 1;
-    	if ((fp = fopen(path, "rb")) == NULL) {Serial.println("Opening file fail"); return false;}
+    	if ((fp = fopen(path, "rb")) == NULL) {printf("Opening file fail"); return false;}
     }
 	else if ((exten = strstr(path, ".otxt")) != NULL && exten[5] == '\0')
 	{
 		is_otxtfile = 1;
-		if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+		if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 	}
 	else if ((exten = strstr(path, ".OTXT")) != NULL && exten[5] == '\0')
 	{
 		is_otxtfile = 1;
-		if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+		if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 	}
 	else // the file is not supported
-        {Serial.println("the file is not supported"); return false;}
+        {printf("the file is not supported"); return false;}
 
     if (is_otxtfile == 1)
 	{
-		if (is_innoOffsetFile(_line, fp) == false) {fclose(fp); Serial.println("the file format is incorrect"); return false;}
+		if (is_innoOffsetFile(_line, fp) == false) {fclose(fp); printf("the file format is incorrect"); return false;}
 	
 		while(fgets(_line, 256, fp))
 		{
@@ -2599,7 +2609,7 @@ bool ServoOffsetInno::load(const char* dir) {
 				else
 				{
 					fclose(fp);
-                    Serial.println("Not find correct format in the offset file");
+                    printf("Not find correct format in the offset file");
 					return false;
 				}
 			}
@@ -2837,22 +2847,22 @@ bool ServoFrameKondo::load(const char* dir, const char* fname) {
 	long tmp_frame[24] = {0L};
 	bool _handled = false;
 	
-	if (dir == NULL) {Serial.println("Fail : the path of frame file is NULL"); return false;}
+	if (dir == NULL) {printf("Fail : the path of frame file is NULL"); return false;}
 
 	get_real_path(dir, path);
 	
 	if ((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
     {
-    	if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+    	if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
     }
 	else if ((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
 	{
-		if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+		if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 	}
 	else // the file is not supported
-		{Serial.println("the file is not supported"); return false;}
+		{printf("the file is not supported"); return false;}
 	
-	if (is_kondoFrameFile(_line, fp) == false) {fclose(fp); Serial.println("the file is not match the format of KONDO frame file"); return false;}
+	if (is_kondoFrameFile(_line, fp) == false) {fclose(fp); printf("the file is not match the format of KONDO frame file"); return false;}
 	
 	while(fgets(_line, 256, fp))
 	{
@@ -2957,22 +2967,22 @@ bool ServoOffsetKondo::load(const char* dir) {
 	char _line[256] = {'\0'}, tmp_ch[256] = {'\0'};
 	long tmp_offset[45] = {0L}, offset;
 	
-	if (dir == NULL) {Serial.println("Fail : the path of offset file is NULL"); return false;}
+	if (dir == NULL) {printf("Fail : the path of offset file is NULL"); return false;}
 
 	get_real_path(dir, path);
 	
 	if ((exten = strstr(path, ".rcb")) != NULL && exten[4] == '\0')
     {
-    	if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+    	if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
     }
 	else if ((exten = strstr(path, ".RCB")) != NULL && exten[4] == '\0')
 	{
-		if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+		if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 	}
 	else // the file is not supported
-		{Serial.println("the file is not supported"); return false;}
+		{printf("the file is not supported"); return false;}
 
-	if (is_kondoOffsetFile(_line, fp) == false) {fclose(fp); Serial.println("the file is not match the format of KONDO offset file"); return false;}
+	if (is_kondoOffsetFile(_line, fp) == false) {fclose(fp); printf("the file is not match the format of KONDO offset file"); return false;}
 
 	while(fgets(_line, 256, fp))
 	{
@@ -2992,7 +3002,7 @@ bool ServoOffsetKondo::load(const char* dir) {
 			else
 			{
 				fclose(fp);
-                Serial.println("Not find correct format in the offset file");
+                printf("Not find correct format in the offset file");
 				return false;
 			}
 		}
@@ -3094,22 +3104,22 @@ bool ServoFramePololu::load(const char* dir, const char* sname, const char* fnam
 	
 	bool _handled = false, find_sequences = false, find_sequence = false;
 	
-	if (dir == NULL) {Serial.println("Fail : the path of frame file is NULL"); return false;}   
+	if (dir == NULL) {printf("Fail : the path of frame file is NULL"); return false;}   
 
 	get_real_path(dir, path);
 	
 	if ((exten = strstr(path, ".txt")) != NULL && exten[4] == '\0')
     {
-    	if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+    	if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
     }
 	else if ((exten = strstr(path, ".TXT")) != NULL && exten[4] == '\0')
 	{
-		if ((fp = fopen(path, "r")) == NULL) {Serial.println("Opening file fail"); return false;}
+		if ((fp = fopen(path, "r")) == NULL) {printf("Opening file fail"); return false;}
 	}
 	else // the file is not supported
-        {Serial.println("the file is not supported"); return false;}
+        {printf("the file is not supported"); return false;}
 	
-	if (is_pololuFrameFile(_line, fp) == false) {fclose(fp); Serial.println("the file format is incorrect"); return false;}
+	if (is_pololuFrameFile(_line, fp) == false) {fclose(fp); printf("the file format is incorrect"); return false;}
 	
 	// find the head of sequences 
 	while(fgets(_line, 256, fp))
@@ -3123,7 +3133,7 @@ bool ServoFramePololu::load(const char* dir, const char* sname, const char* fnam
 		if (strcmp(tmp_ch, sequence_start) == 0) {find_sequences = true; break;}
 	}
 	
-	if (find_sequences == false) {Serial.println("sequences is not found"); return false;}
+	if (find_sequences == false) {printf("sequences is not found"); return false;}
 	
 	// find the sequence name
 	while(fgets(_line, 256, fp))
@@ -3139,7 +3149,7 @@ bool ServoFramePololu::load(const char* dir, const char* sname, const char* fnam
 		break;
 	}
 	
-	if (find_sequence == false) {Serial.println("sequences is not found"); return false;}
+	if (find_sequence == false) {printf("sequences is not found"); return false;}
 		
 	// find the frame name
 	while(fgets(_line, 256, fp))
@@ -3583,14 +3593,14 @@ bool ServoFrameVstone::load(const char* filename, const char* framename) {
 	char* pose_data_title = "_POSE:";
 	bool _handled = false, find_pose = false;
 
-	if (filename == NULL || framename == NULL) {Serial.println("Fail : the path of frame file is NULL"); return false;}    
+	if (filename == NULL || framename == NULL) {printf("Fail : the path of frame file is NULL"); return false;}    
 
 	get_real_path(filename, path);
 	
 	fileType = getFileType(path, ".txt", ".TXT", &fp);
-	if (fileType == NOFILE) {Serial.println("Get incorrect filetype"); return false;}
+	if (fileType == NOFILE) {printf("Get incorrect filetype"); return false;}
 
-	if (is_VstoneFrameFile(_line, sizeof(_line), fileType, fp) == false) {fclose(fp); Serial.println("the file format is incorrect"); return false;}
+	if (is_VstoneFrameFile(_line, sizeof(_line), fileType, fp) == false) {fclose(fp); printf("the file format is incorrect"); return false;}
 
 	// find the pose name, Note: dont clear "SPACE" char
 	while(myfgets(_line, sizeof(_line), fileType, fp))
@@ -3608,7 +3618,7 @@ bool ServoFrameVstone::load(const char* filename, const char* framename) {
 		}
 	}
 
-	if (find_pose == false) {Serial.println("could not get correct pose data"); return false;}
+	if (find_pose == false) {printf("could not get correct pose data"); return false;}
 
 	// get the frame data
 	while(myfgets(_line, sizeof(_line), fileType, fp))
@@ -3693,12 +3703,12 @@ bool ServoOffsetVstone::load(const char* dir, const char* offsetname) {
 	char* offset_data_title = "DEFOFS_VALUE:";
 	bool find_offset = false, _handled = false;
 	
-	if (dir == NULL || offsetname == NULL) {Serial.println("Fail : the path of frame file is NULL"); return false;}    
+	if (dir == NULL || offsetname == NULL) {printf("Fail : the path of frame file is NULL"); return false;}    
 
 	get_real_path(dir, path);
 	
 	fileType = getFileType(path, ".ini", ".INI", &fp);
-	if (fileType == NOFILE) {Serial.println("Get incorrect filetype"); return false;}
+	if (fileType == NOFILE) {printf("Get incorrect filetype"); return false;}
 
 	while(myfgets(_line, sizeof(_line), fileType, fp))
 	{
@@ -3715,7 +3725,7 @@ bool ServoOffsetVstone::load(const char* dir, const char* offsetname) {
 		}
 	}
 	
-    if (find_offset == false) {Serial.println("could not find offset data"); return false;}
+    if (find_offset == false) {printf("could not find offset data"); return false;}
 	
 	// get the offset data
 	while(myfgets(_line, sizeof(_line), fileType, fp))

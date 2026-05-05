@@ -40,8 +40,8 @@
 	#define  COM3_TX    (0x98)
 	#define  COM3_RX    (0x99)
 
-#else
-	
+#elif defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE)
+
 	#define  COM1_TX    (0x9A)
 	#define  COM1_RX    (0x9B)
 	#define  COM2_TX    (0x9E)
@@ -49,7 +49,18 @@
 	#define  COM3_TX    (0x9C)
 	#define  COM3_RX    (0x9D)
 
+#elif defined (__86DUINO_HMI043T) 
+    
+    #define  COM1_TX    (0x00)
+	#define  COM1_RX    (0x00)
+	#define  COM2_TX    (0x00)
+	#define  COM2_RX    (0x00)
+	#define  COM3_TX    (0x00)
+	#define  COM3_RX    (0x00)
+    
 #endif
+
+#define TX_QUEUE_SIZE    		(1024*4) // from uart.cpp
 
 // Public Methods //////////////////////////////////////////////////////////////
 HardwareSerial::HardwareSerial(int com_port, unsigned long com_baudrate, unsigned char com_format, unsigned long com_rxtimeout, unsigned long com_txtimeout) {
@@ -77,96 +88,111 @@ void HardwareSerial::begin(unsigned long baud, uint8_t config) {
 
 void HardwareSerial::begin(unsigned long baud, uint8_t config, int comtype) {
     unsigned short crossbar_ioaddr = 0;
-	if(handle != NULL) return;
-	
-	if (io_Init() == false) {
-		printf("ERROR: IO init fail.\n");
-		return;
-	}
-	sb_Write(0xc0, (sb_Read(0xc0) & 0x7fffffffL) | ((unsigned long)1L << 31));
-	io_Close();
-
+    
+	if (handle != NULL) {
+        com_Close(handle);
+        handle = NULL;
+    }
+    
+    if (_G_COM[port] == NOTHING)
+    {
+        printf("This CPU does not get COM%d\n", port+1);
+        return;
+    }
+    
 	if ((handle = com_Init(port)) == NULL) 
 	{
-		printf("COM init fail!!\n");
+		printf("COM%d init fail!!\n", port+1);
 		return;
 	}
+    
+	if ((port == COM9) && vx86_IsPCIeTarget()) {
+        vx86_SetUartFormula(COM9, VX86_UART_FORMULA4);
+        vx86_SetUartFormula(COM10, VX86_UART_FORMULA4);
+        com_SetParallelMode(handle);
+    } else {
+        switch (baud) {
+        case 6000000L: baud = COM_UARTBAUD_6000000BPS; break;
+        case 3000000L: baud = COM_UARTBAUD_3000000BPS; break;
+        case 2000000L: baud = COM_UARTBAUD_2000000BPS; break;
+        case 1500000L: baud = COM_UARTBAUD_1500000BPS; break;
+        case 1000000L: baud = COM_UARTBAUD_1000000BPS; break;
+        case 750000L:  baud = COM_UARTBAUD_750000BPS;  break;
+        case 500000L:  baud = COM_UARTBAUD_500000BPS;  break;
+        case 461538L:  baud = COM_UARTBAUD_461538BPS;  break;
+        case 333333L:  baud = COM_UARTBAUD_333333BPS;  break;
+        case 300000L:  baud = COM_UARTBAUD_300000BPS;  break;
+        case 250000L:  baud = COM_UARTBAUD_250000BPS;  break;
+        case 200000L:  baud = COM_UARTBAUD_200000BPS;  break;
+        case 150000L:  baud = COM_UARTBAUD_150000BPS;  break;
+        case 125000L:  baud = COM_UARTBAUD_125000BPS;  break;
+        case 115200L:  baud = COM_UARTBAUD_115200BPS;  break;
+        case 57600L:   baud = COM_UARTBAUD_57600BPS;   break;
+        case 38400L:   baud = COM_UARTBAUD_38400BPS;   break;
+        case 28800L:   baud = COM_UARTBAUD_28800BPS;   break;
+        case 19200L:   baud = COM_UARTBAUD_19200BPS;   break;
+        case 14400L:   baud = COM_UARTBAUD_14400BPS;   break;
+        case 9600L:    baud = COM_UARTBAUD_9600BPS;    break;
+        case 4800L:    baud = COM_UARTBAUD_4800BPS;    break;
+        case 2400L:    baud = COM_UARTBAUD_2400BPS;    break;
+        case 1200L:    baud = COM_UARTBAUD_1200BPS;    break;
+        case 600L:     baud = COM_UARTBAUD_600BPS;     break;
+        case 300L:     baud = COM_UARTBAUD_300BPS;     break;
+        case 50L:      baud = COM_UARTBAUD_50BPS;      break;
+        default:       baud = COM_UARTBAUD_9600BPS;    break;
+        }
+        com_SetBPS(handle, baud);
+    }
 	
-	switch (baud) {
-	case 6000000L: baud = COM_UARTBAUD_6000000BPS; break;
-	case 3000000L: baud = COM_UARTBAUD_3000000BPS; break;
-	case 2000000L: baud = COM_UARTBAUD_2000000BPS; break;
-	case 1500000L: baud = COM_UARTBAUD_1500000BPS; break;
-	case 1000000L: baud = COM_UARTBAUD_1000000BPS; break;
-	case 750000L:  baud = COM_UARTBAUD_750000BPS;  break;
-	case 500000L:  baud = COM_UARTBAUD_500000BPS;  break;
-	case 461538L:  baud = COM_UARTBAUD_461538BPS;  break;
-	case 333333L:  baud = COM_UARTBAUD_333333BPS;  break;
-	case 300000L:  baud = COM_UARTBAUD_300000BPS;  break;
-	case 250000L:  baud = COM_UARTBAUD_250000BPS;  break;
-	case 200000L:  baud = COM_UARTBAUD_200000BPS;  break;
-	case 150000L:  baud = COM_UARTBAUD_150000BPS;  break;
-	case 125000L:  baud = COM_UARTBAUD_125000BPS;  break;
-	case 115200L:  baud = COM_UARTBAUD_115200BPS;  break;
-	case 57600L:   baud = COM_UARTBAUD_57600BPS;   break;
-	case 38400L:   baud = COM_UARTBAUD_38400BPS;   break;
-	case 28800L:   baud = COM_UARTBAUD_28800BPS;   break;
-	case 19200L:   baud = COM_UARTBAUD_19200BPS;   break;
-	case 14400L:   baud = COM_UARTBAUD_14400BPS;   break;
-	case 9600L:    baud = COM_UARTBAUD_9600BPS;    break;
-	case 4800L:    baud = COM_UARTBAUD_4800BPS;    break;
-	case 2400L:    baud = COM_UARTBAUD_2400BPS;    break;
-	case 1200L:    baud = COM_UARTBAUD_1200BPS;    break;
-	case 600L:     baud = COM_UARTBAUD_600BPS;     break;
-	case 300L:     baud = COM_UARTBAUD_300BPS;     break;
-	case 50L:      baud = COM_UARTBAUD_50BPS;      break;
-	default:       baud = COM_UARTBAUD_9600BPS;    break;
-	}
-	
-	com_SetBPS(handle, baud);
 	com_SetFormat(handle, config);  
 	com_FlushTxQueue(handle);
 	com_FlushRxQueue(handle);
 	com_SetTimeOut(handle, rxtimeout, txtimeout);
-	crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
+	crossbar_ioaddr = sb_Read16(0x64) & 0xfffe;
 	
-	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
-	if(port == COM1 || port == COM2 || port == COM3)
-		if(comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
+	if (port == COM1 || port == COM2 || port == COM3)
+		if (comtype == COM_HalfDuplex) com_EnableHalfDuplex(handle);
 
-	if(port == COM1)
+    // Set the COM's crossbar
+    #if defined (__86DUINO_EX)
+	if (port == COM1)
 	{
-		io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
-		io_outpb(crossbar_ioaddr + COM1_RX, 0x08);
+		if (COM1_TX) io_outpb(crossbar_ioaddr + COM1_TX, 0x08);
+		if (COM1_RX) io_outpb(crossbar_ioaddr + COM1_RX, 0x08);
 	}
-	else if(port == COM2)
+	else if (port == COM2)
 	{
-		io_outpb(crossbar_ioaddr + COM2_TX, 0x08);
-		io_outpb(crossbar_ioaddr + COM2_RX, 0x08);
+		if (COM2_TX) io_outpb(crossbar_ioaddr + COM2_TX, 0x08);
+		if (COM2_RX) io_outpb(crossbar_ioaddr + COM2_RX, 0x08);
 	}
-	else if(port == COM3)
+	else if (port == COM3)
 	{
-		io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
-		io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
+		if (COM3_TX) io_outpb(crossbar_ioaddr + COM3_TX, 0x08);
+		if (COM3_RX) io_outpb(crossbar_ioaddr + COM3_RX, 0x08);
 	}
 	#endif
+    
+    #if defined (__86DUINO_HMI043T)
+    io_outpb(crossbar_ioaddr + 0x18, 0x05); // RICH-IO port1, COM3-TXD3, for RFID
+	io_outpb(crossbar_ioaddr + 0x19, 0x06); // RICH-IO port1, COM3-RXD3, for RFID
+    #endif
 }
 
 void HardwareSerial::end() {
-	if(handle == NULL) return;
+	if (handle == NULL) return;
 	com_FlushWFIFO(handle);
 	com_Close(handle);
 	handle = NULL;
 }
 
 int HardwareSerial::available(void) {
-    if(handle == NULL) return 0;
+    if (handle == NULL) return 0;
 	return com_QueryRxQueue(handle);
 } 
 
 int HardwareSerial::peek(void) {
-  	if(handle == NULL) return -1;
-	if(peek_stored == true)
+  	if (handle == NULL) return -1;
+	if (peek_stored == true)
   		return peek_val;
   	else
   	{
@@ -179,8 +205,8 @@ int HardwareSerial::peek(void) {
 
 int HardwareSerial::read(void) {
 	int c;
-	if(handle == NULL) return -1;
-	if(peek_stored == true)
+	if (handle == NULL) return -1;
+	if (peek_stored == true)
 	{
 		peek_stored = false;
 		return peek_val;
@@ -194,18 +220,31 @@ int HardwareSerial::read(void) {
 
 int HardwareSerial::availableForWrite(void)
 {
-    if(handle == NULL) return 0;
-    return com_QueryTxQueue(handle);
+    if (handle == NULL) return 0;
+    return TX_QUEUE_SIZE - com_QueryTxQueue(handle);
 }
 
-void HardwareSerial::flush() {
-    if(handle == NULL) return;
-	com_FlushTxQueue(handle);
+void HardwareSerial::flush(int w) {
+    if (handle == NULL) return;
+	if (w == 0)
+        com_FlushTxQueue(handle);
+    else
+        com_FlushRxQueue(handle);
+}
+
+void HardwareSerial::setTimeout(unsigned long rxtimeout, unsigned long txtimeout) {
+    if (handle == NULL) return;
+    com_SetTimeOut(handle, rxtimeout, txtimeout);
 }
 
 size_t HardwareSerial::write(uint8_t c) {
-	if(handle == NULL) return 0;
+	if (handle == NULL) return 0;
 	return (com_Write(handle, c) == true) ? 1 : 0;
+} 
+
+size_t HardwareSerial::write(const uint8_t *buffer, size_t size) {
+	if (handle == NULL) return 0;
+	return com_Send(handle, (uint8_t*)buffer, size);
 } 
 
 HardwareSerial::operator bool() {
@@ -230,22 +269,23 @@ void serialEvent232() {}
 
 void serialEventRun(void)
 {
-	if(USBDEV != NULL && Serial.available() > 0) serialEvent();
-	if(Serial1.handle != NULL && Serial1.available() > 0) serialEvent1();
-	if(Serial2.handle != NULL && Serial2.available() > 0) serialEvent2();
-	if(Serial3.handle != NULL && Serial3.available() > 0) serialEvent3();
-	if(Serial5.handle != NULL && Serial5.available() > 0) serialEvent5();
-	if(Serial485.handle != NULL && Serial485.available() > 0) serialEvent485();
-	if(Serial232.handle != NULL && Serial232.available() > 0) serialEvent232();
+	// if (USBDEV != NULL && Serial.available() > 0) serialEvent();
+	if (_Serial1.handle != NULL && _Serial1.available() > 0) serialEvent1();
+	if (_Serial2.handle != NULL && _Serial2.available() > 0) serialEvent2();
+	if (_Serial3.handle != NULL && _Serial3.available() > 0) serialEvent3();
+	if (_Serial5.handle != NULL && _Serial5.available() > 0) serialEvent5();
+	if (_Serial485.handle != NULL && _Serial485.available() > 0) serialEvent485();
+	if (_Serial232.handle != NULL && _Serial232.available() > 0) serialEvent232();
 }
 
-HardwareSerial Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
-HardwareSerial Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
-HardwareSerial Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
-HardwareSerial Serial5(COM5, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
-HardwareSerial Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
-HardwareSerial Serial232(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial _Serial1(COM1, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial _Serial2(COM2, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial _Serial3(COM3, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial _Serial5(COM5, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial _Serial485(COM4, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial _Serial232(COM6, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
+HardwareSerial _SerialPCIE(COM9, 115200L, BYTESIZE8|NOPARITY|STOPBIT1, 0L, 500L);
 
-HardwareSerial* HWSerial[7] = {NULL, &Serial1, &Serial2, &Serial3, &Serial485, &Serial5, &Serial232};
+HardwareSerial* HWSerial[7] = {NULL, &_Serial1, &_Serial2, &_Serial3, &_Serial485, &_Serial5, &_Serial232};
 
 // Preinstantiate Objects //////////////////////////////////////////////////////

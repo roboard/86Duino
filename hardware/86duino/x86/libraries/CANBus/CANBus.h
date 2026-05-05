@@ -7,32 +7,36 @@
 //#error CAN bus library is only used on 86Duino ONE!
 //#endif
 
-#define CAN_10KBPS         (CAN_BPS_10K)
-#define CAN_20KBPS         (CAN_BPS_20K)
-#define CAN_50KBPS         (CAN_BPS_50K)
-#define CAN_83K3BPS        (CAN_BPS_83K3)
-#define CAN_100KBPS        (CAN_BPS_100K)
-#define CAN_125KBPS        (CAN_BPS_125K)
-#define CAN_250KBPS        (CAN_BPS_250K)
-#define CAN_500KBPS        (CAN_BPS_500K)
-#define CAN_833KBPS        (CAN_BPS_833K)
-#define CAN_1000KBPS       (CAN_BPS_1000K)
+#define CAN_BUS_0           (0)
+#define CAN_BUS_1           (1)
 
-#define CAN_STDID          (STD_DATA_FRAME)
-#define CAN_EXTID          (EXT_DATA_FRAME)
-#define CAN_STDID_REMOTE   (STD_REMOTE_FRAME)
-#define CAN_EXTID_REMOTE   (EXT_REMOTE_FRAME)
+#define CAN_10KBPS          (CAN_BPS_10K)
+#define CAN_20KBPS          (CAN_BPS_20K)
+#define CAN_50KBPS          (CAN_BPS_50K)
+#define CAN_83K3BPS         (CAN_BPS_83K3)
+#define CAN_100KBPS         (CAN_BPS_100K)
+#define CAN_125KBPS         (CAN_BPS_125K)
+#define CAN_250KBPS         (CAN_BPS_250K)
+#define CAN_500KBPS         (CAN_BPS_500K)
+#define CAN_833KBPS         (CAN_BPS_833K)
+#define CAN_1000KBPS        (CAN_BPS_1000K)
 
-#define CAN_OK             (0)
-#define CAN_MSGAVAIL       (3)
-#define CAN_NOMSG          (4)
-#define CAN_FAIL           (-1)
+#define CAN_STDID           (STD_DATA_FRAME)
+#define CAN_EXTID           (EXT_DATA_FRAME)
+#define CAN_STDID_REMOTE    (STD_REMOTE_FRAME)
+#define CAN_EXTID_REMOTE    (EXT_REMOTE_FRAME)
+
+#define CAN_OK              (0)
+#define CAN_MSGAVAIL        (3)
+#define CAN_NOMSG           (4)
+#define CAN_FAIL            (-1)
 
 #define CAN_TX_BUFFER_MAX_SIZE (512)
 
 class Vortex86CAN
 {
   private:
+    int dev;
 	COMPort *can;
 	uint32_t _remoteID;
 	uint8_t _remoteExt;
@@ -45,7 +49,7 @@ class Vortex86CAN
 	int RxSize;
 
   public:
-	Vortex86CAN();
+	Vortex86CAN(int candev);
     void begin();
     void begin(uint32_t speed);
     
@@ -71,5 +75,7 @@ class Vortex86CAN
 };
 
 extern Vortex86CAN CAN;
-
+#if defined (__86DUINO_EX2)
+extern Vortex86CAN CAN1;
+#endif
 #endif

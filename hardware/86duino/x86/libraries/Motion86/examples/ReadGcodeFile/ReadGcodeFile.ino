@@ -14,7 +14,7 @@
 Machine machine(0);
 
 // Stepper driver enable pin.
-int EnablePin = 4;
+int EnablePin = 12;
 
 // The gocde file in the SD card storage.
 char *filename = "auto.gcode";

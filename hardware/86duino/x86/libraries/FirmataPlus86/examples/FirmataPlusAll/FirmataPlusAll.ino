@@ -828,185 +828,185 @@ void sysexCallback(byte command, byte argc, byte *argv)
 #endif
       break;
 
-    case TONE_PLAY:
-      byte toneCommand, pin;
-      int frequency, duration;
+  case TONE_PLAY:
+    byte toneCommand, pin;
+    int frequency, duration;
 
-      toneCommand = argv[0];
-      pin = argv[1];
+    toneCommand = argv[0];
+    pin = argv[1];
 
-      if (toneCommand == TONE_TONE) {
-        frequency = argv[2] + (argv[3] << 7);
-        // duration is currently limited to 16,383 ms
-        duration = argv[4] + (argv[5] << 7);
-        tone(pin, frequency, duration);
-      }
-      else if (toneCommand == TONE_NO_TONE) {
-        noTone(pin);
-      }
-      break ;
+    if (toneCommand == TONE_TONE) {
+      frequency = argv[2] + (argv[3] << 7);
+      // duration is currently limited to 16,383 ms
+      duration = argv[4] + (argv[5] << 7);
+      tone(pin, frequency, duration);
+    }
+    else if (toneCommand == TONE_NO_TONE) {
+      noTone(pin);
+    }
+    break ;
 
-      // arg0 = trigger pin
-      // arg1 = echo pin
-      // arg2 = ping interval in milliseconds if 0, then set to 33
-      // arg3 = maxdistance lsb
-      // arg4 = maxdistance msb
-    case SONAR_CONFIG :
-      int max_distance ;
-      if ( numActiveSonars < MAX_SONARS)
-      {
-        sonarTriggerPin = argv[0] ;
-        sonarEchoPin = argv[1] ;
-        // set interval to a minium of 33 ms.
-        if ( argv[2] >= 33 ) {
-          pingInterval = argv[2] ;
-        }
-        else {
-          pingInterval = 33 ;
-        }
-        max_distance = argv[3] + (argv[4] << 7 ) ;
-        sonarPinNumbers[numActiveSonars] = sonarTriggerPin ;
-
-        setPinModeCallback(sonarTriggerPin, PIN_MODE_SONAR);
-        setPinModeCallback(sonarEchoPin, PIN_MODE_SONAR);
-        sonars[numActiveSonars] = new NewPing(sonarTriggerPin, sonarEchoPin, max_distance) ;
-        numActiveSonars++ ;
+    // arg0 = trigger pin
+    // arg1 = echo pin
+    // arg2 = ping interval in milliseconds if 0, then set to 33
+    // arg3 = maxdistance lsb
+    // arg4 = maxdistance msb
+  case SONAR_CONFIG :
+    int max_distance ;
+    if ( numActiveSonars < MAX_SONARS)
+    {
+      sonarTriggerPin = argv[0] ;
+      sonarEchoPin = argv[1] ;
+      // set interval to a minium of 33 ms.
+      if ( argv[2] >= 33 ) {
+        pingInterval = argv[2] ;
       }
       else {
-        Firmata.sendString("PING_CONFIG Error: Exceeded number of supported ping devices");
+        pingInterval = 33 ;
       }
-      break ;
+      max_distance = argv[3] + (argv[4] << 7 ) ;
+      sonarPinNumbers[numActiveSonars] = sonarTriggerPin ;
 
-    case STEPPER_DATA:
-      // determine if this a STEPPER_CONFIGURE command or STEPPER_OPERATE command
-      if (argv[0] == STEPPER_CONFIGURE)
+      setPinModeCallback(sonarTriggerPin, PIN_MODE_SONAR);
+      setPinModeCallback(sonarEchoPin, PIN_MODE_SONAR);
+      sonars[numActiveSonars] = new NewPing(sonarTriggerPin, sonarEchoPin, max_distance) ;
+      numActiveSonars++ ;
+    }
+    else {
+      Firmata.sendString("PING_CONFIG Error: Exceeded number of supported ping devices");
+    }
+    break ;
+
+  case STEPPER_DATA:
+    // determine if this a STEPPER_CONFIGURE command or STEPPER_OPERATE command
+    if (argv[0] == STEPPER_CONFIGURE)
+    {
+      int numSteps = argv[1] + (argv[2] << 7);
+      int pin1 = argv[3] ;
+      int pin2 = argv[4] ;
+      if ( argc == 5 )
       {
-        int numSteps = argv[1] + (argv[2] << 7);
-        int pin1 = argv[3] ;
-        int pin2 = argv[4] ;
-        if ( argc == 5 )
-        {
-          // two pin motor
-          stepper = new Stepper(numSteps, pin1, pin2) ;
-        }
-        else if (argc == 7 ) // 4 wire motor
-        {
-          int pin3 = argv[5] ;
-          int pin4 = argv[6] ;
-          stepper =  new Stepper(numSteps, pin1, pin2, pin3, pin4) ;
-        }
-        else
-        {
-          Firmata.sendString("STEPPER CONFIG Error: Wrong Number of arguments");
-          printData("argc = ", argc) ;
-        }
+        // two pin motor
+        stepper = new Stepper(numSteps, pin1, pin2) ;
       }
-      else if ( argv[0] == STEPPER_STEP )
+      else if (argc == 7 ) // 4 wire motor
       {
-        long speed = (long)argv[1] | ((long)argv[2] << 7) | ((long)argv[3] << 14);
-        int numSteps = argv[4] + (argv[5] << 7);
-        int direction = argv[6] ;
-        if (stepper != NULL )
-        {
-          stepper->setSpeed(speed) ;
-          if (direction == 0 )
-          {
-            numSteps *= -1 ;
-          }
-          stepper->step(numSteps) ;
-        }
-        else
-        {
-          Firmata.sendString("STEPPER OPERATE Error: MOTOR NOT CONFIGURED");
-        }
-      }
-      else if ( argv[0] == STEPPER_LIBRARY_VERSION )
-      {
-        if ( stepper != NULL )
-        {
-          int version = stepper->version() ;
-          Firmata.write(START_SYSEX);
-          Firmata.write(STEPPER_DATA);
-          Firmata.write(version & 0x7F);
-          Firmata.write(version >> 7);
-          Firmata.write(END_SYSEX);
-        }
-        else
-        {
-          // did not find a configured stepper
-          Firmata.sendString("STEPPER FIRMWARE VERSION Error: NO MOTORS CONFIGURED");
-        }
-        break ;
+        int pin3 = argv[5] ;
+        int pin4 = argv[6] ;
+        stepper =  new Stepper(numSteps, pin1, pin2, pin3, pin4) ;
       }
       else
       {
-        Firmata.sendString("STEPPER CONFIG Error: UNKNOWN STEPPER COMMAND");
+        Firmata.sendString("STEPPER CONFIG Error: Wrong Number of arguments");
+        printData("argc = ", argc) ;
+      }
+    }
+    else if ( argv[0] == STEPPER_STEP )
+    {
+      long speed = (long)argv[1] | ((long)argv[2] << 7) | ((long)argv[3] << 14);
+      int numSteps = argv[4] + (argv[5] << 7);
+      int direction = argv[6] ;
+      if (stepper != NULL )
+      {
+        stepper->setSpeed(speed) ;
+        if (direction == 0 )
+        {
+          numSteps *= -1 ;
+        }
+        stepper->step(numSteps) ;
+      }
+      else
+      {
+        Firmata.sendString("STEPPER OPERATE Error: MOTOR NOT CONFIGURED");
+      }
+    }
+    else if ( argv[0] == STEPPER_LIBRARY_VERSION )
+    {
+      if ( stepper != NULL )
+      {
+        int version = stepper->version() ;
+        Firmata.write(START_SYSEX);
+        Firmata.write(STEPPER_DATA);
+        Firmata.write(version & 0x7F);
+        Firmata.write(version >> 7);
+        Firmata.write(END_SYSEX);
+      }
+      else
+      {
+        // did not find a configured stepper
+        Firmata.sendString("STEPPER FIRMWARE VERSION Error: NO MOTORS CONFIGURED");
       }
       break ;
-      
-    case MOVE_ONE_SERVO:
-      pin = one_servo_used_pin = (int)argv[0];
-	  angle = (long)argv[1] | ((long)argv[2] << 7);
-      
-      if (angle < MIN_PULSE_WIDTH)
-	  { // treat values less than 450 as angles in degrees (valid values in microseconds are handled as microseconds)
-		if (angle < 0) angle = 0;
-		if (angle > 180) angle = 180;
-		angle = map(angle, 0, 180, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);      
-	  }
+    }
+    else
+    {
+      Firmata.sendString("STEPPER CONFIG Error: UNKNOWN STEPPER COMMAND");
+    }
+    break ;
     
-      if (argv[3] == 0)
-      {
-        msec = (long)argv[4] | ((long)argv[5] << 7);
-        servos[servoPinMap[pin]].setPosition(angle, msec);
-      }
-      else if (argv[3] == 1)
-      {
-        velocity = (long)argv[4] | ((long)argv[5] << 7);
-        servos[servoPinMap[pin]].setVelocity(velocity);
-        servos[servoPinMap[pin]].setPosition(angle);
-      }
-      servos[servoPinMap[pin]].run();
-      
-      one_servo_is_moving = true;
-      
-      break;
-      
-    case SERVO_MOVING_ALL:
-      servoMultiRun();
-      break ;
-      
-	case SERVO_CONFIG_EX:
-	  pin = (int)argv[0];
-	  angle = (long)argv[1] | ((long)argv[2] << 7);
-      
-      if (angle < MIN_PULSE_WIDTH)
-	  { // treat values less than 450 as angles in degrees (valid values in microseconds are handled as microseconds)
-		if (angle < 0) angle = 0;
-		if (angle > 180) angle = 180;
-		angle = map(angle, 0, 180, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);      
-	  }
-      
-      if (argv[3] == 0) // waiting time
-      {
-        msec = (long)argv[4] | ((long)argv[5] << 7);
-        servos[servoPinMap[pin]].setPosition(angle, msec);
-      }
-      else if (argv[3] == 1) // set speed
-      {
-        velocity = (long)argv[4] | ((long)argv[5] << 7);
-        servos[servoPinMap[pin]].setVelocity(velocity);
-        servos[servoPinMap[pin]].setPosition(angle);
-      }
-	  break ;
+  case MOVE_ONE_SERVO:
+    pin = one_servo_used_pin = (int)argv[0];
+	angle = (long)argv[1] | ((long)argv[2] << 7);
     
-    case ENABLE_IMU:
-      enableIMUWaiting = true;
-      imu_waiting_id = (int)argv[0] | ((int)argv[1] << 7);
-      break;
-    case CHECK_86DUINO_ACTIVE:
-      checkActiveStart = true;
-      break;
+    if (angle < MIN_PULSE_WIDTH)
+	{ // treat values less than 450 as angles in degrees (valid values in microseconds are handled as microseconds)
+	  if (angle < 0) angle = 0;
+	  if (angle > 180) angle = 180;
+	  angle = map(angle, 0, 180, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);      
+	}
+    
+    if (argv[3] == 0)
+    {
+      msec = (long)argv[4] | ((long)argv[5] << 7);
+      servos[servoPinMap[pin]].setPosition(angle, msec);
+    }
+    else if (argv[3] == 1)
+    {
+      velocity = (long)argv[4] | ((long)argv[5] << 7);
+      servos[servoPinMap[pin]].setVelocity(velocity);
+      servos[servoPinMap[pin]].setPosition(angle);
+    }
+    servos[servoPinMap[pin]].run();
+    
+    one_servo_is_moving = true;
+    
+    break;
+    
+  case SERVO_MOVING_ALL:
+    servoMultiRun();
+    break ;
+  
+  case SERVO_CONFIG_EX:
+	pin = (int)argv[0];
+	angle = (long)argv[1] | ((long)argv[2] << 7);
+    
+    if (angle < MIN_PULSE_WIDTH)
+	{ // treat values less than 450 as angles in degrees (valid values in microseconds are handled as microseconds)
+	  if (angle < 0) angle = 0;
+	  if (angle > 180) angle = 180;
+	  angle = map(angle, 0, 180, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);      
+	}
+    
+    if (argv[3] == 0) // waiting time
+    {
+      msec = (long)argv[4] | ((long)argv[5] << 7);
+      servos[servoPinMap[pin]].setPosition(angle, msec);
+    }
+    else if (argv[3] == 1) // set speed
+    {
+      velocity = (long)argv[4] | ((long)argv[5] << 7);
+      servos[servoPinMap[pin]].setVelocity(velocity);
+      servos[servoPinMap[pin]].setPosition(angle);
+    }
+	break ;
+    
+  case ENABLE_IMU:
+    enableIMUWaiting = true;
+    imu_waiting_id = (int)argv[0] | ((int)argv[1] << 7);
+    break;
+  case CHECK_86DUINO_ACTIVE:
+    checkActiveStart = true;
+    break;
   }
 }
 

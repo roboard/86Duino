@@ -24,30 +24,78 @@
 #define __MOTION86_H
 
 #include <Encoder.h>
+#include "motion/MotInterface.h"
 
 enum machineAxis_t
 {
-  AXIS_UNUSED = -1,
   AXIS_X = 0,
   AXIS_Y = 1,
   AXIS_Z = 2
 };
 
-class Machine
+enum axisGroup_t
+{
+  MACHINE_UNUSED = -1,
+  MACHINE_0 = 0,
+  MACHINE_1 = 1,
+  MACHINE_2 = 2,
+  CUSTOM_MACHINE_0 = 100,
+  CUSTOM_MACHINE_1 = 101,
+  CUSTOM_MACHINE_2 = 102,
+};
+
+enum ioPolarity_t
+{
+  ACTIVE_LOW = 0,
+  ACTIVE_HIGH = 1,
+};
+
+enum homeCommand_t
+{
+  READ_HOME_X = 0,
+  READ_HOME_Y = 1,
+  READ_HOME_Z = 2,
+};
+
+enum jogCommand_t
+{
+  READ_JOG_X_POSITIVE = 0,
+  READ_JOG_X_NEGATIVE = 1,
+  READ_JOG_Y_POSITIVE = 2,
+  READ_JOG_Y_NEGATIVE = 3,
+  READ_JOG_Z_POSITIVE = 4,
+  READ_JOG_Z_NEGATIVE = 5,
+};
+
+enum mpgCommand_t
+{
+  READ_MPG_COUNTER = 0,
+  READ_MPG_RANGE = 1
+};
+
+class Machine : public IMotCB
 {
   public:
-    Machine(int axis_group = 0);
+    Machine(axisGroup_t axis_group = MACHINE_0);
+    Machine(int axis_group) : Machine((axisGroup_t)axis_group) {}
+
     ~Machine();
 
     bool config_MaxVelocity(machineAxis_t axis, double max_feedrate_mps);
     bool config_MaxAcc(double max_acc);
-    bool config_PosLimit(machineAxis_t axis, int min, int max);
+    bool config_PosLimit(machineAxis_t axis, double min, double max);
     bool config_PPU(machineAxis_t axis, double steps_per_mm);
     bool config_ReverseDirection(machineAxis_t axis);
     bool config_MaxPulseSpeed(int pfhz);
     bool config_PulseMode(machineAxis_t axis, pulseMode_t mode);
     bool config_HomePins(int xLimit, int yLimit, int zLimit);
     bool config_EGearSlave(Machine &target, double xRatio, double yRatio, double zRatio);
+    bool config_HomeController_Callback(int (*cb)(homeCommand_t) = NULL);
+    bool config_JogController_Callback(int (*cb)(jogCommand_t) = NULL);
+    bool config_MpgController_Callback(unsigned long (*cb)(mpgCommand_t) = NULL);
+    
+    bool config_CustomActuators_Callbacks(void (*setCB)(int, long), long (*getCB)(int));
+    bool config_CustomActuators_CycleTime(unsigned long period);
 
     double getMaxVelocity(machineAxis_t axis);
     double getMaxAcc();
@@ -59,11 +107,11 @@ class Machine
     int getCmdCount();
     int getFreeCmdCount();
 
-	void setDefaultFeedrate(double feedrate);
-	void setHomeSpeed(double feedrate);
-	void setHomeSpeed(double xFeedrate, double yFeedrate, double zFeedrate);
-	void setRelative();
-	void setAbsolute();
+    void setDefaultFeedrate(double feedrate);
+    void setHomeSpeed(double feedrate);
+    void setHomeSpeed(double xFeedrate, double yFeedrate, double zFeedrate);
+    void setRelative();
+    void setAbsolute();
 
     double computePPU_Belt(double pulses_per_revolution, double belt_pitch, double pulley_tooth_count);
     double computePPU_LeadScrew(double pulses_per_revolution, double leadscrew_pitch, double gear_ratio);
@@ -76,8 +124,8 @@ class Machine
     void enableSoftLimit();
     void disableSoftLimit();
 
-    void machineOn();
-    void machineOff();
+    virtual void machineOn();
+    virtual void machineOff();
     bool gcode(char *cmd);
     void home();
     void stop();
@@ -102,22 +150,41 @@ class Machine
     bool helicalXZ(double cX, double cZ, double dstY, double theta, double feedrate = -1.0);
     bool helicalYZ(double cY, double cZ, double dstX, double theta, double feedrate = -1.0);
 
-    void beginJog(int pX, int mX, int pY, int mY, int pZ, int mZ, bool incJog = false);
+    void beginJog(bool incJog = false);
+    void beginJog(int pX, int nX, int pY, int nY, int pZ, int nZ, bool incJog = false, ioPolarity_t polarity = ACTIVE_HIGH);
     void endJog();
     void setJogSpeed(double feedrate);
     void setJogOffset(double incPerMM);
+    void setJogPins(int pX, int nX, int pY, int nY, int pZ, int nZ, ioPolarity_t polarity = ACTIVE_HIGH);
 
+    void beginMpg();
     void beginMpg(Encoder &encoder);
     void endMpg();
+    void setMpgOn();
+    void setMpgOff();
     void setMpgSpeed(double feedrate);
     void setMpgAxis(machineAxis_t axis);
     void setMpgRatio(double rate);
+
     double getJogPos(machineAxis_t axis);
     void getJogPos(double &x, double &y, double &z);
+
+    void updateAxes();
+    
+
+    virtual int homeIoHelper(homeCommand_t cmd);
+    virtual int jogIoHelper(jogCommand_t cmd);
+    virtual unsigned long mpgIoHelper(mpgCommand_t cmd);
+    
+  protected:
+    void setAxisPosition(int axis, long pos) override;
+    long getAxisPosition(int axis) override;
+    machineMode_t getMachineMode();
+    bool isHomePrepReady;
+    
   private:
     int axis_group_number;
     double defaultFeedrate;
-    double homeFeedrate[3];
 };
 
 #endif

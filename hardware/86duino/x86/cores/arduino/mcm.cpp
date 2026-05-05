@@ -30,6 +30,7 @@
 
 #include "io.h"
 #include "mcm.h"
+#include "global.h"
 
 #include <go32.h>
 #include <dpmi.h>
@@ -53,160 +54,358 @@ DMPAPI(void) set_PortIO(void) {
 }
 
 
-static unsigned PWM_baseAddr = 0;
-static unsigned long MMIO_baseAddr = 0L;
-static void* io_handle = NULL;
-static void* mcm_p = NULL;
+// #define MCM_DEBUG
+static unsigned IO_baseAddr[3] = {0, 0, 0};
+static unsigned long MMIO_baseAddr[3] = {0L, 0L, 0L};
+static void* io_handle[3] = {NULL, NULL, NULL};
+static void* mcm_p[3] = {NULL, NULL, NULL};
+static unsigned short MCM_MMIO_SECTION = 0;
+static unsigned long MCM_MMIO_START = 0L;
+static int cpuid;
+static bool mcmInitOK = false;
 DMPAPI(int) mcmInit(void) {
-	if(mcm_p != NULL) return 0;
-    mcm_p = pci_Alloc(0, 0x10, 0);
-	if(mcm_p == NULL)
+
+	if (mcm_p[0] != NULL || mcm_p[1] != NULL || mcm_p[2] != NULL) return 0;
+	
+	if (io_Init() == false)
 	{
-		printf("Alloc PCI config fail.\n");
+		printf("Fail to I/O init.\n");
 		return -1;
 	}
+    
+    cpuid = vx86_CpuID();
+    
+    if (cpuid == CPU_VORTEX86EX) { 
+        MCM_MMIO_SECTION = 0x380;
+        mcm_p[0] = pci_Find(0x17F3, 0x1331); // RU check
+        mcm_p[1] = NULL;
+        mcm_p[2] = NULL;
+        if (mcm_p[0] != NULL) _G_MCM[0] = GET; else _G_MCM[0] = NOTHING;
+    } else if ((cpuid == CPU_VORTEX86DX2) || (cpuid == CPU_VORTEX86DX3)) {
+        MCM_MMIO_SECTION = 0xA10;
+        mcm_p[0] = pci_Find(0x17F3, 0x1330); // RU check
+        mcm_p[1] = NULL;
+        mcm_p[2] = NULL;
+        if (mcm_p[0] != NULL) _G_MCM[0] = GET; else _G_MCM[0] = NOTHING;
+    } else if ((cpuid == CPU_VORTEX86EX2_MASTER) || (cpuid == CPU_VORTEX86EX2_SLAVE)) {
+        MCM_MMIO_SECTION = 0x3A0;
+        mcm_p[0] = pci_Alloc(0, 0x0F, 0); // this mothe  should be changed to scan pci devices
+        mcm_p[1] = pci_Alloc(0, 0x10, 0);
+        mcm_p[2] = pci_Alloc(0, 0x11, 0);
+        // Don't need to detect MCM resoure allocation for Vortex86EX2, because they had been set by strap.
+    } else if ((cpuid == CPU_VORTEX86EX3_MASTER) || (cpuid == CPU_VORTEX86EX3_SLAVE)) {
+        // TODO ...
+    }
 
+#if defined MCM_DEBUG
+	if (mcm_p[0] == NULL) printf("Alloc PCI config fail. No find MCM 0 Group\n");
+	if (mcm_p[1] == NULL) printf("Alloc PCI config fail. No find MCM 1 Group\n");
+	if (mcm_p[2] == NULL) printf("Alloc PCI config fail. No find MCM 2 Group\n");
+#endif
+    
+    if ((mcm_p[0] == NULL) && (mcm_p[1] == NULL) && (mcm_p[2] == NULL)) return 0;
+    
 	#if defined (DMP_LINUX) || defined (DMP_WIN32_MSVC)
-        MMIO_baseAddr = pci_In32(mcm_p, 0x14);
-	    io_handle = io_Alloc(IO_USE_MMIO, MMIO_baseAddr, 0x380);
-		if(io_handle == NULL)
+        for(int i=0; i<3; i++)
 		{
-			printf("Alloc MCM MMIO space fail.");
-			return -1;
+			if(mcm_p[i] == NULL) continue;
+			MMIO_baseAddr[i] = pci_In32(mcm_p[i], 0x14);
+			io_handle[i] = io_Alloc(IO_USE_MMIO, MMIO_baseAddr[i], MCM_MMIO_SECTION);
+			if(io_handle[i] == NULL)
+			{
+				printf("Alloc MCM%d MMIO space fail.", i);
+				return -1;
+			}
 		}
         MC_useMMIO = true;
 	#elif defined (DMP_DOS_DJGPP) || defined (DMP_DOS_WATCOM)
 		if(MC_useMMIO == true)
 		{
-			MMIO_baseAddr = pci_In32(mcm_p, 0x14);
-			io_handle = io_Alloc(IO_USE_MMIO, MMIO_baseAddr, 0x380);
-			if(io_handle == NULL)
+			for(int i=0; i<3; i++)
 			{
-				printf("Alloc MCM MMIO space fail.");
-				return -1;
+				if(mcm_p[i] == NULL) continue;
+				MMIO_baseAddr[i] = pci_In32(mcm_p[i], 0x14);
+				io_handle[i] = io_Alloc(IO_USE_MMIO, MMIO_baseAddr[i], MCM_MMIO_SECTION);
+				if(io_handle[i] == NULL)
+				{
+					printf("Alloc MCM%d MMIO space fail.\n", i);
+					return -1;
+				}
 			}
 		}
 		else
 		{
-			PWM_baseAddr = (unsigned)(pci_In32(mcm_p, 0x10) & 0x0000fff0L);
-			io_handle = io_Alloc(IO_USE_PORTIO, PWM_baseAddr, 0xD4);
-			if(io_handle == NULL)
+			for(int i=0; i<3; i++)
 			{
-				printf("Alloc MCM IO space fail.");
-				return -1;
+				if(mcm_p[i] == NULL) continue;
+				IO_baseAddr[i] = (unsigned)(pci_In32(mcm_p[i], 0x10) & 0x0000fff0L);
+				io_handle[i] = io_Alloc(IO_USE_PORTIO, IO_baseAddr[i], 0xD4);
+				if(io_handle[i] == NULL)
+				{
+					printf("Alloc MCM%d IO space fail.\n", i);
+					return -1;
+				}
 			}
 		}
 	#else
-		PWM_baseAddr = (unsigned)(pci_In32(mcm_p, 0x10) & 0x0000fff0L);
-		io_handle = io_Alloc(IO_USE_PORTIO, PWM_baseAddr, 0xD4);
-		if(io_handle == NULL)
+		for(int i=0; i<3; i++)
 		{
-			printf("Alloc MCM IO space fail.");
-			return -1;
+			if(mcm_p[i] == NULL) continue;
+			IO_baseAddr[i] = (unsigned)(pci_In32(mcm_p[i], 0x10) & 0x0000fff0L);
+			io_handle[i] = io_Alloc(IO_USE_PORTIO, IO_baseAddr[i], 0xD4);
+			if(io_handle[i] == NULL)
+			{
+				printf("Alloc MCM%d IO space fail.\n", i);
+				return -1;
+			}
 		}
         MC_useMMIO = false;
 	#endif
-	return 0;
+	
+	#if defined MCM_DEBUG
+		if(MC_useMMIO == true)
+		{
+			if(MMIO_baseAddr[0] != 0L) printf("MCM0 BaseAddr = %08X\n", MMIO_baseAddr[0]);
+			if(MMIO_baseAddr[1] != 0L) printf("MCM1 BaseAddr = %08X\n", MMIO_baseAddr[1]);
+			if(MMIO_baseAddr[2] != 0L) printf("MCM2 BaseAddr = %08X\n", MMIO_baseAddr[2]);
+		}
+		else
+		{
+			if(IO_baseAddr[0] != 0L) printf("MCM0 BaseAddr = %08X\n", IO_baseAddr[0]);
+			if(IO_baseAddr[1] != 0L) printf("MCM1 BaseAddr = %08X\n", IO_baseAddr[1]);
+			if(IO_baseAddr[2] != 0L) printf("MCM2 BaseAddr = %08X\n", IO_baseAddr[2]);
+		}
+	#endif
+    mcmInitOK = true;
+	return 1;
 }
 
 DMPAPI(void) mcmClose(void) {
-    PWM_baseAddr = 0L;
-    MMIO_baseAddr = 0L;
-	pci_Free(mcm_p);
-	io_Free(io_handle);
+    for(int i=0; i<3; i++)
+	{
+		IO_baseAddr[i] = 0L;
+		MMIO_baseAddr[i] = 0L;
+		if(mcm_p[i] != NULL) pci_Free(mcm_p[i]);
+		if(io_handle[i] != NULL) io_Free(io_handle[i]);
+	}
 }
 
-DMPAPI(unsigned long) mc_getbaseaddr(void) {
-    if(MC_useMMIO == true)
-		return MMIO_baseAddr;
+DMPAPI(bool) isAllocThisMCMGroup(int group) {
+    if (mcm_p[group] == NULL)
+        return false;
+    return true;
+}
+
+// compatiable for old ver.
+DMPAPI(unsigned long) mc_setbaseaddr() {
+	return mcmInit();
+}
+
+// compatiable for old ver.
+DMPAPI(void) Master_DX2() {
+}
+
+DMPAPI(unsigned long) mc_getbaseaddr(int mcg) {
+    if(mcg < 0 || mcg > 2) return 0L;
+	
+	if(MC_useMMIO == true)
+		return MMIO_baseAddr[mcg];
 	else
-		return PWM_baseAddr;
+		return IO_baseAddr[mcg];
 }
 
-DMPAPI(int) mc_getIRQ(void) {
-	return (int)(pci_In32(mcm_p, 0x3c) & 0xFF);
+DMPAPI(int) mc_getIRQ(int mcg) {
+	if(mcg < 0 || mcg > 2) return 0L;
+	return (int)(pci_In32(mcm_p[mcg], 0x3c) & 0xFF);
 }
 
-DMPAPI(void) mc_outp(int mc, unsigned long idx, unsigned long val) {
-    // if (USE_8051B == true) { mc8051_outp(mc, idx, val); return; }
-	if(io_handle == NULL) return;
+DMPAPI(void) mc_outp(int mc, unsigned long idx, unsigned long val, int group) {
+    int _group = 0;
+    
+    if (!mcmInitOK) return;
+    
+    #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+        MCM_MMIO_START = 0x40L;
+    #elif defined (MCM_VORTEX86EX2)
+        MCM_MMIO_START = 0x60L;
+        if(mc == MC_GENERAL)
+        {
+            _group = group;
+            if (_group == 999)
+            {
+                printf("You should input the correct MCM group number for GENERAL.\n");
+                return;
+            }
+        }
+        else
+            _group = mc/4;
+    #else
+        #error "No define any CPU"
+    #endif
+    
+	if(io_handle[_group] == NULL) return;
 
     if (MC_useMMIO == true)
     {
 		if (mc == MC_GENERAL)
-            io_Out32(io_handle, idx, val);
+            io_Out32(io_handle[_group], idx, val);
         else
-            io_Out32(io_handle, 0x40L + (unsigned long)mc * 0xd0L + idx, val);
+            io_Out32(io_handle[_group], MCM_MMIO_START + (unsigned long)(mc%4) * 0xd0L + idx, val);
     }
     else
     {   
         io_DisableINT();
-        io_Out32(io_handle, 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
-        io_Out32(io_handle, (unsigned)idx, val);
+        #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+            io_Out32(io_handle[_group], 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
+        #elif defined (MCM_VORTEX86EX2)
+            if (mc == MC_GENERAL) io_Out32(io_handle[_group], 0xd0, 1UL);  // paging to corresponding reg window
+            else io_Out32(io_handle[_group], 0xd0, 1UL<<((mc%4)+1));
+        #endif
+		io_Out32(io_handle[_group], (unsigned)idx, val);
         io_RestoreINT();
     }
 }
 
-DMPAPI(unsigned long) mc_inp(int mc, unsigned long idx) {
+DMPAPI(unsigned long) mc_inp(int mc, unsigned long idx, int group) {
     unsigned long tmp;
-    // if (USE_8051B == true) return mc8051_inp(mc, idx);
-    if(io_handle == NULL) return 0L;
+    int _group = 0;
+
+    if (!mcmInitOK) return 0L;
+    
+    #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+        MCM_MMIO_START = 0x40L;
+    #elif defined (MCM_VORTEX86EX2)
+        MCM_MMIO_START = 0x60L;
+        if(mc == MC_GENERAL)
+        {
+            _group = group;
+            if (_group == 999)
+            {
+                printf("You should input the correct MCM group number for GENERAL.\n");
+                return 0L;
+            }
+        }
+        else
+            _group = mc/4;
+    #else
+        #error "No define any CPU"
+    #endif
+
+	if(io_handle[_group] == NULL) return 0L;
 
     if (MC_useMMIO == true)
     {
 		if (mc == MC_GENERAL)
-            return io_In32(io_handle, idx);
+            return io_In32(io_handle[_group], idx);
         else
-            return io_In32(io_handle, 0x40L + (unsigned long)mc * 0xd0L + idx);
+            return io_In32(io_handle[_group], MCM_MMIO_START + (unsigned long)(mc%4) * 0xd0L + idx);
     }
     else
     {   
         io_DisableINT();
-        io_Out32(io_handle, 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
-        tmp = io_In32(io_handle, (unsigned)idx);
+        #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+            io_Out32(io_handle[_group], 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
+        #elif defined (MCM_VORTEX86EX2)
+            if(mc == MC_GENERAL) io_Out32(io_handle[_group], 0xd0, 1UL);  // paging to corresponding reg window
+            else io_Out32(io_handle[_group], 0xd0, 1UL<<((mc%4)+1));
+        #endif
+		tmp = io_In32(io_handle[_group], (unsigned)idx);
         io_RestoreINT();
         return tmp;
     }
 }
 
-DMPAPI(void) mc_outpb(int mc, unsigned long idx, unsigned char val) {
-    // if (USE_8051B == true) { mc8051_outpb(mc, idx, val); return; }
-    if(io_handle == NULL) return;
+DMPAPI(void) mc_outpb(int mc, unsigned long idx, unsigned char val, int group) {
+    int _group = 0;
+
+    if (!mcmInitOK) return;
+    
+    #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+        MCM_MMIO_START = 0x40L;
+    #elif defined (MCM_VORTEX86EX2)
+        MCM_MMIO_START = 0x60L;
+        if(mc == MC_GENERAL)
+        {
+            _group = group;
+            if (_group == 999)
+            {
+                printf("You should input the correct MCM group number for GENERAL.\n");
+                return;
+            }
+        }
+        else
+            _group = mc/4;
+    #else
+        #error "No define any CPU"
+    #endif
+
+	if(io_handle[_group] == NULL) return;
 
     if (MC_useMMIO == true)
     {
         if (mc == MC_GENERAL)
-            io_Out8(io_handle, idx, val);
+            io_Out8(io_handle[_group], idx, val);
         else
-            io_Out8(io_handle, 0x40L + (unsigned long)mc * 0xd0L + idx, val);
+            io_Out8(io_handle[_group], MCM_MMIO_START + (unsigned long)(mc%4) * 0xd0L + idx, val);
     }
     else
     {   
         io_DisableINT();
-        io_Out32(io_handle, 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
-        io_Out8(io_handle, (unsigned)idx, val);
+        #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+            io_Out32(io_handle[_group], 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
+        #elif defined (MCM_VORTEX86EX2)
+            if(mc == MC_GENERAL) io_Out32(io_handle[_group], 0xd0, 1UL);  // paging to corresponding reg window
+            else io_Out32(io_handle[_group], 0xd0, 1UL<<((mc%4)+1));
+        #endif
+        io_Out8(io_handle[_group], (unsigned)idx, val);
         io_RestoreINT();
     }
 }
 
-DMPAPI(unsigned char) mc_inpb(int mc, unsigned long idx) {
+DMPAPI(unsigned char) mc_inpb(int mc, unsigned long idx, int group) {
     unsigned char tmp;
-    // // if (USE_8051B == true) return mc8051_inpb(mc, idx);
-    if(io_handle == NULL) return 0L;
+    int _group = 0;
+
+    if (!mcmInitOK) return 0;
+    
+    #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+        MCM_MMIO_START = 0x40L;
+    #elif defined (MCM_VORTEX86EX2)
+        MCM_MMIO_START = 0x60L;
+        if(mc == MC_GENERAL)
+        {
+            _group = group;
+            if (_group == 999)
+            {
+                printf("You should input the correct MCM group number for GENERAL.\n");
+                return 0;
+            }
+        }
+        else
+            _group = mc/4;
+    #else
+        #error "No define any CPU"
+    #endif
+	
+	if(io_handle[_group] == NULL) return 0;
 
     if (MC_useMMIO == true)
     {
         if (mc == MC_GENERAL)
-            return io_In8(io_handle, idx);
+            return io_In8(io_handle[_group], idx);
         else
-            return io_In8(io_handle, 0x40L + (unsigned long)mc * 0xd0L + idx);
-        return 0;
+            return io_In8(io_handle[_group], MCM_MMIO_START + (unsigned long)(mc%4) * 0xd0L + idx);
     }
     else
     {   
         io_DisableINT();
-        io_Out32(io_handle, 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
-        tmp = io_In8(io_handle, (unsigned)idx);
+        #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+            io_Out32(io_handle[_group], 0xd0, 1UL<<(mc+1));  // paging to corresponding reg window
+        #elif defined (MCM_VORTEX86EX2)
+            if(mc == MC_GENERAL) io_Out32(io_handle[_group], 0xd0, 1UL);  // paging to corresponding reg window
+            else io_Out32(io_handle[_group], 0xd0, 1UL<<((mc%4)+1));
+        #endif
+        tmp = io_In8(io_handle[_group], (unsigned)idx);
         io_RestoreINT();
         return tmp;
     }
@@ -238,16 +437,25 @@ DMPAPI(unsigned char) mc_inpb(int mc, unsigned long idx) {
 #define MCG_UNLOCKREG1      (0x3cL)     // 16-bit
 #define MCG_UNLOCKREG2      (0x3eL)     // 16-bit
 
-DMPAPI(bool) mc_IsEnabled(int mc) {
-    unsigned long reg1 = mc_inp(MC_GENERAL, MCG_ENABLEREG1);
-    unsigned long reg2 = mc_inp(MC_GENERAL, MCG_ENABLEREG2);
-    int i;
+// EX2 New Features
+#define MCG_ENABLESETREG1   (0x40L)
+#define MCG_ENABLESETREG2   (0x44L)     // 16-bit
+#define MCG_ENABLECLRREG1   (0x48L)
+#define MCG_ENABLECLRREG2   (0x4CL)     // 16-bit
+#define MCG_ADCTRIGGERREG   (0x50L)
 
-    if ((reg2 & (1L << (mc+4))) != 0L) return true;     // check SIFBEN
+
+DMPAPI(bool) mc_IsEnabled(int mc) {
+    unsigned long reg1 = mc_inp(MC_GENERAL, MCG_ENABLEREG1, mc/4);
+    unsigned long reg2 = mc_inp(MC_GENERAL, MCG_ENABLEREG2, mc/4);
+    int i;
+	int _mc = mc%4;
+
+    if ((reg2 & (1L << (_mc+4))) != 0L) return true;     // check SIFBEN
 
     for (i=0; i<3; i++)  // check PWMAEN/SERVOAEN/SIFAEN, PWMBEN/SERVOBEN, PWMCEN/SERVOCEN
     {
-        int tmp = mc*3 + i;
+        int tmp = _mc*3 + i;
         if (tmp <  32 && ((reg1 & (0x01L << tmp)) != 0L)) return true;
         if (tmp >= 32 && ((reg2 & (0x01L << (tmp-32))) != 0L)) return true;
     }
@@ -256,35 +464,31 @@ DMPAPI(bool) mc_IsEnabled(int mc) {
 }
 
 DMPAPI(bool) mc_SetMode(int mc, unsigned long mode) {
-    unsigned long mask = ~(0x0fL << ((mc & 0x07) * 4));
-    unsigned long val  = mode << ((mc & 0x07) * 4);
-    unsigned long reg  = (mc < 8)? MCG_MODEREG1 : MCG_MODEREG2;
+	unsigned long mask = ~(0x0fL << (((mc%4) & 0x07) * 4));
+    unsigned long val  = mode << (((mc%4) & 0x07) * 4);
+    unsigned long reg  = ((mc%4) < 8)? MCG_MODEREG1 : MCG_MODEREG2;
 
     if (mc_IsEnabled(mc) == true)
     {
-        //printf("ERROR: can't set MC mode when some module is enabled!\n");
+        printf("ERROR: can't set MC mode when some module is enabled!\n");
         return false;
     }
 
-    mc_outp(MC_GENERAL, reg, (mc_inp(MC_GENERAL, reg) & mask) | val);
+    mc_outp(MC_GENERAL, reg, (mc_inp(MC_GENERAL, reg, mc/4) & mask) | val, mc/4);
     return true;
 }
 
 
 DMPAPI(void) mc_LockLDRDYs(unsigned long group1, unsigned long group2, unsigned long group3) {
-    unsigned long reg1 = group1 | (group2 << 12) | (group3 << 24);
-    unsigned long reg2 = group3 >> 8;
-
-    mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1) & ~reg1);
-    mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG2, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG2) & ~reg2);
+	if(group1 != 0L) mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1, 0) & ~group1, 0);
+    if(group2 != 0L) mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1, 1) & ~group2, 1);
+    if(group3 != 0L) mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1, 2) & ~group3, 2);
 }
 
 DMPAPI(void) mc_UnlockLDRDYs(unsigned long group1, unsigned long group2, unsigned long group3) {
-    unsigned long reg1 = group1 | (group2 << 12) | (group3 << 24);
-    unsigned long reg2 = group3 >> 8;
-
-    mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1) | reg1);
-    mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG2, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG2) | reg2);
+    if(group1 != 0L) mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1, 0) | group1, 0);
+    if(group2 != 0L) mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1, 1) | group2, 1);
+    if(group3 != 0L) mc_outp(MC_GENERAL, MCG_LDRDYSYNCREG1, mc_inp(MC_GENERAL, MCG_LDRDYSYNCREG1, 2) | group3, 2);
 }
 
 DMPAPI(void) mc_LockLDRDY(int mc, int module) {
@@ -302,55 +506,150 @@ DMPAPI(void) mc_UnlockLDRDY(int mc, int module) {
 }
 
 
-
 DMPAPI(void) mc_EnableMulti(unsigned long group1, unsigned long group2, unsigned long group3) {
-    unsigned long val1 = (group1 & 0x00000fffL) + ((group2 & 0x00000fffL) << 12) + ((group3 & 0x00000ffL) << 24);
-    unsigned long val2 = ((group3 & 0x00000f00L) >> 8) + ((group1 & 0x000f0000L) >> 12) + ((group2 & 0x000f0000L) >> 8) + ((group3 & 0x000f0000L) >> 4);
+    unsigned long val1_1 = (group1 & 0x00000fffL);
+    unsigned long val1_2 = ((group1 & 0x000f0000L) >> 12);
+	unsigned long val2_1 = (group2 & 0x00000fffL);
+    unsigned long val2_2 = ((group2 & 0x000f0000L) >> 12);
+	unsigned long val3_1 = (group3 & 0x00000fffL);
+    unsigned long val3_2 = ((group3 & 0x000f0000L) >> 12);
+    
+	if(val1_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, 0) | val1_2, 0);
+	if(val1_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, 0) | val1_1, 0);
 
-    // 注意這裡的 enable 順序是反的
-    mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2) | val2);
-    mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1) | val1);
+	if(val2_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, 1) | val2_2, 1);
+	if(val2_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, 1) | val2_1, 1);
+	
+	if(val3_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, 2) | val3_2, 2);
+	if(val3_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, 2) | val3_1, 2);
+	
+	/* DX2/DX3/EX Ver.
+    mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, mcg/4) | val2, mcg/4);
+    mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, mcg/4) | val1, mcg/4);
+	*/
 }
 
 DMPAPI(void) mc_DisableMulti(unsigned long group1, unsigned long group2, unsigned long group3) {
-    unsigned long val1 = (group1 & 0x00000fffL) + ((group2 & 0x00000fffL) << 12) + ((group3 & 0x00000ffL) << 24);
-    unsigned long val2 = ((group3 & 0x00000f00L) >> 8) + ((group1 & 0x000f0000L) >> 12) + ((group2 & 0x000f0000L) >> 8) + ((group3 & 0x000f0000L) >> 4);
-
-    mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1) & (~val1));
-    mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2) & (~val2));
+    unsigned long val1_1 = (group1 & 0x00000fffL);
+    unsigned long val1_2 = ((group1 & 0x000f0000L) >> 12);
+	unsigned long val2_1 = (group2 & 0x00000fffL);
+    unsigned long val2_2 = ((group2 & 0x000f0000L) >> 12);
+	unsigned long val3_1 = (group3 & 0x00000fffL);
+    unsigned long val3_2 = ((group3 & 0x000f0000L) >> 12);
+    
+	if(val1_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, 0) & (~val1_1), 0);
+	if(val1_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, 0) & (~val1_2), 0);
+	
+	if(val2_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, 1) & (~val2_1), 1);
+	if(val2_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, 1) & (~val2_2), 1);
+	
+	if(val3_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, 2) & (~val3_1), 2);
+	if(val3_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, 2) & (~val3_2), 2);
+	/* DX2/DX3/EX Ver.
+    mc_outp(MC_GENERAL, MCG_ENABLEREG1, mc_inp(MC_GENERAL, MCG_ENABLEREG1, mcg/4) & (~val1), mcg/4);
+    mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, mcg/4) & (~val2), mcg/4);
+	*/
 }
 
-DMPAPI(unsigned long) mc_ReadEnableREG1(void) {
-    return mc_inp(MC_GENERAL, MCG_ENABLEREG1);
+DMPAPI(unsigned long) mc_ReadEnableREG1(int mc) {
+    return mc_inp(MC_GENERAL, MCG_ENABLEREG1, mc/4);
 }
-DMPAPI(unsigned long) mc_ReadEnableREG2(void) {
-    return mc_inp(MC_GENERAL, MCG_ENABLEREG2);
+DMPAPI(unsigned long) mc_ReadEnableREG2(int mc) {
+    return mc_inp(MC_GENERAL, MCG_ENABLEREG2, mc/4);
 }
-
-
 
 DMPAPI(void) mc_SetRouting_MC2SIF(unsigned long group1, unsigned long group2, unsigned long group3) {
-    mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1) | group1);
-    mc_outp(MC_GENERAL, MCG_G2ROUTEREG1, mc_inp(MC_GENERAL, MCG_G2ROUTEREG1) | group2);
-    mc_outp(MC_GENERAL, MCG_G3ROUTEREG1, mc_inp(MC_GENERAL, MCG_G3ROUTEREG1) | group3);
+    if(group1 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1, 0) | group1, 0);
+    if(group2 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1, 1) | group2, 1);
+    if(group3 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1, 2) | group3, 2);
 }
 
 DMPAPI(void) mc_RemoveRouting_MC2SIF(unsigned long group1, unsigned long group2, unsigned long group3) {
-    mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1) & (~group1));
-    mc_outp(MC_GENERAL, MCG_G2ROUTEREG1, mc_inp(MC_GENERAL, MCG_G2ROUTEREG1) & (~group2));
-    mc_outp(MC_GENERAL, MCG_G3ROUTEREG1, mc_inp(MC_GENERAL, MCG_G3ROUTEREG1) & (~group3));
+    if(group1 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1, 0) & (~group1), 0);
+    if(group2 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1, 1) & (~group2), 1);
+    if(group3 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG1, mc_inp(MC_GENERAL, MCG_G1ROUTEREG1, 2) & (~group3), 2);
 }
 
 DMPAPI(void) mc_SetRouting_SIF2MC(unsigned long group1, unsigned long group2, unsigned long group3) {
-    mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2) | group1);
-    mc_outp(MC_GENERAL, MCG_G2ROUTEREG2, mc_inp(MC_GENERAL, MCG_G2ROUTEREG2) | group2);
-    mc_outp(MC_GENERAL, MCG_G3ROUTEREG2, mc_inp(MC_GENERAL, MCG_G3ROUTEREG2) | group3);
+    if(group1 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2, 0) | group1, 0);
+    if(group2 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2, 1) | group2, 1);
+    if(group3 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2, 2) | group3, 2);
 }
 
 DMPAPI(void) mc_RemoveRouting_SIF2MC(unsigned long group1, unsigned long group2, unsigned long group3) {
-    mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2) & (~group1));
-    mc_outp(MC_GENERAL, MCG_G2ROUTEREG2, mc_inp(MC_GENERAL, MCG_G2ROUTEREG2) & (~group2));
-    mc_outp(MC_GENERAL, MCG_G3ROUTEREG2, mc_inp(MC_GENERAL, MCG_G3ROUTEREG2) & (~group3));
+    if(group1 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2, 0) & (~group1), 0);
+    if(group2 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2, 1) & (~group2), 1);
+    if(group3 != MCNET_SIF2MC_NONE) mc_outp(MC_GENERAL, MCG_G1ROUTEREG2, mc_inp(MC_GENERAL, MCG_G1ROUTEREG2, 2) & (~group3), 2);
+}
+
+
+// EX2 New features
+DMPAPI(void) mc_EnableSetMulti(unsigned long group1, unsigned long group2, unsigned long group3) {
+    unsigned long val1_1 = (group1 & 0x00000fffL);
+    unsigned long val1_2 = ((group1 & 0x000f0000L) >> 12); // SIFB Enable bits (MD0, 1, 2, 3)
+	unsigned long val2_1 = (group2 & 0x00000fffL);
+    unsigned long val2_2 = ((group2 & 0x000f0000L) >> 12); // SIFB Enable bits (MD0, 1, 2, 3)
+	unsigned long val3_1 = (group3 & 0x00000fffL);
+    unsigned long val3_2 = ((group3 & 0x000f0000L) >> 12); // SIFB Enable bits (MD0, 1, 2, 3)
+    
+	if(val1_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLESETREG2, val1_2, 0);
+	if(val1_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLESETREG1, val1_1, 0);
+
+	if(val2_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLESETREG2, val2_2, 1);
+	if(val2_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLESETREG1, val2_1, 1);
+	
+	if(val3_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLESETREG2, val3_2, 2);
+	if(val3_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLESETREG1, val3_1, 2);
+}
+
+DMPAPI(void) mc_EnableClearMulti(unsigned long group1, unsigned long group2, unsigned long group3) {
+    unsigned long val1_1 = (group1 & 0x00000fffL);
+    unsigned long val1_2 = ((group1 & 0x000f0000L) >> 12);
+	unsigned long val2_1 = (group2 & 0x00000fffL);
+    unsigned long val2_2 = ((group2 & 0x000f0000L) >> 12);
+	unsigned long val3_1 = (group3 & 0x00000fffL);
+    unsigned long val3_2 = ((group3 & 0x000f0000L) >> 12);
+    
+	if(val1_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLECLRREG2, val1_2, 0);
+	if(val1_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLECLRREG1, val1_1, 0);
+
+	if(val2_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLECLRREG2, val2_2, 1);
+	if(val2_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLECLRREG1, val2_1, 1);
+	
+	if(val3_2 != 0L) mc_outp(MC_GENERAL, MCG_ENABLECLRREG2, val3_2, 2);
+	if(val3_1 != 0L) mc_outp(MC_GENERAL, MCG_ENABLECLRREG1, val3_1, 2);
+}
+
+DMPAPI(unsigned long) mc_ReadEnableSetREG1(int mc) {
+    return mc_inp(MC_GENERAL, MCG_ENABLESETREG1, mc/4);
+}
+
+DMPAPI(unsigned long) mc_ReadEnableSetREG2(int mc) {
+    return mc_inp(MC_GENERAL, MCG_ENABLESETREG2, mc/4);
+}
+
+DMPAPI(unsigned long) mc_ReadEnableClearREG1(int mc) {
+    return mc_inp(MC_GENERAL, MCG_ENABLECLRREG1, mc/4);
+}
+
+DMPAPI(unsigned long) mc_ReadEnableClearREG2(int mc) {
+    return mc_inp(MC_GENERAL, MCG_ENABLECLRREG2, mc/4);
+}
+
+DMPAPI(void) mc_SetADCTriggerMulti(unsigned long group1, unsigned long group2, unsigned long group3) {
+	if(group1 != 0L) mc_outp(MC_GENERAL, MCG_ADCTRIGGERREG, group1, 0);
+	if(group2 != 0L) mc_outp(MC_GENERAL, MCG_ADCTRIGGERREG, group2, 1);
+	if(group3 != 0L) mc_outp(MC_GENERAL, MCG_ADCTRIGGERREG, group3, 2);
+}
+
+DMPAPI(void) mc_ClearADCTriggerMulti(unsigned long group1, unsigned long group2, unsigned long group3) {
+	if(group1 != 0L) mc_outp(MC_GENERAL, MCG_ADCTRIGGERREG, ~group1, 0);
+	if(group2 != 0L) mc_outp(MC_GENERAL, MCG_ADCTRIGGERREG, ~group2, 1);
+	if(group3 != 0L) mc_outp(MC_GENERAL, MCG_ADCTRIGGERREG, ~group3, 2);
+}
+
+DMPAPI(unsigned long) mc_ReadADCTriggerMulti(int group) {
+	return mc_inp(MC_GENERAL, MCG_ADCTRIGGERREG, group);
 }
 
 /*-----------------------  end of General Settings  --------------------------*/
@@ -374,35 +673,29 @@ static unsigned long MCPWM_modOffset[3] = {0x08L, 0x08L + 0x2cL, 0x08L + 2L*0x2c
 #define MCPWM_LDREG         (0x28L)
 
 DMPAPI(void) mcpwm_Enable(int mc, int module) {
-    unsigned long val  = 1L << ((mc*3 + module) & 31);
-    unsigned long reg  = ((mc*3 + module) < 32)? MCG_ENABLEREG1 : MCG_ENABLEREG2;
+    unsigned long val  = 1L << (((mc%4)*3 + module) & 31);
+    unsigned long reg  = (((mc%4)*3 + module) < 32)? MCG_ENABLEREG1 : MCG_ENABLEREG2;
     
-    mc_outp(MC_GENERAL, reg, mc_inp(MC_GENERAL, reg) | val);
+    mc_outp(MC_GENERAL, reg, mc_inp(MC_GENERAL, reg, mc/4) | val, mc/4);
 }
 
 DMPAPI(void) mcpwm_Disable(int mc, int module) {
-    unsigned long val  = 1L << ((mc*3 + module) & 31);
-    unsigned long reg  = ((mc*3 + module) < 32)? MCG_ENABLEREG1 : MCG_ENABLEREG2;
+    unsigned long val  = 1L << (((mc%4)*3 + module) & 31);
+    unsigned long reg  = (((mc%4)*3 + module) < 32)? MCG_ENABLEREG1 : MCG_ENABLEREG2;
 
-    mc_outp(MC_GENERAL, reg, mc_inp(MC_GENERAL, reg) & ~val);
+    mc_outp(MC_GENERAL, reg, mc_inp(MC_GENERAL, reg, mc/4) & ~val, mc/4);
 }
 
 DMPAPI(void) mcpwm_DisableProtect(int mc, int module) {
-    unsigned long val = ~(1L << ((mc*3 + module) & 31));
-    unsigned long reg = ((mc*3 + module) < 32)? MCG_PROTECTREG1 : MCG_PROTECTREG2;
+    unsigned long val = ~(1L << (((mc%4)*3 + module) & 31));
+    unsigned long reg = (((mc%4)*3 + module) < 32)? MCG_PROTECTREG1 : MCG_PROTECTREG2;
     
-    val = mc_inp(MC_GENERAL, reg) & val;
-    if ((mc*3 + module) < 32)  // unlock the write protection register
-    {
-        mc_outp(MC_GENERAL, MCG_UNLOCKREG1, 0x000055aaL);
-        mc_outp(MC_GENERAL, MCG_UNLOCKREG1, 0x0000aa55L);
-    }
-    else
-    {
-        mc_outp(MC_GENERAL, MCG_UNLOCKREG1, 0x55aa0000L);
-        mc_outp(MC_GENERAL, MCG_UNLOCKREG1, 0xaa550000L);
-    }
-    mc_outp(MC_GENERAL, reg, val);
+    val = mc_inp(MC_GENERAL, reg, mc/4) & val;
+
+	mc_outp(MC_GENERAL, MCG_UNLOCKREG1, 0x000055aaL, mc/4);
+	mc_outp(MC_GENERAL, MCG_UNLOCKREG1, 0x0000aa55L, mc/4);
+
+    mc_outp(MC_GENERAL, reg, val, mc/4);
 }
 
 
@@ -854,6 +1147,12 @@ DMPAPI(void) mcsv_SetDIRDeadband(int mc, int module, unsigned long db) {
     mc_outp(mc, reg, (mc_inp(mc, reg) & 0xff000000L) | (db & 0x00ffffffL));
 }
 
+DMPAPI(void) mcsv_SetDIRDBPin(int mc, int module, int dbpin) {
+    unsigned long reg = MCSV_modOffset[module] + MCSV_OUTCTRLREG;
+
+    mc_outp(mc, reg, (mc_inp(mc, reg) & ~(0x10000000L)) | dbpin);
+}
+
 
 
 DMPAPI(void) mcsv_ReloadSV(int mc, int module, unsigned char mode) {
@@ -938,14 +1237,14 @@ DMPAPI(void) mcsif_Enable(int mc, int module) {
     if (module == MCSIF_MODULEA)
         mcpwm_Enable(mc, module);
     else
-        mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2) | (1L << (mc + 4)));
+        mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, mc/4) | (1L << ((mc%4) + 4)), mc/4);
 }
 
 DMPAPI(void) mcsif_Disable(int mc, int module) {
     if (module == MCSIF_MODULEA)
         mcpwm_Disable(mc, module);
     else
-        mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2) & ~(1L << (mc + 4)));
+        mc_outp(MC_GENERAL, MCG_ENABLEREG2, mc_inp(MC_GENERAL, MCG_ENABLEREG2, mc/4) & ~(1L << ((mc%4) + 4)), mc/4);
 }
 
 DMPAPI(void) mcsif_SetMode(int mc, int module, unsigned long mode) {
@@ -1094,6 +1393,12 @@ DMPAPI(void) mcenc_SetCapMode(int mc, int module, unsigned long mode) {
     unsigned long reg = MCSIF_modOffset[module] + MCSIF_ENC_CAPCTRLREG;
 
     mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfff0ffffL) | mode);
+}
+
+DMPAPI(void) mcenc_SetCapINT(int mc, int module, unsigned long val) {
+    unsigned long reg = MCSIF_modOffset[module] + MCSIF_ENC_CAPCTRLREG;
+
+    mc_outp(mc, reg, (mc_inp(mc, reg) & 0xfffff07ffL) | ((val & 0x1fL) << 11));
 }
 
 DMPAPI(void) mcenc_SetCapInterval(int mc, int module, unsigned long capivl) {
@@ -1342,19 +1647,19 @@ DMPAPI(unsigned long) mcpfau_ReadCAPSTAT3(int mc, int module) {
 DMPAPI(unsigned long) mcpfau_ReadCAPFIFO1(int mc, int module, unsigned long* data) {
     unsigned long tmp = mc_inp(mc, MCSIF_modOffset[module] + MCSIF_PFAU_CAPFIFOREG1);
     
-    if (data != NULL) *data = tmp & 0x0fffffffL;
+    if (data != NULL) *data = (tmp + 1) & 0x0fffffffL;
     return tmp & 0xf0000000L;
 }
 DMPAPI(unsigned long) mcpfau_ReadCAPFIFO2(int mc, int module, unsigned long* data) {
     unsigned long tmp = mc_inp(mc, MCSIF_modOffset[module] + MCSIF_PFAU_CAPFIFOREG2);
     
-    if (data != NULL) *data = tmp & 0x0fffffffL;
+    if (data != NULL) *data = (tmp + 1) & 0x0fffffffL;
     return tmp & 0xf0000000L;
 }
 DMPAPI(unsigned long) mcpfau_ReadCAPFIFO3(int mc, int module, unsigned long* data) {
     unsigned long tmp = mc_inp(mc, MCSIF_modOffset[module] + MCSIF_PFAU_CAPFIFOREG3);
     
-    if (data != NULL) *data = tmp & 0x0fffffffL;
+    if (data != NULL) *data = (tmp + 1) & 0x0fffffffL;
     return tmp & 0xf0000000L;
 }
 
@@ -1713,12 +2018,19 @@ DMPAPI(unsigned long) mcssi_ReadCtrlREG(int mc, int module) {
 
 
 // MCM INTERRUPT SETTING FUNCTION //
-static unsigned char int_routing_table[16] = {0xff, 0x08, 0xff, 0x02, 0x04, 0x05, 0x07, 0x06, 0xff, 0x01, 0x03, 0x09, 0x0b, 0xff, 0x0d, 0x0f};
-DMPAPI(unsigned char) GetMCIRQ(void) {
-    return (unsigned char)(pci_In32(mcm_p, 0x3c) & 0xffL);
+static unsigned long int_routing_table[16] = {0xffL, 0x08L, 0xffL, 0x02L, 0x04L, 0x05L, 0x07L, 0x06L, 0xffL, 0x01L, 0x03L, 0x09L, 0x0bL, 0xffL, 0x0dL, 0x0fL};
+DMPAPI(unsigned char) GetMCIRQ(int group) {
+    if (!mcmInitOK) return 0xff;
+    return (unsigned char)(pci_In32(mcm_p[group], 0x3c) & 0xffL);
 }
 
-DMPAPI(void) Set_MCIRQ(unsigned char irq) {
-	pci_Out32(mcm_p, 0x3c, (pci_In32(mcm_p, 0x3c) & 0xffffff00L) | (unsigned long) irq);
-    sb1_Write8(0xb4, (sb1_Read8(0xb4) & 0xf0) | int_routing_table[irq]);
+DMPAPI(void) Set_MCIRQ(unsigned char irq, int group) {
+    if (!mcmInitOK || irq == 0x00 || irq == 0xFF) return;
+
+	pci_Out32(mcm_p[group], 0x3c, (pci_In32(mcm_p[group], 0x3c) & 0xffffff00L) | (unsigned long) irq);
+    #if defined (MCM_VORTEX86EX) || defined (MCM_VORTEX86DX2) || defined (MCM_VORTEX86DX3)
+        sb1_Write8(0xb4, (sb1_Read8(0xb4) & 0xf0) | int_routing_table[irq]);
+    #elif defined (MCM_VORTEX86EX2)
+        sb1_Write(0xb4, (sb1_Read(0xb4) & ~(0x0000000fL << (4+group*4))) | (int_routing_table[irq] << (4+group*4)));
+    #endif
 }

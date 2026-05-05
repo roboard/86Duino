@@ -16,236 +16,254 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-  (If you need a commercial license, please contact soc@dmp.com.tw 
+  (If you need a commercial license, please contact soc@dmp.com.tw
    to get more information.)
 */
 
-extern "C" {
-#include "string.h"
-}
-
 #include "SwsSock.h"
-#include "EthernetClient.h"
-#include "EthernetServer.h"
+#include "Ethernet.h"
+#include "sws_sock.h"
 
 EthernetServer::EthernetServer(uint16_t port)
 {
-	int i;
-	
-	_port = port;
-	sws = (struct SwsSockInfo*)malloc(sizeof(struct SwsSockInfo));
-	if (sws) {
-		memset(sws, 0, sizeof(struct SwsSockInfo));
-		sws->_sock = SWS_INVALID_SOCKET;
-	}
-	
-	for (i = 0; i < MAX_SOCK_NUM; i++) {
-		if (Clients[i].sws == NULL) continue;
-		Clients[i].sws->_sock = SWS_INVALID_SOCKET;
-		Clients[i]._id = -1;
-		Clients[i].pServer = this;
-	}
+    this->_ethernet = &Ethernet;
+    this->_localPort = port;
+    this->_sock = SWS_INVALID_SOCKET;
+}
+
+EthernetServer::EthernetServer(uint16_t port, EthernetClass &ethernet)
+{
+    this->_ethernet = &ethernet;
+    this->_localPort = port;
+    this->_sock = SWS_INVALID_SOCKET;
 }
 
 EthernetServer::~EthernetServer()
 {
-	for (int i = 0; i < MAX_SOCK_NUM; i++) {
-		if (Clients[i].sws == NULL) continue;
-		free(Clients[i].sws);
-		Clients[i].sws = NULL;
-	}
-	if (sws) {
-		free(sws);
-		sws = NULL;
-	}
+    stop();
 }
 
 void EthernetServer::begin()
 {
-	int idx;
-	struct SWS_sockaddr_in sin;
-	SWS_u_long lArg = 1;
-	int yes = 1, no = 0;
-	
-	if (sws == NULL) return;
-	sws->_sock = SWS_socket(SWS_AF_INET, SWS_SOCK_STREAM, 0);
-    if (sws->_sock == SWS_INVALID_SOCKET) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		return;
-    }
-	
-	bzero(&sin, sizeof(sin));
-    sin.sin_family = SWS_AF_INET;
-    sin.sin_addr.SWS_s_addr = SwsSock.getULLocalIp();
-    sin.sin_port = SWS_htons(_port);
-	
-	if (SWS_bind(sws->_sock, (struct SWS_sockaddr *)&sin, sizeof(sin)) != 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return;
-    }
-
-    if (SWS_listen(sws->_sock, MAX_SOCK_NUM) != 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return;
-    }
-	
-	if (SWS_ioctl(sws->_sock, SWS_FIONBIO, &lArg) != 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return;
-	}
-	
-	if (SWS_setsockopt(sws->_sock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char*)&yes, sizeof(int)) < 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return;
-	}
-	
-	if (SWS_setsockopt(sws->_sock, SWS_SOL_SOCKET, SWS_SO_DONTLINGER, (const char*)&no, sizeof(int)) < 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return;
-	}
+    begin(false);
 }
 
-struct SwsSockInfo *EthernetServer::make_new_client(struct SwsSockInfo *info)
+void EthernetServer::begin(bool bindAny)
 {
-	SWS_SOCKET tempsock;
-	int addrsize, idx;
-	int yes = 1;
-	SWS_u_long lArg = 1;
-	struct SWS_sockaddr_in pin;
-	
-	for (idx = 0; idx < MAX_SOCK_NUM; idx++) {
-		if (Clients[idx].sws == NULL) continue;
-		if (Clients[idx].sws->_sock == SWS_INVALID_SOCKET)
-			break;
-	}
-	
-	addrsize = sizeof(pin);
-	if ((tempsock = SWS_accept(sws->_sock, (struct SWS_sockaddr *)&pin, &addrsize)) < 0)
-		return NULL;
-	
-	if (SWS_ioctl(tempsock, SWS_FIONBIO, &lArg) != 0) {
-		SWS_shutdown(tempsock, SWS_SD_BOTH);
-		SWS_close(tempsock);
-		return NULL;
-	}
-	
-	if (SWS_setsockopt(tempsock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char*)&yes, sizeof(int)) < 0) {
-		SWS_shutdown(tempsock, SWS_SD_BOTH);
-		SWS_close(tempsock);
-		return NULL;
-	}
-	
-	if (SWS_setsockopt(tempsock, SWS_SOL_SOCKET, SWS_SO_DONTLINGER, (const char*)&yes, sizeof(int)) < 0) {
-		SWS_shutdown(tempsock, SWS_SD_BOTH);
-		SWS_close(tempsock);
-		return NULL;
-	}
-	
-	if (idx >= MAX_SOCK_NUM) {
-		SWS_shutdown(tempsock, SWS_SD_BOTH);
-		SWS_close(tempsock);
-		return NULL;
-	}
-	
-	Clients[idx].sws->_sock = tempsock;
-	Clients[idx]._id = idx;
-	
-	return Clients[idx].sws;
+    SWS_SOCKET sock;
+    SWS_sockaddr_in sin;
+    SWS_u_long lArg = 1;
+    int yes = 1;
+
+    if (this->_sock != SWS_INVALID_SOCKET)
+        return;
+    if (this->_ethernet->isInitialized() == 0)
+        return;
+
+    if ((sock = SWS_socket(SWS_AF_INET, SWS_SOCK_STREAM, 0)) == SWS_INVALID_SOCKET)
+        return;
+
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = SWS_AF_INET;
+    sin.sin_addr.SWS_s_addr = (bindAny) ? SWS_INADDR_ANY : (uint32_t)this->_ethernet->localIP();
+    sin.sin_port = SWS_htons(this->_localPort);
+    if (SWS_bind(sock, (struct SWS_sockaddr *)&sin, sizeof(sin)) != 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        return;
+    }
+
+    if (SWS_listen(sock, MAX_SOCK_NUM) != 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        return;
+    }
+
+    if (SWS_ioctl(sock, SWS_FIONBIO, &lArg) != 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        return;
+    }
+
+    if (SWS_setsockopt(sock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char *)&yes, sizeof(int)) < 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        return;
+    }
+
+    this->_sock = sock;
+}
+
+void EthernetServer::stop()
+{
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+
+    if (sock == SWS_INVALID_SOCKET)
+        return;
+
+    for (int i = 0; i < MAX_SOCK_NUM; i++)
+    {
+        if (this->_clients[i].status())
+            this->_clients[i].stop();
+    }
+    SWS_shutdown(sock, SWS_SD_BOTH);
+    SWS_close(sock);
+    this->_sock = SWS_INVALID_SOCKET;
+}
+
+EthernetClient EthernetServer::accept()
+{
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+    SWS_SOCKET newsock;
+    SWS_sockaddr_in sockaddr;
+    SWS_socklen_t socklen = sizeof(sockaddr);
+
+    if (sock == SWS_INVALID_SOCKET)
+        return EthernetClient();
+
+    if ((newsock = SWS_accept(sock, (SWS_sockaddr *)&sockaddr, &socklen)) != SWS_INVALID_SOCKET)
+    {
+        SWS_u_long non_block = 1;
+        int yes = 1;
+
+        if (SWS_ioctl(newsock, SWS_FIONBIO, &non_block) != 0 ||
+            SWS_setsockopt(newsock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char *)&yes, sizeof(int)) < 0)
+        {
+            SWS_shutdown(newsock, SWS_SD_BOTH);
+            SWS_close(newsock);
+            newsock = NULL;
+        }
+    }
+
+    if (newsock != SWS_INVALID_SOCKET)
+    {
+        int idx;
+
+        for (idx = 0; idx < MAX_SOCK_NUM; idx++)
+        {
+            if (this->_clients[idx]._sock == SWS_INVALID_SOCKET)
+                break;
+        }
+
+        if (idx >= MAX_SOCK_NUM)
+        {
+            SWS_shutdown(newsock, SWS_SD_BOTH);
+            SWS_close(newsock);
+        }
+        else
+        {
+            this->_clients[idx]._ethernet = this->_ethernet;
+            this->_clients[idx]._serverIndex = idx;
+            this->_clients[idx]._server = this;
+            this->_clients[idx]._sock = newsock;
+            return this->_clients[idx];
+        }
+    }
+
+    return EthernetClient();
 }
 
 EthernetClient EthernetServer::available()
 {
-	struct SwsSockInfo *temp;
-	SWS_SOCKET tempsock;
-	SWS_SOCKET socks[MAX_SOCK_NUM+1];
-	int i, j;
-	struct SWS_timeval seltime;
-	
-	if (sws == NULL) return EthernetClient(NULL);
-	if (sws->_sock != SWS_INVALID_SOCKET)
-	{
-		socks[0] = sws->_sock;
-		SWS_FdZero(&sws->rfds);
-		SWS_FdSet(sws->_sock, &sws->rfds);
-		for (i = 0; i < MAX_SOCK_NUM; i++) {
-			if (Clients[i].sws == NULL) continue;
-			socks[i+1] = Clients[i].sws->_sock;
-			
-			if (Clients[i].sws->_sock != SWS_INVALID_SOCKET){
-				SWS_FdSet(Clients[i].sws->_sock, &sws->rfds);
-				}
-		}
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+    SWS_SOCKET newsock;
+    SWS_sockaddr_in sockaddr;
+    SWS_socklen_t socklen = sizeof(sockaddr);
 
-		seltime.tv_sec = 0;
-		seltime.tv_usec = 0;
-		if (!SWS_select(&sws->rfds, NULL, NULL, &seltime))
-			return EthernetClient(NULL);
-		
-		for (i = 0; i < MAX_SOCK_NUM+1; i++) {
-			
-			if (SWS_FdIsSet(socks[i], &sws->rfds)) {
-				
-				if (socks[i] == sws->_sock) {
-					temp =  make_new_client(sws);
-					tempsock = (temp == NULL) ? (SWS_INVALID_SOCKET) : (temp->_sock);
-				} else
-					tempsock = socks[i];
-				
-				if (tempsock != SWS_INVALID_SOCKET && socks[i] != sws->_sock) {
-					for (j = 0; j < MAX_SOCK_NUM; j++) {
-						if (Clients[j].sws == NULL) continue;
-						if (Clients[j].sws->_sock == tempsock) {
-							uint8_t val;
-							
-							if (SWS_recv(Clients[j].sws->_sock, &val, 1, SWS_MSG_PEEK) <= 0)
-								Clients[j].stop();
-							
-							return Clients[j];
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	return EthernetClient(NULL);
+    if (sock == SWS_INVALID_SOCKET)
+        return EthernetClient();
+
+    if ((newsock = SWS_accept(sock, (SWS_sockaddr *)&sockaddr, &socklen)) != SWS_INVALID_SOCKET)
+    {
+        SWS_u_long non_block = 1;
+        int yes = 1;
+
+        if (SWS_ioctl(newsock, SWS_FIONBIO, &non_block) != 0 ||
+            SWS_setsockopt(newsock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char *)&yes, sizeof(int)) < 0)
+        {
+            SWS_shutdown(newsock, SWS_SD_BOTH);
+            SWS_close(newsock);
+            newsock = NULL;
+        }
+    }
+
+    if (newsock != SWS_INVALID_SOCKET)
+    {
+        int idx;
+
+        for (idx = 0; idx < MAX_SOCK_NUM; idx++)
+        {
+            if (this->_clients[idx]._sock == SWS_INVALID_SOCKET)
+                break;
+        }
+
+        if (idx >= MAX_SOCK_NUM)
+        {
+            SWS_shutdown(newsock, SWS_SD_BOTH);
+            SWS_close(newsock);
+        }
+        else
+        {
+            this->_clients[idx]._ethernet = this->_ethernet;
+            this->_clients[idx]._serverIndex = idx;
+            this->_clients[idx]._server = this;
+            this->_clients[idx]._sock = newsock;
+            return this->_clients[idx];
+        }
+    }
+
+    for (int i = 0; i < MAX_SOCK_NUM; i++)
+    {
+        if (this->_clients[i]._sock == SWS_INVALID_SOCKET)
+            continue;
+        if (this->_clients[i].available() > 0)
+            return this->_clients[i];
+        if (this->_clients[i].connected() == 0)
+            this->_clients[i].stop();
+    }
+
+    return EthernetClient();
 }
 
-size_t EthernetServer::write(uint8_t b) 
+size_t EthernetServer::write(uint8_t b)
 {
-	return write(&b, 1);
+    return write(&b, 1);
 }
 
-size_t EthernetServer::write(const uint8_t *buffer, size_t size) 
+size_t EthernetServer::write(const uint8_t *buffer, size_t size)
 {
-	int i;
-	size_t n = 0;
-	
-	for (i = 0; i < MAX_SOCK_NUM; i++) {
-		if (Clients[i].status())
-			n += Clients[i].write(buffer, size);
-	}
-	
-	return n;
+    size_t n = 0;
+
+    for (int i = 0; i < MAX_SOCK_NUM; i++)
+    {
+        if (this->_clients[i].status())
+        {
+            n += this->_clients[i].write(buffer, size);
+        }
+    }
+
+    return n;
 }
 
 void EthernetServer::closeServerSocket(int idx)
 {
-	if (idx >= 0 && idx < MAX_SOCK_NUM) {
-		if (Clients[idx].sws != NULL) {
-			Clients[idx].sws->_sock = SWS_INVALID_SOCKET;
-		}
-	}
+    if (idx < 0 || idx >= MAX_SOCK_NUM)
+        return;
+    this->_clients[idx]._sock = SWS_INVALID_SOCKET;
 }
-	
+
+int EthernetServer::getSocketNumber(int idx)
+{
+    if (idx < 0 || idx >= MAX_SOCK_NUM)
+        return 0;
+    return (int)this->_clients[idx]._sock;
+}
+
+EthernetServer::operator bool()
+{
+    return this->_sock != SWS_INVALID_SOCKET;
+}

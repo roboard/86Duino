@@ -50,20 +50,22 @@ public:
 	void disableAlarm();
 
 	void attachInterrupt(voidFuncPtr callback);
+    void attachRTInterrupt(voidFuncPtr callback);
+    void attachHTInterrupt(voidFuncPtr callback);
 	void detachInterrupt();
 
 	void standbyMode();
 
 	/* Get Functions */
 
-	uint8_t getSeconds();
-	uint8_t getMinutes();
-	uint8_t getHours();
+	uint8_t getSeconds(bool now=false);
+	uint8_t getMinutes(bool now=false);
+	uint8_t getHours(bool now=false);
 	uint8_t getAM_PM();
 
-	uint8_t getDay();
-	uint8_t getMonth();
-	uint8_t getYear();
+	uint8_t getDay(bool now=false);
+	uint8_t getMonth(bool now=false);
+	uint8_t getYear(bool now=false);
 
 	uint8_t getAlarmSeconds();
 	uint8_t getAlarmMinutes();
@@ -104,6 +106,10 @@ public:
 	void setY2kEpoch(uint32_t ts);
 private:
 	bool RTCZeroEnable;
+    void inti_Fifolan(void);
+    unsigned int getDosTime(void);
+    
+    void attachInterrupt(voidFuncPtr callback, int _rt);
 };
 
 #endif // RTC_ZERO_H

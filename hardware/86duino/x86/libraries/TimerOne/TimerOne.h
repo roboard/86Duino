@@ -31,6 +31,7 @@ class TimerOne
 		bool timer1Enable;
 		double _period;
 		double _duty[PINS];
+        void attachInterrupt(void (*isr)(), long microseconds, int _rt);
          
 	public:
 		TimerOne();
@@ -48,6 +49,8 @@ class TimerOne
 		void pwm(char pin, int duty, long microseconds=-1);
 		void disablePwm(char pin);
 		void attachInterrupt(void (*isr)(), long microseconds=-1);
+        void attachRTInterrupt(void (*isr)(), long microseconds=-1);
+        void attachHTInterrupt(void (*isr)(), long microseconds=-1);
 		void detachInterrupt();
 		void setPeriod(long microseconds);
 		void setPwmDuty(char pin, int duty);
@@ -58,11 +61,14 @@ class TimerRealTimeClock {
 	private:
 		unsigned char _freq;
 		bool timerRTCEnable;
-		
+		void attachInterrupt(void (*isr)(), long microseconds, int _rt);
+        
 	public:
 		TimerRealTimeClock();
 		void initialize(long microseconds=500000L);
 		void attachInterrupt(void (*isr)(), long microseconds=-1);
+        void attachRTInterrupt(void (*isr)(), long microseconds=-1);
+        void attachHTInterrupt(void (*isr)(), long microseconds=-1);
 		void detachInterrupt();
 		void setPeriod(long microseconds);
 		void (*isrCallback)();

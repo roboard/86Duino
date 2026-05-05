@@ -2,30 +2,36 @@
 #define ethernetserver_h
 
 #include "Server.h"
-#include "Ethernet.h"
 
-class EthernetClient;
+#define MAX_SOCK_NUM (128)
 
-class EthernetServer : public Server {
+class EthernetClass;
+class EthernetServer : public Server
+{
+public:
+    EthernetServer(uint16_t port);
+    EthernetServer(uint16_t port, EthernetClass &ethernet);
+    virtual ~EthernetServer();
+    EthernetClient available();
+    EthernetClient accept();
+    virtual void begin();
+    virtual void begin(bool bindAny);
+    virtual size_t write(uint8_t);
+    virtual size_t write(const uint8_t *buf, size_t size);
+    virtual operator bool();
+    void stop();
+
+    friend class EthernetClient;
+    using Print::write;
 
 private:
-	struct SwsSockInfo *sws;
-	struct SwsSockInfo *make_new_client(struct SwsSockInfo *info);
-	
-	uint16_t _port;
-	
-	EthernetClient Clients[MAX_SOCK_NUM];
-	
-public:
-	EthernetServer(uint16_t);
-	~EthernetServer();
-	EthernetClient available();
-	virtual void begin();
-	virtual size_t write(uint8_t);
-	virtual size_t write(const uint8_t *buf, size_t size);
-	using Print::write;
-	
-	void closeServerSocket(int idx);
+    void closeServerSocket(int idx);
+    int getSocketNumber(int idx);
+    EthernetClass *_ethernet;
+    EthernetClient _clients[MAX_SOCK_NUM];
+    uint16_t _localPort;
+    void *_sock;
+
 };
 
 #endif

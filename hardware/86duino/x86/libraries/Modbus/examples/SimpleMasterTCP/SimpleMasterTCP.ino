@@ -20,7 +20,7 @@ void setup()
     bus.begin(MODBUS_TCP, serverIp);
     
     /* Slave node initialize. */
-    node.begin(11, bus);
+    node.attach(11, bus);
 }
 
 void loop()

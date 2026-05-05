@@ -1,0 +1,8 @@
+
+# Whois servers not available from: whois -nwhois.iana.org TLD
+
+.cd     whois.nic.cd
+#.ck     whois.nic.ck
+#.fj     whois.usp.ac.fj
+.pw     whois.nic.pw
+.su     whois.ripn.net

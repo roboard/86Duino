@@ -1,6 +1,6 @@
 /*
-  can.h - DM&P Vortex86EX CAN Bus library
-  Copyright (c) 2013 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
+  can.h - DM&P Vortex86 CAN Bus library
+  Copyright (c) 2018 Johnson Hung <Dyhung@dmp.com.tw>. All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -37,12 +37,14 @@
 extern "C" {
 #endif
 
+#define VCAN0               (0x00)
+#define VCAN1               (0x01)
 
 // CANFrame type
-#define STD_DATA_FRAME     (0x00)
-#define EXT_DATA_FRAME     (0x01)
-#define STD_REMOTE_FRAME   (0x02) 
-#define EXT_REMOTE_FRAME   (0x03)
+#define STD_DATA_FRAME      (0x00)
+#define EXT_DATA_FRAME      (0x01)
+#define STD_REMOTE_FRAME    (0x02) 
+#define EXT_REMOTE_FRAME    (0x03)
 
 typedef struct {
 	int type;
@@ -69,6 +71,7 @@ typedef struct {
 
 typedef volatile struct can_bus
 {
+    int            canNo;
 	void          *ioHandle;
 	bool           InUse;
 
@@ -115,7 +118,7 @@ typedef volatile struct can_bus
 	 
 } CAN_Bus;
 
-DMPAPI(void*) CreateCANBus(int IO_Space);
+DMPAPI(void*) CreateCANBus(int can, int IO_Space);
 #define IO_PORT       (0)
 #define IO_MEMORY     (1)
 
@@ -123,20 +126,30 @@ DMPAPI(bool) can_Init(void *vcan);
 DMPAPI(void) can_Close(void *vcan);
 DMPAPI(void) can_Reset(void *vcan);
 
+DMPAPI(bool) can_SetBitTiming(void *vcan, unsigned int ckdiv, unsigned int sjw
+                                                            , unsigned int prog
+                                                            , unsigned int ps1
+                                                            , unsigned int ps2);
 DMPAPI(bool) can_SetBPS(void *vcan, unsigned long bps);
-#define CAN_BPS_1000K   (0x80021144UL)
-#define CAN_BPS_833K    (0x80021155UL)
-#define CAN_BPS_500K    (0x80041144UL)
-#define CAN_BPS_250K    (0x80081144UL)
-#define CAN_BPS_125K    (0x80101144UL)
-#define CAN_BPS_100K    (0x80141144UL)
-#define CAN_BPS_83K3    (0x80181144UL)
-#define CAN_BPS_50K     (0x80281144UL)
-#define CAN_BPS_20K     (0x80641144UL)
-#define CAN_BPS_10K     (0x80501888UL)
+#define CAN_BPS_1000K   (1000000UL)
+#define CAN_BPS_833K    ( 833333UL)
+#define CAN_BPS_800K    ( 800000UL)
+#define CAN_BPS_600K    ( 600000UL)
+#define CAN_BPS_500K    ( 500000UL)
+#define CAN_BPS_250K    ( 250000UL)
+#define CAN_BPS_200K    ( 200000UL)
+#define CAN_BPS_125K    ( 125000UL)
+#define CAN_BPS_100K    ( 100000UL)
+#define CAN_BPS_83K3    (  83333UL)
+#define CAN_BPS_80K     (  80000UL)
+#define CAN_BPS_60K     (  60000UL)
+#define CAN_BPS_50K     (  50000UL)
+#define CAN_BPS_25K     (  25000UL)
+#define CAN_BPS_20K     (  20000UL)
+#define CAN_BPS_10K     (  10000UL)
 
 DMPAPI(void) can_SetTimeOut(void *vcan, unsigned long rx_timeout, unsigned long tx_timeout);
-#define CAN_NO_TIMEOUT  (-1)
+#define CAN_NO_TIMEOUT  (~0UL)
 
 /* CAN-BUS Identifier list has 32 filter. Note: index = 0 ~ 31. */
 DMPAPI(bool) can_AddIDFilter(void *vcan, int index, int  ext_id, unsigned long  filter, unsigned long  mask);

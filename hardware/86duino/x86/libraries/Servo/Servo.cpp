@@ -26,6 +26,7 @@
 #include "io.h"
 #include "irq.h"
 #include "pins_arduino.h"
+#include "mcm.h"
 
 typedef struct {
   int pin;
@@ -62,23 +63,32 @@ static volatile bool pwm_IsEnable = false;
 
 #define SERVO_MIN() (MIN_PULSE_WIDTH - this->min * 4)  // minimum value in uS for this servo
 #define SERVO_MAX() (MAX_PULSE_WIDTH - this->max * 4)  // maximum value in uS for this servo 
-static int mc = 3;
-static int md = 2;
+
+#if defined (__86DUINO_EX)
+    static int mc = 3;
+    static int md = 2;
+    #define MAGIC_NUM (80L)
+#elif defined (__86DUINO_EX2)
+    static int mc = 11;
+    static int md = 2;
+    #define MAGIC_NUM (20L)
+#endif
+
 #define EVTPOINT    (5000L)
 
 /************************************ MCM ************************************/
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(unsigned long used_int) {
-    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]);
 }
 
 static void disable_MCINT(unsigned long used_int) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) | (1L << (mc%4)), mc/4);
 }
 
 static void enable_MCINT(unsigned long used_int) {
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) & ~(1L << (mc%4)), mc/4);
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
@@ -128,7 +138,7 @@ static int isr_handler(int irq, void* data) {
     
     do
     	val = mcpwm_ReadSTATREG2(mc, md);
-    while(val>=80L && val<EVTPOINT);
+    while(val>=MAGIC_NUM && val<EVTPOINT);
 	
 	
 	if(evtnumber > 0)
@@ -342,14 +352,14 @@ static bool initServoIRQ(void) {
 	        printf("irq_init fail\n"); return false;
 	    }
 	    
-	    if(irq_Setting(GetMCIRQ(), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
+	    if(irq_Setting(GetMCIRQ(mc/4), IRQ_LEVEL_TRIGGER + IRQ_DISABLE_INTR) == false)
 	    {
 	        printf("%s\n", __FUNCTION__); return false;
 	    }
 	    Global_irq_Init = true;
 	}
     
-    if(irq_InstallISR(GetMCIRQ(), isr_handler, (void*)name) == false)
+    if(irq_InstallISR(GetMCIRQ(mc/4), isr_handler, (void*)name) == false)
     {
         printf("irq_install fail\n"); return false;
     }
@@ -358,7 +368,7 @@ static bool initServoIRQ(void) {
 }
 
 static bool closeServoIRQ(void) {
-    irq_UninstallISR(GetMCIRQ(), (void*)name);
+    irq_UninstallISR(GetMCIRQ(mc/4), (void*)name);
 }
 
 static bool isPWMPin(uint8_t pin) {

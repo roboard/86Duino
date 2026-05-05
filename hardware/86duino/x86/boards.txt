@@ -1,6 +1,10 @@
 # See: http://code.google.com/p/arduino/wiki/Platforms
 
 menu.cpu=Processor
+# menu.optimization=Optimization
+menu.link=Link
+menu.slot=Slot
+menu.ethernet=Dual Ethernet
 
 ################################################################################
 
@@ -41,6 +45,7 @@ menu.cpu=Processor
 86DuinoZERO.build.core=arduino
 86DuinoZERO.build.variant=zero
 86DuinoZERO.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoZERO.build.v86uploader=v86dude
 
 ################################################################################
 
@@ -81,6 +86,7 @@ menu.cpu=Processor
 86DuinoONE.build.core=arduino
 86DuinoONE.build.variant=one
 86DuinoONE.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoONE.build.v86uploader=v86dude
 
 ################################################################################
 
@@ -121,52 +127,54 @@ EduCake.build.board=86DuinoEduCake
 EduCake.build.core=arduino
 EduCake.build.variant=educake
 EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+EduCake.build.v86uploader=v86dude
 
 ################################################################################
 
-# 86DuinoPLC.name=86Duino PLC
-# 86DuinoPLC.upload.via_ssh=false
-
-# 86DuinoPLC.vid.0=0x0525
-# 86DuinoPLC.pid.0=0x0036
-# 86DuinoPLC.vid.1=0x0525
-# 86DuinoPLC.pid.1=0x8036
-# 86DuinoPLC.vid.2=0x0525
-# 86DuinoPLC.pid.2=0xa4a5
-# 86DuinoPLC.vid.3=0x0525
-# 86DuinoPLC.pid.3=0x00a5
-
-# 86DuinoPLC.upload.tool=86upload
-# 86DuinoPLC.upload.protocol=avr109
-# 86DuinoPLC.upload.maximum_size=4194304
-# 86DuinoPLC.upload.speed=57600
-# 86DuinoPLC.upload.disable_flushing=true
-# 86DuinoPLC.upload.use_1200bps_touch=true
-# 86DuinoPLC.upload.wait_for_upload_port=true
-
-# 86DuinoPLC.bootloader.tool=86upload
-# 86DuinoPLC.bootloader.low_fuses=0xff
-# 86DuinoPLC.bootloader.high_fuses=0xd8
-# 86DuinoPLC.bootloader.extended_fuses=0xcb
-# 86DuinoPLC.bootloader.file=v86boot.exe
-# 86DuinoPLC.bootloader.unlock_bits=0x3F
-# 86DuinoPLC.bootloader.lock_bits=0x2F
-
-# 86DuinoPLC.build.mcu=atmega32u4
-# 86DuinoPLC.build.f_cpu=16000000L
-# 86DuinoPLC.build.vid=0x0525
-# 86DuinoPLC.build.pid=0x8036
-# 86DuinoPLC.build.usb_product="86Duino PLC"
-# 86DuinoPLC.build.board=86DuinoPLC
-# 86DuinoPLC.build.core=arduino
-# 86DuinoPLC.build.variant=plc
-# 86DuinoPLC.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+# 86DuinoMotion.name=86Duino Motion9D
+# 86DuinoMotion.upload.via_ssh=false
+# 
+# 86DuinoMotion.vid.0=0x0525
+# 86DuinoMotion.pid.0=0x0036
+# 86DuinoMotion.vid.1=0x0525
+# 86DuinoMotion.pid.1=0x8036
+# 86DuinoMotion.vid.2=0x0525
+# 86DuinoMotion.pid.2=0xa4a5
+# 86DuinoMotion.vid.3=0x0525
+# 86DuinoMotion.pid.3=0x00a5
+# 
+# 86DuinoMotion.upload.tool=86upload
+# 86DuinoMotion.upload.protocol=avr109
+# 86DuinoMotion.upload.maximum_size=4194304
+# 86DuinoMotion.upload.speed=57600
+# 86DuinoMotion.upload.disable_flushing=true
+# 86DuinoMotion.upload.use_1200bps_touch=true
+# 86DuinoMotion.upload.wait_for_upload_port=true
+# 
+# 86DuinoMotion.bootloader.tool=86upload
+# 86DuinoMotion.bootloader.low_fuses=0xff
+# 86DuinoMotion.bootloader.high_fuses=0xd8
+# 86DuinoMotion.bootloader.extended_fuses=0xcb
+# 86DuinoMotion.bootloader.file=v86boot.exe
+# 86DuinoMotion.bootloader.unlock_bits=0x3F
+# 86DuinoMotion.bootloader.lock_bits=0x2F
+# 
+# 86DuinoMotion.build.mcu=atmega32u4
+# 86DuinoMotion.build.f_cpu=16000000L
+# 86DuinoMotion.build.vid=0x0525
+# 86DuinoMotion.build.pid=0x8036
+# 86DuinoMotion.build.usb_product="86Duino Motion9D"
+# 86DuinoMotion.build.board=86DuinoMotion
+# 86DuinoMotion.build.core=arduino
+# 86DuinoMotion.build.variant=motion9d
+# 86DuinoMotion.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+# 86DuinoMotion.build.v86uploader=v86dude
 
 ################################################################################
 
 # 86DuinoAI.name=86Duino AI
 # 86DuinoAI.upload.via_ssh=false
-
+# 
 # 86DuinoAI.vid.0=0x0525
 # 86DuinoAI.pid.0=0x0036
 # 86DuinoAI.vid.1=0x0525
@@ -175,7 +183,7 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 # 86DuinoAI.pid.2=0xa4a5
 # 86DuinoAI.vid.3=0x0525
 # 86DuinoAI.pid.3=0x00a5
-
+# 
 # 86DuinoAI.upload.tool=86upload
 # 86DuinoAI.upload.protocol=avr109
 # 86DuinoAI.upload.maximum_size=4194304
@@ -183,7 +191,7 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 # 86DuinoAI.upload.disable_flushing=true
 # 86DuinoAI.upload.use_1200bps_touch=true
 # 86DuinoAI.upload.wait_for_upload_port=true
-
+# 
 # 86DuinoAI.bootloader.tool=86upload
 # 86DuinoAI.bootloader.low_fuses=0xff
 # 86DuinoAI.bootloader.high_fuses=0xd8
@@ -191,7 +199,7 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 # 86DuinoAI.bootloader.file=v86boot.exe
 # 86DuinoAI.bootloader.unlock_bits=0x3F
 # 86DuinoAI.bootloader.lock_bits=0x2F
-
+# 
 # 86DuinoAI.build.mcu=atmega32u4
 # 86DuinoAI.build.f_cpu=16000000L
 # 86DuinoAI.build.vid=0x0525
@@ -201,3 +209,822 @@ EduCake.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
 # 86DuinoAI.build.core=arduino
 # 86DuinoAI.build.variant=ai
 # 86DuinoAI.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+# 86DuinoAI.build.v86uploader=v86dude
+
+################################################################################
+
+86DuinoEX2.name=86Duino QEC DUO
+86DuinoEX2.aliasname=86Duino DUO
+86DuinoEX2.upload.via_ssh=false
+
+86DuinoEX2.vid.0=0x0525
+86DuinoEX2.pid.0=0x0036
+86DuinoEX2.vid.1=0x0525
+86DuinoEX2.pid.1=0x8036
+86DuinoEX2.vid.2=0x0525
+86DuinoEX2.pid.2=0xa4a5
+86DuinoEX2.vid.3=0x0525
+86DuinoEX2.pid.3=0x00a5
+
+86DuinoEX2.upload.tool=86upload
+86DuinoEX2.upload.protocol=avr109
+86DuinoEX2.upload.maximum_size=4194304
+86DuinoEX2.upload.speed=57600
+86DuinoEX2.upload.disable_flushing=true
+86DuinoEX2.upload.use_1200bps_touch=true
+86DuinoEX2.upload.wait_for_upload_port=true
+
+86DuinoEX2.bootloader.tool=86upload
+86DuinoEX2.bootloader.low_fuses=0xff
+86DuinoEX2.bootloader.high_fuses=0xd8
+86DuinoEX2.bootloader.extended_fuses=0xcb
+86DuinoEX2.bootloader.file=v86boot.exe
+86DuinoEX2.bootloader.unlock_bits=0x3F
+86DuinoEX2.bootloader.lock_bits=0x2F
+
+86DuinoEX2.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoEX2.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+86DuinoEX2.build.mcu=atmega32u4
+86DuinoEX2.build.f_cpu=16000000L
+86DuinoEX2.build.vid=0x0525
+86DuinoEX2.build.pid=0x8036
+86DuinoEX2.build.usb_product="86Duino DUO"
+86DuinoEX2.build.board=86DuinoDUO
+86DuinoEX2.build.core=arduino
+86DuinoEX2.build.variant=duo
+86DuinoEX2.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoEX2.build.v86uploader=v86dude
+
+################################################################################
+
+# 86Duino3DPCOLOR.name=86Duino 3DP COLOR
+# 86Duino3DPCOLOR.upload.via_ssh=false
+# 
+# 86Duino3DPCOLOR.vid.0=0x0525
+# 86Duino3DPCOLOR.pid.0=0x0036
+# 86Duino3DPCOLOR.vid.1=0x0525
+# 86Duino3DPCOLOR.pid.1=0x8036
+# 86Duino3DPCOLOR.vid.2=0x0525
+# 86Duino3DPCOLOR.pid.2=0xa4a5
+# 86Duino3DPCOLOR.vid.3=0x0525
+# 86Duino3DPCOLOR.pid.3=0x00a5
+# 
+# 86Duino3DPCOLOR.upload.tool=86upload
+# 86Duino3DPCOLOR.upload.protocol=avr109
+# 86Duino3DPCOLOR.upload.maximum_size=4194304
+# 86Duino3DPCOLOR.upload.speed=57600
+# 86Duino3DPCOLOR.upload.disable_flushing=true
+# 86Duino3DPCOLOR.upload.use_1200bps_touch=true
+# 86Duino3DPCOLOR.upload.wait_for_upload_port=true
+# 
+# 86Duino3DPCOLOR.bootloader.tool=86upload
+# 86Duino3DPCOLOR.bootloader.low_fuses=0xff
+# 86Duino3DPCOLOR.bootloader.high_fuses=0xd8
+# 86Duino3DPCOLOR.bootloader.extended_fuses=0xcb
+# 86Duino3DPCOLOR.bootloader.file=v86boot.exe
+# 86Duino3DPCOLOR.bootloader.unlock_bits=0x3F
+# 86Duino3DPCOLOR.bootloader.lock_bits=0x2F
+# 
+# 86Duino3DPCOLOR.build.mcu=atmega32u4
+# 86Duino3DPCOLOR.build.f_cpu=16000000L
+# 86Duino3DPCOLOR.build.vid=0x0525
+# 86Duino3DPCOLOR.build.pid=0x8036
+# 86Duino3DPCOLOR.build.usb_product="86Duino 3DP COLOR"
+# 86Duino3DPCOLOR.build.board=86Duino3DPCOLOR
+# 86Duino3DPCOLOR.build.core=arduino
+# 86Duino3DPCOLOR.build.variant=color3dp
+# 86Duino3DPCOLOR.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+# 86Duino3DPCOLOR.build.v86uploader=v86dude
+
+################################################################################
+
+DM520.name=DM520
+DM520.aliasname=AI-DIO-BOX
+DM520.upload.via_ssh=false
+
+DM520.vid.0=0x0525
+DM520.pid.0=0x0036
+DM520.vid.1=0x0525
+DM520.pid.1=0x8036
+DM520.vid.2=0x0525
+DM520.pid.2=0xa4a5
+DM520.vid.3=0x0525
+DM520.pid.3=0x00a5
+
+DM520.upload.tool=86upload
+DM520.upload.protocol=avr109
+DM520.upload.maximum_size=4194304
+DM520.upload.speed=57600
+DM520.upload.disable_flushing=true
+DM520.upload.use_1200bps_touch=true
+DM520.upload.wait_for_upload_port=true
+
+DM520.bootloader.tool=86upload
+DM520.bootloader.low_fuses=0xff
+DM520.bootloader.high_fuses=0xd8
+DM520.bootloader.extended_fuses=0xcb
+DM520.bootloader.file=v86boot.exe
+DM520.bootloader.unlock_bits=0x3F
+DM520.bootloader.lock_bits=0x2F
+
+DM520.build.mcu=atmega32u4
+DM520.build.f_cpu=16000000L
+DM520.build.vid=0x0525
+DM520.build.pid=0x8036
+DM520.build.usb_product="AIDIOBOX"
+DM520.build.board=AIDIOBOX
+DM520.build.core=arduino
+DM520.build.variant=dm520
+DM520.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+DM520.build.v86uploader=v86dude
+
+################################################################################
+
+HMI043T.name=86Duino QEC HMI043T
+HMI043T.aliasname=HMI 043T
+HMI043T.upload.via_ssh=false
+
+HMI043T.vid.0=0x0525
+HMI043T.pid.0=0x0036
+HMI043T.vid.1=0x0525
+HMI043T.pid.1=0x8036
+HMI043T.vid.2=0x0525
+HMI043T.pid.2=0xa4a5
+HMI043T.vid.3=0x0525
+HMI043T.pid.3=0x00a5
+
+HMI043T.upload.tool=86upload
+HMI043T.upload.protocol=avr109
+HMI043T.upload.maximum_size=4194304
+HMI043T.upload.speed=57600
+HMI043T.upload.disable_flushing=true
+HMI043T.upload.use_1200bps_touch=true
+HMI043T.upload.wait_for_upload_port=true
+
+HMI043T.bootloader.tool=86upload
+HMI043T.bootloader.low_fuses=0xff
+HMI043T.bootloader.high_fuses=0xd8
+HMI043T.bootloader.extended_fuses=0xcb
+HMI043T.bootloader.file=v86boot.exe
+HMI043T.bootloader.unlock_bits=0x3F
+HMI043T.bootloader.lock_bits=0x2F
+
+HMI043T.build.mcu=atmega32u4
+HMI043T.build.f_cpu=16000000L
+HMI043T.build.vid=0x0525
+HMI043T.build.pid=0x8036
+HMI043T.build.usb_product="86Duino HMI043T"
+HMI043T.build.board=86DuinoHMI043T
+HMI043T.build.core=arduino
+HMI043T.build.variant=hmi043t
+HMI043T.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+HMI043T.build.v86uploader=v86dude
+
+################################################################################
+
+86DuinoQEC.name=86Duino QEC
+86DuinoQEC.aliasname=QEC M043T
+86DuinoQEC.upload.via_ssh=false
+
+86DuinoQEC.vid.0=0x067B
+86DuinoQEC.pid.0=0x23A3
+86DuinoQEC.vid.1=0x067B
+86DuinoQEC.pid.1=0x23A3
+86DuinoQEC.vid.2=0x067B
+86DuinoQEC.pid.2=0x23A3
+86DuinoQEC.vid.3=0x067B
+86DuinoQEC.pid.3=0x23A3
+
+86DuinoQEC.upload.tool=86upload
+86DuinoQEC.upload.protocol=avr109
+86DuinoQEC.upload.maximum_size=4194304
+86DuinoQEC.upload.speed=57600
+86DuinoQEC.upload.disable_flushing=true
+86DuinoQEC.upload.use_1200bps_touch=false
+86DuinoQEC.upload.wait_for_upload_port=false
+
+86DuinoQEC.bootloader.tool=86upload
+86DuinoQEC.bootloader.low_fuses=0xff
+86DuinoQEC.bootloader.high_fuses=0xd8
+86DuinoQEC.bootloader.extended_fuses=0xcb
+86DuinoQEC.bootloader.file=v86boot.exe
+86DuinoQEC.bootloader.unlock_bits=0x3F
+86DuinoQEC.bootloader.lock_bits=0x2F
+
+86DuinoQEC.build.mcu=atmega32u4
+86DuinoQEC.build.f_cpu=16000000L
+86DuinoQEC.build.vid=0x067B
+86DuinoQEC.build.pid=0x23A3
+86DuinoQEC.build.usb_product="86Duino QEC"
+86DuinoQEC.build.board=86DuinoQEC
+86DuinoQEC.build.core=arduino
+86DuinoQEC.build.variant=qec
+86DuinoQEC.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQEC.build.v86uploader=v86dude
+
+# 86DuinoQEC.menu.optimization.default=default -O1
+# 86DuinoQEC.menu.optimization.default.build.optimization=-O1
+# 86DuinoQEC.menu.optimization.O2=-O2
+# 86DuinoQEC.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQEC.menu.optimization.O3=-O3
+# 86DuinoQEC.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQEC.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQEC.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQEC7.name=86Duino QEC7
+86DuinoQEC7.aliasname=QEC M070T
+86DuinoQEC7.upload.via_ssh=false
+
+86DuinoQEC7.vid.0=0x067B
+86DuinoQEC7.pid.0=0x23A3
+86DuinoQEC7.vid.1=0x067B
+86DuinoQEC7.pid.1=0x23A3
+86DuinoQEC7.vid.2=0x067B
+86DuinoQEC7.pid.2=0x23A3
+86DuinoQEC7.vid.3=0x067B
+86DuinoQEC7.pid.3=0x23A3
+
+86DuinoQEC7.upload.tool=86upload
+86DuinoQEC7.upload.protocol=avr109
+86DuinoQEC7.upload.maximum_size=4194304
+86DuinoQEC7.upload.speed=57600
+86DuinoQEC7.upload.disable_flushing=true
+86DuinoQEC7.upload.use_1200bps_touch=false
+86DuinoQEC7.upload.wait_for_upload_port=false
+
+86DuinoQEC7.bootloader.tool=86upload
+86DuinoQEC7.bootloader.low_fuses=0xff
+86DuinoQEC7.bootloader.high_fuses=0xd8
+86DuinoQEC7.bootloader.extended_fuses=0xcb
+86DuinoQEC7.bootloader.file=v86boot.exe
+86DuinoQEC7.bootloader.unlock_bits=0x3F
+86DuinoQEC7.bootloader.lock_bits=0x2F
+
+86DuinoQEC7.build.mcu=atmega32u4
+86DuinoQEC7.build.f_cpu=16000000L
+86DuinoQEC7.build.vid=0x067B
+86DuinoQEC7.build.pid=0x23A3
+86DuinoQEC7.build.usb_product="86Duino QEC7"
+86DuinoQEC7.build.board=86DuinoQEC7
+86DuinoQEC7.build.core=arduino
+86DuinoQEC7.build.variant=qec7
+86DuinoQEC7.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQEC7.build.v86uploader=v86dude
+
+# 86DuinoQEC7.menu.optimization.default=default -O1
+# 86DuinoQEC7.menu.optimization.default.build.optimization=-O1
+# 86DuinoQEC7.menu.optimization.O2=-O2
+# 86DuinoQEC7.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQEC7.menu.optimization.O3=-O3
+# 86DuinoQEC7.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQEC7.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQEC7.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQEC9.name=86Duino QEC9
+86DuinoQEC9.aliasname=QEC M090T
+86DuinoQEC9.upload.via_ssh=false
+
+86DuinoQEC9.vid.0=0x067B
+86DuinoQEC9.pid.0=0x23A3
+86DuinoQEC9.vid.1=0x067B
+86DuinoQEC9.pid.1=0x23A3
+86DuinoQEC9.vid.2=0x067B
+86DuinoQEC9.pid.2=0x23A3
+86DuinoQEC9.vid.3=0x067B
+86DuinoQEC9.pid.3=0x23A3
+
+86DuinoQEC9.upload.tool=86upload
+86DuinoQEC9.upload.protocol=avr109
+86DuinoQEC9.upload.maximum_size=4194304
+86DuinoQEC9.upload.speed=57600
+86DuinoQEC9.upload.disable_flushing=true
+86DuinoQEC9.upload.use_1200bps_touch=false
+86DuinoQEC9.upload.wait_for_upload_port=false
+
+86DuinoQEC9.bootloader.tool=86upload
+86DuinoQEC9.bootloader.low_fuses=0xff
+86DuinoQEC9.bootloader.high_fuses=0xd8
+86DuinoQEC9.bootloader.extended_fuses=0xcb
+86DuinoQEC9.bootloader.file=v86boot.exe
+86DuinoQEC9.bootloader.unlock_bits=0x3F
+86DuinoQEC9.bootloader.lock_bits=0x2F
+
+86DuinoQEC9.build.mcu=atmega32u4
+86DuinoQEC9.build.f_cpu=16000000L
+86DuinoQEC9.build.vid=0x067B
+86DuinoQEC9.build.pid=0x23A3
+86DuinoQEC9.build.usb_product="86Duino QEC9"
+86DuinoQEC9.build.board=86DuinoQEC9
+86DuinoQEC9.build.core=arduino
+86DuinoQEC9.build.variant=qec9
+86DuinoQEC9.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQEC9.build.v86uploader=v86dude
+
+# 86DuinoQEC9.menu.optimization.default=default -O1
+# 86DuinoQEC9.menu.optimization.default.build.optimization=-O1
+# 86DuinoQEC9.menu.optimization.O2=-O2
+# 86DuinoQEC9.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQEC9.menu.optimization.O3=-O3
+# 86DuinoQEC9.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQEC9.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQEC9.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQEC15.name=86Duino QEC15
+86DuinoQEC15.aliasname=QEC M150T
+86DuinoQEC15.upload.via_ssh=false
+
+86DuinoQEC15.vid.0=0x067B
+86DuinoQEC15.pid.0=0x23A3
+86DuinoQEC15.vid.1=0x067B
+86DuinoQEC15.pid.1=0x23A3
+86DuinoQEC15.vid.2=0x067B
+86DuinoQEC15.pid.2=0x23A3
+86DuinoQEC15.vid.3=0x067B
+86DuinoQEC15.pid.3=0x23A3
+
+86DuinoQEC15.upload.tool=86upload
+86DuinoQEC15.upload.protocol=avr109
+86DuinoQEC15.upload.maximum_size=4194304
+86DuinoQEC15.upload.speed=57600
+86DuinoQEC15.upload.disable_flushing=true
+86DuinoQEC15.upload.use_1200bps_touch=false
+86DuinoQEC15.upload.wait_for_upload_port=false
+
+86DuinoQEC15.bootloader.tool=86upload
+86DuinoQEC15.bootloader.low_fuses=0xff
+86DuinoQEC15.bootloader.high_fuses=0xd8
+86DuinoQEC15.bootloader.extended_fuses=0xcb
+86DuinoQEC15.bootloader.file=v86boot.exe
+86DuinoQEC15.bootloader.unlock_bits=0x3F
+86DuinoQEC15.bootloader.lock_bits=0x2F
+
+86DuinoQEC15.build.mcu=atmega32u4
+86DuinoQEC15.build.f_cpu=16000000L
+86DuinoQEC15.build.vid=0x067B
+86DuinoQEC15.build.pid=0x23A3
+86DuinoQEC15.build.usb_product="86Duino QEC15"
+86DuinoQEC15.build.board=86DuinoQEC15
+86DuinoQEC15.build.core=arduino
+86DuinoQEC15.build.variant=qec15
+86DuinoQEC15.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQEC15.build.v86uploader=v86dude
+
+# 86DuinoQEC15.menu.optimization.default=default -O1
+# 86DuinoQEC15.menu.optimization.default.build.optimization=-O1
+# 86DuinoQEC15.menu.optimization.O2=-O2
+# 86DuinoQEC15.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQEC15.menu.optimization.O3=-O3
+# 86DuinoQEC15.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQEC15.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQEC15.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQECPPC9.name=86Duino QECPPC9
+86DuinoQECPPC9.aliasname=QEC PPCM090
+86DuinoQECPPC9.upload.via_ssh=false
+
+86DuinoQECPPC9.vid.0=0x067B
+86DuinoQECPPC9.pid.0=0x23A3
+86DuinoQECPPC9.vid.1=0x067B
+86DuinoQECPPC9.pid.1=0x23A3
+86DuinoQECPPC9.vid.2=0x067B
+86DuinoQECPPC9.pid.2=0x23A3
+86DuinoQECPPC9.vid.3=0x067B
+86DuinoQECPPC9.pid.3=0x23A3
+
+86DuinoQECPPC9.upload.tool=86upload
+86DuinoQECPPC9.upload.protocol=avr109
+86DuinoQECPPC9.upload.maximum_size=4194304
+86DuinoQECPPC9.upload.speed=57600
+86DuinoQECPPC9.upload.disable_flushing=true
+86DuinoQECPPC9.upload.use_1200bps_touch=false
+86DuinoQECPPC9.upload.wait_for_upload_port=false
+
+86DuinoQECPPC9.bootloader.tool=86upload
+86DuinoQECPPC9.bootloader.low_fuses=0xff
+86DuinoQECPPC9.bootloader.high_fuses=0xd8
+86DuinoQECPPC9.bootloader.extended_fuses=0xcb
+86DuinoQECPPC9.bootloader.file=v86boot.exe
+86DuinoQECPPC9.bootloader.unlock_bits=0x3F
+86DuinoQECPPC9.bootloader.lock_bits=0x2F
+
+86DuinoQECPPC9.build.mcu=atmega32u4
+86DuinoQECPPC9.build.f_cpu=16000000L
+86DuinoQECPPC9.build.vid=0x067B
+86DuinoQECPPC9.build.pid=0x23A3
+86DuinoQECPPC9.build.usb_product="86Duino QECPPC9"
+86DuinoQECPPC9.build.board=86DuinoQECPPC9
+86DuinoQECPPC9.build.core=arduino
+86DuinoQECPPC9.build.variant=qecppc9
+86DuinoQECPPC9.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQECPPC9.build.v86uploader=v86dude
+
+# 86DuinoQECPPC9.menu.optimization.default=default -O1
+# 86DuinoQECPPC9.menu.optimization.default.build.optimization=-O1
+# 86DuinoQECPPC9.menu.optimization.O2=-O2
+# 86DuinoQECPPC9.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQECPPC9.menu.optimization.O3=-O3
+# 86DuinoQECPPC9.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQECPPC9.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQECPPC9.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQECPPC104.name=86Duino QECPPC104
+86DuinoQECPPC104.aliasname=QEC PPCM104
+86DuinoQECPPC104.upload.via_ssh=false
+
+86DuinoQECPPC104.vid.0=0x067B
+86DuinoQECPPC104.pid.0=0x23A3
+86DuinoQECPPC104.vid.1=0x067B
+86DuinoQECPPC104.pid.1=0x23A3
+86DuinoQECPPC104.vid.2=0x067B
+86DuinoQECPPC104.pid.2=0x23A3
+86DuinoQECPPC104.vid.3=0x067B
+86DuinoQECPPC104.pid.3=0x23A3
+
+86DuinoQECPPC104.upload.tool=86upload
+86DuinoQECPPC104.upload.protocol=avr109
+86DuinoQECPPC104.upload.maximum_size=4194304
+86DuinoQECPPC104.upload.speed=57600
+86DuinoQECPPC104.upload.disable_flushing=true
+86DuinoQECPPC104.upload.use_1200bps_touch=false
+86DuinoQECPPC104.upload.wait_for_upload_port=false
+
+86DuinoQECPPC104.bootloader.tool=86upload
+86DuinoQECPPC104.bootloader.low_fuses=0xff
+86DuinoQECPPC104.bootloader.high_fuses=0xd8
+86DuinoQECPPC104.bootloader.extended_fuses=0xcb
+86DuinoQECPPC104.bootloader.file=v86boot.exe
+86DuinoQECPPC104.bootloader.unlock_bits=0x3F
+86DuinoQECPPC104.bootloader.lock_bits=0x2F
+
+86DuinoQECPPC104.build.mcu=atmega32u4
+86DuinoQECPPC104.build.f_cpu=16000000L
+86DuinoQECPPC104.build.vid=0x067B
+86DuinoQECPPC104.build.pid=0x23A3
+86DuinoQECPPC104.build.usb_product="86Duino QECPPC104"
+86DuinoQECPPC104.build.board=86DuinoQECPPC104
+86DuinoQECPPC104.build.core=arduino
+86DuinoQECPPC104.build.variant=qec104
+86DuinoQECPPC104.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQECPPC104.build.v86uploader=v86dude
+
+# 86DuinoQECPPC104.menu.optimization.default=default -O1
+# 86DuinoQECPPC104.menu.optimization.default.build.optimization=-O1
+# 86DuinoQECPPC104.menu.optimization.O2=-O2
+# 86DuinoQECPPC104.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQECPPC104.menu.optimization.O3=-O3
+# 86DuinoQECPPC104.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQECPPC104.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQECPPC104.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQECPPC15.name=86Duino QECPPC15
+86DuinoQECPPC15.aliasname=QEC PPCM150
+86DuinoQECPPC15.upload.via_ssh=false
+
+86DuinoQECPPC15.vid.0=0x067B
+86DuinoQECPPC15.pid.0=0x23A3
+86DuinoQECPPC15.vid.1=0x067B
+86DuinoQECPPC15.pid.1=0x23A3
+86DuinoQECPPC15.vid.2=0x067B
+86DuinoQECPPC15.pid.2=0x23A3
+86DuinoQECPPC15.vid.3=0x067B
+86DuinoQECPPC15.pid.3=0x23A3
+
+86DuinoQECPPC15.upload.tool=86upload
+86DuinoQECPPC15.upload.protocol=avr109
+86DuinoQECPPC15.upload.maximum_size=4194304
+86DuinoQECPPC15.upload.speed=57600
+86DuinoQECPPC15.upload.disable_flushing=true
+86DuinoQECPPC15.upload.use_1200bps_touch=false
+86DuinoQECPPC15.upload.wait_for_upload_port=false
+
+86DuinoQECPPC15.bootloader.tool=86upload
+86DuinoQECPPC15.bootloader.low_fuses=0xff
+86DuinoQECPPC15.bootloader.high_fuses=0xd8
+86DuinoQECPPC15.bootloader.extended_fuses=0xcb
+86DuinoQECPPC15.bootloader.file=v86boot.exe
+86DuinoQECPPC15.bootloader.unlock_bits=0x3F
+86DuinoQECPPC15.bootloader.lock_bits=0x2F
+
+86DuinoQECPPC15.build.mcu=atmega32u4
+86DuinoQECPPC15.build.f_cpu=16000000L
+86DuinoQECPPC15.build.vid=0x067B
+86DuinoQECPPC15.build.pid=0x23A3
+86DuinoQECPPC15.build.usb_product="86Duino QECPPC15"
+86DuinoQECPPC15.build.board=86DuinoQECPPC15
+86DuinoQECPPC15.build.core=arduino
+86DuinoQECPPC15.build.variant=qec15
+86DuinoQECPPC15.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQECPPC15.build.v86uploader=v86dude
+
+# 86DuinoQECPPC15.menu.optimization.default=default -O1
+# 86DuinoQECPPC15.menu.optimization.default.build.optimization=-O1
+# 86DuinoQECPPC15.menu.optimization.O2=-O2
+# 86DuinoQECPPC15.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQECPPC15.menu.optimization.O3=-O3
+# 86DuinoQECPPC15.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQECPPC15.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQECPPC15.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQECM2.name=86Duino QECM2
+86DuinoQECM2.aliasname=QEC M01
+86DuinoQECM2.upload.via_ssh=false
+
+86DuinoQECM2.vid.0=0x067B
+86DuinoQECM2.pid.0=0x23A3
+86DuinoQECM2.vid.1=0x067B
+86DuinoQECM2.pid.1=0x23A3
+86DuinoQECM2.vid.2=0x067B
+86DuinoQECM2.pid.2=0x23A3
+86DuinoQECM2.vid.3=0x067B
+86DuinoQECM2.pid.3=0x23A3
+
+86DuinoQECM2.upload.tool=86upload
+86DuinoQECM2.upload.protocol=avr109
+86DuinoQECM2.upload.maximum_size=4194304
+86DuinoQECM2.upload.speed=57600
+86DuinoQECM2.upload.disable_flushing=true
+86DuinoQECM2.upload.use_1200bps_touch=false
+86DuinoQECM2.upload.wait_for_upload_port=false
+
+86DuinoQECM2.bootloader.tool=86upload
+86DuinoQECM2.bootloader.low_fuses=0xff
+86DuinoQECM2.bootloader.high_fuses=0xd8
+86DuinoQECM2.bootloader.extended_fuses=0xcb
+86DuinoQECM2.bootloader.file=v86boot.exe
+86DuinoQECM2.bootloader.unlock_bits=0x3F
+86DuinoQECM2.bootloader.lock_bits=0x2F
+
+86DuinoQECM2.build.mcu=atmega32u4
+86DuinoQECM2.build.f_cpu=16000000L
+86DuinoQECM2.build.vid=0x067B
+86DuinoQECM2.build.pid=0x23A3
+86DuinoQECM2.build.usb_product="86Duino QECM2"
+86DuinoQECM2.build.board=86DuinoQECM2
+86DuinoQECM2.build.core=arduino
+86DuinoQECM2.build.variant=qecm2
+86DuinoQECM2.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQECM2.build.v86uploader=v86dude
+
+# 86DuinoQECM2.menu.optimization.default=default -O1
+# 86DuinoQECM2.menu.optimization.default.build.optimization=-O1
+# 86DuinoQECM2.menu.optimization.O2=-O2
+# 86DuinoQECM2.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQECM2.menu.optimization.O3=-O3
+# 86DuinoQECM2.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQECM2.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQECM2.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+# 86DuinoCYF001.name=86Duino CYF001
+# 86DuinoCYF001.upload.via_ssh=false
+
+# 86DuinoCYF001.vid.0=0x0525
+# 86DuinoCYF001.pid.0=0x0036
+# 86DuinoCYF001.vid.1=0x0525
+# 86DuinoCYF001.pid.1=0x8036
+# 86DuinoCYF001.vid.2=0x0525
+# 86DuinoCYF001.pid.2=0xa4a5
+# 86DuinoCYF001.vid.3=0x0525
+# 86DuinoCYF001.pid.3=0x00a5
+
+# 86DuinoCYF001.upload.tool=86upload
+# 86DuinoCYF001.upload.protocol=avr109
+# 86DuinoCYF001.upload.maximum_size=4194304
+# 86DuinoCYF001.upload.speed=57600
+# 86DuinoCYF001.upload.disable_flushing=true
+# 86DuinoCYF001.upload.use_1200bps_touch=false
+# 86DuinoCYF001.upload.wait_for_upload_port=false
+
+# 86DuinoCYF001.bootloader.tool=86upload
+# 86DuinoCYF001.bootloader.low_fuses=0xff
+# 86DuinoCYF001.bootloader.high_fuses=0xd8
+# 86DuinoCYF001.bootloader.extended_fuses=0xcb
+# 86DuinoCYF001.bootloader.file=v86boot.exe
+# 86DuinoCYF001.bootloader.unlock_bits=0x3F
+# 86DuinoCYF001.bootloader.lock_bits=0x2F
+
+# 86DuinoCYF001.build.mcu=atmega32u4
+# 86DuinoCYF001.build.f_cpu=16000000L
+# 86DuinoCYF001.build.vid=0x0525
+# 86DuinoCYF001.build.pid=0x8036
+# 86DuinoCYF001.build.usb_product="86Duino CYF001"
+# 86DuinoCYF001.build.board=86DuinoCYF001
+# 86DuinoCYF001.build.core=arduino
+# 86DuinoCYF001.build.variant=cyf001
+# 86DuinoCYF001.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+# 86DuinoCYF001.build.v86uploader=v86dude
+
+# # 86DuinoCYF001.menu.optimization.default=default -O1
+# # 86DuinoCYF001.menu.optimization.default.build.optimization=-O1
+# # 86DuinoCYF001.menu.optimization.O2=-O2
+# # 86DuinoCYF001.menu.optimization.O2.build.optimization=-O2
+# # 86DuinoCYF001.menu.optimization.O3=-O3
+# # 86DuinoCYF001.menu.optimization.O3.build.optimization=-O3
+
+# 86DuinoCYF001.menu.link.default=Default -lipc -lproc -lvdpm
+# 86DuinoCYF001.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoQECM02.name=86Duino QECM02
+86DuinoQECM02.aliasname=QEC M02
+86DuinoQECM02.upload.via_ssh=false
+
+86DuinoQECM02.vid.0=0x067B
+86DuinoQECM02.pid.0=0x23A3
+86DuinoQECM02.vid.1=0x067B
+86DuinoQECM02.pid.1=0x23A3
+86DuinoQECM02.vid.2=0x067B
+86DuinoQECM02.pid.2=0x23A3
+86DuinoQECM02.vid.3=0x067B
+86DuinoQECM02.pid.3=0x23A3
+
+86DuinoQECM02.upload.tool=86upload
+86DuinoQECM02.upload.protocol=avr109
+86DuinoQECM02.upload.maximum_size=4194304
+86DuinoQECM02.upload.speed=57600
+86DuinoQECM02.upload.disable_flushing=true
+86DuinoQECM02.upload.use_1200bps_touch=false
+86DuinoQECM02.upload.wait_for_upload_port=false
+
+86DuinoQECM02.bootloader.tool=86upload
+86DuinoQECM02.bootloader.low_fuses=0xff
+86DuinoQECM02.bootloader.high_fuses=0xd8
+86DuinoQECM02.bootloader.extended_fuses=0xcb
+86DuinoQECM02.bootloader.file=v86boot.exe
+86DuinoQECM02.bootloader.unlock_bits=0x3F
+86DuinoQECM02.bootloader.lock_bits=0x2F
+
+86DuinoQECM02.build.mcu=atmega32u4
+86DuinoQECM02.build.f_cpu=16000000L
+86DuinoQECM02.build.vid=0x067B
+86DuinoQECM02.build.pid=0x23A3
+86DuinoQECM02.build.usb_product="86Duino QECM02"
+86DuinoQECM02.build.board=86DuinoQECM02
+86DuinoQECM02.build.core=arduino
+86DuinoQECM02.build.variant=qecm02
+86DuinoQECM02.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoQECM02.build.v86uploader=v86dude
+
+# 86DuinoQECM02.menu.optimization.default=default -O1
+# 86DuinoQECM02.menu.optimization.default.build.optimization=-O1
+# 86DuinoQECM02.menu.optimization.O2=-O2
+# 86DuinoQECM02.menu.optimization.O2.build.optimization=-O2
+# 86DuinoQECM02.menu.optimization.O3=-O3
+# 86DuinoQECM02.menu.optimization.O3.build.optimization=-O3
+
+86DuinoQECM02.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoQECM02.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+
+##############################################################
+
+86DuinoPPC9S.name=86Duino QEC PPC9 Simple
+86DuinoPPC9S.aliasname=PPCM090 (None-EtherCAT)
+86DuinoPPC9S.upload.via_ssh=false
+
+86DuinoPPC9S.vid.0=0x067B
+86DuinoPPC9S.pid.0=0x23A3
+86DuinoPPC9S.vid.1=0x067B
+86DuinoPPC9S.pid.1=0x23A3
+86DuinoPPC9S.vid.2=0x067B
+86DuinoPPC9S.pid.2=0x23A3
+86DuinoPPC9S.vid.3=0x067B
+86DuinoPPC9S.pid.3=0x23A3
+
+86DuinoPPC9S.upload.tool=86upload
+86DuinoPPC9S.upload.protocol=avr109
+86DuinoPPC9S.upload.maximum_size=4194304
+86DuinoPPC9S.upload.speed=57600
+86DuinoPPC9S.upload.disable_flushing=true
+86DuinoPPC9S.upload.use_1200bps_touch=false
+86DuinoPPC9S.upload.wait_for_upload_port=false
+
+86DuinoPPC9S.bootloader.tool=86upload
+86DuinoPPC9S.bootloader.low_fuses=0xff
+86DuinoPPC9S.bootloader.high_fuses=0xd8
+86DuinoPPC9S.bootloader.extended_fuses=0xcb
+86DuinoPPC9S.bootloader.file=v86boot.exe
+86DuinoPPC9S.bootloader.unlock_bits=0x3F
+86DuinoPPC9S.bootloader.lock_bits=0x2F
+
+86DuinoPPC9S.build.mcu=atmega32u4
+86DuinoPPC9S.build.f_cpu=16000000L
+86DuinoPPC9S.build.vid=0x067B
+86DuinoPPC9S.build.pid=0x23A3
+86DuinoPPC9S.build.usb_product="86Duino QECPPC9S"
+86DuinoPPC9S.build.board=86DuinoQECPPC9S
+86DuinoPPC9S.build.core=arduino
+86DuinoPPC9S.build.variant=ppc9s
+86DuinoPPC9S.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoPPC9S.build.v86uploader=v86dude
+
+# 86DuinoPPC9S.menu.optimization.default=default -O1
+# 86DuinoPPC9S.menu.optimization.default.build.optimization=-O1
+# 86DuinoPPC9S.menu.optimization.O2=-O2
+# 86DuinoPPC9S.menu.optimization.O2.build.optimization=-O2
+# 86DuinoPPC9S.menu.optimization.O3=-O3
+# 86DuinoPPC9S.menu.optimization.O3.build.optimization=-O3
+
+86DuinoPPC9S.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoPPC9S.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+86DuinoPPC9S.menu.ethernet.default=Default -DDUAL_PORT_NIC
+86DuinoPPC9S.menu.link.default.build.dualethernet=-DDUAL_PORT_NIC
+
+##############################################################
+
+86DuinoPPC15S.name=86Duino QEC PPC15 Simple
+86DuinoPPC15S.aliasname=PPCM150 (None-EtherCAT)
+86DuinoPPC15S.upload.via_ssh=false
+
+86DuinoPPC15S.vid.0=0x067B
+86DuinoPPC15S.pid.0=0x23A3
+86DuinoPPC15S.vid.1=0x067B
+86DuinoPPC15S.pid.1=0x23A3
+86DuinoPPC15S.vid.2=0x067B
+86DuinoPPC15S.pid.2=0x23A3
+86DuinoPPC15S.vid.3=0x067B
+86DuinoPPC15S.pid.3=0x23A3
+
+86DuinoPPC15S.upload.tool=86upload
+86DuinoPPC15S.upload.protocol=avr109
+86DuinoPPC15S.upload.maximum_size=4194304
+86DuinoPPC15S.upload.speed=57600
+86DuinoPPC15S.upload.disable_flushing=true
+86DuinoPPC15S.upload.use_1200bps_touch=false
+86DuinoPPC15S.upload.wait_for_upload_port=false
+
+86DuinoPPC15S.bootloader.tool=86upload
+86DuinoPPC15S.bootloader.low_fuses=0xff
+86DuinoPPC15S.bootloader.high_fuses=0xd8
+86DuinoPPC15S.bootloader.extended_fuses=0xcb
+86DuinoPPC15S.bootloader.file=v86boot.exe
+86DuinoPPC15S.bootloader.unlock_bits=0x3F
+86DuinoPPC15S.bootloader.lock_bits=0x2F
+
+86DuinoPPC15S.build.mcu=atmega32u4
+86DuinoPPC15S.build.f_cpu=16000000L
+86DuinoPPC15S.build.vid=0x067B
+86DuinoPPC15S.build.pid=0x23A3
+86DuinoPPC15S.build.usb_product="86Duino QECPPC15S"
+86DuinoPPC15S.build.board=86DuinoQECPPC15S
+86DuinoPPC15S.build.core=arduino
+86DuinoPPC15S.build.variant=ppc150s
+86DuinoPPC15S.build.extra_flags=-DUSB_VID={build.vid} -DUSB_PID={build.pid}
+86DuinoPPC15S.build.v86uploader=v86dude
+
+# 86DuinoPPC15S.menu.optimization.default=default -O1
+# 86DuinoPPC15S.menu.optimization.default.build.optimization=-O1
+# 86DuinoPPC15S.menu.optimization.O2=-O2
+# 86DuinoPPC15S.menu.optimization.O2.build.optimization=-O2
+# 86DuinoPPC15S.menu.optimization.O3=-O3
+# 86DuinoPPC15S.menu.optimization.O3.build.optimization=-O3
+
+86DuinoPPC15S.menu.link.default=Default -lipc -lproc -lvdpm
+86DuinoPPC15S.menu.link.default.build.linkerex2=-lipc -lproc -lvdpm
+86DuinoPPC15S.menu.ethernet.default=Default -DDUAL_PORT_NIC
+86DuinoPPC15S.menu.link.default.build.dualethernet=-DDUAL_PORT_NIC
+
+86DuinoQECM02.menu.slot.default=Slot 0 (Main)
+86DuinoQECM02.menu.slot.default.build.slot=slot0
+86DuinoQECM02.menu.slot.slot1=Slot 1
+86DuinoQECM02.menu.slot.slot1.build.slot=slot1
+86DuinoQECM02.menu.slot.slot2=Slot 2
+86DuinoQECM02.menu.slot.slot2.build.slot=slot2
+86DuinoQECM02.menu.slot.slot3=Slot 3
+86DuinoQECM02.menu.slot.slot3.build.slot=slot3
+86DuinoQECM02.menu.slot.slot4=Slot 4
+86DuinoQECM02.menu.slot.slot4.build.slot=slot4
+86DuinoQECM02.menu.slot.slot5=Slot 5
+86DuinoQECM02.menu.slot.slot5.build.slot=slot5
+86DuinoQECM02.menu.slot.slot6=Slot 6
+86DuinoQECM02.menu.slot.slot6.build.slot=slot6
+86DuinoQECM02.menu.slot.slot7=Slot 7
+86DuinoQECM02.menu.slot.slot7.build.slot=slot7
+86DuinoQECM02.menu.slot.slot8=Slot 8
+86DuinoQECM02.menu.slot.slot8.build.slot=slot8
+86DuinoQECM02.menu.slot.slot9=Slot 9
+86DuinoQECM02.menu.slot.slot9.build.slot=slot9

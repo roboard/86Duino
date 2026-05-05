@@ -1,74 +1,68 @@
 /*
- * Copyright (c) 2010 by Cristian Maglie <c.maglie@bug.st> 
+ * Copyright (c) 2010 by Cristian Maglie <c.maglie@bug.st>
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of either the GNU General Public License version 2
  * or the GNU Lesser General Public License version 2.1, both as
  * published by the Free Software Foundation.
- * 
- * Modified 10 December 2013 by DY Hung  
+ *
+ * Modified 10 December 2013 by DY Hung
  */
-
 #ifndef __DMP_SWSSOCK_H
 #define __DMP_SWSSOCK_H
 
-#include "sws_sock.h"
-
+#include "sws_nif.h"
 #include <stdint.h>
+#include <string>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define NIC_UNKNOWN (0)
+#define NIC_R6040   (1)
+#define NIC_OTHERS  (2)
+#define NIC_VNET    (3)
+#define NIC_EOE     (4)
+#define NIC_BRIDGE  (5)
 
-struct SwsSockInfo {
-	SWS_SOCKET _sock;
-	SWS_fd_set rfds;
-	struct SWS_sockaddr_in txaddr;
-	struct SWS_sockaddr_in rxaddr;
+enum EnetLinkstatus {
+    UNKNOWN,
+    LINK_ON,
+    LINK_OFF
 };
 
-class SwsSockClass {
-
+class SwsSockClass
+{
 public:
-	SwsSockClass();
-	
-	int setDhcp(unsigned long, unsigned long);
-	
-	uint8_t *getLocalIp();
-	uint8_t *getSubnetMask();
-	uint8_t *getGatewayIp();
-	uint8_t *getDnsServerIp();
-	
-	SWS_u_long getULLocalIp();
-	SWS_u_long getULSubnetMask();
-	SWS_u_long getULGatewayIp();
-	SWS_u_long getULDnsServerIp();
-	
-	void setIPAddress(uint8_t*);
-	void setGatewayIp(uint8_t*);
-	void setSubnetMask(uint8_t*);
-	void setDnsServerIp(uint8_t*);
-	void getIPAddress(uint8_t*);
-	void getGatewayIp(uint8_t*);
-	void getSubnetMask(uint8_t*);
-	void getDnsServerIp(uint8_t*);
-	
-	void init();
+    SwsSockClass(NetworkInterface *iface);
+    SwsSockClass(const char *ifname);
+    SwsSockClass(const char *ifname, NetworkInterface *iface);
+    ~SwsSockClass();
+
+    int init(uint8_t *mac, uint32_t ip_address, uint32_t subnet, uint32_t gateway, uint32_t dns);
+    int init(uint8_t *mac);
+    int isInitialized();
+    int getChip();
+    int setPromiscuousMode(bool enable);
+    int setMulticast(bool enable);
+    EnetLinkstatus getLinkStatus();
+
+    void getMACAddress(uint8_t *mac_address);
+    uint32_t getLocalIP();
+    uint32_t getSubnetMask();
+    uint32_t getGatewayIP();
+    uint32_t getDnsServerIP();
+
+    void setMACAddress(uint8_t *mac_address);
+    void setLocalIP(uint32_t local_ip);
+    void setSubnetMask(uint32_t subnet);
+    void setGatewayIP(uint32_t gateway);
+    void setDnsServerIP(uint32_t dns_server);
 
 private:
-	int inited;
-	
-	uint8_t _SwsSockLocalIp[4];
-	uint8_t _SwsSockGateway[4];
-	uint8_t _SwsSockNetMask[4];
-	uint8_t _SwsSockDnsServerIp[4];
+    void close();
+    NetworkInterface *_iface;
+    std::string _ifname;
+    static bool _vnetStartup;
+    static bool _swsStartup;
+    void *_privateData;
 };
-
-extern SwsSockClass SwsSock;
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

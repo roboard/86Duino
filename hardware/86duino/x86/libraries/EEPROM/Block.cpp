@@ -29,7 +29,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ADDRESS 16
+#if defined (__86DUINO_DUO)
+    #define ADDRESS 95
+#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+    #define ADDRESS 32
+#else
+    #define ADDRESS 16
+#endif
+
 #define SECTORSIZE 4096
 #define DATASIZE 1024
 #define EEPROMSIZE (ADDRESS * DATASIZE)
@@ -156,9 +163,9 @@ void EEPROMBlock::write(unsigned short int in_addr, unsigned char in_data)
   if(in_addr >= DATASIZE)
   {
 #if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
-    	Serial.print("EEPROMBlock write failed: in_addr = ");
+    Serial.print("EEPROMBlock write failed: in_addr = ");
 	Serial.print(in_addr);
-    	Serial.print(" >= ");
+    Serial.print(" >= ");
 	Serial.println(DATASIZE);
 #elif (defined(DMP_LINUX))
 	printf("EEPROMBlock write failed: in_addr = %x >= %x\n", in_addr, DATASIZE);
@@ -208,9 +215,9 @@ unsigned char EEPROMBlock::read(unsigned short int in_addr)
   if(in_addr >= DATASIZE)
   {
 #if (defined(DMP_DOS_BC) || defined(DMP_DOS_DJGPP) || defined(DMP_DOS_WATCOM))
-    	Serial.print("EEPROMBlock read failed: in_addr = ");
+    Serial.print("EEPROMBlock read failed: in_addr = ");
 	Serial.print(in_addr);
-    	Serial.print(" >= ");
+    Serial.print(" >= ");
 	Serial.println(DATASIZE);
 #elif (defined(DMP_LINUX))
 	printf("EEPROMBlock read failed: in_addr = %x >= %x\n", in_addr, DATASIZE);

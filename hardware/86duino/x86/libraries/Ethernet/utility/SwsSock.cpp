@@ -1,267 +1,578 @@
 /*
-  SwsSock.cpp - Part of DM&P Vortex86 Ethernet library
-  Copyright (c) 2013 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
+SwsSock.cpp - Part of DM&P Vortex86 Ethernet library
+Copyright (c) 2013 DY Hung <Dyhung@dmp.com.tw>. All right reserved.
 
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
 
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-  (If you need a commercial license, please contact soc@dmp.com.tw 
-   to get more information.)
+(If you need a commercial license, please contact soc@dmp.com.tw
+to get more information.)
 */
 
 #include "SwsSock.h"
+#include "sws_nmgr.h"
 
+#include "sws_sock.h"
 #include "sws_cfg.h"
 #include "sws_dlnk.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "io.h"
+#include "ini.h"
 
-#define SWSSOCK_CFG  "Z:\\sws_sock.ini"
-
-SwsSockClass SwsSock;
-
-SwsSockClass::SwsSockClass()
+static inline uint16_t r6040_phy_read(uint32_t iobase, uint16_t phyaddr, uint16_t reg)
 {
-	inited = 0;
+    int limit = 2048;
+    
+    io_outpw(iobase + 0x20, (1 << 13) | (phyaddr << 8) | reg);
+    while (limit--) {
+        if (!(io_inpw(iobase + 0x20) & (1 << 13)))
+            break;
+    }
+    
+    return io_inpw(iobase + 0x24);
 }
 
-int SwsSockClass::setDhcp(unsigned long timeout, unsigned long responseTimeout)
-{	
-	// set DHCP config
-	FILE *opt;
-	opt = fopen(SWSSOCK_CFG, "w");
-	
-	if (opt == NULL)
-		return 0;
-		
-	fprintf(opt, "[PacketDriverInterface1]\n");
-	fprintf(opt, "dhcp=1\n");
-	fprintf(opt, "\n");
-	fprintf(opt, "[dns]\n");
-	fprintf(opt, "hostname=86Duino\n");
-	fflush(opt);
-	fclose(opt);
-		
-	if (SWS_CfgSetName(SWSSOCK_CFG, NULL) == 0)
-		return 0;
-
-	inited = 1;
-	if (SWS_SockStartup(0, NULL)) {
-		SWS_SockExit();
-		return 0;
-	}
-		
-	if (getULLocalIp() == 0x0100007FUL) {
-		SWS_SockExit();
-		return 0;
-	}
-	
-	return 1;
-}
-
-SWS_u_long SwsSockClass::getULLocalIp()
+static inline uint32_t r6040_find_iobase(int nic)
 {
-	char host_name[128];
-	struct SWS_hostent *Host;
-	SWS_u_long ipaddr;
-	
-	if (SWS_gethostname(host_name, sizeof(host_name)) != 0) {
-		ipaddr = 0UL;
-	}
-	else {
-		Host = SWS_gethostbyname(host_name);
-		ipaddr = *(SWS_u_long*)Host->h_addr_list[0];
-	}
-	
-	return ipaddr;
+    #define MAX_R6040_NUM   (2)
+    int bus[MAX_R6040_NUM] = {0, 0};
+    int dev[MAX_R6040_NUM] = {8, 9};
+    int fun[MAX_R6040_NUM] = {0, 0};
+    uint32_t iobase;
+    uint8_t macaddr[6];
+    size_t len = sizeof(macaddr);
+
+    SWS_DatalinkGetProperty(nic + 1, SWS_kDatalinkProperty_HwAddress, macaddr, &len);
+
+    for (int i = 0; i < MAX_R6040_NUM; i++)
+    {
+        void *pci = pci_Alloc(bus[i], dev[i], fun[i]);
+        if (pci != NULL)
+        {
+            uint8_t address[6];
+            iobase = pci_In32(pci, 0x10) & 0xFFFFFFF0UL;
+            ((uint16_t *)address)[0] = io_inpw(iobase + 0x68);
+            ((uint16_t *)address)[1] = io_inpw(iobase + 0x6A);
+            ((uint16_t *)address)[2] = io_inpw(iobase + 0x6C);
+            pci_Free(pci);
+            if (address[0] == macaddr[0] &&
+                address[1] == macaddr[1] &&
+                address[2] == macaddr[2] &&
+                address[3] == macaddr[3] &&
+                address[4] == macaddr[4] &&
+                address[5] == macaddr[5])
+                return iobase;
+        }
+    }
+
+    return 0;
 }
 
-uint8_t *SwsSockClass::getLocalIp()
+static inline uint16_t r6040_find_phyaddr(uint32_t iobase)
 {
-	SWS_u_long ipaddr = getULLocalIp();
-	
-	_SwsSockLocalIp[0] = (uint8_t)(ipaddr);
-	_SwsSockLocalIp[1] = (uint8_t)(ipaddr >> 8);
-	_SwsSockLocalIp[2] = (uint8_t)(ipaddr >> 16);
-	_SwsSockLocalIp[3] = (uint8_t)(ipaddr >> 24);
-	
-	return (uint8_t*)_SwsSockLocalIp;
+    uint8_t phyaddr = 0;
+
+    if (iobase == 0)
+        return 0;
+
+    while (r6040_phy_read(iobase, phyaddr, 0x02) == 0xFFFF) {
+        if (++phyaddr == 0)
+            break;
+    }
+
+    return phyaddr;
 }
 
-SWS_u_long SwsSockClass::getULSubnetMask()
+static inline void r6040_set_promiscuous(uint32_t iobase, int enable)
 {
-	SWS_u_long ipaddr;
-	size_t len;
-	
-	len = sizeof(ipaddr);
-	if (SWS_DatalinkGetProperty(1, SWS_kDatalinkProperty_SubnetMask, &ipaddr, &len) != 0) {
-		ipaddr = 0UL;
-	}
-	
-	return ipaddr;
+    io_outpw(iobase, (io_inpw(iobase) & ~(1 << 5)) | (!!enable << 5));
 }
 
-uint8_t *SwsSockClass::getSubnetMask()
+#define SWSSOCK_CFG "Z:\\sws_sock.ini"
+
+bool SwsSockClass::_vnetStartup = false;
+bool SwsSockClass::_swsStartup = false;
+
+struct SwsSock_t
 {
-	SWS_u_long ipaddr = getULSubnetMask();
-	
-	_SwsSockNetMask[3] = (uint8_t)(ipaddr);
-	_SwsSockNetMask[2] = (uint8_t)(ipaddr >> 8);
-	_SwsSockNetMask[1] = (uint8_t)(ipaddr >> 16);
-	_SwsSockNetMask[0] = (uint8_t)(ipaddr >> 24);
-	
-	return (uint8_t*)_SwsSockNetMask;
-}
+    NetworkInterface *iface;
+    int nic;
+    int chip;
+    int initialized;
+    int promiscuous;
+    uint32_t iobase;
+    uint16_t phyaddr;
+    bool isPacketDriver;
+};
 
-SWS_u_long SwsSockClass::getULGatewayIp()
+SwsSockClass::SwsSockClass(NetworkInterface *iface)
 {
-	SWS_u_long ipaddr;
-	size_t len;
-	
-	len = sizeof(ipaddr);
-	if (SWS_DatalinkGetProperty(1, SWS_kDatalinkProperty_Gateway, &ipaddr, &len) != 0) {
-		ipaddr = 0UL;
-	}
-	
-	return ipaddr;
+    this->_privateData = NULL;
+    this->_iface = iface;
+    this->_ifname.clear();
+    NetworkManager::getInstance().scanPhysicalInterfaces();
+    NetworkManager::getInstance().addInterface(iface);
+    this->_ifname = NetworkManager::getInstance().getInterfaceName(iface);
 }
 
-uint8_t *SwsSockClass::getGatewayIp()
+SwsSockClass::SwsSockClass(const char *ifname)
 {
-	SWS_u_long ipaddr = getULGatewayIp();
-	
-	_SwsSockGateway[3] = (uint8_t)(ipaddr);
-	_SwsSockGateway[2] = (uint8_t)(ipaddr >> 8);
-	_SwsSockGateway[1] = (uint8_t)(ipaddr >> 16);
-	_SwsSockGateway[0] = (uint8_t)(ipaddr >> 24);
-	
-	return (uint8_t*)_SwsSockGateway;
+    this->_privateData = NULL;
+    this->_iface = NULL;
+    this->_ifname = ifname;
+    NetworkManager::getInstance().scanPhysicalInterfaces();
 }
 
-SWS_u_long SwsSockClass::getULDnsServerIp()
+SwsSockClass::SwsSockClass(const char *ifname, NetworkInterface *iface)
 {
-	return SWS_DnsGetPriServer();
+    this->_privateData = NULL;
+    this->_iface = iface;
+    this->_ifname.clear();
+    NetworkManager::getInstance().scanPhysicalInterfaces();
+    NetworkManager::getInstance().addInterface(iface, ifname);
+    this->_ifname = NetworkManager::getInstance().getInterfaceName(iface);
 }
 
-uint8_t *SwsSockClass::getDnsServerIp()
+SwsSockClass::~SwsSockClass()
 {
-	SWS_u_long ipaddr = getULDnsServerIp();
-	
-	_SwsSockDnsServerIp[3] = (uint8_t)(ipaddr);
-	_SwsSockDnsServerIp[2] = (uint8_t)(ipaddr >> 8);
-	_SwsSockDnsServerIp[1] = (uint8_t)(ipaddr >> 16);
-	_SwsSockDnsServerIp[0] = (uint8_t)(ipaddr >> 24);
-	
-	return (uint8_t*)_SwsSockDnsServerIp;
+    close();
 }
 
-void SwsSockClass::setIPAddress(uint8_t *ip)
+void SwsSockClass::close()
 {
-	_SwsSockLocalIp[0] = ip[0];
-	_SwsSockLocalIp[1] = ip[1];
-	_SwsSockLocalIp[2] = ip[2];
-	_SwsSockLocalIp[3] = ip[3];
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return;
+
+    free(sock);
+    this->_privateData = NULL;
 }
 
-void SwsSockClass::setGatewayIp(uint8_t *ip)
+int SwsSockClass::init(uint8_t *mac, uint32_t ip_address, uint32_t subnet, uint32_t gateway, uint32_t dns)
 {
-	_SwsSockGateway[0] = ip[0];
-	_SwsSockGateway[1] = ip[1];
-	_SwsSockGateway[2] = ip[2];
-	_SwsSockGateway[3] = ip[3];
+    NetworkInterface *iface;
+    SwsSock_t *sock;
+    INIFile ini;
+    char section[32], ipaddress[32], ipsubnet[32], ipgateway[32], dnsserver[32];
+    int nic;
+
+    if ((iface = NetworkManager::getInstance().getInterface(this->_ifname)) == NULL)
+        return 0;
+    if ((nic = NetworkManager::getInstance().getAdapterIndex(iface)) < 0)
+        return 0;
+
+    if (this->_privateData)
+        this->close();
+    if ((sock = (SwsSock_t*)malloc(sizeof(SwsSock_t))) == NULL)
+        return 0;
+    memset(sock, 0, sizeof(SwsSock_t));
+    sock->iface = iface;
+    sock->nic = nic;
+    sock->isPacketDriver = sock->iface->isPacketDriver();
+    if (sock->iface == this->_iface)
+        sock->iface->setMACAddress(mac);
+
+    if (this->_swsStartup) {
+        this->_swsStartup = false;
+        SWS_SockCleanup();
+        io_Close();
+    }
+    sock->initialized = 0;
+
+    if (ini.open(SWSSOCK_CFG) < 0) {
+        free(sock);
+        return 0;
+    }
+
+    for (int i = 0; i < sock->nic; i++) {
+        char value[64];
+        sprintf(section, "PacketDriverInterface%d", i + 1);
+        if (ini.get(section, "dhcp", value, sizeof(value)) == NULL &&
+            ini.get(section, "ipaddress", value, sizeof(value)) == NULL) {
+            ini.add(section, "ipaddress", (char *)"192.168.0.0");
+        }
+    }
+
+    sprintf(section, "PacketDriverInterface%d", sock->nic + 1);
+    sprintf(ipaddress, "%d.%d.%d.%d", ((uint8_t *)&ip_address)[0], ((uint8_t *)&ip_address)[1], ((uint8_t *)&ip_address)[2], ((uint8_t *)&ip_address)[3]);
+    sprintf(ipsubnet, "%d.%d.%d.%d", ((uint8_t *)&subnet)[0], ((uint8_t *)&subnet)[1], ((uint8_t *)&subnet)[2], ((uint8_t *)&subnet)[3]);
+    sprintf(ipgateway, "%d.%d.%d.%d", ((uint8_t *)&gateway)[0], ((uint8_t *)&gateway)[1], ((uint8_t *)&gateway)[2], ((uint8_t *)&gateway)[3]);
+    sprintf(dnsserver, "%d.%d.%d.%d", ((uint8_t *)&dns)[0], ((uint8_t *)&dns)[1], ((uint8_t *)&dns)[2], ((uint8_t *)&dns)[3]);
+    ini.del(section);
+    ini.add(section, "ipaddress", ipaddress);
+    ini.add(section, "ipsubnet", ipsubnet);
+    ini.add(section, "ipgateway", ipgateway);
+    ini.add(section, "dhcp", 0);
+
+    for (int i = sock->nic + 1; ; i++) {
+        char ip[32] = {'\0'}, subnet[32] = {'\0'}, gateway[32] = {'\0'}, dhcp[32] = {'\0'};
+        char value[64];
+        sprintf(section, "PacketDriverInterface%d", i + 1);
+        if (ini.get(section, "dhcp", value, sizeof(value)) == NULL &&
+            ini.get(section, "ipaddress", value, sizeof(value)) == NULL)
+            break;
+        ini.get(section, "ipaddress", ip, sizeof(ip));
+        ini.get(section, "ipsubnet", subnet, sizeof(subnet));
+        ini.get(section, "ipgateway", gateway, sizeof(gateway));
+        ini.get(section, "dhcp", dhcp, sizeof(dhcp));
+        ini.del(section);
+        if (ip[0] != '\0')
+            ini.add(section, "ipaddress", ip);
+        if (subnet[0] != '\0')
+            ini.add(section, "ipsubnet", subnet);
+        if (gateway[0] != '\0')
+            ini.add(section, "ipgateway", gateway);
+        if (dhcp[0] != '\0')
+            ini.add(section, "dhcp", dhcp);
+    }
+
+    ini.del("dns");
+    ini.add("dns", "hostname", (char *)"86Duino");
+    ini.add("dns", "server", dnsserver);
+    ini.close();
+
+    if (io_Init() == false) {
+        free(sock);
+        return 0;
+    }
+    if (SWS_CfgSetName(SWSSOCK_CFG, NULL) == 0 ||
+        SWS_SockStartup(0, NULL) != 0) {
+        io_Close();
+        free(sock);
+        return 0;
+    }
+
+    this->_swsStartup = true;
+    sock->initialized = 1;
+    sock->iobase = r6040_find_iobase(sock->nic);
+    sock->phyaddr = r6040_find_phyaddr(sock->iobase);
+    if (sock->iobase > 0) {
+        sock->chip = NIC_R6040;
+    } else {
+        switch (sock->iface->getType()) {
+        case NIF_TYPE_PHYSICAL: sock->chip = NIC_OTHERS;  break;
+        case NIF_TYPE_VIRTUAL:  sock->chip = NIC_VNET;    break;
+        case NIF_TYPE_BRIDGE:   sock->chip = NIC_BRIDGE;  break;
+        case NIF_TYPE_EOE:      sock->chip = NIC_EOE;     break;
+        default:                sock->chip = NIC_UNKNOWN; break;
+        }
+    }
+    this->_privateData = sock;
+
+    return 1;
 }
 
-void SwsSockClass::setSubnetMask(uint8_t *ip)
+int SwsSockClass::init(uint8_t *mac)
 {
-	_SwsSockNetMask[0] = ip[0];
-	_SwsSockNetMask[1] = ip[1];
-	_SwsSockNetMask[2] = ip[2];
-	_SwsSockNetMask[3] = ip[3];
+    NetworkInterface *iface;
+    SwsSock_t *sock;
+    INIFile ini;
+    char section[32];
+    int nic;
+
+    if ((iface = NetworkManager::getInstance().getInterface(this->_ifname)) == NULL)
+        return 0;
+    if ((nic = NetworkManager::getInstance().getAdapterIndex(iface)) < 0)
+        return 0;
+
+    if (this->_privateData)
+        this->close();
+    if ((sock = (SwsSock_t*)malloc(sizeof(SwsSock_t))) == NULL)
+        return 0;
+    memset(sock, 0, sizeof(SwsSock_t));
+    sock->iface = iface;
+    sock->nic = nic;
+    sock->isPacketDriver = sock->iface->isPacketDriver();
+    if (sock->iface == this->_iface)
+        sock->iface->setMACAddress(mac);
+
+    if (this->_swsStartup) {
+        this->_swsStartup = false;
+        SWS_SockCleanup();
+        io_Close();
+    }
+    sock->initialized = 0;
+
+    if (ini.open(SWSSOCK_CFG) < 0)
+        return 0;
+
+    for (int i = 0; i < sock->nic; i++) {
+        char value[64];
+        sprintf(section, "PacketDriverInterface%d", i + 1);
+        if (ini.get(section, "dhcp", value, sizeof(value)) == NULL &&
+            ini.get(section, "ipaddress", value, sizeof(value)) == NULL) {
+            ini.add(section, "ipaddress", (char *)"192.168.0.0");
+        }
+    }
+
+    sprintf(section, "PacketDriverInterface%d", sock->nic + 1);
+    ini.del(section);
+    ini.add(section, "dhcp", 1);
+
+    for (int i = sock->nic + 1; ; i++) {
+        char ip[32] = {'\0'}, subnet[32] = {'\0'}, gateway[32] = {'\0'}, dhcp[32] = {'\0'};
+        char value[64];
+        sprintf(section, "PacketDriverInterface%d", i + 1);
+        if (ini.get(section, "dhcp", value, sizeof(value)) == NULL &&
+            ini.get(section, "ipaddress", value, sizeof(value)) == NULL)
+            break;
+        ini.get(section, "ipaddress", ip, sizeof(ip));
+        ini.get(section, "ipsubnet", subnet, sizeof(subnet));
+        ini.get(section, "ipgateway", gateway, sizeof(gateway));
+        ini.get(section, "dhcp", dhcp, sizeof(dhcp));
+        ini.del(section);
+        if (ip[0] != '\0')
+            ini.add(section, "ipaddress", ip);
+        if (subnet[0] != '\0')
+            ini.add(section, "ipsubnet", subnet);
+        if (gateway[0] != '\0')
+            ini.add(section, "ipgateway", gateway);
+        if (dhcp[0] != '\0')
+            ini.add(section, "dhcp", dhcp);
+    }
+
+    ini.del("dns");
+    ini.add("dns", "hostname", (char *)"86Duino");
+    ini.close();
+
+    if (io_Init() == false)
+        return 0;
+    if (SWS_CfgSetName(SWSSOCK_CFG, NULL) == 0 ||
+        SWS_SockStartup(0, NULL) != 0) {
+        io_Close();
+        return 0;
+    }
+
+    this->_swsStartup = true;
+    sock->initialized = 1;
+    sock->iobase = r6040_find_iobase(sock->nic);
+    sock->phyaddr = r6040_find_phyaddr(sock->iobase);
+    if (sock->iobase > 0) {
+        sock->chip = NIC_R6040;
+    } else {
+        switch (sock->iface->getType()) {
+        case NIF_TYPE_PHYSICAL: sock->chip = NIC_OTHERS;  break;
+        case NIF_TYPE_VIRTUAL:  sock->chip = NIC_VNET;    break;
+        case NIF_TYPE_BRIDGE:   sock->chip = NIC_BRIDGE;  break;
+        case NIF_TYPE_EOE:      sock->chip = NIC_EOE;     break;
+        default:                sock->chip = NIC_UNKNOWN; break;
+        }
+    }
+    this->_privateData = sock;
+
+    return 1;
 }
 
-void SwsSockClass::setDnsServerIp(uint8_t *ip)
+int SwsSockClass::isInitialized()
 {
-	_SwsSockDnsServerIp[0] = ip[0];
-	_SwsSockDnsServerIp[1] = ip[1];
-	_SwsSockDnsServerIp[2] = ip[2];
-	_SwsSockDnsServerIp[3] = ip[3];
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+    if (sock == NULL)
+        return 0;
+    return sock->initialized;
 }
 
-void SwsSockClass::getIPAddress(uint8_t *ip)
+int SwsSockClass::getChip()
 {
-	ip[0] = _SwsSockLocalIp[0];
-	ip[1] = _SwsSockLocalIp[1];
-	ip[2] = _SwsSockLocalIp[2];
-	ip[3] = _SwsSockLocalIp[3];
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+    if (sock == NULL)
+        return NIC_UNKNOWN;
+    return sock->chip;
 }
 
-void SwsSockClass::getGatewayIp(uint8_t *ip)
+int SwsSockClass::setPromiscuousMode(bool enable)
 {
-	ip[0] = _SwsSockGateway[0];
-	ip[1] = _SwsSockGateway[1];
-	ip[2] = _SwsSockGateway[2];
-	ip[3] = _SwsSockGateway[3];
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return 0;
+    if (sock->initialized == 0)
+        return 0;
+    if (sock->promiscuous == 0 && enable == false)
+        return 0;
+
+    sock->promiscuous += !!enable - !enable;
+
+    if ((enable && sock->promiscuous == 1) || (!enable && sock->promiscuous == 0))
+    {
+        uint32_t uVal = !!enable;
+        SWS_DatalinkSetProperty(sock->nic + 1, SWS_kDatalinkProperty_Promiscuity, &uVal, sizeof(uVal));
+        sock->iface->setPromiscuousMode(!!enable);
+    }
+
+    return 1;
 }
 
-void SwsSockClass::getSubnetMask(uint8_t *ip)
+int SwsSockClass::setMulticast(bool enable)
 {
-	ip[0] = _SwsSockNetMask[0];
-	ip[1] = _SwsSockNetMask[1];
-	ip[2] = _SwsSockNetMask[2];
-	ip[3] = _SwsSockNetMask[3];
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return 0;
+    if (sock->initialized == 0)
+        return 0;
+    if (sock->isPacketDriver)
+        return setPromiscuousMode(enable);
+
+    return 1;
 }
 
-void SwsSockClass::getDnsServerIp(uint8_t *ip)
+EnetLinkstatus SwsSockClass::getLinkStatus()
 {
-	ip[0] = _SwsSockDnsServerIp[0];
-	ip[1] = _SwsSockDnsServerIp[1];
-	ip[2] = _SwsSockDnsServerIp[2];
-	ip[3] = _SwsSockDnsServerIp[3];
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return UNKNOWN;
+    if (sock->chip != NIC_R6040)
+        return UNKNOWN;
+
+    return ((r6040_phy_read(sock->iobase, sock->phyaddr, 0x01) >> 2) & 1) ? (LINK_ON) : (LINK_OFF);
 }
 
-void SwsSockClass::init()
+void SwsSockClass::getMACAddress(uint8_t *mac_address)
 {
-	FILE *opt;
-	
-	opt = fopen(SWSSOCK_CFG, "w");
-	
-	if (opt == NULL)
-		return;
-	
-	fprintf(opt, (inited == 0) ? "[PacketDriverInterface1]\n" : "[PacketDriverInterface2]\n");
-	fprintf(opt, "ipaddress=%d.%d.%d.%d\n", _SwsSockLocalIp[0], _SwsSockLocalIp[1], _SwsSockLocalIp[2], _SwsSockLocalIp[3]);
-	fprintf(opt, "ipsubnet=%d.%d.%d.%d\n", _SwsSockNetMask[0], _SwsSockNetMask[1], _SwsSockNetMask[2], _SwsSockNetMask[3]);
-	fprintf(opt, "ipgateway=%d.%d.%d.%d\n", _SwsSockGateway[0], _SwsSockGateway[1], _SwsSockGateway[2], _SwsSockGateway[3]);
-	fprintf(opt, "dhcp=0\n");
-	fprintf(opt, "\n");
-	fprintf(opt, "[dns]\n");
-	fprintf(opt, "hostname=86Duino\n");
-	fprintf(opt, "server=%d.%d.%d.%d\n", _SwsSockDnsServerIp[0], _SwsSockDnsServerIp[1], _SwsSockDnsServerIp[2], _SwsSockDnsServerIp[3]);
-	fflush(opt);
-	fclose(opt);
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+    size_t len = 6;
 
-	if (SWS_CfgSetName(SWSSOCK_CFG, NULL) == 0)
-		return;
+    if (sock == NULL)
+        return;
+    if (sock->initialized == 0) {
+        memset(mac_address, 0xFF, len);
+        return;
+    }
 
-	inited = 1;
-	if (SWS_SockStartup(0, NULL)) {
-		SWS_SockExit();
-		return;
-	}
+    SWS_DatalinkGetProperty(sock->nic + 1, SWS_kDatalinkProperty_HwAddress, mac_address, &len);
 }
 
+uint32_t SwsSockClass::getLocalIP()
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+    uint32_t ipaddr = 0;
+    size_t len = sizeof(ipaddr);
 
+    if (sock == NULL)
+        return 0;
+    if (sock->initialized == 0)
+        return 0;
 
+    SWS_DatalinkGetProperty(sock->nic + 1, SWS_kDatalinkProperty_Address, &ipaddr, &len);
+    return SWS_ntohl(ipaddr);
+}
+
+uint32_t SwsSockClass::getSubnetMask()
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+    uint32_t subnet = 0;
+    size_t len = sizeof(subnet);
+
+    if (sock == NULL)
+        return 0;
+    if (sock->initialized == 0)
+        return 0;
+
+    SWS_DatalinkGetProperty(sock->nic + 1, SWS_kDatalinkProperty_SubnetMask, &subnet, &len);
+    return SWS_ntohl(subnet);
+}
+
+uint32_t SwsSockClass::getGatewayIP()
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+    uint32_t gateway = 0;
+    size_t len = sizeof(gateway);
+
+    if (sock == NULL)
+        return 0;
+    if (sock->initialized == 0)
+        return 0;
+
+    SWS_DatalinkGetProperty(sock->nic + 1, SWS_kDatalinkProperty_Gateway, &gateway, &len);
+    return SWS_ntohl(gateway);
+}
+
+uint32_t SwsSockClass::getDnsServerIP()
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return 0;
+    if (sock->initialized == 0)
+        return 0;
+
+    return SWS_ntohl(SWS_DnsGetPriServer());
+}
+
+void SwsSockClass::setMACAddress(uint8_t *mac_address)
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return;
+    if (sock->initialized == 0)
+        return;
+
+    SWS_DatalinkSetProperty(sock->nic + 1, SWS_kDatalinkProperty_HwAddress, mac_address, 6);
+}
+
+void SwsSockClass::setLocalIP(uint32_t local_ip)
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return;
+    if (sock->initialized == 0)
+        return;
+
+    local_ip = SWS_ntohl(local_ip);
+    SWS_DatalinkSetProperty(sock->nic + 1, SWS_kDatalinkProperty_Address, &local_ip, sizeof(local_ip));
+}
+
+void SwsSockClass::setSubnetMask(uint32_t subnet)
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return;
+    if (sock->initialized == 0)
+        return;
+
+    subnet = SWS_ntohl(subnet);
+    SWS_DatalinkSetProperty(sock->nic + 1, SWS_kDatalinkProperty_SubnetMask, &subnet, sizeof(subnet));
+}
+
+void SwsSockClass::setGatewayIP(uint32_t gateway)
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return;
+    if (sock->initialized == 0)
+        return;
+
+    gateway = SWS_ntohl(gateway);
+    SWS_DatalinkSetProperty(sock->nic + 1, SWS_kDatalinkProperty_Gateway, &gateway, sizeof(gateway));
+}
+
+void SwsSockClass::setDnsServerIP(uint32_t dns_server)
+{
+    SwsSock_t *sock = (SwsSock_t *)this->_privateData;
+
+    if (sock == NULL)
+        return;
+    if (sock->initialized == 0)
+        return;
+
+    SWS_DnsSetPriServer(SWS_ntohl(dns_server));
+}

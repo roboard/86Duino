@@ -26,8 +26,60 @@
 
 #include "com.h"
 #include "Stream.h"
+#include "SerialInterface.h"
 
-class HardwareSerial : public Stream
+#ifdef _86DUINO
+    #include "v86board.h"
+#endif
+
+#if defined (__86DUINO_ZERO)
+
+    #define Serial1 _Serial1
+    #define SerialPCIE _SerialPCIE
+
+#elif defined (__86DUINO_ONE) || defined (__86DUINO_AI)
+
+    #define Serial1 _Serial1
+    #define Serial2 _Serial2
+    #define Serial3 _Serial3
+    #define Serial485 _Serial485 
+
+#elif defined (__86DUINO_EDUCAKE)
+
+    #define Serial1 _Serial1
+    #define Serial2 _Serial2
+    #define Serial3 _Serial3
+    #define Serial232 _Serial232
+
+#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9)  || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_CYF001) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+    
+    #define Serial _Serial3
+    #define Serial1 _Serial1
+    
+    #define SerialCOM _Serial485
+    #define Serial485 _Serial485
+
+#elif defined (__86DUINO_DUO)
+ 
+    #define Serial1 _Serial1
+    #define Serial2 _Serial2
+    #define Serial3 _Serial3
+    #define Serial485 _Serial485
+    #define SerialPCIE _SerialPCIE
+
+#elif defined (__86DUINO_HMI043T)
+
+    #define Serial1 _Serial1
+    #define Serial5 _Serial5
+    #define Serial6 _Serial232
+
+#else
+    
+    #error No this 86Duino board
+    
+#endif
+
+class HardwareSerial : public SerialInterface
 {
   private:
 	int port;
@@ -43,14 +95,19 @@ class HardwareSerial : public Stream
     void begin(unsigned long);
     void begin(unsigned long, int);
     void begin(unsigned long, uint8_t);
-    void begin(unsigned long , uint8_t, int);
+    void begin(unsigned long, uint8_t, int);
     void end();
-    virtual int available(void);
-    virtual int peek(void);
-    virtual int read(void);
-    virtual int availableForWrite(void);
-    virtual void flush(void);
-    virtual size_t write(uint8_t);
+    using Stream::setTimeout;
+    void setTimeout(unsigned long rxtimeout, unsigned long txtimeout);
+    int available(void);
+    int peek(void);
+    int read(void);
+    int availableForWrite(void);
+    void flush(int w=0);
+    size_t write(uint8_t);
+    size_t write(const uint8_t *buffer, size_t size);
+    inline size_t write(unsigned short n) { return write((uint8_t)n); }
+    inline size_t write(short n) { return write((uint8_t)n); }
     inline size_t write(unsigned long n) { return write((uint8_t)n); }
     inline size_t write(long n) { return write((uint8_t)n); }
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
@@ -85,17 +142,18 @@ class HardwareSerial : public Stream
 #define SERIAL_7O2 ((uint8_t)(BYTESIZE7|ODDPARITY|STOPBIT2))
 #define SERIAL_8O2 ((uint8_t)(BYTESIZE8|ODDPARITY|STOPBIT2))
 
-
 #include "USBAPI.h"
 #define COM_FullDuplex    (1000)
 #define COM_HalfDuplex    (2000)
 
-extern HardwareSerial Serial1;
-extern HardwareSerial Serial2;
-extern HardwareSerial Serial3;
-extern HardwareSerial Serial5;
-extern HardwareSerial Serial485;
-extern HardwareSerial Serial232;
+extern HardwareSerial _Serial1;
+extern HardwareSerial _Serial2;
+extern HardwareSerial _Serial3;
+extern HardwareSerial _Serial5;
+extern HardwareSerial _Serial6;
+extern HardwareSerial _Serial485;
+extern HardwareSerial _Serial232;
+extern HardwareSerial _Serial9;
 extern HardwareSerial* HWSerial[7];
 
 #ifndef __HARDWARE_SERIAL_LIB

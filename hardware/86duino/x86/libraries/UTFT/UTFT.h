@@ -77,9 +77,11 @@
 #define ST7735S			24
 #define ILI9341_S5P		25
 #define ILI9341_S4P		26
-#define R61581			27
-#define ILI9486			28
-#define CPLD			29
+#define ILI9341_8		27
+#define ILI9341_16		28
+#define R61581			29
+#define ILI9486			30
+#define CPLD			31
 
 #define ITDB32			0	// HX8347-A (16bit)
 #define ITDB32WC		1	// ILI9327  (16bit)
@@ -128,11 +130,11 @@
 #define TFT01_18SP		24	// ST7735S  (Serial)
 #define TFT01_22SP		25	// ILI9341	(Serial 5Pin)
 #define MI0283QT9		26  // ILI9341	(Serial 4Pin)
-#define CTE35IPS		27	// R61581	(16bit)
-#define CTE40			28	// ILI9486	(16bit)
-#define EHOUSE50CPLD	29	// CPLD		(16bit)
-#define CTE50CPLD		29	// CPLD		(16bit)
-#define CTE70CPLD		29	// CPLD		(16bit)
+#define CTE35IPS		29	// R61581	(16bit)
+#define CTE40			30	// ILI9486	(16bit)
+#define EHOUSE50CPLD	31	// CPLD		(16bit)
+#define CTE50CPLD		31	// CPLD		(16bit)
+#define CTE70CPLD		31	// CPLD		(16bit)
 
 
 #define SERIAL_4PIN		4

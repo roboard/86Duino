@@ -73,13 +73,17 @@ static AFMotorController MC;
 /******************************************
                MOTORS
 ******************************************/
-static unsigned short crossbar_ioaddr = 0;
 
 static bool _initPWM1 = false;
 static unsigned long PWM1_freq = 12500L; // 8KHz
 inline void initPWM1(uint8_t freq) {
-	int pin = 11;
-	int mc = 1, md = 1;
+	int pin = 11, mc, md;
+    
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 1; md = 1;
+    #elif defined (__86DUINO_DUO)
+        mc = 2; md = 1;
+    #endif
 	 
 	pinMode(pin, OUTPUT);
 	
@@ -102,8 +106,6 @@ inline void initPWM1(uint8_t freq) {
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
 
-		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-
 		io_RestoreINT();
 		_initPWM1 = true;
 	}   
@@ -112,13 +114,22 @@ inline void initPWM1(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM1_freq - 1L, (PWM1_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+    #elif defined (__86DUINO_DUO)
+        io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+    #endif
 	io_RestoreINT();
 }
 
 inline void setPWM1(uint8_t s) {
-	int pin = 11;
-	int mc = 1, md = 1;
+	int pin = 11, mc, md;
+	
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 1; md = 1;
+    #elif defined (__86DUINO_DUO)
+        mc = 2; md = 1;
+    #endif
 	
 	if (s == 0L)
 		digitalWrite(pin, LOW);
@@ -130,7 +141,11 @@ inline void setPWM1(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM1_freq - 1L, (PWM1_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+			#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+                io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+            #elif defined (__86DUINO_DUO)
+                io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+            #endif
 		}
 	}
 }
@@ -138,8 +153,13 @@ inline void setPWM1(uint8_t s) {
 static bool _initPWM2 = false;
 static unsigned long PWM2_freq = 12500L; // 8KHz
 inline void initPWM2(uint8_t freq) {
-	int pin = 3;
-	int mc = 3, md = 0;
+	int pin = 3, mc, md;
+	
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 3; md = 0;
+    #elif defined (__86DUINO_DUO)
+        mc = 4; md = 0;
+    #endif
 	
 	pinMode(pin, OUTPUT);
 	
@@ -162,8 +182,6 @@ inline void initPWM2(uint8_t freq) {
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
 
-		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-
 		io_RestoreINT();
 		_initPWM2 = true;
 	}   
@@ -172,13 +190,22 @@ inline void initPWM2(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM2_freq - 1L, (PWM2_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+    #elif defined (__86DUINO_DUO)
+        io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+    #endif
 	io_RestoreINT();
 }
 
 inline void setPWM2(uint8_t s) {
-	int pin = 3;
-	int mc = 3, md = 0;
+	int pin = 3, mc, md;
+	
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 3; md = 0;
+    #elif defined (__86DUINO_DUO)
+        mc = 4; md = 0;
+    #endif
 	
 	if (s == 0L)
 		digitalWrite(pin, LOW);
@@ -190,7 +217,11 @@ inline void setPWM2(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM2_freq - 1L, (PWM2_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+			#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+                io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+            #elif defined (__86DUINO_DUO)
+                io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+            #endif
 		}
 	}
 }
@@ -198,8 +229,13 @@ inline void setPWM2(uint8_t s) {
 static bool _initPWM3 = false;
 static unsigned long PWM3_freq = 12500L; // 8KHz
 inline void initPWM3(uint8_t freq) {
-	int pin = 6;
-	int mc = 0, md = 1;
+	int pin = 6, mc, md;
+	
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 0; md = 1;
+    #elif defined (__86DUINO_DUO)
+        mc = 4; md = 2;
+    #endif
 
 	pinMode(pin, OUTPUT);
 	
@@ -221,8 +257,6 @@ inline void initPWM3(uint8_t freq) {
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
 
-		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-
 		io_RestoreINT();
 		_initPWM3 = true;
 	}   
@@ -231,13 +265,22 @@ inline void initPWM3(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM3_freq - 1L, (PWM3_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+    #elif defined (__86DUINO_DUO)
+        io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+    #endif
 	io_RestoreINT();
 }
 
 inline void setPWM3(uint8_t s) {
-	int pin = 6;
-	int mc = 0, md = 1;
+	int pin = 6, mc, md;
+	
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 0; md = 1;
+    #elif defined (__86DUINO_DUO)
+        mc = 4; md = 2;
+    #endif
 	
 	if (s == 0L)
 		digitalWrite(pin, LOW);
@@ -249,7 +292,11 @@ inline void setPWM3(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM3_freq - 1L, (PWM3_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+			#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+                io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+            #elif defined (__86DUINO_DUO)
+                io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+            #endif
 		}
 	}
 }
@@ -258,8 +305,13 @@ inline void setPWM3(uint8_t s) {
 static bool _initPWM4 = false;
 static unsigned long PWM4_freq = 12500L; // 8KHz
 static void initPWM4(uint8_t freq) {
-	int pin = 5;
-	int mc = 0, md = 2; // need to indicate
+	int pin = 5, mc, md;
+	
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 0; md = 2;
+    #elif defined (__86DUINO_DUO)
+        mc = 4; md = 1;
+    #endif
     
 	pinMode(pin, OUTPUT);
 	
@@ -281,8 +333,6 @@ static void initPWM4(uint8_t freq) {
 		mcpwm_SetWaveform(mc, md, MCPWM_EDGE_A0I1);
 		mcpwm_SetSamplCycle(mc, md, 1999L);   // sample cycle: 20ms
 
-		crossbar_ioaddr = sb_Read16(0x64)&0xfffe;
-
 		io_RestoreINT();
 		_initPWM4 = true;
 	}   
@@ -291,13 +341,22 @@ static void initPWM4(uint8_t freq) {
 	mcpwm_SetWidth(mc, md, PWM4_freq - 1L, (PWM4_freq - 1L)/2L); // 50% duty
 	mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
 	mcpwm_Enable(mc, md);
-	io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+    #elif defined (__86DUINO_DUO)
+        io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+    #endif
 	io_RestoreINT();
 }
 
 void setPWM4(uint8_t s) {
-	int pin = 5;
-	int mc = 0, md = 2;
+	int pin = 5, mc, md;
+	
+    #if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+        mc = 0; md = 2;
+    #elif defined (__86DUINO_DUO)
+        mc = 4; md = 1;
+    #endif
 	
 	if (s == 0L)
 		digitalWrite(pin, LOW);
@@ -309,7 +368,11 @@ void setPWM4(uint8_t s) {
 		{
 			mcpwm_SetWidth(mc, md, PWM4_freq - 1L, (PWM4_freq*s/255L) - 1L);
 			mcpwm_ReloadPWM(mc, md, MCPWM_RELOAD_PEREND);
-			io_outpb(crossbar_ioaddr + 0x90 + PIN86[pin].gpN, 0x08);
+			#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
+                io_outpb(CROSSBARBASE + 0x90 + PIN86[pin].gpN, 0x08);
+            #elif defined (__86DUINO_DUO)
+                io_outpb(CROSSBARBASE + 0x100 + PIN86[pin].gpN, 0x01);
+            #endif
 		}
 	}
 }

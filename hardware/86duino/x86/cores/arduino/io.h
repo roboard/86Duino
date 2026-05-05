@@ -139,6 +139,20 @@ DMPAPI(unsigned long)  io_In32P(void* handle, unsigned long offset);
 DMPAPI(unsigned short) io_In16P(void* handle, unsigned long offset);
 DMPAPI(unsigned char)  io_In8P(void* handle, unsigned long offset);
 
+// just for speed hacking in some libraries of Vortex86-series devices
+DMPAPI(void) io_MMIO_SeqOut32(void* handle, unsigned long offset, unsigned long* data, int data_count);
+DMPAPI(void) io_MMIO_SeqOut16(void* handle, unsigned long offset, unsigned short* data, int data_count);
+DMPAPI(void) io_MMIO_SeqOut8(void* handle, unsigned long offset, unsigned char* data, int data_count);
+DMPAPI(void) io_MMIO_SeqIn32(void* handle, unsigned long offset, unsigned long* buf, int data_count);
+DMPAPI(void) io_MMIO_SeqIn16(void* handle, unsigned long offset, unsigned short* buf, int data_count);
+DMPAPI(void) io_MMIO_SeqIn8(void* handle, unsigned long offset, unsigned char* buf, int data_count);
+
+#if defined     DMP_DOS_DJGPP
+    DMPAPI(unsigned short) io_MMIO_GetSelector(void* handle);
+#elif defined(DMP_DOS_WATCOM) || defined(USE_WINIO3) || defined(USE_PHYMEM) || defined(DMP_LINUX)
+    DMPAPI(unsigned long) io_MMIO_GetMappedBaseAddr(void* handle);
+#endif
+
 
 /* =============================================
  *   PCI-CFG Access Functions
@@ -175,12 +189,15 @@ DMPAPI(int) vx86_CpuID(void);
      #define CPU_VORTEX86DX2            (41)
      #define CPU_VORTEX86DX3            (42)
      #define CPU_VORTEX86EX             (51)
-     #define CPU_VORTEX86EX2            (52)
-     #define CPU_VORTEX86EX2M           (52)
-     #define CPU_VORTEX86EX2S           (53)
+     #define CPU_VORTEX86EX2_MASTER     (52)
+     #define CPU_VORTEX86EX2_SLAVE      (53)
+     #define CPU_VORTEX86EX3_MASTER     (54)
+     #define CPU_VORTEX86EX3_SLAVE      (55)
 
 DMPAPI(unsigned long) vx86_CpuCLK(void);
 DMPAPI(unsigned long) vx86_DramCLK(void);
+/* It is not recommended to call this function in interrupt service routine (ISR). */
+DMPAPI(double) vx86_CpuCLK_Hz(void);
 
 DMPAPI(void) vx86_NBSB_Write(int fun, unsigned char offset, unsigned long val);
 DMPAPI(unsigned long) vx86_NBSB_Read(int fun, unsigned char offset);

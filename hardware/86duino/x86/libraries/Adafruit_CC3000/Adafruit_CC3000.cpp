@@ -25,7 +25,7 @@
 
 #include "Adafruit_CC3000.h"
 #include "ccspi.h"
-
+#include "mcm.h"
 #include "utility/cc3000_common.h"
 #include "utility/evnt_handler.h"
 #include "utility/hci.h"
@@ -40,9 +40,15 @@
 uint8_t g_csPin, g_irqPin, g_vbatPin, g_IRQnum, g_SPIspeed;
 
 static const uint8_t dreqinttable[] = {
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
   42, 0,
   43, 1,
-  44, 2,
+  44, 2
+#elif defined (__86DUINO_DUO)
+  17, 0,
+  18, 1,
+  19, 2
+#endif
 };
 
 /***********************/
@@ -210,7 +216,7 @@ bool Adafruit_CC3000::begin(uint8_t patchReq, bool useSmartConfigData, const cha
   // The shortest width of pulse(HIGH) is 190ns on IRQ line by CC3000!! Must close 86Duino filter.
 
   init_spi();
-  attachInterrupt(g_IRQnum, SPI_IRQ, FALLING);
+  attachRTInterrupt(g_IRQnum, SPI_IRQ, FALLING);
   
   mcsif_Disable(mc_sif, md_sif);
   mcsif_SetInputFilter(mc_sif, md_sif, 0L);
@@ -1441,7 +1447,20 @@ size_t Adafruit_CC3000_Client::write(const uint8_t *buf, size_t len)
   return write(buf, len, 0);
 }
 
+int Adafruit_CC3000_Client::writeNB(const uint8_t *buf, size_t len) // same as write(const uint8_t *buf, size_t len)
+{
+  return write(buf, len, 0);
+}
+
 size_t Adafruit_CC3000_Client::write(uint8_t c)
+{
+  int32_t r;
+  r = send(_socket, &c, 1, 0);
+  if ( r < 0 ) return 0;
+  return r;
+}
+
+int Adafruit_CC3000_Client::writeNB(uint8_t c) // same as write(uint8_t c)
 {
   int32_t r;
   r = send(_socket, &c, 1, 0);

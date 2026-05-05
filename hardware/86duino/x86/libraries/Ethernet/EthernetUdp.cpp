@@ -1,7 +1,7 @@
 /*
  *  ENUdp.cpp: Library to send/receive UDP packets with the Arduino ethernet shield.
  *  This version only offers minimal wrapping of socket.c/socket.h
- *  Drop ENUdp.h/.cpp into the Ethernet library directory at hardware/libraries/Ethernet/ 
+ *  Drop ENUdp.h/.cpp into the Ethernet library directory at hardware/libraries/Ethernet/
  *
  * MIT License:
  * Copyright (c) 2008 Bjoern Hartmann
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,315 +24,375 @@
  * THE SOFTWARE.
  *
  * bjoern@cs.stanford.edu 12/30/2008
- * 
- * Modified 12 December 2013 by DY Hung   
+ *
+ * Modified 12 December 2013 by DY Hung
  */
- 
+
 #include "Ethernet.h"
 #include "Udp.h"
 #include "Dns.h"
-#include "SwsSock.h"
+#include "sws_sock.h"
 
-/* Constructor */
+#define UDP_PACKET_MAX_SIZE (65507)
+
 EthernetUDP::EthernetUDP()
 {
-	TxSize = 0;
-	RxHead = 0;
-	RxTail = 0;
-	RxSize = 0;
-	sws = (struct SwsSockInfo*)malloc(sizeof(struct SwsSockInfo));
-	if (sws) {
-		memset(sws, 0, sizeof(struct SwsSockInfo));
-		sws->_sock = SWS_INVALID_SOCKET;
-	}
+    this->_ethernet = &Ethernet;
+    this->_sock = SWS_INVALID_SOCKET;
+    this->_multicast = false;
+    this->_localPort = 0;
+    this->_txRemotePort = 0;
+    this->_rxRemotePort = 0;
+    this->_txRemoteIP = (uint32_t)0;
+    this->_rxRemoteIP = (uint32_t)0;
+    this->_txBuffer = NULL;
+    this->_rxBuffer = NULL;
+    this->_txSize = 0;
+    this->_rxSize = 0;
+    this->_rxHead = 0;
+}
+
+EthernetUDP::EthernetUDP(EthernetClass &ethernet)
+{
+    this->_ethernet = &ethernet;
+    this->_sock = SWS_INVALID_SOCKET;
+    this->_multicast = false;
+    this->_localPort = 0;
+    this->_txRemotePort = 0;
+    this->_rxRemotePort = 0;
+    this->_txRemoteIP = (uint32_t)0;
+    this->_rxRemoteIP = (uint32_t)0;
+    this->_txBuffer = NULL;
+    this->_rxBuffer = NULL;
+    this->_txSize = 0;
+    this->_rxSize = 0;
+    this->_rxHead = 0;
 }
 
 EthernetUDP::~EthernetUDP()
 {
-	if (sws) {
-		free(sws);
-		sws = NULL;
-	}
+    stop();
 }
 
-/* Start EthernetUDP socket, listening at local port PORT */
-uint8_t EthernetUDP::begin(uint16_t port) {
-	struct SWS_sockaddr_in sin;
-	SWS_u_long lArg = 1;
-	int yes = 1, no = 0;
-	
-	if (sws == NULL) return 0;
-	
-	if (sws->_sock != SWS_INVALID_SOCKET)
-		return 0;
-	
-	sws->_sock = SWS_socket(SWS_AF_INET, SWS_SOCK_DGRAM, 0);
-    if (sws->_sock == SWS_INVALID_SOCKET)
-		return 0;
-	
-	bzero(&sin, sizeof(sin));
-    sin.sin_family = SWS_AF_INET;
-    sin.sin_addr.SWS_s_addr = SwsSock.getULLocalIp();
-    sin.sin_port = SWS_htons(port);
-	
-	if (SWS_bind(sws->_sock, (struct SWS_sockaddr *)&sin, sizeof(sin)) != 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return 0;
+uint8_t EthernetUDP::begin(uint16_t port)
+{
+    SWS_SOCKET sock;
+    SWS_sockaddr_in sin;
+    SWS_u_long lArg = 1;
+    int yes = 1;
+    uint8_t *buffer;
+
+    if (this->_sock != SWS_INVALID_SOCKET)
+        return 0;
+    if (this->_ethernet->isInitialized() == 0)
+        return 0;
+
+    if ((buffer = (uint8_t *)malloc(UDP_PACKET_MAX_SIZE << 1)) == NULL)
+        return 0;
+
+    if ((sock = SWS_socket(SWS_AF_INET, SWS_SOCK_DGRAM, 0)) == SWS_INVALID_SOCKET)
+    {
+        free(buffer);
+        return 0;
     }
-	
-	if (SWS_ioctl(sws->_sock, SWS_FIONBIO, &lArg) < 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return 0;
-	}
-	
-	if (SWS_setsockopt(sws->_sock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char*)&yes, sizeof(int)) < 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return 0;
-	}
-	
-	if (SWS_setsockopt(sws->_sock, SWS_SOL_SOCKET, SWS_SO_DONTLINGER, (const char*)&no, sizeof(int)) < 0) {
-		SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-		SWS_close(sws->_sock);
-		sws->_sock = SWS_INVALID_SOCKET;
-		return 0;
-	}
-	
-	_port = port;
-	TxSize = 0;
-	RxHead = 0;
-	RxTail = 0;
-	RxSize = 0;
-	
-	return 1;
+
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = SWS_AF_INET;
+    sin.sin_addr.SWS_s_addr = (uint32_t)this->_ethernet->localIP();
+    sin.sin_port = SWS_htons(port);
+    if (SWS_bind(sock, (struct SWS_sockaddr *)&sin, sizeof(sin)) != 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        free(buffer);
+        return 0;
+    }
+
+    if (SWS_ioctl(sock, SWS_FIONBIO, &lArg) < 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        free(buffer);
+        return 0;
+    }
+
+    if (SWS_setsockopt(sock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char *)&yes, sizeof(int)) < 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        free(buffer);
+        return 0;
+    }
+
+    this->_txBuffer = buffer;
+    this->_rxBuffer = buffer + UDP_PACKET_MAX_SIZE;
+    this->_txSize = 0;
+    this->_rxSize = 0;
+    this->_localPort = port;
+    this->_sock = sock;
+
+    return 1;
+}
+
+uint8_t EthernetUDP::beginMulticast(IPAddress ip, uint16_t port)
+{
+    SWS_SOCKET sock;
+    SWS_sockaddr_in sin;
+    SWS_ip_mreq mreq;
+    SWS_u_long lArg = 1;
+    int yes = 1;
+    uint8_t *buffer;
+
+    if (this->_sock != SWS_INVALID_SOCKET)
+        return 0;
+    if (this->_ethernet->isInitialized() == 0)
+        return 0;
+
+    if ((buffer = (uint8_t *)malloc(UDP_PACKET_MAX_SIZE << 1)) == NULL)
+        return 0;
+
+    if ((sock = SWS_socket(SWS_AF_INET, SWS_SOCK_DGRAM, 0)) == SWS_INVALID_SOCKET)
+    {
+        free(buffer);
+        return 0;
+    }
+
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = SWS_AF_INET;
+    sin.sin_addr.SWS_s_addr = (uint32_t)this->_ethernet->localIP();
+    sin.sin_port = SWS_htons(port);
+    if (SWS_bind(sock, (struct SWS_sockaddr *)&sin, sizeof(sin)) != 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        free(buffer);
+        return 0;
+    }
+
+    mreq.imr_multiaddr.S_un.S_addr = (uint32_t)ip;
+    mreq.imr_interface.S_un.S_addr = (uint32_t)this->_ethernet->localIP();
+    if (SWS_setsockopt(sock, SWS_IPPROTO_IP, SWS_IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        free(buffer);
+        return 0;
+    }
+
+    if (SWS_ioctl(sock, SWS_FIONBIO, &lArg) < 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        free(buffer);
+        return 0;
+    }
+
+    if (SWS_setsockopt(sock, SWS_SOL_SOCKET, SWS_SO_REUSEADDR, (const char *)&yes, sizeof(int)) < 0)
+    {
+        SWS_shutdown(sock, SWS_SD_BOTH);
+        SWS_close(sock);
+        free(buffer);
+        return 0;
+    }
+
+    this->_txBuffer = buffer;
+    this->_rxBuffer = buffer + UDP_PACKET_MAX_SIZE;
+    this->_txSize = 0;
+    this->_rxSize = 0;
+    this->_localPort = port;
+    this->_sock = sock;
+    this->_multicast = true;
+    this->_ethernet->setMulticast(true);
+
+    return 1;
 }
 
 /* return number of bytes available in the current packet,
-   will return zero if parsePacket hasn't been called yet */
+will return zero if parsePacket hasn't been called yet */
 int EthernetUDP::available()
 {
-	return RxSize;
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+
+    if (sock == SWS_INVALID_SOCKET)
+        return 0;
+
+    return this->_rxSize;
 }
 
 /* Release any resources being used by this EthernetUDP instance */
 void EthernetUDP::stop()
 {
-	if (sws == NULL) return;
-	if (sws->_sock == SWS_INVALID_SOCKET)
-		return;
-	
-	flush();
-	SWS_shutdown(sws->_sock, SWS_SD_BOTH);
-	SWS_close(sws->_sock);
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
 
-	TxSize = 0;
-	sws->_sock = SWS_INVALID_SOCKET;
+    if (sock == SWS_INVALID_SOCKET)
+        return;
+
+    flush();
+
+    if (this->_multicast == true)
+    {
+        this->_multicast = false;
+        this->_ethernet->setPromiscuousMode(false);
+    }
+    SWS_shutdown(sock, SWS_SD_BOTH);
+    SWS_close(sock);
+    free(this->_txBuffer);
+    this->_sock = SWS_INVALID_SOCKET;
+    this->_localPort = 0;
+    this->_txRemotePort = 0;
+    this->_rxRemotePort = 0;
+    this->_txRemoteIP = (uint32_t)0;
+    this->_rxRemoteIP = (uint32_t)0;
+    this->_txBuffer = NULL;
+    this->_rxBuffer = NULL;
+    this->_txSize = 0;
+    this->_rxSize = 0;
+    this->_rxHead = 0;
 }
 
 int EthernetUDP::beginPacket(const char *host, uint16_t port)
 {
-	// Look up the host first
-	int ret = 0;
-	DNSClient dns;
-	IPAddress remote_addr;
+    DNSClient dns;
+    IPAddress remote_addr;
+    int ret;
 
-	dns.begin(Ethernet.dnsServerIP());
-	ret = dns.getHostByName(host, remote_addr);
-	if (ret == 1)
-		return beginPacket(remote_addr, port);
-	else
-		return ret;
+    dns.begin(this->_ethernet->dnsServerIP());
+    if ((ret = dns.getHostByName(host, remote_addr)) == 1)
+        return beginPacket(remote_addr, port);
+
+    return ret;
 }
 
 int EthernetUDP::beginPacket(IPAddress ip, uint16_t port)
 {
-	uint8_t *ipchar;
-	SWS_u_long iplong;
-	
-	if (sws == NULL) return 0;
-	if (sws->_sock == SWS_INVALID_SOCKET)
-		return 0;
-	
-	ipchar = rawIPAddress(ip);
-	memcpy(&iplong, ipchar, 4);
-	
-	bzero(&sws->txaddr, sizeof(sws->txaddr));
-    sws->txaddr.sin_family = SWS_AF_INET;
-    sws->txaddr.sin_addr.SWS_s_addr = iplong;
-    sws->txaddr.sin_port = SWS_htons(port);
-	
-	TxSize = 0;
-	
-	return 1;
+    if (this->_sock == SWS_INVALID_SOCKET)
+        return 0;
+
+    this->_txRemoteIP = ip;
+    this->_txRemotePort = port;
+    this->_txSize = 0;
+
+    return 1;
 }
 
 int EthernetUDP::endPacket()
 {
-	int rc, curByte;
-	
-	if (sws == NULL) return 0;
-	if (sws->_sock == SWS_INVALID_SOCKET)
-		return 0;
-	
-	curByte = 0;
-	while (TxSize > 0) {
-		rc = SWS_sendto(sws->_sock, &TxBuffer[curByte], TxSize, 0, (struct SWS_sockaddr *)&sws->txaddr, sizeof(sws->txaddr));
-		
-		if (rc > 0) {
-			curByte += rc;
-			TxSize -= rc;
-		}
-		else {
-			stop();
-			return 0;
-		}
-	}
-	
-	return 1;
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+    SWS_sockaddr_in tx_address;
+    uint32_t sent = 0;
+
+    if (sock == SWS_INVALID_SOCKET)
+        return 0;
+    if (this->_txSize == 0)
+        return 0;
+
+    memset(&tx_address, 0, sizeof(tx_address));
+    tx_address.sin_family = SWS_AF_INET;
+    tx_address.sin_addr.SWS_s_addr = (uint32_t)this->_txRemoteIP;
+    tx_address.sin_port = SWS_htons(this->_txRemotePort);
+
+    while (sent < this->_txSize)
+    {
+        int rc = SWS_sendto(sock, &this->_txBuffer[sent], this->_txSize - sent, 0, (SWS_sockaddr *)&tx_address, sizeof(tx_address));
+        if (rc <= 0)
+            break;
+        sent += rc;
+    }
+    this->_txSize = 0;
+
+    return !!(sent > 0);
 }
 
 size_t EthernetUDP::write(uint8_t byte)
 {
-	return write(&byte, 1);
+    return write(&byte, 1);
 }
 
 size_t EthernetUDP::write(const uint8_t *buffer, size_t size)
 {
-	size_t bytes_written = 0;
-	
-	if (sws == NULL) return 0;
-	if (sws->_sock == SWS_INVALID_SOCKET)
-		return 0;
-	
-	while (TxSize < UDP_TX_PACKET_MAX_SIZE && size > 0) {
-		TxBuffer[TxSize++] = buffer[bytes_written++];
-		size--;
-	}
-	
-	return bytes_written;
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+
+    if (sock == SWS_INVALID_SOCKET)
+        return 0;
+
+    if (size > UDP_PACKET_MAX_SIZE - this->_txSize)
+        size = UDP_PACKET_MAX_SIZE - this->_txSize;
+    if (size == 0)
+        return 0;
+
+    memcpy(&this->_txBuffer[this->_txSize], buffer, size);
+    this->_txSize += size;
+
+    return size;
 }
 
 int EthernetUDP::parsePacket()
 {
-	int i, rc, len;
-	uint8_t buf[UDP_RX_PACKET_MAX_SIZE];
-	
-	if (RxSize > 0)
-		return RxSize;
-	
-	if (sws == NULL) return 0;
-	if (sws->_sock == SWS_INVALID_SOCKET)
-		return 0;
-	
-	len = sizeof(sws->rxaddr);
-	rc = SWS_recvfrom(sws->_sock, buf, UDP_RX_PACKET_MAX_SIZE, 0, (struct SWS_sockaddr *)&sws->rxaddr, &len);
-	
-	if (rc > 0) {
-	
-		uint8_t tmpBuf[4];
-		
-		memcpy(tmpBuf, &sws->rxaddr.sin_addr.SWS_s_addr, 4);
-		_remoteIP = tmpBuf;
-		_remotePort = SWS_ntohs(sws->rxaddr.sin_port);
-		
-		i = 0;
-		while (rc > 0) {
-			RxBuffer[RxTail++] = buf[i++];
-			RxSize++;
-			if (RxTail >= UDP_RX_PACKET_MAX_SIZE)
-				RxTail = 0;
-				
-			rc--;
-		}
-	}
-	
-	return RxSize;
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+    SWS_sockaddr_in rx_address;
+    SWS_socklen_t socklen = sizeof(rx_address);
+    int rc;
+
+    if (sock == SWS_INVALID_SOCKET)
+        return 0;
+
+    if ((rc = SWS_recvfrom(sock, this->_rxBuffer, UDP_PACKET_MAX_SIZE, 0, (struct SWS_sockaddr *)&rx_address, &socklen)) <= 0)
+        return 0;
+
+    this->_rxRemoteIP = (uint32_t)rx_address.sin_addr.SWS_s_addr;
+    this->_rxRemotePort = SWS_ntohs(rx_address.sin_port);
+    this->_rxSize = rc;
+    this->_rxHead = 0;
+
+    return this->_rxSize;
 }
 
 int EthernetUDP::read()
 {
-	uint8_t val;
-	
-	if (read(&val, 1) > 0)
-		return val;
-		
-	return -1;
+    uint8_t val;
+
+    if (read(&val, 1) > 0)
+        return val;
+
+    return -1;
 }
 
-int EthernetUDP::read(unsigned char* buf, size_t size)
+int EthernetUDP::read(unsigned char *buffer, size_t len)
 {
-	int rc, cur, len;
-	uint8_t val;
-		
-	cur = 0;
-	
-	if (RxSize > 0) {
-	
-		while (RxSize > 0 && size > 0) {
-			buf[cur++] = RxBuffer[RxHead++];
-			RxSize--;
-			size--;
-			if (RxHead >= UDP_RX_PACKET_MAX_SIZE)
-				RxHead = 0;
-		}
-	} else if (sws == NULL) {
-		return -1;
-	} else if (sws->_sock != SWS_INVALID_SOCKET && size > 0) {
-	
-		len = sizeof(sws->rxaddr);
-		rc = SWS_recvfrom(sws->_sock, &buf[cur], size, 0, (struct SWS_sockaddr *)&sws->rxaddr, &len);
-		
-		if (rc > 0) {
-		
-			uint8_t tmpBuf[4];
-			
-			memcpy(tmpBuf, &sws->rxaddr.sin_addr.SWS_s_addr, 4);
-			_remoteIP = tmpBuf;
-			_remotePort = SWS_ntohs(sws->rxaddr.sin_port);
-			
-			size -= rc;
-			cur += rc;
-		}
-		else
-			return -1;
-	}
-	else
-		return -1;
-	
-	return cur;
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+
+    if (sock == SWS_INVALID_SOCKET)
+        return -1;
+
+    if (len > this->_rxSize)
+        len = this->_rxSize;
+    if (len == 0)
+        return -1;
+
+    memcpy(buffer, &this->_rxBuffer[this->_rxHead], len);
+    this->_rxSize -= len;
+    this->_rxHead += len;
+
+    return len;
 }
 
 int EthernetUDP::peek()
 {
-	if (sws == NULL) return -1;
-	if (sws->_sock == SWS_INVALID_SOCKET)
-		return -1;
-		
-	if (!available())
-		return -1;
-		
-	return RxBuffer[RxHead];
+    if (available() == 0)
+        return -1;
+    return this->_rxBuffer[this->_rxHead];
 }
 
 void EthernetUDP::flush()
 {
-	int rc, len;
-	uint8_t val;
-	
-	RxSize = 0;
-	RxHead = 0;
-	RxTail = 0;
-	
-	if (sws == NULL) return;
-	if (sws->_sock == SWS_INVALID_SOCKET)
-		return;
-	
-	len = sizeof(sws->rxaddr);
-	while ((rc = SWS_recvfrom(sws->_sock, &val, 1, 0, (struct SWS_sockaddr *)&sws->rxaddr, &len)) > 0);
-}
+    SWS_SOCKET sock = (SWS_SOCKET)this->_sock;
+    SWS_sockaddr_in rx_address;
+    SWS_socklen_t socklen = sizeof(rx_address);
 
+    if (sock == SWS_INVALID_SOCKET)
+        return;
+
+    this->_rxSize = 0;
+    this->_rxHead = 0;
+    while (SWS_recvfrom(sock, this->_rxBuffer, UDP_PACKET_MAX_SIZE, 0, (struct SWS_sockaddr *)&rx_address, &socklen) > 0);
+}

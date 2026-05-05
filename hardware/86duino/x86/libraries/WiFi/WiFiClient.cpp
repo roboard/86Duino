@@ -65,13 +65,18 @@ int WiFiClient::connect(IPAddress ip, uint16_t port) {
     		return 0;
     	}
     }else{
-    	Serial.println("No Socket available");
+        printf("No Socket available");
+    	// Serial.println("No Socket available");
     	return 0;
     }
     return 1;
 }
 
 size_t WiFiClient::write(uint8_t b) {
+	  return write(&b, 1);
+}
+
+int WiFiClient::writeNB(uint8_t b) {
 	  return write(&b, 1);
 }
 
@@ -100,6 +105,10 @@ size_t WiFiClient::write(const uint8_t *buf, size_t size) {
   }
 
   return size;
+}
+
+int WiFiClient::writeNB(const uint8_t *buf, size_t size) {
+  return write(buf, size);
 }
 
 int WiFiClient::available() {

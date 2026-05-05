@@ -5,6 +5,9 @@ namespace MsTimer2 {
 	extern void (*func)();
 	
 	void set(unsigned long ms, void (*f)());
+    void RTSet(unsigned long ms, void (*f)());
+    void HTSet(unsigned long ms, void (*f)());
+    void set(unsigned long ms, void (*f)(), int _rt);
 	void start();
 	void stop();
 	void _overflow();

@@ -25,22 +25,22 @@
 volatile irparams_t irparams;
 
 #define TIMER_PIN    (32)  // It is a PWM pin (like analogWrite), but it is used as a timer here.
-static int mc = 3, md = 1; // It is TIMER_PIN's MC and MD (equal to use arduino_to_mc_md[][])
+static int mc = 7, md = 1; // It is TIMER_PIN's MC and MD (equal to use arduino_to_mc_md[][])
 static int mc_md_inuse[PINS];
 static int iroutpin = TIMER_PWM_PIN; // default use pin 10 to send IR signal
 
 static int mcint_offset[3] = {0, 8, 16};
 static void clear_INTSTATUS(unsigned long used_int) {
-    mc_outp(mc, 0x04, used_int << mcint_offset[md]); //for EX
+    mc_outp(mc, 0x04, used_int << mcint_offset[md]);
 }
 
 static void disable_MCINT(unsigned long used_int) {
     mc_outp(mc, 0x00, mc_inp(mc, 0x00) & ~(used_int << mcint_offset[md]));  // disable mc interrupt
-    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) | (1L << mc));
+    mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) | (1L << (mc%4)), mc/4);
 }
 
 static void enable_MCINT(unsigned long used_int) {
-	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38) & ~(1L << mc));
+	mc_outp(MC_GENERAL, 0x38, mc_inp(MC_GENERAL, 0x38, mc/4) & ~(1L << (mc%4)), mc/4);
 	mc_outp(mc, 0x00, mc_inp(mc, 0x00) | (used_int << mcint_offset[md]));
 }
 
@@ -59,7 +59,7 @@ static bool init_mc_irq(void) {
 	    printf("%s\n", __FUNCTION__); return false;
 	}
 	*/
-	if(irq_InstallISR(GetMCIRQ(), isr_handler, name) == false)
+	if(irq_InstallISR(GetMCIRQ(mc/4), isr_handler, name) == false)
 	{
 	    printf("irq_install fail\n"); return false;
 	}

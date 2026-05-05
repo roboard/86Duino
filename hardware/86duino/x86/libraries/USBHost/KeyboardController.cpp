@@ -21,9 +21,66 @@
 */
 
 #include "Arduino.h"
+#define ALLEGRO_HAVE_STDINT_H
 #include <allegro.h>
 #include "KeyboardController.h"
 #include "queue.h"
+
+#if defined (USBHOST_REMOTE)
+#include "ipcnet.h"
+#define MAX_SOCKS   (4)
+static int fd, rc;
+static unsigned char rxbuf[4096];
+static unsigned char txbuf[4096];
+static bool init_OK = false;
+static unsigned long val;
+
+static void send_command_para(uint8_t c, uint8_t* p, int p_size) {
+    int i = 0, cur = 0, j;
+    
+    // command
+    txbuf[i++] = c;
+    
+    // other parameters
+    if (p != NULL) {
+        for (j=0; j<p_size; j++)
+            txbuf[i++] = *(p++);
+    }
+    
+    do {
+        rc = ipcnet_send(fd, &txbuf[cur], i - cur);
+        if (rc > 0) cur += rc;
+    } while (cur != i);
+    
+}
+
+// -1 : continue
+//  0 : complite
+static int recv_command_result(uint8_t* mybuf, int num) {
+    int i, cur = 0;
+    
+    do {
+        rc = ipcnet_recv(fd, &rxbuf[cur], num - cur);
+        if (rc < 0 && ipcnet_errno(fd) == IPCNET_ECONNABORTED)
+            return -1;
+        cur += rc;
+    } while (cur != num);
+    
+    for (i=0; i<num; i++)
+        mybuf[i] = rxbuf[i];
+    
+    return 0;
+}
+
+static int fourBytes2Int(unsigned char a0, unsigned char a1, unsigned char a2, unsigned char a3) {
+    int r = 0;
+    r = a3;
+    r = (r << 8) + a2;
+    r = (r << 8) + a1;
+    r = (r << 8) + a0;
+    return r;
+}
+#endif
 
 #define KBQUEUESIZE    (4096)
 
@@ -171,12 +228,39 @@ unsigned char scancodeMap[128] =
 static bool kbInit = false;
 volatile Queue *kbQueue = NULL;
 void keypress_watcher(int scancode) {
-	PushQueue(kbQueue, scancode); // In Arduino, it has 10ms scan-time.
+	PushQueue((Queue*)kbQueue, scancode); // In Arduino, it has 10ms scan-time.
 } END_OF_FUNCTION(keypress_watcher)
 
+#if defined (USBHOST_REMOTE)
+KeyboardController::KeyboardController(USBHost &pusb) {
+    USBHost *p = &pusb;
+	p->RegisterKeyboardClass(this);
+    
+	val = 1;
+    
+    fd = ipcnet_socket();
+    ipcnet_ioctl(fd, IPCNET_FIONBIO, (unsigned long)&val);
+    
+    do {
+        rc = ipcnet_connect(fd, 89); // 89 : USBHOST keyboard port
+        if (rc == 0)
+            break;
+        // if (rc < 0 && ipcnet_errno(fd) != ipcnet_EWOULDBLOCK) {
+            // printf("begining...fail!\r");
+            // printf("\n\n %d\n", ipcnet_errno(fd));
+            // return;
+        // }
+        printf("begining...\r");
+    } while (1);
+    printf("\n begin() OK!\n");
+}
+#else
 KeyboardController::KeyboardController(USBHost &pusb) {
 	USBHost *p = &pusb;
 	p->RegisterKeyboardClass(this);
+    
+    kbQueue = CreateQueue(KBQUEUESIZE);
+    
 	if(__allegro_function_init == 0)
 	{
 		allegro_init();
@@ -186,17 +270,17 @@ KeyboardController::KeyboardController(USBHost &pusb) {
 	if(kbInit == false)
 	{
 		install_timer();
+        LOCK_FUNCTION(keypress_watcher);
+        LOCK_VARIABLE(kbQueue);
 		install_keyboard();
 		kbInit = true;
 	}
 	
-	kbQueue = CreateQueue(KBQUEUESIZE);
-	//if(kbQueue == NULL) return;
-	LOCK_VARIABLE(kbQueue);
+	if(kbQueue == NULL) {printf("alloc kbQueue fial\n"); return;}
 	keyboard_lowlevel_callback = keypress_watcher;
 	set_keyboard_rate(0, 0); // close scan rate
 }
-
+#endif
 
 unsigned char CapsLock = 0;
 unsigned char NumLock = 0;
@@ -284,17 +368,8 @@ uint8_t KeyboardController::OemToAscii(uint8_t mod, uint8_t key)
 }
 
 void KeyboardController::KeyboardEvent(bool press, int scode) {
-	uint8_t mod = 0, oemkey = 0;
+	uint8_t oemkey = 0;
 	unsigned char asciicode;
-
-	if (key[KEY_LCONTROL]) mod |= 0x01;
-    if (key[KEY_LSHIFT])   mod |= 0x02;
-    if (key[KEY_ALT])      mod |= 0x04;
-    if (key[KEY_LWIN])     mod |= 0x08;
-    if (key[KEY_RCONTROL]) mod |= 0x10;
-    if (key[KEY_RSHIFT])   mod |= 0x20;
-    if (key[KEY_ALTGR])    mod |= 0x40;
-    if (key[KEY_RWIN])     mod |= 0x80;
 
     oemkey = scancodeMap[scode];
     
@@ -312,24 +387,69 @@ void KeyboardController::KeyboardEvent(bool press, int scode) {
 	}
 }
 
+#if defined (USBHOST_REMOTE)
 void KeyboardController::handleEvent(void) {
 	int scode = 0, pressFlag = 0;
+    int r;
+    uint8_t _r[5];
+    // handle keyboard event:
+	// 1. press key
+	// 2. release key
+	// if(kbQueue != NULL && QueueEmpty(kbQueue) == false)
+	// {
+		// scode = PopQueue(kbQueue);
+    send_command_para(1, NULL, 0); // 1 : "PopQueue" command
+    
+    r = recv_command_result(_r, 5);
+    if (r == 0) {
+        mod = _r[0];
+        scode = fourBytes2Int(_r[1], _r[2], _r[3], _r[4]);
+        if (scode != 0) {
+            pressFlag = scode & 0x80;
+            scode &= 0x7f;
+            if (pressFlag)
+                KeyboardEvent(false, scode);
+            else
+                KeyboardEvent(true, scode);
+        }
+    }
+        
+	// }
+}
+#else
+void KeyboardController::handleEvent(void) {
+	int scode = 0, pressFlag = 0;
+    
+    mod = 0;
     
     // handle keyboard event:
 	// 1. press key
 	// 2. release key
-	if(kbQueue != NULL && QueueEmpty(kbQueue) == false)
+	if(kbQueue != NULL && QueueEmpty((Queue*)kbQueue) == false)
 	{
-		scode = PopQueue(kbQueue);
+		ex2SlaveCode = scode = PopQueue((Queue*)kbQueue);
+
+        if (key[KEY_LCONTROL]) mod |= 0x01;
+        if (key[KEY_LSHIFT])   mod |= 0x02;
+        if (key[KEY_ALT])      mod |= 0x04;
+        if (key[KEY_LWIN])     mod |= 0x08;
+        if (key[KEY_RCONTROL]) mod |= 0x10;
+        if (key[KEY_RSHIFT])   mod |= 0x20;
+        if (key[KEY_ALTGR])    mod |= 0x40;
+        if (key[KEY_RWIN])     mod |= 0x80;
+    
+        // If this area is used for EX2 Master, we can remark them to save time.
 		pressFlag = scode & 0x80;
 		scode &= 0x7f;
 		if (pressFlag)
 			KeyboardEvent(false, scode);
 		else
 			KeyboardEvent(true, scode);
-	}
+        // End
+	} else
+        ex2SlaveCode = 0;
 }
-
+#endif
 
 extern "C" {
 	void __keyboardControllerEmptyCallback() { }
@@ -348,6 +468,6 @@ void KeyboardController::OnKeyDown(uint8_t _mod, uint8_t _oemKey) {
 void KeyboardController::OnKeyUp(uint8_t _mod, uint8_t _oemKey) {
 	modifiers = _mod;
 	keyOem = _oemKey;
-	keyascii = OemToAscii(_mod, _oemKey);
-	keyReleased();
+    keyascii = OemToAscii(_mod, _oemKey);
+    keyReleased();
 }

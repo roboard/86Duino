@@ -202,7 +202,7 @@ void NewPing::ping_timer(void (*userFunc)(void), unsigned int max_cm_distance) {
 	if (max_cm_distance > 0) set_max_distance(max_cm_distance); // Call function to set a new max sensor distance.
 
 	if (!ping_trigger()) return;         // Trigger a ping, if it returns false, return without starting the echo timer.
-	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+	#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
 		MsTimer2::set(50, userFunc); // 50us check
 	#else
 		timer_us(ECHO_TIMER_FREQ, userFunc); // Set ping echo timer check every ECHO_TIMER_FREQ uS.
@@ -216,7 +216,7 @@ boolean NewPing::check_timer() {
 		return false;           // Cancel ping timer.
 	}
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
 	if (digitalRead(_echoPin)) {
 #elif URM37_ENABLED == false
 	if (!(*_echoInput & _echoBit)) { // Ping echo received.
@@ -250,7 +250,7 @@ void NewPing::timer_us(unsigned int frequency, void (*userFunc)(void)) {
 	intFunc = userFunc; // User's function to call when there's a timer event.
 	timer_setup();      // Configure the timer interrupt.
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
 	if (frequency < 50) frequency = 50;
 	MsTimer2::set(frequency, userFunc);
 	MsTimer2::start();
@@ -272,7 +272,7 @@ void NewPing::timer_ms(unsigned long frequency, void (*userFunc)(void)) {
 	_ms_cnt = _ms_cnt_reset = frequency; // Current ms counter and reset value.
 	timer_setup();                      // Configure the timer interrupt.
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
 	MsTimer2::set(frequency*1000L, userFunc);
 	MsTimer2::start();
 #elif defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
@@ -288,7 +288,7 @@ void NewPing::timer_ms(unsigned long frequency, void (*userFunc)(void)) {
 
 
 void NewPing::timer_stop() { // Disable timer interrupt.
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
 	MsTimer2::stop();
 #elif defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
 	TIMSK4 = 0;
@@ -305,7 +305,7 @@ void NewPing::timer_stop() { // Disable timer interrupt.
 // ---------------------------------------------------------------------------
 
 void NewPing::timer_setup() {
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
 	timer_stop();
 #elif defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
 	timer_stop(); // Disable Timer4 interrupt.
@@ -337,7 +337,7 @@ void NewPing::timer_ms_cntdwn() {
 	}
 }
 
-#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_PLC) || defined (__86DUINO_AI) || defined (__86DUINO_DUO)
 	// Nothing...
 #elif defined (__AVR_ATmega32U4__) // Use Timer4 for ATmega32U4 (Teensy/Leonardo).
 ISR(TIMER4_OVF_vect) {

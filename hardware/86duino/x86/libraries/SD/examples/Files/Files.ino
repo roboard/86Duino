@@ -20,13 +20,15 @@
 #include <SPI.h>
 #include <SD.h>
 
-File myFile;
-
 void setup()
 {
  // Open serial communications and wait for port to open:
   Serial.begin(9600);
-   while (!Serial) {
+  
+  // SD.setBank(USBDISK);
+  SD.setBank(EMMCDISK);
+  
+  while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
 
@@ -39,7 +41,7 @@ void setup()
 
   // open a new file and immediately close it:
   Serial.println("Creating example.txt...");
-  myFile = SD.open("example.txt", FILE_WRITE);
+  File myFile = SD.open("example.txt", FILE_WRITE);
   myFile.close();
 
   // Check to see if the file exists: 
