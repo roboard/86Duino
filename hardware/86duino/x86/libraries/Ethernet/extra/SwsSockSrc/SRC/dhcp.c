@@ -1325,7 +1325,6 @@ SDhcpClient* DhcpFind( int iface)
     {
     if ( iface == pClient->iface)
       return pClient;
-    pClient = pClient->pNext;
     }
   return NULL;
   }

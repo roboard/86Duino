@@ -5,11 +5,11 @@ IDE Version
 
 Included Firmware Packages
 -------------------------------------------
-  86Duino Board Firmaware Package : 1.0.0
-  QEC Board Firmware Package      : 1.0.2
+  86Duino Firmaware Package : 1.0.0
+  QEC Firmware Package      : 1.0.1
 
 Included Plug-ins
 -------------------------------------------
-  86HMI      : 1.5.0.1
-  86EVA      : 0.9.5.0
-  ArduBlock  : Modified@20260428
+  86HMI      : 1.4
+  86EVA      : 0.8.3.0
+  ArduBlock  : Modified@20250616

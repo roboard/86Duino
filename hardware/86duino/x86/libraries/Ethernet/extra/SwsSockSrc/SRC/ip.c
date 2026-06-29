@@ -3443,25 +3443,6 @@ SWS_SRoute* RouteFind(
 
   TRACE( 9, ("RouteFind(%08lx,%08lx,%u,%d)\n", src,dst,tos,mode));
 
-  for (
-    pItem = DEQUE_FIRST( pHead);
-    pItem != pHead;
-    pItem = DEQUE_FIRST( pItem)
-  ) {
-    SWS_SRoute* const pRoute = DEQ2ROUTE( pItem);
-    ASSERT( NULL != pRoute->pInterface);
-
-    if ( InterfaceAddress( pRoute->pInterface) == src
-    ) {
-      if ( dst == pRoute->dst)
-        {
-        pBestRoute = pRoute;
-        break;
-        }
-      }
-  }
-
-  if (NULL == pBestRoute) {
   /* Search the route table, LRU first */
   for (
     pItem = DEQUE_FIRST( pHead);
@@ -3503,7 +3484,6 @@ SWS_SRoute* RouteFind(
         }
       }
     }
-  }
 
   /* Route found? */
   if ( NULL != pBestRoute)

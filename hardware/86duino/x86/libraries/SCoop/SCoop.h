@@ -88,7 +88,7 @@ class SCoop;
 
 extern SCoopEvent *  SCoopFirstItem;      // point on the latest registered item in the scheduler list
 extern SCoopTask*    SCoopFirstTask;      // point on the latest registered task
-extern uint16_t      SCoopNumberTask;     // the number of tasks registered (main loop() not counted)
+extern uint8_t       SCoopNumberTask;     // the number of tasks registered (main loop() not counted)
 extern void          sleep(SCDelay_t time); // (weak) in order to replace standard delay() for Arduino <150 not containing yield
 
 extern SCoop SCoopInstanceNickName;       // one forced instance of the SCoop Scheduler

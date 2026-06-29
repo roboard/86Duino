@@ -1,0 +1,190 @@
+#FUNCTIONS COLOR 			#D35400 - ORANGE			KEYWORD1
+#FUNCTIONS COLOR			#D35400 - ORANGE			KEYWORD2
+#STRUCTURE COLORS 			#728E00 - GREEN			KEYWORD3
+#CONSTANTS COLOR 				#00979C - BLUE				LITERAL1
+#VARIABLES COLOR 				#00979C - BLUE				LITERAL2
+
+#ERROR COLOR					#A61717 - RED
+#COMMENTS // COLOR			#95A5A6 - LIGHT GREY
+#COMMENTS /**/ COLOR		#434F54	- DARK GREY
+
+# GUI - STATUS
+status.notice.fgcolor = #000066
+status.notice.bgcolor = #7EA3D0
+status.error.fgcolor = #640000
+status.error.bgcolor = #CC5E6B
+status.edit.fgcolor = #000000
+status.edit.bgcolor = #648CB4
+status.font = SansSerif,plain,12
+
+# GUI - TABS
+# settings for the tabs at the top
+# (tab images are stored in the lib/theme folder)
+# header.bgcolor = #17A1A5
+# header.text.selected.color = #FFCCCC
+# header.text.unselected.color = #007e82
+# header.text.font = SansSerif,plain,12
+
+header.bgcolor = #8BB7E7
+header.text.selected.color = #000000
+header.text.unselected.color = #768399
+#header.text.font = Lucida Console Regular,plain,11
+#header.text.font = SansSerif,plain,12
+#header.text.font = SourceDejaVu,plain,11
+#header.text.font = DejaVuSansMono YaHei NF,plain,11
+#header.text.font = FiraCode QiHei NF,plain,11
+#header.text.font = Source Cascadia,plain,11
+header.text.font = Hack,plain,11
+#header.text.font = Sarasa Term CL Regular,plain,11
+#header.text.font = Hack,plain,11
+
+# GUI - CONSOLE
+# console.font = Monospaced,plain,11
+# console.font.macosx = Monaco,plain,10
+# console.color = #000000
+# console.output.color = #eeeeee
+# console.error.color = #E34C00
+
+#console.font = SansSerif,plain,10
+#console.font = SourceDejaVu,plain,9
+#console.font = DejaVuSansMono YaHei NF,plain,9
+console.font = Hack,plain,9
+#console.font = FiraCode QiHei NF,plain,9
+#console.font = Source Han Mono EL,plain,9
+#console.font = Lucida Console Regular,plain,9
+console.font.macosx = Monaco,plain,12
+console.color = #303640 
+#console.output.color = #90BD49
+console.output.color = #87FDFF
+#console.output.color = #5CF6E4
+#console.output.color = #ADFFFB
+#console.error.color = #C73D41
+console.error.color = #F27295
+
+# GUI - BUTTONS
+# buttons.bgcolor = #006468
+# buttons.status.font = SansSerif,plain,12
+# buttons.status.color = #ffffff
+
+buttons.bgcolor = #6686BA
+#buttons.status.font = SansSerif,bold,11
+#buttons.status.font = Hack,plain,11
+#buttons.status.font = Lucida Console Regular,plain,11
+#buttons.status.font = Source Han Mono EL,plain,11
+#buttons.status.font = SourceDejaVu,plain,9
+#buttons.status.font = DejaVuSansMono YaHei NF,plain,11
+#buttons.status.font = FiraCode QiHei NF,plain,11
+#buttons.status.font = Source Cascadia,plain,11
+buttons.status.font = Hack,plain,11
+#buttons.status.color = #FFD2AA
+#buttons.status.color = #F9BF98
+#buttons.status.color = #F9DAC6
+#buttons.status.color = #FFF0E5
+#buttons.status.color = #FFFFFF
+#buttons.status.color = #EE9C37
+buttons.status.color = #EDD295
+
+
+# GUI - PLOTTING
+# color cycle created via colorbrewer2.org
+plotting.bgcolor = #ffffff
+plotting.color = #ffffff
+plotting.gridcolor = #f0f0f0
+plotting.boundscolor = #000000
+plotting.graphcolor.size = 8
+plotting.graphcolor.00 = #0000FF
+plotting.graphcolor.01 = #FF0000
+plotting.graphcolor.02 = #009900
+plotting.graphcolor.03 = #FF9900
+plotting.graphcolor.04 = #CC00CC
+plotting.graphcolor.05 = #666666
+plotting.graphcolor.06 = #00CCFF
+plotting.graphcolor.07 = #000000
+
+# GUI - LINESTATUS
+linestatus.color = #ffffff
+linestatus.bgcolor = #3C4B78
+
+# EDITOR - DETAILS
+# foreground and background colors
+# editor.fgcolor = #000000
+# editor.bgcolor = #ffffff
+
+editor.fgcolor = #000000
+editor.bgcolor = #FEFCFF
+
+# highlight for the current line
+# editor.linehighlight.color=#e2e2e2
+editor.linehighlight.color= #F1F4F5
+# highlight for the current line
+editor.linehighlight=true
+
+# caret blinking and caret color
+# editor.caret.color = #333300
+editor.caret.color = #333300
+
+# color to be used for background when 'external editor' enabled
+# editor.external.bgcolor = #c8d2dc
+editor.external.bgcolor = #c8d2dc
+
+# selection color
+# editor.selection.color = #ffcc00
+editor.selection.color = #FFCD91
+
+# area that's not in use by the text (replaced with tildes)
+editor.invalid.style = #7e7e7e,bold
+
+# little pooties at the end of lines that show where they finish
+editor.eolmarkers = false
+editor.eolmarkers.color = #999999
+
+# bracket/brace highlighting
+editor.brackethighlight = true
+editor.brackethighlight.color = #006699
+
+
+# TEXT - KEYWORDS
+
+# FUNCTIONS
+editor.keyword1.style = #d35400,bold
+editor.data_type.style = #E07B48,bold 
+
+# METHODS
+editor.keyword2.style = #D35400,plain
+editor.function.style = #E07B48,bold 
+
+# STRUCTURES
+editor.keyword3.style = #5E6D03,plain
+editor.reserved_word.style = #06938A,bold 
+
+
+# TEXT - LITERALS
+editor.literal1.style = #00979C,plain
+editor.literal2.style = #00979C,plain
+editor.variable.style = #00979C,plain
+editor.reserved_word_2.style = #89B136,bold   
+editor.literal_boolean.style = #75689C,plain  
+editor.literal_char.style = #EC96B1,plain
+editor.literal_string_double_quote.style = #EC96B1,plain  
+editor.preprocessor.style = #BBA40B,bold  
+
+# http://www.arduino.cc/
+editor.url.style = #0000ff,underlined
+
+# e.g. + - = /
+editor.operator.style = #434f54,plain
+
+
+# ?? maybe this is for words followed by a colon
+# like in case statements or goto
+editor.label.style = #7e7e7e,bold
+
+
+# TEXT - COMMENTS
+editor.comment1.style = #95a5a6,plain  
+editor.comment2.style = #95a5a6,plain 
+
+
+# LINE STATUS - editor line number status bar at the bottom of the screen
+linestatus.font	   = SansSerif,plain,10
+linestatus.height  = 20

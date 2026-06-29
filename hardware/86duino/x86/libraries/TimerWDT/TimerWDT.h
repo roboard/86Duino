@@ -52,7 +52,7 @@ class TimerWatchdogTimer {
 };
 
 
-#if defined (__86DUINO_EX2)
+#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02)
 extern TimerWatchdogTimer TimerWDT;
 extern TimerWatchdogTimer TimerWDT1;
 #else

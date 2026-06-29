@@ -1,0 +1,21 @@
+86Duino QEC-M-043T
+-----------------------------------
+The EtherCAT Master System with 4.3" LCD.
+
+Specification : 
+------------+----------------------
+ CPU        | Vortex86EX2
+------------+----------------------
+ Clock      | Master 533MHz
+            | Slave  400MHz
+------------+----------------------
+ Memory     | 512MB/1GB/2GB DDRIII
+------------+----------------------
+ Storage    | 32MB SPI Flash
+------------+----------------------
+ Optional   | 2GB/4GB SLC eMMC
+ Storage    |
+------------+----------------------
+ Display    | 800x480
+ Resolution |
+------------+----------------------

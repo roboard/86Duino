@@ -35,6 +35,7 @@
  *
  * Modified 12 December 2013 by DY Hung
  */
+
 #ifndef ethernetudp_h
 #define ethernetudp_h
 
@@ -42,13 +43,14 @@
 
 #define UDP_TX_PACKET_MAX_SIZE  (512)
 
-class EthernetClass;
 class EthernetUDP : public UDP
 {
 public:
     EthernetUDP(); // Constructor
-    EthernetUDP(EthernetClass &ethernet);
     virtual ~EthernetUDP();
+#if defined(__86DUINO_DUO)
+    uint8_t _id_transmit;
+#endif
     virtual uint8_t begin(uint16_t); // initialize, start listening on specified port. Returns 1 if successful, 0 if there are no sockets available to use
     virtual uint8_t beginMulticast(IPAddress, uint16_t);
     virtual void stop(); // Finish with the UDP socket
@@ -95,7 +97,6 @@ public:
     virtual uint16_t localPort() { return _localPort; }
 
 private:
-    EthernetClass *_ethernet;
     void *_sock;
     bool _multicast;
     uint16_t _localPort;

@@ -1,0 +1,5 @@
+connect	KEYWORD2
+execute	KEYWORD2
+show_results	KEYWORD2
+connected	KEYWORD2
+field_struct	KEYWORD3

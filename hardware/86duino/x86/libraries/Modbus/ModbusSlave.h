@@ -28,11 +28,9 @@
 #define ModbusSlave_h
 
 #include "SerialInterface.h"
-#include "Ethernet.h"
 #include "ModbusCommon.h"
 
 /* Modbus Callback Function Index */
-#define MODBUS_CB_NUM                       (9)
 #define MODBUS_CB_READ_COILS                (0)
 #define MODBUS_CB_READ_DISCRETE_INPUTS      (1)
 #define MODBUS_CB_READ_HOLDING_REGISTERS    (2)
@@ -49,70 +47,97 @@
 
 class ModbusSlaveNode;
 
-class ModbusSlave
-{
-public:
-    ModbusSlave();
-    ~ModbusSlave();
+class ModbusSlave {
+    public:
+        ModbusSlave();
+        
+        bool begin(int mode, SerialInterface &serial);
+        // bool begin(int mode, HardwareSerial &serial);
+        // bool begin(int mode, MyVirtualSerial &serial);
+        bool begin(int mode, uint16_t port = 502);
+        
+        void setTimeout(uint32_t milliseconds);
 
-    bool begin(int mode, SerialInterface &serial);
-    bool begin(int mode, uint16_t port = 502);
-    bool begin(int mode, uint16_t port, EthernetClass &ethernet);
-    void end();
+    private:
+        /* Modbus Maximum Message Size */
+        enum { MODBUS_MAX_MESSAGE_LENGTH = 513 };
 
-    void setTimeout(uint32_t milliseconds);
+        bool initialize();
+        
+        int poll();
+        int poll(ModbusSlaveNode *node);
+        
+        void addNode(ModbusSlaveNode *node);
+        
+        ModbusSlaveNode *headNode;
+        
+        int pollState;
+        unsigned long timeout;
+        unsigned long recvTime;
 
-private:
-    void *_privateData;
-    int getModbusMode();
-    int poll();
-    int poll(void *);
-    void addNode(void *);
-
-    friend class ModbusSlaveNode;
+        uint8_t req[MODBUS_MAX_MESSAGE_LENGTH];
+        int req_length;
+        int handle_num;
+        
+        int _mode;
+        void *mbus;
+        
+        friend class ModbusSlaveNode;
 };
 
-class ModbusSlaveNode
-{
-public:
-    ModbusSlaveNode();
-    ~ModbusSlaveNode();
+class ModbusSlaveNode {
+    private:
+        enum { MODBUS_CB_NUM = 9,
+               MODBUS_MAX_TABLE_SIZE = 64 * 1024 };
 
-    bool attach(ModbusSlave &bus);
-    bool attach(uint8_t slave_id, ModbusSlave &bus);
-    bool begin(ModbusSlave &bus);
-    bool begin(uint8_t slave_id, ModbusSlave &bus);
-    void detach();
+        ModbusSlaveNode *nextNode;
+        int handled;
+        ModbusSlave *slave;
+        uint8_t slaveID;
+        
+        void *table;
+        
+        uint16_t coils[MODBUS_MAX_TABLE_SIZE];
+        uint16_t discrete_inputs[MODBUS_MAX_TABLE_SIZE];
+        uint16_t holding_registers[MODBUS_MAX_TABLE_SIZE];
+        uint16_t input_registers[MODBUS_MAX_TABLE_SIZE];
 
-    /* Modbus Slave Polling Function */
-    int poll();
-    int poll(uint16_t *buf, uint16_t size);
+        friend class ModbusSlave;
+        
+    public:
+        ModbusSlaveNode();
+        
+        bool attach(ModbusSlave &bus);
+        bool attach(uint8_t slave_id, ModbusSlave &bus);
+        bool begin(ModbusSlave &bus);
+        bool begin(uint8_t slave_id, ModbusSlave &bus);
+        
+        /* Modbus Slave Polling Function */
+        int poll();
+        int poll(uint16_t *buf, uint16_t size);
 
-    /* Modbus Callback Functions */
-    uint8_t (*cbFunc[MODBUS_CB_NUM])(uint8_t, uint16_t, uint16_t);
+        /* Modbus Callback Functions */
+        uint8_t (*cbFunc[MODBUS_CB_NUM])(uint8_t, uint16_t, uint16_t);
+        
+        /* Read/Write Coil Table */
+        int readCoil(uint16_t address, uint16_t size, uint16_t *buffer);
+        int readCoil(uint16_t address);
+        int writeCoil(uint16_t address, uint16_t size, uint16_t *buffer);
+        int writeCoil(uint16_t address, uint16_t value);
 
-    /* Read/Write Coil Table */
-    int readCoil(uint16_t address, uint16_t size, uint16_t *buffer);
-    int readCoil(uint16_t address);
-    int writeCoil(uint16_t address, uint16_t size, uint16_t *buffer);
-    int writeCoil(uint16_t address, uint16_t value);
+        /* Write Discrete Input Table */
+        int writeDiscreteInput(uint16_t address, uint16_t size, uint16_t *buffer);
+        int writeDiscreteInput(uint16_t address, uint16_t value);
 
-    /* Write Discrete Input Table */
-    int writeDiscreteInput(uint16_t address, uint16_t size, uint16_t *buffer);
-    int writeDiscreteInput(uint16_t address, uint16_t value);
+        /* Read/Write Holding Register Table */
+        int readHoldingRegister(uint16_t address, uint16_t size, uint16_t *buffer);
+        int readHoldingRegister(uint16_t address);
+        int writeHoldingRegister(uint16_t address, uint16_t size, uint16_t *buffer);
+        int writeHoldingRegister(uint16_t address, uint16_t value);
 
-    /* Read/Write Holding Register Table */
-    int readHoldingRegister(uint16_t address, uint16_t size, uint16_t *buffer);
-    int readHoldingRegister(uint16_t address);
-    int writeHoldingRegister(uint16_t address, uint16_t size, uint16_t *buffer);
-    int writeHoldingRegister(uint16_t address, uint16_t value);
-
-    /* Write Input Register Table */
-    int writeInputRegister(uint16_t address, uint16_t size, uint16_t *buffer);
-    int writeInputRegister(uint16_t address, uint16_t value);
-
-private:
-    void *_privateData;
+        /* Write Input Register Table */
+        int writeInputRegister(uint16_t address, uint16_t size, uint16_t *buffer);
+        int writeInputRegister(uint16_t address, uint16_t value);
 };
 
 #endif

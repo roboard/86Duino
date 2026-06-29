@@ -53,11 +53,6 @@ enum
   SWS_kDatalinkProperty_PrivateMax = 0x7fff
   };
 
-typedef struct SWS_DatalinkPriv
-  {
-  ui32 isPacketDriver;
-  } SWS_DatalinkPriv;
-
 
 #ifdef __cplusplus
 extern "C" {

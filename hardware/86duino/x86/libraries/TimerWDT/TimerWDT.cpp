@@ -254,7 +254,7 @@ static int timerwdt_isr_handler(int irq, void* data) {
     
 	_wdt_disable(wdtn);
     if (rt[wdtn] == RT_MODE) {
-        #if defined (__86DUINO_EX2)
+        #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15)
         if (TimerWDT1.isrCallback != NULL) TimerWDT1.isrCallback();
         #endif
         if (TimerWDT.isrCallback != NULL) TimerWDT.isrCallback();
@@ -269,7 +269,7 @@ static int timerwdt_isr_handler(int irq, void* data) {
 }
 
 static void dpcCallBackFunc(void* data) {
-    #if defined (__86DUINO_EX2)
+    #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15)
     if (TimerWDT1.isrCallback != NULL) TimerWDT1.isrCallback();
     #endif
     if (TimerWDT.isrCallback != NULL) TimerWDT.isrCallback();
@@ -337,7 +337,7 @@ void TimerWatchdogTimer::initialize(long microseconds, bool type) {
 static void UT_LOOP(void) {
     if (UT_flag) {
         if (TimerWDT.isrCallback != NULL) TimerWDT.isrCallback();
-        #if defined (__86DUINO_EX2)
+        #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15)
         if (TimerWDT1.isrCallback != NULL) TimerWDT1.isrCallback();
         #endif
         UT_flag = false;
@@ -473,7 +473,7 @@ bool TimerWatchdogTimer::isResetByWDT(void) {
     return ((tmp & 0x80) == 0) ? (false) : (true);
 }
 
-#if defined (__86DUINO_EX2)
+#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15)
 TimerWatchdogTimer TimerWDT(0);
 TimerWatchdogTimer TimerWDT1(1);
 #else

@@ -38,9 +38,9 @@ TimerRealTimeClock TimerRTC;
 static _HelperTask* _task = NULL;
 static _HelperTask* _taskRTC = NULL;
 
-#if defined (__86DUINO_EX2)
+#if defined (__86DUINO_DUO) || defined (__86DUINO_MOTION9D) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_CYF001)
 static int mc = 11, md = 2;
-#elif defined (__86DUINO_EX)
+#elif defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
 static int mc = 3, md = 2;
 #endif
 

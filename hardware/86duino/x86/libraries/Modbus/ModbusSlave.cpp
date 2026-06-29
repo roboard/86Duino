@@ -23,11 +23,8 @@
 
 #include "ModbusSlave.h"
 #include "ModbusSerialHAL.h"
-#include "ModbusEtherHAL.h"
 #include "modbus-core.h"
 #include "io.h"
-#include <stdlib.h>
-#include <string.h>
 
 #define MAX_CLIENT_NUM  (128)
 #define TIME_SEC        (1)
@@ -98,341 +95,236 @@ static int modbus_cb_mask_write_register(int function, int address, int num, voi
     return currentNode->cbFunc[MODBUS_CB_MASK_WRITE_REGISTER](function, address, num);
 }
 
-struct modbus_slave_node_t
-{
-    modbus_slave_node_t *next;
-    ModbusSlaveNode *node;
-
-    int handled;
-    ModbusSlave *bus;
-    uint8_t slaveId;
-
-    modbus_mapping_t *mapping;
-
-    uint16_t coils[64 * 1024];
-    uint16_t discrete_inputs[64 * 1024];
-    uint16_t holding_registers[64 * 1024];
-    uint16_t input_registers[64 * 1024];
-};
-
-struct modbus_slave_t
-{
-    modbus_slave_node_t *head;
-    modbus_hal_t hal;
-    modbus_t *ctx;
-    int mode;
-
-    int pollState;
-    unsigned long timeout;
-    unsigned long recvTime;
-
-    uint8_t req[MAX_MESSAGE_LENGTH];
-    int req_length;
-    int handle_num;
-};
-
 ModbusSlave::ModbusSlave()
 {
-    this->_privateData = NULL;
+    _mode = MODBUS_RTU;
+    mbus = NULL;
+    currentNode = NULL;
+    timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
+    handle_num = 0;
 }
 
-ModbusSlave::~ModbusSlave()
+bool ModbusSlave::initialize()
 {
-    end();
+    modbus_t *ctx = (modbus_t *)mbus;
+    
+    modbus_set_callback(ctx, MODBUS_FC_READ_COILS              , modbus_cb_read_coils              , NULL);
+    modbus_set_callback(ctx, MODBUS_FC_READ_DISCRETE_INPUTS    , modbus_cb_read_discrete_inputs    , NULL);
+    modbus_set_callback(ctx, MODBUS_FC_READ_HOLDING_REGISTERS  , modbus_cb_read_holding_registers  , NULL);
+    modbus_set_callback(ctx, MODBUS_FC_READ_INPUT_REGISTERS    , modbus_cb_read_input_registers    , NULL);
+    modbus_set_callback(ctx, MODBUS_FC_WRITE_SINGLE_COIL       , modbus_cb_write_single_coil       , NULL);
+    modbus_set_callback(ctx, MODBUS_FC_WRITE_SINGLE_REGISTER   , modbus_cb_write_single_register   , NULL);
+    modbus_set_callback(ctx, MODBUS_FC_WRITE_MULTIPLE_COILS    , modbus_cb_write_multiple_coils    , NULL);
+    modbus_set_callback(ctx, MODBUS_FC_WRITE_MULTIPLE_REGISTERS, modbus_cb_write_multiple_registers, NULL);
+    modbus_set_callback(ctx, MODBUS_FC_MASK_WRITE_REGISTER     , modbus_cb_mask_write_register     , NULL);
+    
+    return true;
+}
+
+int ModbusSlave::poll()
+{
+    modbus_t *ctx = (modbus_t *)mbus;
+    ModbusSlaveNode *tempNode;
+    unsigned long nowTime;
+    int s, slave = -1;
+    
+    if (pollState != 2 && _mode == MODBUS_TCP) {
+        s = modbus_tcp_select(ctx);
+        if (s == -1)
+            return 0;;
+        modbus_set_socket(ctx, s);
+    }
+
+    nowTime = timer_NowTime();
+
+    if (pollState == 0 && modbus_receive_available(ctx) > 0) {
+        pollState = 1;
+        recvTime = nowTime;
+    }
+    
+    if (pollState == 1) {
+
+        req_length = modbus_receive_nowait(ctx, req);
+        if (req_length > 0) {
+            slave = modbus_query_slave(ctx, req, req_length);
+            pollState = 2;
+            handle_num = 0;
+            tempNode = headNode;
+            while (tempNode != NULL) {
+                if (slave == MODBUS_BROADCAST_ADDRESS) {
+                    tempNode->handled++;
+                    handle_num++;
+                } else if (slave == tempNode->slaveID) {
+                    tempNode->handled++;
+                    handle_num++;
+                    break;
+                }
+                tempNode = tempNode->nextNode;
+            }
+            if (handle_num == 0)
+                modbus_ignore_confirmation(ctx);
+        } else if (nowTime - recvTime > timeout) {
+            modbus_flush(ctx);
+            modbus_receive_reset(ctx);
+            pollState = 0;
+        }
+    }
+    
+    return slave;
+}
+
+int ModbusSlave::poll(ModbusSlaveNode *node)
+{
+    modbus_t *ctx = (modbus_t *)mbus;
+    ModbusSlaveNode *tempNode;
+
+    poll();
+
+    if (pollState == 2) {
+        if (node->handled == 1) {
+            currentNode = node;
+            modbus_reply(ctx, req, req_length, (modbus_mapping_t *)node->table);
+            node->handled++;
+            return req_length;
+        } else if (node->handled == 2) {
+            handle_num = 0;
+        }
+        
+        if (handle_num == 0) {
+            pollState = 0;
+            tempNode = headNode;
+            while (tempNode != NULL) {
+                tempNode->handled = 0;
+                tempNode = tempNode->nextNode;
+            }
+        }
+    }
+    
+    return 0;
 }
 
 bool ModbusSlave::begin(int mode, SerialInterface &serial)
 {
-    modbus_slave_t *slave;
+    modbus_hal_t hal = {0};
+    modbus_t *ctx = NULL;
 
-    if (mode != MODBUS_RTU && mode != MODBUS_ASCII)
-        return false;
+    hal.available = modbus_serial_hal_available;
+    hal.flush = modbus_serial_hal_flush;
+    hal.write = modbus_serial_hal_write;
+    hal.read = modbus_serial_hal_read;
+    hal.user_data = &serial;
 
-    if ((slave = (modbus_slave_t *)malloc(sizeof(*slave))) == NULL)
-        return false;
-    memset(slave, 0, sizeof(*slave));
-    slave->mode = mode;
-    slave->timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
-    slave->hal.available = modbus_serial_hal_available;
-    slave->hal.flush = modbus_serial_hal_flush;
-    slave->hal.write = modbus_serial_hal_write;
-    slave->hal.read = modbus_serial_hal_read;
-    slave->hal.user_data = &serial;
-
-    switch (slave->mode) {
+    switch (mode) {
     case MODBUS_RTU:
-        slave->ctx = modbus_new_rtu_ext(&slave->hal);
+        ctx = modbus_new_rtu_ext(&hal);
         break;
     case MODBUS_ASCII:
-        slave->ctx = modbus_new_ascii_ext(&slave->hal);
+        ctx = modbus_new_ascii_ext(&hal);
         break;
     }
-    if (slave->ctx == NULL) {
-        free(slave);
+    if (ctx == NULL)
+        return false;
+
+    modbus_skip_slave(ctx, TRUE);
+    modbus_set_response_timeout(ctx, TIME_SEC, TIME_USEC);
+    _mode = mode;
+    mbus = (void *)ctx;
+    serial.setTimeout(0, 0);
+
+    if (initialize() == false) {
+        modbus_free(ctx);
         return false;
     }
-    modbus_skip_slave(slave->ctx, TRUE);
-    modbus_set_response_timeout(slave->ctx, TIME_SEC, TIME_USEC);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_COILS              , modbus_cb_read_coils              , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_DISCRETE_INPUTS    , modbus_cb_read_discrete_inputs    , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_HOLDING_REGISTERS  , modbus_cb_read_holding_registers  , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_INPUT_REGISTERS    , modbus_cb_read_input_registers    , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_SINGLE_COIL       , modbus_cb_write_single_coil       , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_SINGLE_REGISTER   , modbus_cb_write_single_register   , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_MULTIPLE_COILS    , modbus_cb_write_multiple_coils    , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_MULTIPLE_REGISTERS, modbus_cb_write_multiple_registers, NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_MASK_WRITE_REGISTER     , modbus_cb_mask_write_register     , NULL);
-    serial.setTimeout(0, 0);
-    this->_privateData = slave;
 
     return true;
 }
 
 bool ModbusSlave::begin(int mode, uint16_t port)
 {
-    return begin(mode, port, Ethernet);
-}
-
-bool ModbusSlave::begin(int mode, uint16_t port, EthernetClass &ethernet)
-{
-    modbus_slave_t *slave;
-    modbus_ether_hal_t *ether;
-
-    if (mode != MODBUS_TCP)
+    modbus_t *ctx = NULL;
+    
+    if (mode == MODBUS_TCP)
+        ctx = modbus_new_tcp(NULL, port);
+    
+    if (ctx == NULL)
         return false;
 
-    if ((ether = new modbus_ether_hal_t(port, ethernet)) == NULL)
-        return false;
-    ether->pClient = NULL;
-
-    if ((slave = (modbus_slave_t *)malloc(sizeof(*slave))) == NULL) {
-        delete ether;
-        return false;
-    }
-    memset(slave, 0, sizeof(*slave));
-    slave->mode = mode;
-    slave->timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
-    slave->hal.user_data = ether;
-    slave->hal.connect = modbus_ether_hal_connect;
-    slave->hal.disconnect = modbus_ether_hal_disconnect;
-    slave->hal.available = modbus_ether_hal_available;
-    slave->hal.flush = modbus_ether_hal_flush;
-    slave->hal.write = modbus_ether_hal_write;
-    slave->hal.read = modbus_ether_hal_read;
-    slave->hal.server_begin = modbus_ether_hal_server_begin;
-    slave->hal.server_available = modbus_ether_hal_server_available;
-
-    if ((slave->ctx = modbus_new_tcp_ext(&slave->hal, NULL, port)) == NULL) {
-        free(slave);
-        delete ether;
+    modbus_skip_slave(ctx, TRUE);
+    modbus_tcp_listen(ctx, MAX_CLIENT_NUM);
+    modbus_set_response_timeout(ctx, TIME_SEC, TIME_USEC);
+    
+    _mode = mode;
+    mbus = (void *)ctx;
+    
+    if (initialize() == false) {
+        modbus_free(ctx);
         return false;
     }
-    modbus_skip_slave(slave->ctx, TRUE);
-    modbus_tcp_listen2(slave->ctx, MAX_CLIENT_NUM);
-    modbus_set_response_timeout(slave->ctx, TIME_SEC, TIME_USEC);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_COILS              , modbus_cb_read_coils              , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_DISCRETE_INPUTS    , modbus_cb_read_discrete_inputs    , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_HOLDING_REGISTERS  , modbus_cb_read_holding_registers  , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_READ_INPUT_REGISTERS    , modbus_cb_read_input_registers    , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_SINGLE_COIL       , modbus_cb_write_single_coil       , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_SINGLE_REGISTER   , modbus_cb_write_single_register   , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_MULTIPLE_COILS    , modbus_cb_write_multiple_coils    , NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_WRITE_MULTIPLE_REGISTERS, modbus_cb_write_multiple_registers, NULL);
-    modbus_set_callback(slave->ctx, MODBUS_FC_MASK_WRITE_REGISTER     , modbus_cb_mask_write_register     , NULL);
-    this->_privateData = slave;
 
     return true;
 }
 
-void ModbusSlave::end()
-{
-    modbus_slave_t *slave = (modbus_slave_t *)this->_privateData;
-
-    if (slave == NULL)
-        return;
-
-    modbus_close(slave->ctx);
-    modbus_free(slave->ctx);
-    switch (slave->mode) {
-    case MODBUS_RTU:
-    case MODBUS_ASCII:
-        break;
-    case MODBUS_TCP:
-        delete (modbus_ether_hal_t *)slave->hal.user_data;
-        break;
-    }
-    free(slave);
-    this->_privateData = NULL;
-}
-
-int ModbusSlave::getModbusMode()
-{
-    modbus_slave_t *slave = (modbus_slave_t *)this->_privateData;
-    if (slave == NULL)
-        return MODBUS_RTU;
-    return slave->mode;
-}
-
 void ModbusSlave::setTimeout(uint32_t milliseconds)
 {
-    modbus_slave_t *slave = (modbus_slave_t *)this->_privateData;
-    if (slave == NULL)
-        return;
-    slave->timeout = milliseconds;
+    timeout = milliseconds;
 }
 
-int ModbusSlave::poll()
+void ModbusSlave::addNode(ModbusSlaveNode *node)
 {
-    modbus_slave_t *slave = (modbus_slave_t *)this->_privateData;
-    modbus_slave_node_t *temp;
-    unsigned long nowtime;
-    int slaveid = -1;
-
-    if (slave->pollState != 2 && slave->mode == MODBUS_TCP) {
-        int s = modbus_tcp_available2(slave->ctx);
-        if (s == -1)
-            return -1;
-        modbus_set_socket(slave->ctx, s);
-    }
-
-    nowtime = timer_NowTime();
-
-    if (slave->pollState == 0 && modbus_receive_available(slave->ctx) > 0) {
-        slave->pollState = 1;
-        slave->recvTime = nowtime;
-    }
-
-    if (slave->pollState == 1) {
-        slave->req_length = modbus_receive_nowait(slave->ctx, slave->req);
-        if (slave->req_length > 0) {
-            slaveid = modbus_query_slave(slave->ctx, slave->req, slave->req_length);
-            slave->pollState = 2;
-            slave->handle_num = 0;
-            temp = slave->head;
-            while (temp != NULL) {
-                if (slaveid == MODBUS_BROADCAST_ADDRESS) {
-                    temp->handled++;
-                    slave->handle_num++;
-                } else if (slaveid == temp->slaveId) {
-                    temp->handled++;
-                    slave->handle_num++;
-                    break;
-                }
-                temp = temp->next;
-            }
-            if (slave->handle_num == 0)
-                modbus_ignore_confirmation(slave->ctx);
-        } else if (nowtime - slave->recvTime > slave->timeout) {
-            modbus_flush(slave->ctx);
-            modbus_receive_reset(slave->ctx);
-            slave->pollState = 0;
-        }
-    }
-
-    return slaveid;
-}
-
-int ModbusSlave::poll(void *data)
-{
-    modbus_slave_t *slave = (modbus_slave_t *)this->_privateData;
-    modbus_slave_node_t *node = (modbus_slave_node_t *)data;
-    modbus_slave_node_t *temp;
-
-    poll();
-
-    if (slave->pollState == 2) {
-        if (node->handled == 1) {
-            currentNode = node->node;
-            modbus_reply(slave->ctx, slave->req, slave->req_length, (modbus_mapping_t *)node->mapping);
-            node->handled++;
-            return slave->req_length;
-        } else if (node->handled == 2) {
-            slave->handle_num = 0;
-        }
-
-        if (slave->handle_num == 0) {
-            slave->pollState = 0;
-            temp = slave->head;
-            while (temp != NULL) {
-                temp->handled = 0;
-                temp = temp->next;
-            }
-        }
-    }
-
-    return 0;
-}
-
-void ModbusSlave::addNode(void *data)
-{
-    modbus_slave_t *slave = (modbus_slave_t *)this->_privateData;
-    modbus_slave_node_t *node = (modbus_slave_node_t *)data;
-    modbus_slave_node_t *temp;
-
-    if (slave == NULL)
-        return;
-
-    if (slave->head == NULL)
-        slave->head = node;
+    ModbusSlaveNode *tempNode;
+    
+    if (headNode == NULL)
+        headNode = node;
     else {
-        temp = slave->head;
+        tempNode = headNode;
         do {
-            if (node == temp)
+            if (node == tempNode)
                 return;
-            if (temp->next == NULL)
+            if (tempNode->nextNode == NULL)
                 break;
-            temp = temp->next;
-        } while (temp != NULL);
-        temp->next = node;
+            tempNode = tempNode->nextNode;
+        } while (tempNode != NULL);
+        tempNode->nextNode = node;
     }
 }
 
 ModbusSlaveNode::ModbusSlaveNode()
 {
-    this->_privateData = NULL;
-}
-
-ModbusSlaveNode::~ModbusSlaveNode()
-{
-    detach();
+    slave = NULL;
+    slaveID = MODBUS_BROADCAST_ADDRESS;
+    nextNode = NULL;
+    handled = 0;
 }
 
 bool ModbusSlaveNode::attach(ModbusSlave &bus)
 {
-    return attach((bus.getModbusMode() == MODBUS_TCP) ? MODBUS_TCP_SLAVE : MODBUS_BROADCAST_ADDRESS, bus);
+    ModbusSlave *s = &bus;
+    
+    if (s == NULL)
+        return false;
+    
+    if (s->_mode == MODBUS_TCP)
+        return begin(MODBUS_TCP_SLAVE, bus);
+    
+    return attach(MODBUS_BROADCAST_ADDRESS, bus);
 }
 
 bool ModbusSlaveNode::attach(uint8_t slave_id, ModbusSlave &bus)
 {
-    modbus_slave_node_t *node;
-
-    if ((node = (modbus_slave_node_t *)malloc(sizeof(*node))) == NULL)
+    slave = &bus;
+    
+    if (slave == NULL)
         return false;
-    memset(node, 0, sizeof(*node));
-    node->bus = &bus;
-    node->slaveId = slave_id;
-    node->node = this;
-
-    if ((node->mapping = modbus_mapping_create()) == NULL) {
-        free(node);
+    
+    table = (void *)modbus_mapping_create();
+    if (table == NULL)
         return false;
-    }
-    node->bus->addNode(node);
-    this->_privateData = node;
-
+    
+    slave->addNode(this);
+    
+    slaveID = slave_id;
+    
     return true;
-}
-
-void ModbusSlaveNode::detach()
-{
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
-
-    if (node == NULL)
-        return;
-
-    modbus_mapping_free(node->mapping);
-    free(node);
-    this->_privateData = NULL;
 }
 
 bool ModbusSlaveNode::begin(ModbusSlave &bus)
@@ -447,81 +339,83 @@ bool ModbusSlaveNode::begin(uint8_t slave_id, ModbusSlave &bus)
 
 int ModbusSlaveNode::poll()
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
 
-    if (node == NULL)
+    if (tab == NULL)
         return 0;
 
-    modbus_mapping_bits_assign(node->mapping, node->coils, 0, sizeof(node->coils));
-    modbus_mapping_input_bits_assign(node->mapping, node->discrete_inputs, 0, sizeof(node->discrete_inputs));
-    modbus_mapping_registers_assign(node->mapping, node->holding_registers, 0, sizeof(node->holding_registers));
-    modbus_mapping_input_registers_assign(node->mapping, node->input_registers, 0, sizeof(node->input_registers));
+    if (slave == NULL)
+        return 0;
 
-    return node->bus->poll(node);
+    modbus_mapping_bits_assign(tab, coils, 0, MODBUS_MAX_TABLE_SIZE);
+    modbus_mapping_input_bits_assign(tab, discrete_inputs, 0, MODBUS_MAX_TABLE_SIZE);
+    modbus_mapping_registers_assign(tab, holding_registers, 0, MODBUS_MAX_TABLE_SIZE);
+    modbus_mapping_input_registers_assign(tab, input_registers, 0, MODBUS_MAX_TABLE_SIZE);
+
+    return slave->poll(this);
 }
 
 int ModbusSlaveNode::poll(uint16_t *buf, uint16_t size)
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
 
-    if (node == NULL)
+    if (tab == NULL)
         return 0;
 
-    modbus_mapping_bits_assign(node->mapping, buf, 0, size);
-    modbus_mapping_input_bits_assign(node->mapping, buf, 0, size);
-    modbus_mapping_registers_assign(node->mapping, buf, 0, size);
-    modbus_mapping_input_registers_assign(node->mapping, buf, 0, size);
+    if (slave == NULL)
+        return 0;
 
-    return node->bus->poll(node);
+    modbus_mapping_bits_assign(tab, buf, 0, size);
+    modbus_mapping_input_bits_assign(tab, buf, 0, size);
+    modbus_mapping_registers_assign(tab, buf, 0, size);
+    modbus_mapping_input_registers_assign(tab, buf, 0, size);
+
+    return slave->poll(this);
 }
 
 int ModbusSlaveNode::readCoil(uint16_t address, uint16_t size, uint16_t *buffer)
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
-    int mapping_address;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
+    int mapping_address = address - tab->start_bits;
+    int i;
 
-    if (node == NULL)
-        return MODBUS_INVALID_BUS;
     if (size < 1 || MODBUS_MAX_READ_BITS < size)
         return MODBUS_ILLEGAL_DATA_VALUE;
-
-    mapping_address = address - node->mapping->start_bits;
-    if (mapping_address < 0 || (mapping_address + size) > node->mapping->nb_bits)
+    
+    if (mapping_address < 0 || (mapping_address + size) > tab->nb_bits)
         return MODBUS_ILLEGAL_DATA_ADDRESS;
-
-    for (int i = 0; i < size; i++)
-        buffer[i] = node->mapping->tab_bits[mapping_address + i];
-
+    
+    for (i = 0; i < size; i++)
+        buffer[i] = tab->tab_bits[mapping_address + i];
+    
     return MODBUS_SUCCESS;
 }
 
 int ModbusSlaveNode::readCoil(uint16_t address)
 {
     uint16_t value;
-
+    
     if (readCoil(address, 1, &value) != MODBUS_SUCCESS)
         return -1;
-
+    
     return (value & 0x01) ? MODBUS_COIL_ON : MODBUS_COIL_OFF;
 }
 
 int ModbusSlaveNode::writeCoil(uint16_t address, uint16_t size, uint16_t *buffer)
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
-    int mapping_address;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
+    int mapping_address = address - tab->start_bits;
+    int i;
 
-    if (node == NULL)
-        return MODBUS_INVALID_BUS;
     if (size < 1 || MODBUS_MAX_WRITE_BITS < size)
         return MODBUS_ILLEGAL_DATA_VALUE;
-
-    mapping_address = address - node->mapping->start_bits;
-    if (mapping_address < 0 || (mapping_address + size) > node->mapping->nb_bits)
+    
+    if (mapping_address < 0 || (mapping_address + size) > tab->nb_bits)
         return MODBUS_ILLEGAL_DATA_ADDRESS;
-
-    for (int i = 0; i < size; i++)
-        node->mapping->tab_bits[mapping_address + i] = buffer[i] ? 1 : 0;
-
+    
+    for (i = 0; i < size; i++)
+        tab->tab_bits[mapping_address + i] = buffer[i] ? 1 : 0;
+    
     return MODBUS_SUCCESS;
 }
 
@@ -532,21 +426,19 @@ int ModbusSlaveNode::writeCoil(uint16_t address, uint16_t value)
 
 int ModbusSlaveNode::writeDiscreteInput(uint16_t address, uint16_t size, uint16_t *buffer)
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
-    int mapping_address;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
+    int mapping_address = address - tab->start_input_bits;
+    int i;
 
-    if (node == NULL)
-        return MODBUS_INVALID_BUS;
     if (size < 1 || MODBUS_MAX_READ_BITS < size)
         return MODBUS_ILLEGAL_DATA_VALUE;
-
-    mapping_address = address - node->mapping->start_input_bits;
-    if (mapping_address < 0 || (mapping_address + size) > node->mapping->nb_input_bits)
+    
+    if (mapping_address < 0 || (mapping_address + size) > tab->nb_input_bits)
         return MODBUS_ILLEGAL_DATA_ADDRESS;
-
-    for (int i = 0; i < size; i++)
-        node->mapping->tab_input_bits[mapping_address + i] = buffer[i];
-
+    
+    for (i = 0; i < size; i++)
+        tab->tab_input_bits[mapping_address + i] = buffer[i];
+    
     return MODBUS_SUCCESS;
 }
 
@@ -557,51 +449,47 @@ int ModbusSlaveNode::writeDiscreteInput(uint16_t address, uint16_t value)
 
 int ModbusSlaveNode::readHoldingRegister(uint16_t address, uint16_t size, uint16_t *buffer)
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
-    int mapping_address;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
+    int mapping_address = address - tab->start_registers;
+    int i;
 
-    if (node == NULL)
-        return MODBUS_INVALID_BUS;
     if (size < 1 || MODBUS_MAX_READ_REGISTERS < size)
         return MODBUS_ILLEGAL_DATA_VALUE;
-
-    mapping_address = address - node->mapping->start_registers;
-    if (mapping_address < 0 || (mapping_address + size) > node->mapping->nb_registers)
+    
+    if (mapping_address < 0 || (mapping_address + size) > tab->nb_registers)
         return MODBUS_ILLEGAL_DATA_ADDRESS;
-
-    for (int i = 0; i < size; i++)
-        buffer[i] = node->mapping->tab_registers[mapping_address + i];
-
+    
+    for (i = 0; i < size; i++)
+        buffer[i] = tab->tab_registers[mapping_address + i];
+    
     return MODBUS_SUCCESS;
 }
 
 int ModbusSlaveNode::readHoldingRegister(uint16_t address)
 {
     uint16_t value;
-
+    
     if (readHoldingRegister(address, 1, &value) != MODBUS_SUCCESS)
         return -1;
-
+    
     return value;
 }
 
 int ModbusSlaveNode::writeHoldingRegister(uint16_t address, uint16_t size, uint16_t *buffer)
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
-    int mapping_address;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
+    int mapping_address = address - tab->start_registers;
+    int i;
 
-    if (node == NULL)
-        return MODBUS_INVALID_BUS;
     if (size < 1 || MODBUS_MAX_WRITE_REGISTERS < size)
         return MODBUS_ILLEGAL_DATA_VALUE;
-
-    mapping_address = address - node->mapping->start_registers;
-    if (mapping_address < 0 || (mapping_address + size) > node->mapping->nb_registers)
+    
+    if (mapping_address < 0 || (mapping_address + size) > tab->nb_registers)
         return MODBUS_ILLEGAL_DATA_ADDRESS;
-
-    for (int i = 0; i < size; i++)
-         node->mapping->tab_registers[mapping_address + i] = buffer[i];
-
+    
+    for (i = 0; i < size; i++)
+         tab->tab_registers[mapping_address + i] = buffer[i];
+    
     return MODBUS_SUCCESS;
 }
 
@@ -612,21 +500,19 @@ int ModbusSlaveNode::writeHoldingRegister(uint16_t address, uint16_t value)
 
 int ModbusSlaveNode::writeInputRegister(uint16_t address, uint16_t size, uint16_t *buffer)
 {
-    modbus_slave_node_t *node = (modbus_slave_node_t *)this->_privateData;
-    int mapping_address;
+    modbus_mapping_t *tab = (modbus_mapping_t *)table;
+    int mapping_address = address - tab->start_input_registers;
+    int i;
 
-    if (node == NULL)
-        return MODBUS_INVALID_BUS;
     if (size < 1 || MODBUS_MAX_READ_REGISTERS < size)
         return MODBUS_ILLEGAL_DATA_VALUE;
-
-    mapping_address = address - node->mapping->start_input_registers;
-    if (mapping_address < 0 || (mapping_address + size) > node->mapping->nb_input_registers)
+    
+    if (mapping_address < 0 || (mapping_address + size) > tab->nb_input_registers)
         return MODBUS_ILLEGAL_DATA_ADDRESS;
-
-    for (int i = 0; i < size; i++)
-        node->mapping->tab_input_registers[mapping_address + i] = buffer[i];
-
+    
+    for (i = 0; i < size; i++)
+        tab->tab_input_registers[mapping_address + i] = buffer[i];
+    
     return MODBUS_SUCCESS;
 }
 

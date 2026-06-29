@@ -47,7 +47,7 @@ enum EthercatMailboxProtocol {
 
 typedef volatile uint8_t *PdoBufferPtr;
 
-class EthercatDevice;
+class EthercatDevice_CiA402;
 class EthercatMaster {
 
 public:
@@ -59,7 +59,6 @@ public:
 
     /* EtherCAT Master Initialize. All slaves will enter PRE-OP state if success. */
     int begin(EthernetPort eth = ECAT_ETH_0, const char *eni_filename = NULL);
-    int begin(uint64_t cycletime_ns, EthernetPort eth = ECAT_ETH_0, const char *eni_filename = NULL);
     /* EtherCAT Master shutdown. */
     void end();
 
@@ -307,6 +306,11 @@ public:
     int getSoEChannels(uint16_t slave_no);
     int isSupportDC(uint16_t slave_no);
 
+    int __addCiA402__(EthercatDevice_CiA402 *device, uint16_t slave_no, uint32_t drive_id);
+    int __delCiA402__(size_t id);
+    int __inInterrupt__();
+    uint64_t __getCycleTime__();
+
     /* For internal use. */
     int getErrorCallbackData(void *data, size_t size);
     int getEventCallbackData(void *data, size_t size);
@@ -315,33 +319,16 @@ public:
     uint32_t getFreeSystemMemory();
     uint32_t getFreeSharedMemory();
     int __begin1__(EthernetPort eth = ECAT_ETH_0, const char *eni_filename = NULL);
-    int __begin1__(uint64_t cycletime_ns, EthernetPort eth = ECAT_ETH_0, const char *eni_filename = NULL);
     int __begin2__();
-    uint64_t __getCycleTime__();
-
-    class Passkey {
-    public:
-        ~Passkey() = default;
-    private:
-        Passkey() = default;
-        friend class EthercatDevice;
-    };
-    int addDevice(Passkey, EthercatDevice *device, uint16_t slave_no, uint32_t sub_id = 0);
-    int delDevice(Passkey, uint16_t slave_no, uint32_t sub_id = 0);
-    int inInterrupt(Passkey);
-    uint64_t getCycleTime(Passkey);
 
 private:
     void *private_data;
     char libVersion[128];
     EthercatMasterSettings settings;
-    CyclicCallbackType UserCyclicCallback;
     ErrorCallbackType UserErrorCallback;
     EventCallbackType UserEventCallback;
     bool UserErrorCallbackUseFPU;
     bool UserEventCallbackUseFPU;
-    bool UserCyclicCallbackUseDPC;
-    bool UserCyclicCallbackUseFPU;
 
 };
 

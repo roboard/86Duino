@@ -1,0 +1,1 @@
+-lswresample -lavformat -lavcodec -lavfilter -lswscale -lavutil -lmp3lame -lz

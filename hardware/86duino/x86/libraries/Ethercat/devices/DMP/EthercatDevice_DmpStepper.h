@@ -2,7 +2,6 @@
 #define ___WZ_ETHERCAT_DEVICE_DMP_STEPPER_H
 
 #include "EthercatDevice_DmpCommon.h"
-#include "EthercatDevice_CiA402.h"
 #include <stdint.h>
 
 class EthercatDevice_QECR11MP3S;

@@ -9,37 +9,34 @@
 #COMMENTS /**/ COLOR		#434F54	- DARK GREY
 
 # GUI - STATUS
-# 字體顏色
 status.notice.fgcolor = #000066
-# 背景顏色
-status.notice.bgcolor = #59AFD0
-# 發生錯誤時的字體顏色
-status.error.fgcolor = #CC0000
-# 發生錯誤時的背景顏色
-status.error.bgcolor = #FFCCCC
-# 開新 tab 時的字體顏色
+status.notice.bgcolor = #7EA3D0
+status.error.fgcolor = #640000
+status.error.bgcolor = #CC5E6B
 status.edit.fgcolor = #000000
-# 開新 tab 時的背景顏色
-status.edit.bgcolor = #82CEE6
+status.edit.bgcolor = #648CB4
 status.font = SansSerif,plain,12
 
 # GUI - TABS
 # settings for the tabs at the top
 # (tab images are stored in the lib/theme folder)
 # header.bgcolor = #17A1A5
-# header.text.selected.color = #005B5B
+# header.text.selected.color = #FFCCCC
 # header.text.unselected.color = #007e82
 # header.text.font = SansSerif,plain,12
 
-# TAB 列的顏色
-#
-# 背景顏色
-header.bgcolor = #083E88
-# user 滑鼠有選到 TAB 的字體顏色
-header.text.selected.color = #005B5B
-# user 滑鼠未選到 TAB 的字體顏色
-header.text.unselected.color = #003399
-header.text.font = SansSerif,plain,12
+header.bgcolor = #8BB7E7
+header.text.selected.color = #000000
+header.text.unselected.color = #768399
+#header.text.font = Lucida Console Regular,plain,11
+#header.text.font = SansSerif,plain,12
+#header.text.font = SourceDejaVu,plain,11
+#header.text.font = DejaVuSansMono YaHei NF,plain,11
+#header.text.font = FiraCode QiHei NF,plain,11
+#header.text.font = Source Cascadia,plain,11
+header.text.font = Hack,plain,11
+#header.text.font = Sarasa Term CL Regular,plain,11
+#header.text.font = Hack,plain,11
 
 # GUI - CONSOLE
 # console.font = Monospaced,plain,11
@@ -48,25 +45,45 @@ header.text.font = SansSerif,plain,12
 # console.output.color = #eeeeee
 # console.error.color = #E34C00
 
-console.font = Monospaced,plain,11
-console.font.macosx = Monaco,plain,10
-# 訊息框的背景顏色
-console.color = #111111
-# 正確訊息輸出的字體顏色
-console.output.color = #AAAAAA
-# 錯誤訊息輸出的字體顏色
-console.error.color = #E34C00
+#console.font = SansSerif,plain,10
+#console.font = SourceDejaVu,plain,9
+#console.font = DejaVuSansMono YaHei NF,plain,9
+console.font = Hack,plain,9
+#console.font = FiraCode QiHei NF,plain,9
+#console.font = Source Han Mono EL,plain,9
+#console.font = Lucida Console Regular,plain,9
+console.font.macosx = Monaco,plain,12
+console.color = #303640 
+#console.output.color = #90BD49
+console.output.color = #87FDFF
+#console.output.color = #5CF6E4
+#console.output.color = #ADFFFB
+#console.error.color = #C73D41
+console.error.color = #F27295
 
 # GUI - BUTTONS
 # buttons.bgcolor = #006468
 # buttons.status.font = SansSerif,plain,12
 # buttons.status.color = #ffffff
 
-# 最上排的按鈕背景顏色
-buttons.bgcolor = #0065B3
-buttons.status.font = SansSerif,bold,12
-# 滑鼠碰到按鈕時的字體顏色
-buttons.status.color = #FFFF00
+buttons.bgcolor = #6686BA
+#buttons.status.font = SansSerif,bold,11
+#buttons.status.font = Hack,plain,11
+#buttons.status.font = Lucida Console Regular,plain,11
+#buttons.status.font = Source Han Mono EL,plain,11
+#buttons.status.font = SourceDejaVu,plain,9
+#buttons.status.font = DejaVuSansMono YaHei NF,plain,11
+#buttons.status.font = FiraCode QiHei NF,plain,11
+#buttons.status.font = Source Cascadia,plain,11
+buttons.status.font = Hack,plain,11
+#buttons.status.color = #FFD2AA
+#buttons.status.color = #F9BF98
+#buttons.status.color = #F9DAC6
+#buttons.status.color = #FFF0E5
+#buttons.status.color = #FFFFFF
+#buttons.status.color = #EE9C37
+buttons.status.color = #EDD295
+
 
 # GUI - PLOTTING
 # color cycle created via colorbrewer2.org
@@ -85,30 +102,25 @@ plotting.graphcolor.06 = #00CCFF
 plotting.graphcolor.07 = #000000
 
 # GUI - LINESTATUS
-# 最下面狀態列的字體顏色
-linestatus.color = #00CCFF
-# 最下面狀態列的背景顏色
-linestatus.bgcolor = #093F89
+linestatus.color = #ffffff
+linestatus.bgcolor = #3C4B78
 
 # EDITOR - DETAILS
 # foreground and background colors
 # editor.fgcolor = #000000
 # editor.bgcolor = #ffffff
 
-# 寫程式區域的字體顏色
 editor.fgcolor = #000000
-# 寫程式區域的背景顏色
-editor.bgcolor = #FFFFFF
+editor.bgcolor = #FEFCFF
 
 # highlight for the current line
 # editor.linehighlight.color=#e2e2e2
-editor.linehighlight.color=#d7e9ed
+editor.linehighlight.color= #F1F4F5
 # highlight for the current line
 editor.linehighlight=true
 
 # caret blinking and caret color
 # editor.caret.color = #333300
-# 游標顏色
 editor.caret.color = #333300
 
 # color to be used for background when 'external editor' enabled
@@ -117,8 +129,7 @@ editor.external.bgcolor = #c8d2dc
 
 # selection color
 # editor.selection.color = #ffcc00
-# 用滑鼠框起指定區域時的背景顏色
-editor.selection.color = #00CCFF
+editor.selection.color = #FFCD91
 
 # area that's not in use by the text (replaced with tildes)
 editor.invalid.style = #7e7e7e,bold
@@ -136,26 +147,26 @@ editor.brackethighlight.color = #006699
 
 # FUNCTIONS
 editor.keyword1.style = #d35400,bold
-editor.data_type.style = #d35400,bold
+editor.data_type.style = #E07B48,bold 
 
 # METHODS
 editor.keyword2.style = #D35400,plain
-editor.function.style = #d35400,plain
+editor.function.style = #E07B48,bold 
 
 # STRUCTURES
 editor.keyword3.style = #5E6D03,plain
-editor.reserved_word.style = #5E6D03,plain
+editor.reserved_word.style = #06938A,bold 
 
 
 # TEXT - LITERALS
 editor.literal1.style = #00979C,plain
 editor.literal2.style = #00979C,plain
 editor.variable.style = #00979C,plain
-editor.reserved_word_2.style = #00979C,plain
-editor.literal_boolean.style = #00979C,plain
-editor.literal_char.style = #00979C,plain
-editor.literal_string_double_quote.style = #005C5F,plain
-editor.preprocessor.style = #5E6D03,plain
+editor.reserved_word_2.style = #89B136,bold   
+editor.literal_boolean.style = #75689C,plain  
+editor.literal_char.style = #EC96B1,plain
+editor.literal_string_double_quote.style = #EC96B1,plain  
+editor.preprocessor.style = #BBA40B,bold  
 
 # http://www.arduino.cc/
 editor.url.style = #0000ff,underlined
@@ -170,8 +181,8 @@ editor.label.style = #7e7e7e,bold
 
 
 # TEXT - COMMENTS
-editor.comment1.style = #434F54,plain
-editor.comment2.style = #95a5a6,plain
+editor.comment1.style = #95a5a6,plain  
+editor.comment2.style = #95a5a6,plain 
 
 
 # LINE STATUS - editor line number status bar at the bottom of the screen

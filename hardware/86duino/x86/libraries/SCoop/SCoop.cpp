@@ -14,7 +14,7 @@
 
 SCoopEvent*   SCoopFirstItem = NULL;           // has to be initialized here. hold a pointer on the whole list of task/event/timer...
 SCoopEvent*   SCoopFirstTaskItem = NULL;       // has to be initialized here. points to the first of all tasks registered in the list
-uint16_t      SCoopNumberTask = 0;             // hold the number of task registered. used to calculate quantum in start(xxx)
+uint8_t       SCoopNumberTask = 0;             // hold the number of task registered. used to calculate quantum in start(xxx)
 
 
 SCoop  SCoopInstanceNickName;                  // then we can use the library in the main sketch directly
@@ -614,8 +614,6 @@ void SCoop::start(micros_t cycleTime) {          // define the total length of t
   
 
 void SCoop::start() {                          // start all objects in the list
-    if (SCoopNumberTask == 0) return;
-    
     targetCycleMicros = quantumMicros;            // initialization
 #if SCoopYIELDCYCLE == 0
     quantumMicrosReal = quantumMicros / SCoopNumberTask;  // divide time in slice, as we come back here at each task switch...
@@ -642,37 +640,34 @@ void SCoop::yield0() {                        // can be called from where ever i
 }
 
 void SCoop::yield() {                         // can be called from where ever in order to Force the switch to next task
-    if (SCoopNumberTask) {
-        
-        coroutineState = IN_SCOOP; // 86Duino
-        
-        st = timer_GetClocks64() - scoopT;
-        
-        if (st > (cpuFreq * 1000000LL)) {
-            SCoopEvent* temp = NULL;
-            temp = SCoopFirstTaskItem;
-            // int i = 0;
-            while (temp != NULL) {
-                if (temp->runTimes > 0) {
-                    temp->prevRunTimes = temp->runTimes;
-                    temp->averageClocks = temp->spentClocks / temp->runTimes;
-                    allSpentClocks += temp->averageClocks;
-                }
-                // printf("%d>%llu ", i++, temp->spentClocks);
-                temp->spentClocks = temp->runTimes = 0;
-                temp = temp->pNext;
+    coroutineState = IN_SCOOP; // 86Duino
+    
+    st = timer_GetClocks64() - scoopT;
+    
+    if (st > (cpuFreq * 1000000LL)) {
+        SCoopEvent* temp = NULL;
+        temp = SCoopFirstTaskItem;
+        // int i = 0;
+        while (temp != NULL) {
+            if (temp->runTimes > 0) {
+                temp->prevRunTimes = temp->runTimes;
+                temp->averageClocks = temp->spentClocks / temp->runTimes;
+                allSpentClocks += temp->averageClocks;
             }
-            if (mainRunTimes > 0) {
-                prevMainRunTimes = mainRunTimes;
-                averageClocks = mainSpentClocks / mainRunTimes;
-                allSpentClocks += averageClocks;
-            }
-            // printf("%llu \n", mainRunTimes);
-            mainSpentClocks = mainRunTimes = 0;
-            prevBusyCPU = ((double)allSpentClocks / (double)st) * 100.0;
-            allSpentClocks = 0;
-            scoopT = timer_GetClocks64();
+            // printf("%d>%llu ", i++, temp->spentClocks);
+            temp->spentClocks = temp->runTimes = 0;
+            temp = temp->pNext;
         }
+        if (mainRunTimes > 0) {
+            prevMainRunTimes = mainRunTimes;
+            averageClocks = mainSpentClocks / mainRunTimes;
+            allSpentClocks += averageClocks;
+        }
+        // printf("%llu \n", mainRunTimes);
+        mainSpentClocks = mainRunTimes = 0;
+        prevBusyCPU = ((double)allSpentClocks / (double)st) * 100.0;
+        allSpentClocks = 0;
+        scoopT = timer_GetClocks64();
     }
     
     if (Task) {

@@ -20,8 +20,12 @@
    to get more information.)
 */
 
+#include "SwsSock.h"
+#include "EthernetUdp.h"
+
 #include "Dns.h"
-#include "sws_sock.h"
+#include <string.h>
+#include "stdint.h"
 
 DNSClient::DNSClient()
 {

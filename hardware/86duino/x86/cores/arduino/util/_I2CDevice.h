@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
 
 #include "_Wire.h"
 
@@ -36,6 +36,6 @@ private:
   bool _read(uint8_t *buffer, size_t len, bool stop);
 };
 
-#endif
+#endif // if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
 
 #endif // Adafruit_I2CDevice_h

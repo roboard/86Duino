@@ -123,16 +123,6 @@ char* getBoardName(void) {
             sprintf(boardName, "QEC-M-150T");
         } else if (strcmp(buf, "QECM2") == 0) {
             sprintf(boardName, "QEC-M-01");
-        } else if (strcmp(buf, "QECM02") == 0) {
-            sprintf(boardName, "QEC-M-02");
-        } else if (strcmp(buf, "QECPPC9") == 0) {
-            sprintf(boardName, "QEC-PPC-090T");
-        } else if (strcmp(buf, "QEC104") == 0) {
-            sprintf(boardName, "QEC-PPC-104T");
-        } else if (strcmp(buf, "PPC9S") == 0) {
-            sprintf(boardName, "PPC-090T");
-        } else if (strcmp(buf, "PPC15S") == 0) {
-            sprintf(boardName, "PPC-150T");
         } else {
             sprintf(boardName, "No such board");
         }

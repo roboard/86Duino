@@ -26,7 +26,7 @@ void setIntervalTimeForPowerDetected(unsigned long t) {
     intervalTime = t;
 }
 
-#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
 
 static _HelperTask* _taskRTC = NULL;
 
@@ -156,7 +156,7 @@ void reloadVpVsIpIsFromFile() {
 // Release Function as below.
 extern unsigned long long _millis(); // in wiring.cpp
 void QECPowerLedWork() {
-    #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+    #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
     
         static int t_state = 0, t_led = 0, state = 0;
         
@@ -178,7 +178,7 @@ void QECPowerLedWork() {
 }
 
 void detectQECInfoInit(void) {
-    #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+    #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
 
         EncExV.begin(MODE_CAPTURE);
         EncExV.attachInterrupt(readcb); // just enable MCM, no interrupt function
@@ -186,7 +186,7 @@ void detectQECInfoInit(void) {
         #if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02)
         pinMode(POWER_LED_RED, OUTPUT); // GPIO Port 6 DIR bit 0、1 => output
         pinMode(POWER_LED_GREEN, OUTPUT);
-        #elif defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+        #elif defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
         detectIsIp_Init(); delay(20); _getIp(); delay(20); _getIs();
         setIntervalTimeForPowerDetected(2000); // Get Vs, Vp, Is, Ip every 2 seconds.
         #endif

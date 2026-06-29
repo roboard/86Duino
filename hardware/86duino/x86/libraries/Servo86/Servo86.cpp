@@ -106,11 +106,11 @@ static volatile bool pwm_IsEnable = false;
 #define SERVO_MIN() (this->min)  // minimum value in uS for this servo
 #define SERVO_MAX() (this->max)  // maximum value in uS for this servo 
 
-#if defined (__86DUINO_EX)
+#if defined (__86DUINO_ZERO) || defined (__86DUINO_ONE) || defined (__86DUINO_EDUCAKE) || defined (__86DUINO_AI)
     static int mc = 3;
     static int md = 2;
     #define MAGIC_NUM (80L)
-#elif defined (__86DUINO_EX2)
+#elif defined (__86DUINO_DUO) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02)
     static int mc = 11;
     static int md = 2;
     #define MAGIC_NUM (20L)

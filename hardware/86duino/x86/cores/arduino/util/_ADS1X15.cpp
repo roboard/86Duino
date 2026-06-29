@@ -30,7 +30,7 @@
 /**************************************************************************/
 #include "_ADS1X15.h"
 
-#if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
 
 /**************************************************************************/
 /*!
@@ -404,4 +404,4 @@ uint16_t _ADS1X15::readRegister(uint8_t reg) {
   return ((buffer[0] << 8) | buffer[1]);
 }
 
-#endif 
+#endif // if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)

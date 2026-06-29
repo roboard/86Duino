@@ -40,7 +40,7 @@ void set_pwm_level(unsigned char level); // this function is in lcdbacklight.c
     #define USED_BOARD    (QEC7_VGA)
 #elif defined (__86DUINO_QEC_9)
     #define USED_BOARD    (QEC9_VGA)
-#elif defined (__86DUINO_QEC_15) || defined (__86DUINO_PPC15S)
+#elif defined (__86DUINO_QEC_15)
     #define USED_BOARD    (QEC15_VGA)
 #elif defined (__86DUINO_DUO)
     #define USED_BOARD    (DUO_VGA)
@@ -50,7 +50,7 @@ void set_pwm_level(unsigned char level); // this function is in lcdbacklight.c
     #define USED_BOARD    (VGA_640x480)
 #elif defined (__86DUINO_QEC_PPC104)
     #define USED_BOARD    (QECPPC104_VGA)
-#elif defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S)
+#elif defined (__86DUINO_QEC_PPC9)
     #define USED_BOARD    (QECPPC9_VGA)
 #else
     #error "no select any 86Duino board."

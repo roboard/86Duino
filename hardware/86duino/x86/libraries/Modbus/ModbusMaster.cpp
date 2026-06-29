@@ -24,189 +24,93 @@
 
 #include <errno.h>
 
+#include "Arduino.h"
 #include "ModbusMaster.h"
 #include "ModbusSerialHAL.h"
-#include "ModbusEtherHAL.h"
 #include "modbus-core.h"
-#include <stdlib.h>
-#include <string.h>
 
-#define TIME_SEC                (1)
-#define TIME_USEC               (0)
-
-struct modbus_master_t
-{
-    modbus_hal_t hal;
-    modbus_t *ctx;
-    int mode;
-
-    uint32_t timeout;
-    uint8_t bitData[2000];
-};
+#define TIME_SEC        (1)
+#define TIME_USEC       (0)
 
 ModbusMaster::ModbusMaster()
 {
-    this->_privateData = NULL;
-    this->gateway = NULL;
-}
-
-ModbusMaster::~ModbusMaster()
-{
-    end();
+    _mode = MODBUS_RTU;
+    mbus = NULL;
+    timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
+    gateway = NULL;
 }
 
 bool ModbusMaster::begin(int mode, SerialInterface &serial)
 {
-    modbus_master_t *master;
+    modbus_hal_t hal = {0};
+    modbus_t *ctx = NULL;
 
-    if (mode != MODBUS_RTU && mode != MODBUS_ASCII)
-        return false;
+    hal.available = modbus_serial_hal_available;
+    hal.flush = modbus_serial_hal_flush;
+    hal.write = modbus_serial_hal_write;
+    hal.read = modbus_serial_hal_read;
+    hal.user_data = &serial;
 
-    if ((master = (modbus_master_t *)malloc(sizeof(*master))) == NULL)
-        return false;
-    memset(master, 0, sizeof(*master));
-    master->mode = mode;
-    master->timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
-    master->hal.available = modbus_serial_hal_available;
-    master->hal.flush = modbus_serial_hal_flush;
-    master->hal.write = modbus_serial_hal_write;
-    master->hal.read = modbus_serial_hal_read;
-    master->hal.user_data = &serial;
-
-    switch (master->mode) {
+    switch (mode) {
     case MODBUS_RTU:
-        master->ctx = modbus_new_rtu_ext(&master->hal);
+        ctx = modbus_new_rtu_ext(&hal);
         break;
     case MODBUS_ASCII:
-        master->ctx = modbus_new_ascii_ext(&master->hal);
+        ctx = modbus_new_ascii_ext(&hal);
         break;
     }
-    if (master->ctx == NULL) {
-        free(master);
+    if (ctx == NULL)
         return false;
-    }
-    modbus_set_response_timeout(master->ctx, TIME_SEC, TIME_USEC);
+
+    modbus_set_response_timeout(ctx, TIME_SEC, TIME_USEC);
+    _mode = mode;
+    mbus = (void *)ctx;
     serial.setTimeout(0, 0);
-    this->_privateData = master;
 
     return true;
 }
 
 bool ModbusMaster::begin(int mode, IPAddress &modbus_server_ip, uint16_t modbus_server_port)
 {
-    return begin(mode, modbus_server_ip, modbus_server_port, Ethernet);
-}
-
-bool ModbusMaster::begin(int mode, IPAddress &modbus_server_ip, uint16_t modbus_server_port, EthernetClass &ethernet)
-{
-    modbus_master_t *master;
-    modbus_ether_hal_t *ether;
+    modbus_t *ctx = NULL;
+    int rc;
     char server_ip[16];
-
-    if (mode != MODBUS_TCP)
-        return false;
-
-    if ((ether = new modbus_ether_hal_t(502, ethernet)) == NULL)
-        return false;
-    ether->pClient = NULL;
-
-    if ((master = (modbus_master_t *)malloc(sizeof(*master))) == NULL) {
-        delete ether;
-        return false;
-    }
-    memset(master, 0, sizeof(*master));
-    master->mode = mode;
-    master->timeout = 1000 * TIME_SEC + TIME_USEC / 1000;
-    master->hal.user_data = ether;
-    master->hal.connect = modbus_ether_hal_connect;
-    master->hal.disconnect = modbus_ether_hal_disconnect;
-    master->hal.available = modbus_ether_hal_available;
-    master->hal.flush = modbus_ether_hal_flush;
-    master->hal.write = modbus_ether_hal_write;
-    master->hal.read = modbus_ether_hal_read;
-    master->hal.server_begin = modbus_ether_hal_server_begin;
-    master->hal.server_available = modbus_ether_hal_server_available;
-
+    
     sprintf(server_ip, "%d.%d.%d.%d", modbus_server_ip[0]
                                     , modbus_server_ip[1]
                                     , modbus_server_ip[2]
                                     , modbus_server_ip[3]);
-    if ((master->ctx = modbus_new_tcp_ext(&master->hal, server_ip, modbus_server_port)) == NULL) {
-        free(master);
-        delete ether;
+    
+    if (mode == MODBUS_TCP)
+        ctx = modbus_new_tcp(server_ip, modbus_server_port);
+    
+    if (ctx == NULL)
+        return false;
+    
+    rc = modbus_connect(ctx);
+    if (rc == -1) {
+        modbus_free(ctx);
         return false;
     }
-    if (modbus_connect(master->ctx) == -1) {
-        modbus_free(master->ctx);
-        free(master);
-        delete ether;
-        return false;
-    }
-    modbus_set_response_timeout(master->ctx, TIME_SEC, TIME_USEC);
-    this->_privateData = master;
+    modbus_set_response_timeout(ctx, TIME_SEC, TIME_USEC);
+    
+    _mode = mode;
+    mbus = (void *)ctx;
 
     return true;
 }
 
-void ModbusMaster::end()
-{
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
-
-    if (master == NULL)
-        return;
-
-    modbus_close(master->ctx);
-    modbus_free(master->ctx);
-    switch (master->mode) {
-    case MODBUS_RTU:
-    case MODBUS_ASCII:
-        break;
-    case MODBUS_TCP:
-        delete (modbus_ether_hal_t *)master->hal.user_data;
-        break;
-    }
-    free(master);
-    this->_privateData = NULL;
-    this->gateway = NULL;
-}
-
-void *ModbusMaster::getModbusHandle()
-{
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
-    if (master == NULL)
-        return NULL;
-    return master->ctx;
-}
-
-int ModbusMaster::getModbusMode()
-{
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
-    if (master == NULL)
-        return MODBUS_RTU;
-    return master->mode;
-}
-
-uint32_t ModbusMaster::getTimeout()
-{
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
-    if (master == NULL)
-        return 0;
-    return master->timeout;
-}
-
 void ModbusMaster::setTimeout(uint32_t milliseconds)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     uint32_t sec, usec;
-
-    if (master == NULL)
-        return;
-
-    master->timeout = milliseconds;
-    sec = master->timeout / 1000;
-    usec = (master->timeout % 1000) * 1000;
-
-    modbus_set_response_timeout(master->ctx, sec, usec);
+    
+    timeout = milliseconds;
+    
+    sec = timeout / 1000;
+    usec = (timeout % 1000) * 1000;
+    
+    modbus_set_response_timeout(ctx, sec, usec);
 }
 
 uint8_t ModbusMaster::getErrorNumber(int err)
@@ -242,126 +146,112 @@ uint8_t ModbusMaster::getErrorNumber(int err)
 
 uint8_t ModbusMaster::readCoils(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
-    int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    modbus_t *ctx = (modbus_t *)mbus;
+    int rc, i, m, n;
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
-
-    rc = modbus_read_bits(master->ctx, address, size, master->bitData);
+    
+    rc = modbus_read_bits(ctx, address, size, bitData);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != size)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
-
-    for (int i = 0; i < size; i++) {
-        int m = i >> 4;
-        int n = i & 0x0F;
-        if (master->bitData[i])
+    
+    for (i = 0; i < size; i++) {
+        m = i >> 4;
+        n = i & 0x0F;
+        if (bitData[i])
             data[m] |= (1 << n);
         else
             data[m] &= ~(1 << n);
     }
-
+    
     return MODBUS_SUCCESS;
 }
 
 uint8_t ModbusMaster::readDiscreteInputs(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
-    int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    modbus_t *ctx = (modbus_t *)mbus;
+    int rc, i, m, n;
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
-
-    rc = modbus_read_input_bits(master->ctx, address, size, master->bitData);
+    
+    rc = modbus_read_input_bits(ctx, address, size, bitData);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != size)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
-
-    for (int i = 0; i < size; i++) {
-        int m = i >> 4;
-        int n = i & 0x0F;
-        if (master->bitData[i])
+    
+    for (i = 0; i < size; i++) {
+        m = i >> 4;
+        n = i & 0x0F;
+        if (bitData[i])
             data[m] |= (1 << n);
         else
             data[m] &= ~(1 << n);
     }
-
+    
     return MODBUS_SUCCESS;
 }
 
 uint8_t ModbusMaster::readHoldingRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     int rc;
+    
+    rc = modbus_set_slave(ctx, slave_id);
 
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
 
-    rc = modbus_read_registers(master->ctx, address, size, data);
+    rc = modbus_read_registers(ctx, address, size, data);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != size)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
-
+    
     return MODBUS_SUCCESS;
 }
 
 uint8_t ModbusMaster::readInputRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
-
-    rc = modbus_read_input_registers(master->ctx, address, size, data);
+    
+    rc = modbus_read_input_registers(ctx, address, size, data);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != size)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
-
+    
     return MODBUS_SUCCESS;
 }
 
 uint8_t ModbusMaster::writeSingleCoil(uint8_t slave_id, uint16_t address, uint16_t value)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
     
-    rc = modbus_write_bit(master->ctx, address, value);
+    rc = modbus_write_bit(ctx, address, value);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != 1)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
     
@@ -370,20 +260,17 @@ uint8_t ModbusMaster::writeSingleCoil(uint8_t slave_id, uint16_t address, uint16
 
 uint8_t ModbusMaster::writeSingleRegister(uint8_t slave_id, uint16_t address, uint16_t value)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
     
-    rc = modbus_write_register(master->ctx, address, value);
+    rc = modbus_write_register(ctx, address, value);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != 1)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
     
@@ -392,26 +279,23 @@ uint8_t ModbusMaster::writeSingleRegister(uint8_t slave_id, uint16_t address, ui
 
 uint8_t ModbusMaster::writeMultipleCoils(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
-    int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    modbus_t *ctx = (modbus_t *)mbus;
+    int rc, i, m, n;
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
     
-    for (int i = 0; i < size; i++) {
-        int m = i >> 4;
-        int n = i & 0x0F;
-        master->bitData[i] = (data[m] & (1 << n)) ? 1 : 0;
+    for (i = 0; i < size; i++) {
+        m = i >> 4;
+        n = i & 0x0F;
+        bitData[i] = (data[m] & (1 << n)) ? 1 : 0;
     }
     
-    rc = modbus_write_bits(master->ctx, address, size, master->bitData);
+    rc = modbus_write_bits(ctx, address, size, bitData);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != size)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
     
@@ -420,20 +304,17 @@ uint8_t ModbusMaster::writeMultipleCoils(uint8_t slave_id, uint16_t address, uin
 
 uint8_t ModbusMaster::writeMultipleRegisters(uint8_t slave_id, uint16_t address, uint16_t size, uint16_t *data)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
     
-    rc = modbus_write_registers(master->ctx, address, size, data);
+    rc = modbus_write_registers(ctx, address, size, data);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != size)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
     
@@ -442,20 +323,17 @@ uint8_t ModbusMaster::writeMultipleRegisters(uint8_t slave_id, uint16_t address,
 
 uint8_t ModbusMaster::maskWriteRegister(uint8_t slave_id, uint16_t address, uint16_t and_mask, uint16_t or_mask)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
     
-    rc = modbus_mask_write_register(master->ctx, address, and_mask, or_mask);
+    rc = modbus_mask_write_register(ctx, address, and_mask, or_mask);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != 1)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
     
@@ -466,21 +344,18 @@ uint8_t ModbusMaster::readWriteMultipleRegisters(uint8_t slave_id,
                                uint16_t write_address, uint16_t write_size, uint16_t *write_data,
                                uint16_t read_address, uint16_t read_size, uint16_t *read_data)
 {
-    modbus_master_t *master = (modbus_master_t *)this->_privateData;
+    modbus_t *ctx = (modbus_t *)mbus;
     int rc;
-
-    if (master == NULL)
-        return MODBUS_INVALID_BUS;
-
-    rc = modbus_set_slave(master->ctx, slave_id);
+    
+    rc = modbus_set_slave(ctx, slave_id);
     if (rc < 0)
         return MODBUS_INVALID_SLAVE_ID;
     
-    rc = modbus_write_and_read_registers(master->ctx, write_address, write_size, write_data,
+    rc = modbus_write_and_read_registers(ctx, write_address, write_size, write_data,
                                          read_address, read_size, read_data);
     if ((slave_id == MODBUS_BROADCAST_ADDRESS && rc <= 0) ||
         (slave_id != MODBUS_BROADCAST_ADDRESS && rc != read_size)) {
-        modbus_flush(master->ctx);
+        modbus_flush(ctx);
         return getErrorNumber(errno);
     }
     
@@ -502,18 +377,26 @@ ModbusMasterNode::ModbusMasterNode()
 
 bool ModbusMasterNode::attach(ModbusMaster &bus)
 {
-    return attach((bus.getModbusMode() == MODBUS_TCP) ? MODBUS_TCP_SLAVE : MODBUS_BROADCAST_ADDRESS, bus);
+    ModbusMaster *m = &bus;
+    
+    if (m == NULL)
+        return false;
+    
+    if (m->_mode == MODBUS_TCP)
+        return begin(MODBUS_TCP_SLAVE, bus);
+    
+    return attach(MODBUS_BROADCAST_ADDRESS, bus);
 }
 
 bool ModbusMasterNode::attach(uint8_t slave_id, ModbusMaster &bus)
 {
     master = &bus;
-
+    
     if (master == NULL)
         return false;
-
+    
     slaveID = slave_id;
-
+    
     return true;
 }
 
@@ -527,28 +410,38 @@ bool ModbusMasterNode::begin(uint8_t slave_id, ModbusMaster &bus)
     return attach(slave_id, bus);
 }
 
-uint16_t ModbusMasterNode::getResponseBuffer(int index, int mode)
+uint16_t ModbusMasterNode::getResponseBuffer(uint8_t index, int mode)
 {
+    uint8_t i, j;
+    
     if (mode == MODBUS_DATAMODE_BIT) {
-        int i = index >> 4;
-        int j = index & 0x0F;
-        if (i >= readSize)
-            return 0xFFFF;
-        return (readData[i] & (1 << j)) ? 1 : 0;
+        i = index >> 4;
+        j = index & 0x0F;
+        if (i < readSize)
+            return (readData[i] & (1 << j)) ? 1 : 0;
+        return 0xFFFF;
     }
-    return (index < readSize) ? readData[index] : 0xFFFF;
+    
+    if (index < readSize)
+        return readData[index];
+    return 0xFFFF;
 }
 
 void ModbusMasterNode::clearResponseBuffer()
 {
-    memset(readData, 0, sizeof(readData));
+    int i;
+    
+    for (i = 0; i < MODBUS_BUFFER_SIZE; i++)
+        readData[i] = 0;
 }
 
-uint8_t ModbusMasterNode::setTransmitBuffer(int index, uint16_t value, int mode)
+uint8_t ModbusMasterNode::setTransmitBuffer(uint8_t index, uint16_t value, int mode)
 {
+    uint8_t i, j;
+    
     if (mode == MODBUS_DATAMODE_BIT) {
-        int i = index >> 4;
-        int j = index & 0x0F;
+        i = index >> 4;
+        j = index & 0x0F;
         if (i < MODBUS_BUFFER_SIZE) {
             if (value)
                 writeData[i] |= (1 << j);
@@ -563,13 +456,16 @@ uint8_t ModbusMasterNode::setTransmitBuffer(int index, uint16_t value, int mode)
         writeData[index] = value;
         return MODBUS_SUCCESS;
     }
-
+    
     return MODBUS_ILLEGAL_DATA_ADDRESS;
 }
 
 void ModbusMasterNode::clearTransmitBuffer()
 {
-    memset(writeData, 0, sizeof(writeData));
+    int i;
+    
+    for (i = 0; i < MODBUS_BUFFER_SIZE; i++)
+        writeData[i] = 0;
 }
 
 void ModbusMasterNode::beginTransmission(uint16_t write_address)
@@ -582,7 +478,7 @@ void ModbusMasterNode::beginTransmission(uint16_t write_address)
 void ModbusMasterNode::sendBit(bool data)
 {
     uint16_t bitIndex = writeCoilSize % 16;
-
+    
     if ((writeCoilSize >> 4) < MODBUS_BUFFER_SIZE) {
         if (bitIndex == 0)
             writeData[writeSize] = 0;

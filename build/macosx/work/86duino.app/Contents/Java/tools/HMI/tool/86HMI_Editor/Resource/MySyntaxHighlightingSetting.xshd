@@ -1,0 +1,202 @@
+<?xml version="1.0"?>
+<!-- syntaxdefinition for C/C++ 2001 by Andrea Paatz and Mike Krueger -->
+<!-- colordefinition for 86HMI Editor 2021 by RoBoardGod and RoBoardMadMan -->
+<!-- converted to AvalonEdit format by Siegfried Pammer in 2010 -->
+<SyntaxDefinition name="C++" extensions=".c;.h;.cc;.cpp;.hpp" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+  
+	<Color name="LoopAndControlFlow" foreground="#FFC0F3B3" fontWeight="bold" />
+	<Color name="Namespace" foreground="#FFE8E55A" fontWeight="bold" />
+	<Color name="JumpKeywords" foreground="#FFFFB797" />
+	<Color name="BooleanConstants" foreground="#FFA6A7FD" fontWeight="bold" />
+	<Color name="TypeKeywords" foreground="#FF81DDE4" />
+ 	<Color name="Modifiers" foreground="#FF81DDE4" fontWeight="bold" />
+	<Color name="Operators" foreground="#FFA6A7FD" fontWeight="bold" />
+	<Color name="CompoundKeywords" foreground="#FFC0F3B3" fontWeight="bold" />
+	<Color name="String" foreground="#FFE17FAC" />
+	<Color name="Character" foreground="#FFE17FAC" />
+
+	<Color name="Comment" foreground="#FFB1BBD3" />
+	<Color name="Preprocessor" foreground="#FFB1BBD3" /> 
+
+	<Color name="MethodName" foreground="#FFFFB797" fontWeight="bold" />
+	<Color name="Digits" foreground="#FFA6A7FD" />
+
+  <Color name="Hmi" foreground="#FF4EC9B0" fontWeight="bold" />
+  <Color name="HmiFunc" foreground="#FFDCDCAA" fontWeight="bold" />
+  <Color name="HmiEnum" foreground="#FFB2D7A3" fontWeight="bold" />
+  <Color name="HmiID" foreground="#FF9CDCFE" fontWeight="bold" />
+  
+	<RuleSet ignoreCase="false">
+    <Keywords color="Hmi">
+      <Word>Hmi</Word>
+    </Keywords>
+      
+		<Keywords color="CompoundKeywords">
+			<Word>__abstract</Word>
+			<Word>__box</Word>
+			<Word>__delegate</Word>
+			<Word>__gc</Word>
+			<Word>__identifier</Word>
+			<Word>__nogc</Word>
+			<Word>__pin</Word>
+			<Word>__property</Word>
+			<Word>__sealed</Word>
+			<Word>__try_cast</Word>
+			<Word>__typeof</Word>
+			<Word>__value</Word>
+			<Word>__event</Word>
+			<Word>__hook</Word>
+			<Word>__raise</Word>
+			<Word>__unhook</Word>
+			<Word>__interface</Word>
+			<Word>ref class</Word>
+			<Word>ref struct</Word>
+			<Word>value class</Word>
+			<Word>value struct</Word>
+			<Word>interface class</Word>
+			<Word>interface struct</Word>
+			<Word>enum class</Word>
+			<Word>enum struct</Word>
+			<Word>delegate</Word>
+			<Word>event</Word>
+			<Word>property</Word>
+			<Word>abstract</Word>
+			<Word>override</Word>
+			<Word>sealed</Word>
+			<Word>generic</Word>
+			<Word>where</Word>
+			<Word>finally</Word>
+			<Word>for each</Word>
+			<Word>gcnew</Word>
+			<Word>in</Word>
+			<Word>initonly</Word>
+			<Word>literal</Word>
+			<Word>nullptr</Word>
+			<Word>friend</Word>
+		</Keywords>
+ 
+		<Keywords color="Operators">
+			<Word>and</Word>
+			<Word>and_eq</Word>
+			<Word>bitand</Word>
+			<Word>bitor</Word>
+			<Word>new</Word>
+			<Word>not</Word>
+			<Word>not_eq</Word>
+			<Word>or</Word>
+			<Word>or_eq</Word>
+			<Word>xor</Word>
+			<Word>xor_eq</Word>
+		</Keywords>
+		
+		<Keywords color="Namespace">
+			<Word>this</Word>
+			<Word>using</Word>
+			<Word>namespace</Word>
+		</Keywords>
+
+		<Keywords color="Modifiers">
+			<Word>private</Word>
+			<Word>protected</Word>
+			<Word>public</Word>
+			<Word>const</Word>
+			<Word>volatile</Word>
+			<Word>static</Word>
+		</Keywords>
+		
+		<Keywords color="TypeKeywords">
+			<Word>bool</Word>
+			<Word>char</Word>
+			<Word>unsigned</Word>
+			<Word>union</Word>
+			<Word>virtual</Word>
+			<Word>double</Word>
+			<Word>float</Word>
+			<Word>short</Word>
+			<Word>signed</Word>
+			<Word>void</Word>
+			<Word>class</Word>
+			<Word>enum</Word>
+			<Word>struct</Word>
+			<Word>asm</Word>
+			<Word>auto</Word>
+			<Word>compl</Word>
+			<Word>mutable</Word>
+			<Word>const_cast</Word>
+			<Word>delete</Word>
+			<Word>dynamic_cast</Word>
+			<Word>explicit</Word>
+			<Word>export</Word>
+			<Word>extern</Word>
+			<Word>inline</Word>
+			<Word>int</Word>
+			<Word>long</Word>
+			<Word>operator</Word>
+			<Word>register</Word>
+			<Word>reinterpret_cast</Word>
+			<Word>sizeof</Word>
+			<Word>static_cast</Word>
+			<Word>template</Word>
+			<Word>typedef</Word>
+			<Word>typeid</Word>
+			<Word>typename</Word>
+		</Keywords>	
+		
+		<Keywords color="BooleanConstants">
+			<Word>false</Word>
+			<Word>true</Word>
+		</Keywords>	
+		
+		<Keywords color="LoopAndControlFlow">
+			<Word>case</Word>
+			<Word>else</Word>
+			<Word>if</Word>
+			<Word>switch</Word>
+			<Word>default</Word>
+			<Word>do</Word>
+			<Word>for</Word>
+			<Word>while</Word>
+			<Word>catch</Word>
+			<Word>throw</Word>
+			<Word>try</Word>
+		</Keywords>
+		
+ 		<Keywords color="JumpKeywords">
+			<Word>break</Word>
+			<Word>continue</Word>
+			<Word>goto</Word>
+			<Word>return</Word>
+		</Keywords>
+    
+    
+		<Span color="Preprocessor">
+			<Begin>\#</Begin>
+		</Span>
+		<Span color="Comment">
+			<Begin>//</Begin>
+		</Span>
+		<Span color="Comment" multiline="true">
+			<Begin>/\*</Begin>
+			<End>\*/</End>
+		</Span>
+		<Span color="String">
+			<Begin>"</Begin>
+			<End>"</End>
+			<RuleSet>
+				<Span begin="\\" end="." />
+			</RuleSet>
+		</Span>
+		<Span color="Character">
+			<Begin>'</Begin>
+			<End>'</End>
+			<RuleSet>
+				<Span begin="\\" end="." />
+			</RuleSet>
+		</Span>
+		
+		<Rule color="MethodName">[\d\w_]+(?=(\s*\())</Rule>
+		<Rule color="Digits">\b0[xX][0-9a-fA-F]+|(\b\d+(\.[0-9]+)?|\.[0-9]+)([eE][+-]?[0-9]+)?</Rule>
+
+
+  </RuleSet>
+</SyntaxDefinition>

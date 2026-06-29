@@ -42,12 +42,12 @@
     #define ADDRESS 95 // 32 + 31 + 32 = 95
     #define BANKNUM 7
     int bank2BlockArea[BANKNUM][2] = {{0, 15}, {16, 31}, {32, 47}, {48, 62}, {63, 78}, {79, 94}, {0, 94}}; // 7 Bank to 7 kind Block area
-#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
     #define ADDRESS 16
     #define BANKNUM 2
     int bank2BlockArea[BANKNUM][2] = {{0, 15}, {16, 31}};
 #else
-    #define BANKNUM 2 // No used under EX
+    #define BANKNUM 2
     #define ADDRESS 16
     #define EEPROMSIZE (ADDRESS * DATASIZE)
 #endif
@@ -236,7 +236,7 @@ EEPROMClass::~EEPROMClass(void)
 
 unsigned char EEPROMClass::read(unsigned short int in_addr)
 {
-#if defined (__86DUINO_DUO) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#if defined (__86DUINO_DUO) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
   int blockOffset = bank2BlockArea[_bank][0];
   int EEPROMSIZE = (bank2BlockArea[_bank][1] - bank2BlockArea[_bank][0] + 1) * DATASIZE;
 #else
@@ -257,7 +257,7 @@ unsigned char EEPROMClass::read(unsigned short int in_addr)
 
 void EEPROMClass::write(unsigned short int in_addr, unsigned char in_data)
 {
-#if defined (__86DUINO_DUO) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#if defined (__86DUINO_DUO) || defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
   int blockOffset = bank2BlockArea[_bank][0];
   int EEPROMSIZE = (bank2BlockArea[_bank][1] - bank2BlockArea[_bank][0] + 1) * DATASIZE;
 #else

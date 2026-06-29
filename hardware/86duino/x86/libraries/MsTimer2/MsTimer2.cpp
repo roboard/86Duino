@@ -38,7 +38,7 @@ void (*MsTimer2::func)();
 #elif defined (__86DUINO_DUO)
 	static int mc = 7;
 	static int md = 1;
-#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC9) || defined (__86DUINO_QEC_15)
     static int mc = 11;
 	static int md = 1;
 #endif

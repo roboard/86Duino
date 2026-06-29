@@ -24,6 +24,8 @@
 # You'll have problems running Processing if you incorrectly 
 # modify lines in this file.
 
+# This file DOES NOT CONTAIN settings for autoformatter (A-Style).
+# Look for the file "formatter.conf" and follow instructions at top.
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -63,7 +65,7 @@ last.sketch.count=0
 # by default, check the processing server for any updates
 # (please avoid disabling, this also helps us know basic numbers 
 # on how many people are using Processing)
-update.check = false
+update.check = true
 
 # on windows, automatically associate .pde files with processing.exe
 platform.auto_file_type_associations = true
@@ -95,7 +97,8 @@ editor.window.height.min = 290
 editor.code_folding=false
 
 # font size for editor
-editor.font=Monospaced,plain,12
+# editor.font=Hack,bold,16
+editor.font=Inconsolata,bold,14
 # Monaco is nicer on Mac OS X, so use that explicitly
 editor.font.macosx = Monaco,plain,12
 
@@ -122,8 +125,6 @@ editor.keys.alternative_cut_copy_paste.macosx = false
 # true if shift-backspace sends the delete character, 
 # false if shift-backspace just means backspace
 editor.keys.shift_backspace_is_delete = true
-
-compiler.warning_level=none
 
 # if set to true, home/end keys will go to the start/end of current line
 editor.keys.home_and_end_beginning_end_of_doc = false

@@ -25,27 +25,46 @@
 #define ModbusGateway_h
 
 #include "SerialInterface.h"
-#include "Ethernet.h"
 
-class ModbusGateway
-{
-public:
-    ModbusGateway();
-    ~ModbusGateway();
-
-    bool begin(int mode, SerialInterface &serial);
-    bool begin(int mode, uint16_t port = 502);
-    bool begin(int mode, uint16_t port, EthernetClass &ethernet);
-    void end();
-
-    bool connect(ModbusMasterNode &mNode);
-    void setTimeout(uint32_t milliseconds);
-
-    int poll();
-
-private:
-    int nodePoll();
-    void *_privateData;
+class ModbusGateway {
+    public:
+        ModbusGateway();
+        
+        bool begin(int mode, SerialInterface &serial);
+        bool begin(int mode, uint16_t port = 502);
+        
+        bool connect(ModbusMasterNode &mNode);
+        void setTimeout(uint32_t milliseconds);
+        
+        int poll();
+        
+    private:
+        enum { MODBUS_MAX_GATEWAY_NODE = 256,
+               MODBUS_MAX_MESSAGE_LENGTH = 513 };
+        
+        int nodePoll();
+        
+        uint8_t req[MODBUS_MAX_MESSAGE_LENGTH];
+        uint8_t rsp[MODBUS_MAX_MESSAGE_LENGTH];
+        int req_length;
+        int rsp_length;
+        
+        uint8_t node_req[MODBUS_MAX_MESSAGE_LENGTH];
+        uint8_t node_rsp[MODBUS_MAX_MESSAGE_LENGTH];
+        int node_req_length;
+        int node_rsp_length;
+        
+        ModbusMasterNode *nodes[MODBUS_MAX_GATEWAY_NODE];
+        ModbusMasterNode *node;
+        int nodeNum;
+        int pollState;
+        int nodePollState;
+        
+        unsigned long timeout;
+        unsigned long recvTime;
+        
+        int _mode;
+        void *mbus;
 };
 
 #endif

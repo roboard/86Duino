@@ -1248,7 +1248,7 @@ void Encoder::setInputPolarity(bool pinA, bool pinB, bool pinZ) {
     Encoder Enc2(2);
     Encoder Enc3(3);
     Encoder Enc4(4);
-#elif defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
+#elif defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
     Encoder Enc0(0);
     Encoder Enc1(2);
 #endif

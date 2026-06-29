@@ -1,0 +1,11 @@
+/* Copyright (C) 2003 DJ Delorie, see COPYING.DJ for details */
+#ifndef __dj_include_inline_ctype_hp_
+#define __dj_include_inline_ctype_hp_
+
+extern unsigned char __dj_ctype_toupper[];
+extern unsigned char __dj_ctype_tolower[];
+
+#define _tolower(c) (__dj_ctype_tolower[(int)(c)+1])
+#define _toupper(c) (__dj_ctype_toupper[(int)(c)+1])
+
+#endif /* __dj_include_inline_ctype_hp_ */

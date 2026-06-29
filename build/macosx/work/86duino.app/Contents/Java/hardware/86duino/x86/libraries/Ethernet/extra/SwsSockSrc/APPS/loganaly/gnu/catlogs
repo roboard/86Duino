@@ -1,0 +1,13 @@
+#!/bin/sh
+zcat\
+ /var/log/sws_inetd.log.9.gz\
+ /var/log/sws_inetd.log.8.gz\
+ /var/log/sws_inetd.log.7.gz\
+ /var/log/sws_inetd.log.6.gz\
+ /var/log/sws_inetd.log.5.gz\
+ /var/log/sws_inetd.log.4.gz\
+ /var/log/sws_inetd.log.3.gz\
+ /var/log/sws_inetd.log.2.gz\
+| cat -\
+ /var/log/sws_inetd.log.1\
+ /var/log/sws_inetd.log

@@ -18,14 +18,14 @@ compiler.path={runtime.hardware.path}/../tools/djgpp/bin/
 compiler.lib.path={runtime.hardware.path}/../tools/djgpp/lib/
 compiler.include.path={runtime.hardware.path}/../tools/djgpp/i586-pc-msdosdjgpp/sys-include/
 compiler.c.cmd=i586-pc-msdosdjgpp-gcc
-compiler.c.flags=-c {compiler.warning_flags} -g -MMD -ffunction-sections -fdata-sections
+compiler.c.flags=-c {compiler.warning_flags} -B{compiler.path} -MMD -ffunction-sections -fdata-sections
 compiler.c.elf.flags={compiler.warning_flags} -Wl,--gc-sections
 compiler.c.elf.cmd=i586-pc-msdosdjgpp-gcc
 compiler.c.elf.libs=-lm
 compiler.c.other.libs=
 compiler.S.flags=-ffunction-sections -fdata-sections -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=deprecated-declarations -Wno-unused-parameter -Wno-sign-compare -freorder-blocks -Wwrite-strings -fstack-protector -fstrict-volatile-bitfields -Wno-error=unused-but-set-variable -fno-jump-tables -fno-tree-switch-conversion -c
 compiler.cpp.cmd=i586-pc-msdosdjgpp-gcc
-compiler.cpp.flags=-c {compiler.warning_flags} -g -MMD -ffunction-sections -fdata-sections -fno-threadsafe-statics -D__STDC_CONSTANT_MACROS
+compiler.cpp.flags=-c {compiler.warning_flags} -B{compiler.path} -MMD -ffunction-sections -fdata-sections -fno-threadsafe-statics -D__STDC_CONSTANT_MACROS
 compiler.ar.cmd=i586-pc-msdosdjgpp-ar
 compiler.ar.flags=rcs
 compiler.objcopy.cmd=avr-objcopy
@@ -41,17 +41,18 @@ build.extra_flags=
 build.optimization=-O1
 build.linkerex2=
 build.slot=
-build.dualethernet=
 build.v86uploader=v86dude
+tool.firmware.name=
+tool.firmware.version.filepath=
 
 # AVR compile patterns
 # --------------------
 
 ## Compile c files
-recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {build.optimization} -DARDUINO=156 -D_86DUINO=500 {build.dualethernet} "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}" "-I{build.path}/skecth"
+recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {build.optimization} -DARDUINO=156 -D_86DUINO=500 "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}"
 
 ## Compile c++ files
-recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {build.optimization} -DARDUINO=156 -D_86DUINO=500 {build.dualethernet} "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}" "-I{build.path}/skecth"
+recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {build.optimization} -DARDUINO=156 -D_86DUINO=500 "{source_file}" -o "{object_file}" {includes} "-I{compiler.lib.path}" "-I{compiler.include.path}"
 
 recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.S.flags} -DARDUINO=156 -D_86DUINO=500 "{source_file}" -o "{object_file}" {includes}
 
@@ -70,7 +71,8 @@ recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.f
 
 ## use upx
 recipe.objcopy.upx.pattern="{upx.path}{compiler.upx.cmd}.exe" "{build.path}/{build.project_name}.exe"
-recipe.objcopy.upx.pattern.linux="{upx.path}{compiler.upx.cmd}" "{build.path}/{build.project_name}.exe"  
+recipe.objcopy.upx.pattern.linux="{upx.path}{compiler.upx.cmd}" "{build.path}/{build.project_name}.exe"
+recipe.objcopy.upx.pattern.macosx="{upx.path}{compiler.upx.cmd}" "{build.path}/{build.project_name}.exe"
 
 ## Save exe
 recipe.output.tmp_file={build.project_name}.exe
@@ -86,6 +88,7 @@ recipe.size.regex=Total\s+([0-9]+).*
 
 tools.86upload.cmd.path={runtime.hardware.path}/../tools/x86/{build.v86uploader}.exe
 tools.86upload.cmd.path.linux={runtime.hardware.path}/../tools/x86/{build.v86uploader}
+tools.86upload.cmd.path.macosx={runtime.hardware.path}/../tools/x86/{build.v86uploader}
 
 tools.86upload.upload.params.verbose=-v -v -v -v
 tools.86upload.upload.params.quiet=-q -q

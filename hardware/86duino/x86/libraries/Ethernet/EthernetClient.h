@@ -2,16 +2,22 @@
 #define ethernetclient_h
 
 #include "Client.h"
+#include "IPAddress.h"
 
-class EthernetClass;
 class EthernetServer;
 class EthernetClient : public Client
 {
 public:
     EthernetClient();
-    EthernetClient(EthernetClass &ethernet);
-    EthernetClient(const EthernetClient &other);
     virtual ~EthernetClient();
+
+#if defined(__86DUINO_DUO)
+    uint8_t _id_transmit;
+#endif
+
+#if defined(ETHERNET_REMOTE)
+    EthernetClient(int id);
+#endif
 
     uint8_t status();
     virtual int connect(IPAddress ip, uint16_t port);
@@ -32,7 +38,6 @@ public:
     virtual bool operator!=(const bool value) { return bool() != value; }
     virtual bool operator==(const EthernetClient &);
     virtual bool operator!=(const EthernetClient &rhs) { return !this->operator==(rhs); }
-    int getSocketNumber();
     virtual uint16_t localPort();
     virtual IPAddress remoteIP();
     virtual uint16_t remotePort();
@@ -42,14 +47,14 @@ public:
     using Print::write;
 
 private:
-    EthernetClass *_ethernet;
+    EthernetClient(void *data);
     EthernetServer *_server;
     int _serverIndex;
     void *_sock;
     IPAddress _remoteIP;
     uint16_t _remotePort;
     uint16_t _connectionTimeout;
-    bool _isCopy;
+
 };
 
 #endif

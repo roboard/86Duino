@@ -1,7 +1,7 @@
 #ifndef ___WZ_ETHERCAT_DEVICE_DMP_AIQ_H
 #define ___WZ_ETHERCAT_DEVICE_DMP_AIQ_H
 
-#include "EthercatDevice_DmpMDP.h"
+#include "EthercatDevice_DmpCommon.h"
 #include <stdint.h>
 
 class EthercatDevice_QECR11A44S;    /*  4 Inputs,  4 Outputs. RJ45 power [1, 1]. */
@@ -97,19 +97,7 @@ protected:
     int nInputChannels;
 
 private:
-    EthercatDevice_DmpMDP_Generic *_internalMDP;
-    void *_privateData;
-    int _attach(uint16_t slave_id, EthercatMaster *master, EthercatAttachMode mode);
-    int _detach();
-    int _analogWrite(int ch, int32_t value);
-    int _voltageWrite(int ch, double voltage);
-    int _currentWrite(int ch, double current);
-    int _analogRead(int ch);
-    double _voltageRead(int ch);
-    int _aiPinMode(int ch, uint32_t range);
-    int _aoPinMode(int ch, uint32_t range);
-    int _getAiPinMode(int ch);
-    int _getAoPinMode(int ch);
+    void *private_data;
 
 };
 

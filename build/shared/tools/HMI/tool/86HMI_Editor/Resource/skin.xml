@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<skins>
+  <Lang_en>
+    <Title>86HMI Editor</Title>
+    <GridTitle1>Properties</GridTitle1>
+    <GridTitle2>Events</GridTitle2>
+    <GridTitle3>Align Objects</GridTitle3>
+    <ScriptEditGridTitle1>Local Script</ScriptEditGridTitle1>
+    <ScriptEditGridTitle2>Global Code</ScriptEditGridTitle2>
+    <LocalScriptComment>// Write your own 86Duino code in the following to define the instruction.&#xD;</LocalScriptComment>
+    <GlobalCodeComment>/* Write your own global code in the following, &#xD;allows you to define variables and functions that will be available in all code.&#xD;For instance,&#xD;you can use global code to define constants that will be used in local scripts you want to use repeatedly. */&#xD;</GlobalCodeComment>
+
+    <!--MenuItem-->
+    <MenuItem_File>File</MenuItem_File>
+      <MenuItem_New_Project>New Project</MenuItem_New_Project>
+      <MenuItem_Open_Project>Open Project</MenuItem_Open_Project>
+      <MenuItem_Save_Project>Save Project</MenuItem_Save_Project>
+      <MenuItem_Save_As_Project>Save As...</MenuItem_Save_As_Project>
+      <MenuItem_Import_Project>Import Project</MenuItem_Import_Project>
+    <MenuItem_Resources>Resources</MenuItem_Resources>
+      <MenuItem_Image>Image</MenuItem_Image>
+      <MenuItem_Sound>Sound</MenuItem_Sound>
+      <MenuItem_Font>Font</MenuItem_Font>
+    <MenuItem_ThemeSelection>Theme Selection</MenuItem_ThemeSelection>
+    <MenuItem_ThemeConfig>Theme Config</MenuItem_ThemeConfig>
+    <MenuItem_LangID>LangID</MenuItem_LangID>
+    <MenuItem_Code_Generation>Code Generation</MenuItem_Code_Generation>
+    <MenuItem_Simulatior>Simulatior</MenuItem_Simulatior>
+    <MenuItem_Help>Help</MenuItem_Help>
+    <MenuItem_Quit>Quit</MenuItem_Quit>
+
+    <!--MsgBox-->
+    <MsgBox_SaveProject>The current project has been modified. Do you want to save changes before exiting?</MsgBox_SaveProject>
+    <MsgBox_DelPage>Do you really want to delete this page?</MsgBox_DelPage>
+    <MsgBox_PageInUse>{name} is currently being used in {inUseCounter} places. Cannot delete it!</MsgBox_PageInUse>
+    <MsgBox_SoundCntExceed>The maximum number of sound files in the internal storage must be less then {SD_StartNum}!</MsgBox_SoundCntExceed>
+    <MsgBox_ResInUse>{name} is currently being used in {inUseCounter} places. Cannot delete it!</MsgBox_ResInUse>
+    <MsgBox_OscSampBufExceed>Sample Buffer Size is not satisfiable!&#xD;The following formula must be established:&#xD;&#xD;      Sample Buffer Size ≥ Td × (Xd + 1) / Ts&#xD;&#xD;where&#xD;&#xD;      Td = Time/Div (µs)&#xD;      Xd = X Division Lines&#xD;      Ts = Single Sample Time (µs)</MsgBox_OscSampBufExceed>
+    
+    <MsgBox_FntError>This font file is not Supported!</MsgBox_FntError>
+    <MsgBox_ImgError>This image file is not Supported!</MsgBox_ImgError>
+    <MsgBox_IdeError>Failed to connect to 86Duino IDE! The HMI editor will be closed.</MsgBox_IdeError>
+    <MsgBox_OpenError>Failed to open the HMI project file!</MsgBox_OpenError>
+    <MsgBox_SaveError>Failed to save the HMI project file!</MsgBox_SaveError>
+    <MsgBox_DuplicateError>Failed to duplicate this page!</MsgBox_DuplicateError>
+    <MsgBox_CopyError>Failed to copy the object!</MsgBox_CopyError>
+    <MsgBox_PasteError>Failed to paste the object!</MsgBox_PasteError>
+    <MsgBox_DeleteError>Failed to delete the object!</MsgBox_DeleteError>
+    <MsgBox_MoveError>Failed to change the object's order!</MsgBox_MoveError>
+    <MsgBox_UnexpectedError>An unexpected error has occurred! The HMI editor will be closed!</MsgBox_UnexpectedError>
+    <MsgBox_CopyWarning>Too many object need to be copied, which may cause insufficient memory. Are you sure to continue?</MsgBox_CopyWarning>
+    <MsgBox_ImportWarning>You need to select at least one page you want to import.</MsgBox_ImportWarning>
+
+    <!--Import-->
+    <Import_ThemeTitle>Theme</Import_ThemeTitle>
+    <Import_PageSelectorTip>Select pages you want to import.</Import_PageSelectorTip>
+    <Import_PositionRemapBoxTip>A different screen configuration than the current project was detected.</Import_PositionRemapBoxTip>
+
+    </Lang_en>
+
+
+  <Lang_cn>
+    <Title>DMP 人機介面編輯器</Title>
+    <GridTitle1>屬性</GridTitle1>
+    <GridTitle2>事件</GridTitle2>
+
+    <!--MenuItem-->
+    <MenuItem_File>檔案</MenuItem_File>
+    <MenuItem_New_Project>新增專案</MenuItem_New_Project>
+    <MenuItem_Open_Project>開啟專案</MenuItem_Open_Project>
+    <MenuItem_Save_Project>儲存專案</MenuItem_Save_Project>
+    <MenuItem_Save_As_Project>另存專案為...</MenuItem_Save_As_Project>
+    <MenuItem_Resources>資源庫</MenuItem_Resources>
+    <MenuItem_Image>圖片</MenuItem_Image>
+    <MenuItem_Sound>聲音</MenuItem_Sound>
+    <MenuItem_Font>字型</MenuItem_Font>
+    <MenuItem_ThemeSelection>主題選擇</MenuItem_ThemeSelection>
+    <MenuItem_ThemeConfig>主題設定</MenuItem_ThemeConfig>
+    <MenuItem_LangID>LangID</MenuItem_LangID>
+    <MenuItem_Code_Generation>程式碼生成</MenuItem_Code_Generation>
+    <MenuItem_Simulatior>模擬器</MenuItem_Simulatior>
+    <MenuItem_Help>說明</MenuItem_Help>
+    <MenuItem_Quit>關閉</MenuItem_Quit>
+
+    <!--MsgBox-->
+    <MsgBox_SaveProject>當前項目已被修改。退出前是否要保存更改？</MsgBox_SaveProject>
+    <MsgBox_DelPage>你真的要刪除這個頁面嗎？</MsgBox_DelPage>
+    <MsgBox_PageInUse>{name} 當前正在 {inUseCounter} 個地方使用。無法刪除！</MsgBox_PageInUse>
+    <MsgBox_SoundCntExceed>內部存儲的最大聲音文件數必須小於{SD_StartNum}！</MsgBox_SoundCntExceed>
+    <MsgBox_ResInUse>{name} 當前正在 {inUseCounter} 地方使用。無法刪除！</MsgBox_ResInUse>
+    <MsgBox_OscSampBufExceed>Sample Buffer Size 不可滿足！&#xD;必須建立以下公式：&#xD;&#xD;      Sample Buffer Size ≥ Td × (Xd + 1) / Ts&#xD;&#xD;其中&#xD;&#xD;      Td = 時間/Div (µs)&#xD;      Xd = X 分割線&#xD;      Ts = 單次採樣時間 (µs )</MsgBox_OscSampBufExceed>
+
+    <MsgBox_FntError>此字體文件不被支持！</MsgBox_FntError>
+    <MsgBox_ImgError>此圖像文件不受支持！</MsgBox_ImgError>
+    <MsgBox_IdeError>連接86Duino IDE失敗！ HMI 編輯器將關閉。</MsgBox_IdeError>
+    <MsgBox_OpenError>人機工程文件打開失敗！</MsgBox_OpenError>
+    <MsgBox_SaveError>人機工程文件保存失敗！</MsgBox_SaveError>
+    <MsgBox_DuplicateError>複製本頁失敗！</MsgBox_DuplicateError>
+    <MsgBox_CopyError>複製對象失敗！</MsgBox_CopyError>
+    <MsgBox_PasteError>粘貼對象失敗！</MsgBox_PasteError>
+    <MsgBox_DeleteError>刪除對象失敗！</MsgBox_DeleteError>
+    <MsgBox_MoveError>改變對象順序失敗！</MsgBox_MoveError>
+    <MsgBox_UnexpectedError>出現意外錯誤！ HMI 編輯器將被關閉！</MsgBox_UnexpectedError>
+
+    <!--Import-->
+    <Import_ThemeTitle>主題</Import_ThemeTitle>
+    <Import_PositionRemap>重新排列</Import_PositionRemap>
+    <Import_SizeRemap>調整大小</Import_SizeRemap>
+    
+  </Lang_cn>
+  <!--Image path-->
+  <Img_ContextMenuButton1> pack://siteoforigin:,,,/Resource/UIImage/ContextMenuButton1.png </Img_ContextMenuButton1>
+  <Img_ContextMenuButton2> pack://siteoforigin:,,,/Resource/UIImage/ContextMenuButton2.png </Img_ContextMenuButton2>
+  <Img_ContextMenuButton3> pack://siteoforigin:,,,/Resource/UIImage/ContextMenuButton3.png </Img_ContextMenuButton3>
+
+  <!--Theme color-->
+  <WindowTopColor>#FF000000</WindowTopColor>
+  <WindowBackgroundColor>#FF363636</WindowBackgroundColor>
+  <ToolBoxColor>#FF383838</ToolBoxColor>
+  <ToolBoxBorderBrushColor>#FF2B2B2B</ToolBoxBorderBrushColor>
+  <TabControlColor>#FF363636</TabControlColor>
+
+</skins>

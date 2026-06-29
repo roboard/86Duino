@@ -1,0 +1,55 @@
+一般
+EtherCAT
+安全性
+離開
+Type
+型號 : 
+Bootloader 版本 :
+Date
+日期 & 時間 :
+BIOS Option
+顯示開機訊息 :
+上傳程式執行檔 :
+上傳資源檔 :
+LCD 觸碰校正 :
+86EVA 組態器 :
+開啟
+管理員密碼 :
+使用者密碼 :
+儲存設定 & 重啟
+取消儲存 & 重啟
+時
+分
+秒
+設定 日期/時間
+上一步
+OK
+下一步
+取消
+是
+否
+請輸入上次設定的密碼
+請輸入新密碼
+請輸入管理員密碼
+請輸入使用者密碼
+#FF8B44 [ ERROR ]#\n密碼不正確
+離開 & 重啟?
+#82FFD7 [ Next Step ]#\n請輸入新密碼
+#82FFD7 [ Success ]#\n設定新密碼成功
+#82FFD7 [ Success ]#\n已清除管理員密碼
+#82FFD7 [ Success ]#\n已清除使用者密碼
+#FF8B44 [ ERROR ]#\n管理員密碼已為空
+#FF8B44 [ ERROR ]#\n使用者密碼已為空
+儲存和重啟?
+取消儲存和重啟?
+校正程序
+按 OK 開始
+警告
+Upload is disabled\nEnable it in the bootloader menu.\nPress OK to reset
+請觸碰原點上的十字焦點
+校正失敗
+請再試一次
+校正成功
+儲存校正參數?
+已儲存
+校正參數成功儲存

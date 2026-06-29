@@ -1,0 +1,10 @@
+
+## all other A class are managed by ARIN
+0.0.0.0/1       whois.arin.net
+
+## All other B class addresses are supposed to be allocated by ARIN
+128.0.0.0/2     whois.arin.net
+
+## All other C class addresses are supposed to be allocated by ARIN
+192.0.0.0/3     whois.arin.net
+224.0.0.0/3     whois.arin.net

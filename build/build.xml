@@ -43,7 +43,26 @@
   <condition property="staging_folder" value="linux"><equals arg1="${platform}" arg2="linuxarm" /></condition>
   <condition property="staging_folder" value="linux"><equals arg1="${platform}" arg2="linuxaarch64" /></condition>
 
-  <condition property="staging_hardware_folder" value="Arduino.app/Contents/Java/hardware"><equals arg1="${platform}" arg2="macosx" /></condition>
+  <!-- for 86Duino: host 平台專屬工具鏈 (djgpp/upx309w/x86) 的來源目錄，依平台挑選。
+       這些是會在 build/開發機上執行的執行檔，各平台版本不同，故不放在共用的 ../hardware，
+       而是放在 build/<平台>/ 下，由 assemble-hardware 依此屬性複製到 bundle 的 hardware/tools。 -->
+  <condition property="tools_src_folder" value="macosx"><equals arg1="${platform}" arg2="macosx" /></condition>
+  <condition property="tools_src_folder" value="windows"><equals arg1="${platform}" arg2="windows" /></condition>
+  <condition property="tools_src_folder" value="linux/32"><equals arg1="${platform}" arg2="linux32" /></condition>
+  <condition property="tools_src_folder" value="linux/64"><equals arg1="${platform}" arg2="linux64" /></condition>
+
+  <!-- for 86Duino: djgpp 交叉編譯工具鏈改為「編譯時下載」(來源 andrewwutw/build-djgpp v3.0)，
+       不再把二進位 commit 進倉庫，避免膨脹原始碼下載。每平台對應不同 archive：
+         djgpp_archive = 要下載的檔名 (mac/linux 為 .tar.bz2，windows 為 .zip)
+         djgpp_unpack  = 解壓方式 (untar-native 用系統 tar 保留 +x；windows 用 unzip) -->
+  <condition property="djgpp_archive" value="djgpp-osx-gcc830.tar.bz2"><equals arg1="${platform}" arg2="macosx" /></condition>
+  <condition property="djgpp_archive" value="djgpp-linux32-gcc830.tar.bz2"><equals arg1="${platform}" arg2="linux32" /></condition>
+  <condition property="djgpp_archive" value="djgpp-linux64-gcc830.tar.bz2"><equals arg1="${platform}" arg2="linux64" /></condition>
+  <condition property="djgpp_archive" value="djgpp-mingw-gcc830-standalone.zip"><equals arg1="${platform}" arg2="windows" /></condition>
+  <condition property="djgpp_unpack" value="unzip"><equals arg1="${platform}" arg2="windows" /></condition>
+  <property name="djgpp_unpack" value="untar-native" /> <!-- 預設 (mac/linux): 系統 tar，保留執行權限 -->
+
+  <condition property="staging_hardware_folder" value="86duino.app/Contents/Java/hardware"><equals arg1="${platform}" arg2="macosx" /></condition>
   <condition property="staging_hardware_folder" value="hardware"><equals arg1="${platform}" arg2="windows" /></condition>
   <condition property="staging_hardware_folder" value="hardware"><equals arg1="${platform}" arg2="linux32" /></condition>
   <condition property="staging_hardware_folder" value="hardware"><equals arg1="${platform}" arg2="linux64" /></condition>
@@ -203,9 +222,12 @@
   <target name="assemble">
     <fail unless="target.path" message="Do not call assemble from the command line." />
 
-    <!-- copy shared tools folder -->
+    <!-- copy shared tools folder (86Duino: 內容為 build/shared/tools 下的 86Duino 工具) -->
     <copy todir="${target.path}/tools">
-      <fileset dir="shared/tools" />
+      <fileset dir="shared/tools">
+        <exclude name="**/.DS_Store"/>
+        <exclude name="**/Thumbs.db"/>
+      </fileset>
     </copy>
 
     <copy file="shared/icons/48x48/apps/arduino.png" tofile="${target.path}/lib/arduino_small.png"/>
@@ -219,13 +241,8 @@
 
     <antcall target="assemble-libraries" />
 
-    <!-- Add WiFi101 updater tool -->
-    <antcall target="unzip">
-      <param name="archive_file" value="shared/WiFi101-Updater-ArduinoIDE-Plugin-${WIFI101-FW-UPDATER_VERSION}.zip" />
-      <param name="archive_url" value="https://github.com/arduino-libraries/WiFi101-FirmwareUpdater-Plugin/releases/download/v${WIFI101-FW-UPDATER_VERSION}/WiFi101-Updater-ArduinoIDE-Plugin-${WIFI101-FW-UPDATER_VERSION}.zip" />
-      <param name="final_folder" value="${target.path}/tools/WiFi101" />
-      <param name="dest_folder" value="${target.path}/tools/" />
-    </antcall>
+    <!-- for 86Duino: 移除 WiFi101 更新工具的下載 —— 86Duino 用不到。
+         原本會下載 WiFi101-Updater 並解壓到 tools/WiFi101，已停用。 -->
   </target>
 
   <target name="assemble-examples">
@@ -300,6 +317,39 @@
       <param name="dest_folder" value="${target.path}/hardware/arduino"/>
     </antcall>
     <copy file="../hardware/package_index_bundled.json" todir="${target.path}/hardware/" />
+    <!-- for 86Duino: 把 ../hardware 下的 86duino 平台與相關檔 (platform.txt、
+         platform.keys.rewrite.txt、tools 等) 複製進 bundle。此分支的 assemble-hardware
+         改成下載 arduino/avr 核心後，遺漏了 master 原有「複製 ../hardware」的步驟，
+         導致 86duino 平台沒被打包，IDE 首次啟動因找不到開發板平台而 NullPointerException。
+         排除 arduino/**：avr 核心已於上方下載，避免覆蓋。 -->
+    <copy todir="${target.path}/hardware">
+      <fileset dir="../hardware">
+        <exclude name="arduino/**"/>
+        <exclude name="tools/**"/>
+        <exclude name="**/.DS_Store"/>
+      </fileset>
+    </copy>
+
+    <!-- for 86Duino: 依平台複製 host 工具鏈 (djgpp/upx309w/x86) 到 hardware/tools。
+         來源 build/<平台> 由 tools_src_folder 決定 (macosx / windows / linux/32 / linux/64)，
+         達成單一 build.xml 在三平台各自打包出該平台的執行檔。
+         這些工具不放共用 ../hardware，以免把某平台的執行檔打包進其他平台。
+         failonerror=false: 某平台尚未放入工具時不致中斷。
+         chmod: ant <copy> 不保留 +x，於此補回 (Windows 上為 no-op)。 -->
+    <!-- djgpp 改為編譯時下載 (見 download-djgpp 與檔頭 djgpp_archive 設定)；
+         其餘 host 工具 (upx309w/x86) 仍由 build/<平台>/ 直接複製。 -->
+    <antcall target="download-djgpp" />
+    <copy todir="${target.path}/hardware/tools/upx309w" failonerror="false">
+      <fileset dir="${tools_src_folder}/upx309w"><exclude name="**/.DS_Store"/></fileset>
+    </copy>
+    <copy todir="${target.path}/hardware/tools/x86" failonerror="false">
+      <fileset dir="${tools_src_folder}/x86"><exclude name="**/.DS_Store"/></fileset>
+    </copy>
+    <chmod perm="755" failonerror="false">
+      <fileset dir="${target.path}/hardware/tools/djgpp" includes="bin/**,i586-pc-msdosdjgpp/bin/**,libexec/**" erroronmissingdir="false"/>
+      <fileset dir="${target.path}/hardware/tools/upx309w" includes="upx,upx.exe" erroronmissingdir="false"/>
+      <fileset dir="${target.path}/hardware/tools/x86" includes="*" erroronmissingdir="false"/>
+    </chmod>
   </target>
 
   <!-- - - - - - - - - -->
@@ -407,9 +457,9 @@
             jvmRequired="1.8"
             jrepreferred="true"
             outputdirectory="${staging_folder}/work"
-            name="Arduino"
-            displayname="Arduino"
-            executablename="Arduino"
+            name="86duino"
+            displayname="86duino"
+            executablename="86duino"
             identifier="cc.arduino.Arduino"
             shortversion="${version}"
             version="${revision}"
@@ -428,7 +478,7 @@
 
       <classpath refid="runtime.jars"/>
 
-      <option value="-Dapple.awt.application.name=Arduino"/>
+      <option value="-Dapple.awt.application.name=86duino"/>
       <option value="-Dcom.apple.macos.use-file-dialog-packages=true"/>
       <option value="-Dcom.apple.smallTabs=true"/>
       <option value="-DAPP_DIR=$APP_ROOT/Contents/Java"/>
@@ -446,8 +496,8 @@
       <!--<option value="-Dcom.apple.macos.useScreenMenuBar=true"/>-->
 
       <!-- Workaround since the icon parameter for bundleapp doesn't work -->
-      <option value="-Xdock:name=Arduino"/>
-      <option value="-Dcom.apple.mrj.application.apple.menu.about.name=Arduino"/>
+      <option value="-Xdock:name=86duino"/>
+      <option value="-Dcom.apple.mrj.application.apple.menu.about.name=86duino"/>
       <option value="-Dfile.encoding=UTF-8"/>
 
       <option value="-Xms128M"/>
@@ -500,6 +550,8 @@
 
     <property name="ARDUINO-BUILDER-EXTRA-VERSION" value="-signed" />
     <antcall target="build-arduino-builder" />
+    <!-- 註: 原生 arm64 arduino-builder 的覆蓋已統一移到 build-arduino-builder 內，
+         以 build/macosx/arduino-builder 為來源 (與 linux/windows 一致)。 -->
 
     <antcall target="portable-${portable}">
       <param name="parentdir" value="macosx/work/${staging_hardware_folder}/.." />
@@ -527,7 +579,7 @@
   <target name="macosx-run" depends="build,start"/>
 
   <target name="macosx-start">
-    <exec executable="macosx/work/Arduino.app/Contents/MacOS/Arduino" spawn="false" failonerror="true"/>
+    <exec executable="macosx/work/86duino.app/Contents/MacOS/86duino" spawn="false" failonerror="true"/>
   </target>
 
   <!-- - - - - - - - - - - - - - - - -->
@@ -538,7 +590,7 @@
     <fail unless="version" message="Please set the property 'version' to correctly sign distribution file" />
 
     <!-- Remove everything from working folder -->
-    <delete dir="macosx/work/Arduino.app" />
+    <delete dir="macosx/work/86duino.app" />
 
     <!-- Unzip unsigned app into working dir -->
     <exec executable="unzip" dir="macosx/work" failonerror="true">
@@ -552,12 +604,12 @@
 
     <!-- Sign app -->
     <exec executable="codesign" dir="macosx/work" failonerror="true">
-      <arg line="--keychain &quot;${macosx-sign-keychain}&quot; --force -s &quot;${macosx-sign-id}&quot; --timestamp --options runtime --deep -v Arduino.app/" />
+      <arg line="--keychain &quot;${macosx-sign-keychain}&quot; --force -s &quot;${macosx-sign-id}&quot; --timestamp --options runtime --deep -v 86duino.app/" />
     </exec>
 
     <!-- Check for successful signing -->
     <exec executable="codesign" dir="macosx/work" failonerror="true">
-      <arg line="-vvvv Arduino.app/" />
+      <arg line="-vvvv 86duino.app/" />
     </exec>
 
     <delete file="macosx/arduino-${version}-${platform}.zip" />
@@ -654,13 +706,13 @@
     <copy todir="linux/work/lib" file="linux/dist/desktop.template" />
     <copy todir="linux/work/lib" file="linux/dist/appdata.xml" />
 
-    <copy todir="linux/work" file="linux/dist/arduino" />
+    <copy todir="linux/work" file="linux/dist/86duino" />
     <copy todir="linux/work" file="linux/dist/install.sh" />
     <copy todir="linux/work" file="linux/dist/arduino-linux-setup.sh" />
     <copy todir="linux/work" file="linux/dist/uninstall.sh" />
 
     <chmod perm="ugo+x">
-        <fileset dir="linux/work" includes="arduino" />
+        <fileset dir="linux/work" includes="86duino" />
         <fileset dir="linux/work" includes="**/*.sh" />
         <fileset dir="linux/work/lib" includes="**/*desktop*" />
     </chmod>
@@ -833,19 +885,41 @@
   <target name="linuxaarch64-run" depends="build,start"/>
 
   <target name="linux32-start">
-    <exec executable="./linux/work/arduino" spawn="false" failonerror="true"/>
+    <exec executable="./linux/work/86duino" spawn="false" failonerror="true"/>
   </target>
 
   <target name="linux64-start">
-    <exec executable="./linux/work/arduino" spawn="false" failonerror="true"/>
+    <exec executable="./linux/work/86duino" spawn="false" failonerror="true"/>
   </target>
 
   <target name="linuxarm-start">
-    <exec executable="./linux/work/arduino" spawn="false" failonerror="true"/>
+    <exec executable="./linux/work/86duino" spawn="false" failonerror="true"/>
   </target>
 
   <target name="linuxaarch64-start">
-    <exec executable="./linux/work/arduino" spawn="false" failonerror="true"/>
+    <exec executable="./linux/work/86duino" spawn="false" failonerror="true"/>
+  </target>
+
+  <!-- for 86Duino: 依平台下載並解壓 djgpp 交叉編譯器到 bundle 的 hardware/tools/djgpp。
+       archive 解壓後頂層即為 djgpp/，故解到 hardware/tools/ 即得 hardware/tools/djgpp。
+       由 assemble-hardware 呼叫；target.path 由呼叫端 (assemble) 傳入並沿用。 -->
+  <target name="download-djgpp" if="djgpp_archive">
+    <mkdir dir="${target.path}/hardware/tools" />
+    <antcall target="${djgpp_unpack}">
+      <param name="archive_file" value="${staging_folder}/${djgpp_archive}" />
+      <param name="archive_url" value="https://github.com/andrewwutw/build-djgpp/releases/download/v3.0/${djgpp_archive}" />
+      <param name="final_folder" value="${target.path}/hardware/tools/djgpp" />
+      <param name="dest_folder" value="${target.path}/hardware/tools" />
+    </antcall>
+    <!-- for 86Duino: 下載的 djgpp 是原版交叉編譯器，缺 86Duino 專用的 target 函式庫與標頭
+         (lib86duino.a、allegro、motion、sws_*.h 等)。這些是針對 i586-DOS target 編的，
+         不分 host 平台，故統一放在 build/djgpp-86duino/{lib,sys-include}，於此覆蓋進去。 -->
+    <copy todir="${target.path}/hardware/tools/djgpp/i586-pc-msdosdjgpp/lib">
+      <fileset dir="djgpp-86duino/lib"><exclude name="**/.DS_Store"/></fileset>
+    </copy>
+    <copy todir="${target.path}/hardware/tools/djgpp/i586-pc-msdosdjgpp/sys-include">
+      <fileset dir="djgpp-86duino/sys-include"><exclude name="**/.DS_Store"/></fileset>
+    </copy>
   </target>
 
   <target name="build-arduino-builder" unless="no_arduino_builder">
@@ -859,6 +933,14 @@
       <param name="dest_folder" value="${staging_folder}/arduino-builder-${platform}" />
     </antcall>
     <copy file="${staging_folder}/arduino-builder-${platform}/arduino-builder" tofile="${staging_folder}/work/${staging_hardware_folder}/../arduino-builder" />
+    <chmod perm="755" file="${staging_folder}/work/${staging_hardware_folder}/../arduino-builder" />
+    <!-- for 86Duino: 若 build/<平台>/arduino-builder 存在，用該「原生版」覆蓋上面下載的版本。
+         tools_src_folder 依平台 = macosx / linux/32 / linux/64 (Windows 走 windows-build 另行處理)。
+         之後只要把各平台原生的 arduino-builder 放進 build/<平台>/ 即可，無需再改 build.xml；
+         不存在時 failonerror=false 會略過，沿用下載版本。 -->
+    <copy file="${tools_src_folder}/arduino-builder"
+          tofile="${staging_folder}/work/${staging_hardware_folder}/../arduino-builder"
+          overwrite="true" force="true" failonerror="false" />
     <chmod perm="755" file="${staging_folder}/work/${staging_hardware_folder}/../arduino-builder" />
     <move file="${staging_folder}/arduino-builder-${platform}/tools" tofile="${staging_folder}/work/${staging_hardware_folder}/../tools-builder"/>
     <copy todir="${staging_folder}/work/${staging_hardware_folder}" overwrite="true">
@@ -1085,6 +1167,11 @@
       <param name="dest_folder" value="${staging_folder}/arduino-builder-windows" />
     </antcall>
     <copy file="${staging_folder}/arduino-builder-windows/arduino-builder.exe" tofile="windows/work/arduino-builder.exe" />
+    <!-- for 86Duino: 若 build/windows/arduino-builder.exe 存在，用該原生版覆蓋上面下載的版本。
+         之後只要把 Windows 原生的 arduino-builder.exe 放進 build/windows/ 即可，無需再改 build.xml；
+         不存在時 failonerror=false 會略過，沿用下載版本。 -->
+    <copy file="windows/arduino-builder.exe" tofile="windows/work/arduino-builder.exe"
+          overwrite="true" force="true" failonerror="false" />
     <antcall target="make-file-executable">
       <param name="file" value="windows/work/arduino-builder.exe" />
     </antcall>

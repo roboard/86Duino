@@ -9,10 +9,10 @@ enum EthercatAttachMode {
 };
 
 class EthercatDevice_Generic;
-typedef class EthercatDevice {
+typedef class _EthercatDevice_CommonDriver {
 public:
-    EthercatDevice();
-    virtual ~EthercatDevice();
+    _EthercatDevice_CommonDriver();
+    virtual ~_EthercatDevice_CommonDriver();
 
     virtual int attach(uint16_t slave_id, EthercatMaster *master, EthercatAttachMode mode = ECAT_SLAVE_NO);
     virtual int attach(uint16_t slave_id, EthercatMaster &master, EthercatAttachMode mode = ECAT_SLAVE_NO);
@@ -201,20 +201,13 @@ public:
     int setState(EthercatState state, uint32_t timeout_us = 100000);
     int resume(uint32_t timeout_us = 100000);
 
-    virtual int update();
-    virtual int remapping() { return 0; }
-    virtual int unmapping() { return 0; }
-
 protected:
-    EthercatMaster::Passkey getPasskey() {
-        return EthercatMaster::Passkey();
-    }
     EthercatMaster *master;
     uint16_t slave_no;
     uint32_t vendorID;
     uint32_t productCode;
 
-} _EthercatDevice_CommonDriver;
+} EthercatDevice;
 
 class EthercatDevice_Generic : public EthercatDevice {
 public:
