@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------------------
+# 86Duino IDE — build 產物、下載暫存與雜物 (不應進版控)
+# 參考上游 arduino/Arduino 的 .gitignore 並依 86Duino 調整
+# ---------------------------------------------------------------------------
+
+# --- 編譯產物: Java classes 與 jar ---
+app/bin/
+app/pde.jar
+app/build/
+arduino-core/bin/
+arduino-core/arduino-core.jar
+arduino-core/build/
+test-bin/
+
+# --- 各平台編譯輸出 (整個打包好的 IDE) ---
+build/*/work/
+build/*/working_dir/
+build/*/working.dmg/
+build/*/*.dmg
+build/*/*.app/
+
+# --- 編譯時從網路下載的工具鏈 / 函式庫 archive (build 時自動抓) ---
+# 只比對 build/ 根目錄與各平台 staging 目錄第一層，避免誤傷 shared/ 下的原始資源
+build/*.tar.bz2
+build/*.tar.gz
+build/*.tar.xz
+build/*.tgz
+build/*.zip
+build/macosx/*.tar.bz2
+build/macosx/*.tar.gz
+build/macosx/*.zip
+build/macosx/dist/*.tar.gz
+build/macosx/dist/*.tar.bz2
+build/linux/*.tar.bz2
+build/linux/*.tar.gz
+build/linux/*.tar.xz
+build/linux/*.tgz
+build/linux/*.zip
+build/linux/dist/*.tar.gz
+build/linux/dist/*.tar.bz2
+build/windows/*.tar.bz2
+build/windows/*.tar.gz
+build/windows/*.tgz
+build/windows/*.zip
+build/windows/dist/*.tar.gz
+build/windows/dist/*.tar.bz2
+avr-toolchain-*.zip
+
+# --- 解壓出來的下載工具暫存資料夾 ---
+build/*/arduino-builder-*/
+build/macosx/appbundler-*/
+build/*/libastylej-*/
+build/*/liblistSerials-*/
+build/windows/launcher/launch4j/
+
+# --- 下載並解壓到 shared 的資源 ---
+build/shared/arduino-examples*
+build/shared/reference*.zip
+build/shared/Galileo*.zip
+build/shared/Edison*.zip
+build/shared/WiFi101-Updater-ArduinoIDE-Plugin*.zip
+
+# --- 編輯器 / IDE 專案檔 ---
+*.iml
+.idea/
+.directory
+manifest.mf
+nbbuild.xml
+nbproject/
+/app/nbproject/private/
+/arduino-core/nbproject/private/
+
+# --- 系統雜物 ---
+.DS_Store
+**/.DS_Store
+Thumbs.db

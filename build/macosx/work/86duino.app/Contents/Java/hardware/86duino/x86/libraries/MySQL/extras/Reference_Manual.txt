@@ -1,4 +1,0 @@
-The documentation for the connector has been moved to the wiki page on Github. For more information and documentation, visit the wiki:
-
-https://github.com/ChuckBell/MySQL_Connector_Arduino/wiki.
-

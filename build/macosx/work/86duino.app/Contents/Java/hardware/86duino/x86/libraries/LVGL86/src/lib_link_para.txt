@@ -1,1 +1,0 @@
--lvx86lcd -lalleg -lfreetype -llvgl -liconv 
