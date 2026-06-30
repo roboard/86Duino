@@ -30,19 +30,26 @@
 
 #ifdef _86DUINO
     #include "v86board.h"
+    #define HAVE_HWSERIAL1
 #endif
 
 #if defined (__86DUINO_ZERO)
 
     #define Serial1 _Serial1
     #define SerialPCIE _SerialPCIE
+    
+    #define HAVE_HWSERIAL_PCIE
 
 #elif defined (__86DUINO_ONE) || defined (__86DUINO_AI)
 
     #define Serial1 _Serial1
     #define Serial2 _Serial2
     #define Serial3 _Serial3
-    #define Serial485 _Serial485 
+    #define Serial485 _Serial485
+    
+    #define HAVE_HWSERIAL2
+    #define HAVE_HWSERIAL3
+    #define HAVE_HWSERIAL485
 
 #elif defined (__86DUINO_EDUCAKE)
 
@@ -50,14 +57,20 @@
     #define Serial2 _Serial2
     #define Serial3 _Serial3
     #define Serial232 _Serial232
+    
+    #define HAVE_HWSERIAL2
+    #define HAVE_HWSERIAL3
+    #define HAVE_HWSERIAL232
 
-#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9)  || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_CYF001) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
+#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9)  || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_CYF001) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
     
     #define Serial _Serial3
     #define Serial1 _Serial1
     
     #define SerialCOM _Serial485
     #define Serial485 _Serial485
+    
+    #define HAVE_HWSERIAL485
 
 #elif defined (__86DUINO_DUO)
  
@@ -66,12 +79,22 @@
     #define Serial3 _Serial3
     #define Serial485 _Serial485
     #define SerialPCIE _SerialPCIE
+    
+    #define HAVE_HWSERIAL2
+    #define HAVE_HWSERIAL3
+    #define HAVE_HWSERIAL485
+    #define HAVE_HWSERIAL_PCIE
 
 #elif defined (__86DUINO_HMI043T)
 
     #define Serial1 _Serial1
+    #define Serial2 _Serial2
     #define Serial5 _Serial5
     #define Serial6 _Serial232
+    
+    #define HAVE_HWSERIAL2
+    #define HAVE_HWSERIAL5
+    #define HAVE_HWSERIAL232
 
 #else
     

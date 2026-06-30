@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #include "dmpcfg.h"
 
 #ifndef __ATTR_CONST__
@@ -96,6 +97,8 @@ typedef unsigned long long prog_uint64_t PROGMEM;
 
 #define printf_P                 printf
 #define sprintf_P                sprintf
+#define vsnprintf_P              vsnprintf
+
 
 #ifdef __cplusplus
 }

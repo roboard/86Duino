@@ -47,7 +47,7 @@ enum EthercatMailboxProtocol {
 
 typedef volatile uint8_t *PdoBufferPtr;
 
-class EthercatDevice_CiA402;
+class EthercatDevice;
 class EthercatMaster {
 
 public:
@@ -59,6 +59,7 @@ public:
 
     /* EtherCAT Master Initialize. All slaves will enter PRE-OP state if success. */
     int begin(EthernetPort eth = ECAT_ETH_0, const char *eni_filename = NULL);
+    int begin(uint64_t cycletime_ns, EthernetPort eth = ECAT_ETH_0, const char *eni_filename = NULL);
     /* EtherCAT Master shutdown. */
     void end();
 
@@ -116,6 +117,8 @@ public:
     int getWorkingCounter();
     /* Get expected working counter. */
     int getExpectedWorkingCounter();
+
+    int addS2SMapping(uint16_t src_slave_no, uint32_t src_bit_offs, uint16_t dst_slave_no, uint32_t dst_bit_offs, uint32_t bitsize);
 
     /*************************************************************************
      *  The following APIs are still under development and are not           *
@@ -306,11 +309,6 @@ public:
     int getSoEChannels(uint16_t slave_no);
     int isSupportDC(uint16_t slave_no);
 
-    int __addCiA402__(EthercatDevice_CiA402 *device, uint16_t slave_no, uint32_t drive_id);
-    int __delCiA402__(size_t id);
-    int __inInterrupt__();
-    uint64_t __getCycleTime__();
-
     /* For internal use. */
     int getErrorCallbackData(void *data, size_t size);
     int getEventCallbackData(void *data, size_t size);
@@ -318,17 +316,36 @@ public:
     char *getEventMessage(int event, char *message, size_t size);
     uint32_t getFreeSystemMemory();
     uint32_t getFreeSharedMemory();
-    int __begin1__(EthernetPort eth = ECAT_ETH_0, const char *eni_filename = NULL);
-    int __begin2__();
+    int init(EthernetPort eth = ECAT_ETH_0);
+    int configure(const char *eni_filename = NULL);
+    int configure(uint64_t cycletime_ns, const char *eni_filename = NULL);
+    void deconfigure();
+    void deinit();
+    uint64_t __getCycleTime__();
+
+    class Passkey {
+    public:
+        ~Passkey() = default;
+    private:
+        Passkey() = default;
+        friend class EthercatDevice;
+    };
+    int addDevice(Passkey, EthercatDevice *device, uint16_t slave_no, uint32_t sub_id = 0);
+    int delDevice(Passkey, uint16_t slave_no, uint32_t sub_id = 0);
+    int inInterrupt(Passkey);
+    uint64_t getCycleTime(Passkey);
 
 private:
     void *private_data;
     char libVersion[128];
     EthercatMasterSettings settings;
+    CyclicCallbackType UserCyclicCallback;
     ErrorCallbackType UserErrorCallback;
     EventCallbackType UserEventCallback;
     bool UserErrorCallbackUseFPU;
     bool UserEventCallbackUseFPU;
+    bool UserCyclicCallbackUseDPC;
+    bool UserCyclicCallbackUseFPU;
 
 };
 

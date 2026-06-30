@@ -11,30 +11,58 @@
 #ifndef __DMP_SWSSOCK_H
 #define __DMP_SWSSOCK_H
 
+#include "sws_nif.h"
 #include <stdint.h>
-#include "sws_sock.h"
+#include <string>
+
+#define NIC_UNKNOWN (0)
+#define NIC_R6040   (1)
+#define NIC_OTHERS  (2)
+#define NIC_VNET    (3)
+#define NIC_EOE     (4)
+#define NIC_BRIDGE  (5)
+
+enum EnetLinkstatus {
+    UNKNOWN,
+    LINK_ON,
+    LINK_OFF
+};
 
 class SwsSockClass
 {
 public:
-    int init(uint32_t ip_address, uint32_t subnet, uint32_t gateway, uint32_t dns);
-    int setDhcp(unsigned long, unsigned long);
-    int setPromiscuousMode(bool enable);
+    SwsSockClass(NetworkInterface *iface);
+    SwsSockClass(const char *ifname);
+    SwsSockClass(const char *ifname, NetworkInterface *iface);
+    ~SwsSockClass();
+
+    int init(uint8_t *mac, uint32_t ip_address, uint32_t subnet, uint32_t gateway, uint32_t dns);
+    int init(uint8_t *mac);
     int isInitialized();
+    int getChip();
+    int setPromiscuousMode(bool enable);
+    int setMulticast(bool enable);
+    EnetLinkstatus getLinkStatus();
 
     void getMACAddress(uint8_t *mac_address);
-    uint32_t getLocalIp();
+    uint32_t getLocalIP();
     uint32_t getSubnetMask();
-    uint32_t getGatewayIp();
-    uint32_t getDnsServerIp();
+    uint32_t getGatewayIP();
+    uint32_t getDnsServerIP();
+
+    void setMACAddress(uint8_t *mac_address);
+    void setLocalIP(uint32_t local_ip);
+    void setSubnetMask(uint32_t subnet);
+    void setGatewayIP(uint32_t gateway);
+    void setDnsServerIP(uint32_t dns_server);
 
 private:
-    static bool _initialized;
-    static int _promiscuous;
-    static int _pktdrvidx;
-
+    void close();
+    NetworkInterface *_iface;
+    std::string _ifname;
+    static bool _vnetStartup;
+    static bool _swsStartup;
+    void *_privateData;
 };
-
-extern SwsSockClass SwsSock;
 
 #endif

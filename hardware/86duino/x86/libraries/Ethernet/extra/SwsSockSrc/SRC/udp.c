@@ -1335,7 +1335,7 @@ SWS_CB( void, UdpRecvInd(
     /* Yes, offer to all matching saps */
     for ( pUdp = s_pBoundUdps; NULL != pUdp; pUdp = pUdp->pNext)
       {
-      if ( UdpGroupFind( pUdp, dst, spec))
+      if ( UdpGroupFind( pUdp, dst, spec) >= 0 )
         {
         if ( localPort == pUdp->localPort)
           {

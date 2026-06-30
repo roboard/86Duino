@@ -1,7 +1,7 @@
 #ifndef ___WZ_ETHERCAT_DEVICE_DMP_CIQ_H
 #define ___WZ_ETHERCAT_DEVICE_DMP_CIQ_H
 
-#include "EthercatDevice_DmpCommon.h"
+#include "EthercatDevice_DmpMDP.h"
 #include <stdint.h>
 
 class EthercatDevice_QECR00CFFG;
@@ -162,7 +162,47 @@ protected:
     int nUART;
 
 private:
-    void *private_data;
+    EthercatDevice_DmpMDP_Generic *_internalMDP;
+    void *_privateData;
+    int _attach(uint16_t slave_id, EthercatMaster *master, EthercatAttachMode mode);
+    int _detach();
+    int _update();
+    int _uartIs485(int dev);
+    int _uartSetBaud(int dev, uint32_t baud);
+    int _uartSetFormat(int dev, uint8_t format);
+    int _uartSetFlowControl(int dev, int control);
+    int _uartGetRTS(int dev);
+    int _uartGetCTS(int dev);
+    int _uartGetDTR(int dev);
+    int _uartGetDSR(int dev);
+    int _uartSetRTS(int dev, uint8_t value);
+    int _uartSetDTR(int dev, uint8_t value);
+    int _uartClearFIFO(int dev);
+    int _uartClearTxQueue(int dev);
+    int _uartClearRxQueue(int dev);
+    int _uartQueryTxQueue(int dev);
+    int _uartQueryRxQueue(int dev);
+    int _uartTxQueueEmpty(int dev);
+    int _uartRxQueueEmpty(int dev);
+    int _uartTxQueueFull(int dev);
+    int _uartRxQueueFull(int dev);
+    int _uartSend(int dev, void *buf, size_t size);
+    int _uartWrite(int dev, uint8_t value);
+    int _uartReceive(int dev, void *buf, size_t size);
+    int _uartRead(int dev);
+    int _digitalWrite(int pin, uint8_t value);
+    int _digitalRead(int pin);
+    int _digitalWriteAll(uint32_t value);
+    uint32_t _digitalReadAll();
+    int _analogWrite(int ch, int32_t value);
+    int _voltageWrite(int ch, double voltage);
+    int _currentWrite(int ch, double current);
+    int _analogRead(int ch);
+    double _voltageRead(int ch);
+    int _aiPinMode(int ch, uint32_t range);
+    int _aoPinMode(int ch, uint32_t range);
+    int _getAiPinMode(int ch);
+    int _getAoPinMode(int ch);
 
 };
 

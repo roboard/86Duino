@@ -5,6 +5,7 @@
 #include "EthercatDevice.h"
 #include "EthercatDevice_CiA402.h"
 #include "devices/DMP/EthercatDevice_DmpCommon.h"
+#include "devices/DMP/EthercatDevice_DmpMDP.h"
 #include "devices/DMP/EthercatDevice_DmpDIQ.h"
 #include "devices/DMP/EthercatDevice_DmpAIQ.h"
 #include "devices/DMP/EthercatDevice_DmpCIQ.h"

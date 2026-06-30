@@ -365,6 +365,12 @@ void Serial_::flush(int w)
         com_FlushRxQueue(handle);
 }
 
+void Serial_::setTimeout(unsigned long rxtimeout, unsigned long txtimeout)
+{
+    if (handle == NULL) return;
+    com_SetTimeOut(handle, rxtimeout, txtimeout);
+}
+
 size_t Serial_::write(uint8_t c)
 {
 	if (handle != NULL && com_Ready(handle) != false)

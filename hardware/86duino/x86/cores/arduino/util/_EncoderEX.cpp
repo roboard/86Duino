@@ -370,7 +370,7 @@ static void open_mcm_crossbar(int mc) {
 */
 
 static void open_encoder_pin() {
-#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
+#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
     for (int i=0; i<EXTERNAL_NUM_INTERRUPTS; i++) {
         if (INTPINSMAP[i] == 0) continue;
         io_outpb(CROSSBARBASE + 0x100 + PIN86[INTPINSMAP[i]].gpN, 0x01); // Only Port 0 ~ 5

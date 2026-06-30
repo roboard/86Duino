@@ -78,8 +78,13 @@ void _86Duino_error_process(int num) {
 
 // Weak empty variant initialization function.
 // May be redefined by variant files.
-void initVariant() __attribute__((weak));
-void initVariant() { }
+void initVariant(void) __attribute__((weak));
+void initVariant(void) { }
+
+// Weak hook: a linked RTOS library (e.g. Arduino_FreeRTOS) overrides this to
+// start its scheduler after setup().  Default is a no-op.
+extern "C" void startSchedulerHook(void) __attribute__((weak));
+extern "C" void startSchedulerHook(void) { }
 
 static __attribute__((constructor(101))) void _f_init()
 {
@@ -113,6 +118,8 @@ char* getBoardName(void) {
             sprintf(boardName, "86Duino One");
         } else if (strcmp(buf, "EDUCAKE") == 0) {
             sprintf(boardName, "86Duino Educake");
+        } else if (strcmp(buf, "DUO") == 0) {
+            sprintf(boardName, "86Duino DUO");
         } else if (strcmp(buf, "QEC") == 0) {
             sprintf(boardName, "QEC-M-043T");
         } else if (strcmp(buf, "QEC7") == 0) {
@@ -123,6 +130,18 @@ char* getBoardName(void) {
             sprintf(boardName, "QEC-M-150T");
         } else if (strcmp(buf, "QECM2") == 0) {
             sprintf(boardName, "QEC-M-01");
+        } else if (strcmp(buf, "QECM02") == 0) {
+            sprintf(boardName, "QEC-M-02");
+        } else if (strcmp(buf, "QECPPC9") == 0) {
+            sprintf(boardName, "QEC-PPC-090T");
+        } else if (strcmp(buf, "QEC104") == 0) {
+            sprintf(boardName, "QEC-PPC-104T");
+        } else if (strcmp(buf, "PPC9S") == 0) {
+            sprintf(boardName, "PPC-090T");
+        } else if (strcmp(buf, "PPC15S") == 0) {
+            sprintf(boardName, "PPC-150T");
+        } else if (strcmp(buf, "HMI043T") == 0) {
+            sprintf(boardName, "HMI-043T");
         } else {
             sprintf(boardName, "No such board");
         }
@@ -165,6 +184,8 @@ int main(void)
     detectQECInfoInit();
     
     setup();
+    
+    startSchedulerHook();
     
     _86DuinoState = IN_MAIN_LOOP;
 	for (;;)

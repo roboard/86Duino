@@ -32,6 +32,7 @@ typedef struct {
     uint32_t StateMachineTimeoutP2S;        /* PREOP to SAFEOP timeout. Unit: milliseconds. */
     uint32_t StateMachineTimeoutS2O;        /* SAFEOP to OP timeout. Unit: milliseconds. */
     uint32_t ScanNetworkTimeout;            /* Scan network timeout. Unit: milliseconds. */
+    uint32_t ConfigureMasterTimeout;        /* Configure master timeout. Unit: milliseconds. */
     uint32_t StartMasterTimeout;            /* Start timeout for master. Unit: milliseconds. */
     uint32_t StartDeviceTimeout;            /* Start timeout for each slave device. Unit: milliseconds. */
 

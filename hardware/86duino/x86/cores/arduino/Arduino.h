@@ -1,6 +1,11 @@
 #ifndef Arduino_h
 #define Arduino_h
 
+#include <string>
+#include <vector>
+#include <map>
+#include <iostream>
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -112,6 +117,13 @@ void helperYield(void);
 
 typedef unsigned short word;
 
+typedef int clockid_t;
+  
+struct timespec {
+    unsigned long long tv_sec;
+    unsigned long long tv_nsec;
+};
+
 #define bit(b)    (1UL << (b))
 #define DEGREE_C    (0)
 #define DEGREE_F    (1)
@@ -162,7 +174,7 @@ bool get_wdt_timeout(void);
 void setup();
 void loop(void);
 
-#if defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
+#if defined (__86DUINO_QEC) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)  || defined (__86DUINO_DUO)
 double systemPowerVoltage();
 double systemPowerCurrent();
 double peripheralPowerVoltage();

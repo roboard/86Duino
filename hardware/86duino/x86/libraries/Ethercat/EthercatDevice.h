@@ -9,10 +9,10 @@ enum EthercatAttachMode {
 };
 
 class EthercatDevice_Generic;
-typedef class _EthercatDevice_CommonDriver {
+typedef class EthercatDevice {
 public:
-    _EthercatDevice_CommonDriver();
-    virtual ~_EthercatDevice_CommonDriver();
+    EthercatDevice();
+    virtual ~EthercatDevice();
 
     virtual int attach(uint16_t slave_id, EthercatMaster *master, EthercatAttachMode mode = ECAT_SLAVE_NO);
     virtual int attach(uint16_t slave_id, EthercatMaster &master, EthercatAttachMode mode = ECAT_SLAVE_NO);
@@ -92,6 +92,9 @@ public:
     /************************************************************************
      *  The following APIs are only for internal use.                       *
      ************************************************************************/
+    /* Get the internal EthercatMaster pointer. */
+    EthercatMaster *getMaster();
+
     /* Read/Write EEPROM alias address. */
     uint16_t readSII_AliasAddress(uint32_t timeout_ms = 500);
     int writeSII_AliasAddress(uint16_t alias, uint32_t timeout_ms = 500);
@@ -201,13 +204,20 @@ public:
     int setState(EthercatState state, uint32_t timeout_us = 100000);
     int resume(uint32_t timeout_us = 100000);
 
+    virtual int update();
+    virtual int remapping() { return 0; }
+    virtual int unmapping() { return 0; }
+
 protected:
+    EthercatMaster::Passkey getPasskey() {
+        return EthercatMaster::Passkey();
+    }
     EthercatMaster *master;
     uint16_t slave_no;
     uint32_t vendorID;
     uint32_t productCode;
 
-} EthercatDevice;
+} _EthercatDevice_CommonDriver;
 
 class EthercatDevice_Generic : public EthercatDevice {
 public:

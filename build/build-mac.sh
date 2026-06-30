@@ -152,27 +152,34 @@ if [ "$ant_status" -eq 0 ] && command -v codesign >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
-# 編譯後處理: 還原 hardware/tools 工具的執行權限 (macOS 安全網)。
-# host 工具鏈 (djgpp/upx309w/x86) 由 build.xml 依平台從 build/macosx/ 複製進 bundle，
-# 但 ant <copy> 不保留 Unix 執行權限 (+x)，會造成 "fork/exec ...: permission denied"。
-# build.xml 已用 <chmod> 補回 (跨平台)，這裡再以「來源 build/macosx 工具的實際 +x」
-# 精準鏡像一次，作為 macOS 的保險 (不受 chmod include 樣式遺漏影響)。
+# 編譯後處理: 還原 bundle 內工具的執行權限 (macOS 安全網)。
+# 工具是用 ant <copy> 複製進 bundle 的，但 ant <copy> 不保留 Unix 執行權限 (+x)，
+# 會造成 "fork/exec ...: permission denied"。這裡以「來源目錄的實際 +x」精準鏡像，
+# 涵蓋兩處:
+#   1) hardware/tools/{upx309w,x86} ← build/macosx/{upx309w,x86}
+#      (djgpp 由 untar-native 解壓已保留 +x，來源已不在 build/macosx，迴圈會自動略過)
+#   2) Contents/Java/tools          ← build/shared/tools
+#      (例如 EcConfig/tool 下的 EcConfig.exe、pl2303gcgpio 是 macOS 原生執行檔)
 # ---------------------------------------------------------------------------
 if [ "$ant_status" -eq 0 ]; then
   APP_BUNDLE="$(ls -d macosx/work/*.app 2>/dev/null | head -1)"
-  DEST_TOOLS="$APP_BUNDLE/Contents/Java/hardware/tools"
-  if [ -n "$APP_BUNDLE" ] && [ -d "$DEST_TOOLS" ]; then
+  if [ -n "$APP_BUNDLE" ]; then
+    JAVA_DIR="$APP_BUNDLE/Contents/Java"
     fixed=0
-    for tool in djgpp upx309w x86; do
-      SRC="macosx/$tool"
-      [ -d "$SRC" ] || continue
+    # 以「來源目錄 → 目標目錄」精準鏡像 +x
+    mirror_pairs="macosx/upx309w:$JAVA_DIR/hardware/tools/upx309w
+macosx/x86:$JAVA_DIR/hardware/tools/x86
+shared/tools:$JAVA_DIR/tools"
+    while IFS= read -r pair; do
+      src="${pair%%:*}"; dest="${pair#*:}"
+      [ -d "$src" ] && [ -d "$dest" ] || continue
       while IFS= read -r -d '' f; do
-        if [ -f "$DEST_TOOLS/$tool/$f" ]; then
-          chmod +x "$DEST_TOOLS/$tool/$f" && fixed=$((fixed + 1))
+        if [ -f "$dest/$f" ]; then
+          chmod +x "$dest/$f" && fixed=$((fixed + 1))
         fi
-      done < <(cd "$SRC" && find . -type f -perm -u+x -print0 2>/dev/null)
-    done
-    echo "已還原 bundle 內 hardware/tools 工具的執行權限 ($fixed 個檔)。"
+      done < <(cd "$src" && find . -type f -perm -u+x -print0 2>/dev/null)
+    done <<< "$mirror_pairs"
+    echo "已還原 bundle 內工具 (hardware/tools + Contents/Java/tools) 的執行權限 ($fixed 個檔)。"
   fi
 fi
 

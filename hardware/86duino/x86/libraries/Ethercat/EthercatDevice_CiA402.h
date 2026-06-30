@@ -447,11 +447,9 @@ public:
     #define CIA402_OBJECT_ACCESS_AUTO       (0)
     #define CIA402_OBJECT_ACCESS_SDO_STRICT (1)
     static void _setCiA402ObjectAccessBehavior(int behavior);
-    int __driveMapping__();
-    int __driveUnmapping__();
-    int __updateInputPDO__();
-    int __updateOutputPDO__();
-    int update();
+    int remapping() override;
+    int unmapping() override;
+    int update() override;
 
 private:
     static int _ObjectAccessBehavior;
@@ -471,12 +469,27 @@ private:
     int setHomingAcceleration(uint32_t value);
     int setTouchProbeSource(int ordinal, int16_t value);
     int setTouchProbeFunction(uint16_t value);
+    int setOperationMode(int8_t value);
+    int setControlword(uint16_t value);
+    uint16_t getControlword();
+    int8_t getOperationModeDisplay();
+    uint16_t getStatusword();
     uint16_t getTouchProbeFunction();
     uint16_t getTouchProbeStatus();
     int32_t getTouchProbePosition1PositiveValue();
     int32_t getTouchProbePosition1NegativeValue();
     int32_t getTouchProbePosition2PositiveValue();
     int32_t getTouchProbePosition2NegativeValue();
+
+    int _checkSupportedDriveMode(int mode);
+    int _checkWrongStateChange(int state);
+    int _setCiA402Mode(int mode, uint32_t timeout_ms);
+    int _setCiA402State(int state, uint32_t timeout_ms);
+    int _getCiA402State();
+    int _setCiA402Command(int command);
+    template <typename T> T _getTxPdoObject(uint16_t index, uint8_t subindex, int pdo_offset);
+    template <typename T> T _getRxPdoObject(uint16_t index, uint8_t subindex, int pdo_offset);
+    template <typename T> int _setRxPdoObject(uint16_t index, uint8_t subindex, int pdo_offset, T value);
 
     int _Halt(uint32_t timeout_ms = 10000);
     int _Resume();

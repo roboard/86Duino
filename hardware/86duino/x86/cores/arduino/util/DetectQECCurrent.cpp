@@ -2,14 +2,14 @@
 #include "_ADS1X15.h"
 #include "DetectQECCurrent.h"
 
-#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
+#if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
 
 I_t isRaw[8] = {{0.0, 498}, {0.5, 524}, {1.0, 550}, {1.5, 576}, {2.0, 603}, {2.5, 630}, {3.0, 656}, {3.5, 681}};
 I_t ipRaw[8] = {{0.0, 500}, {0.5, 527}, {1.0, 548}, {1.5, 578}, {2.0, 603}, {2.5, 630}, {3.0, 656}, {3.5, 680}};
 // I_t isRaw[8] = {{0.0, 12595}, {0.5, 13205}, {1.0, 13815}, {1.5, 14425}, {2.0, 15032}, {2.5, 15633}, {3.0, 16227}, {3.5, 16808}};  // 12 bits
 // I_t ipRaw[8] = {{0.0, 12828}, {0.5, 13458}, {1.0, 14086}, {1.5, 14715}, {2.0, 15343}, {2.5, 15950}, {3.0, 16555}, {3.5, 17150}}; // 12 bits
 
-#if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
+#if defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
 _ADS1115 ads;
 bool adsInited = false;
 void detectIsIp_Init(void) {
@@ -70,7 +70,7 @@ void detectIsIp(uint16_t* Ip, uint16_t* Is) {
     break;
     }
 }
-#endif // defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15)
+#endif
 
 double calculateCurrent(I_t * iRaw, int detectValue) {
     double result;
@@ -127,4 +127,4 @@ void parseI(FILE* fp, I_t* i) {
     }
 }
 
-#endif // if defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15)
+#endif

@@ -46,6 +46,17 @@ public:
     IPAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
     IPAddress(uint32_t address);
     IPAddress(const uint8_t *address);
+    
+    bool fromString(const char* buf) {
+        int ip[4];
+        if (sscanf(buf, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]) == 4) {
+            int c = 0;
+            for (int i=0; i<4; i++) if (ip[i] >= 0 && ip[i] <= 255) c++;
+            if (c == 4) { for (int i=0; i<4; i++) _address[i] = ip[i]; } else return false;
+            return true;
+        }
+        return false;
+    };
 
     // Overloaded cast operator to allow IPAddress objects to be used where a pointer
     // to a four-byte uint8_t array is expected

@@ -28,7 +28,7 @@ extern USBDevice_ USBDevice;
 
     #define SerialUSB Serial
 
-#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9)
+#elif defined (__86DUINO_QEC) || defined (__86DUINO_QEC_7) || defined (__86DUINO_QEC_9) || defined (__86DUINO_QEC_15) || defined (__86DUINO_QEC_M2) || defined (__86DUINO_QEC_M02) || defined (__86DUINO_QEC_PPC104) || defined (__86DUINO_QEC_PPC9) || defined (__86DUINO_PPC9S) || defined (__86DUINO_PPC15S)
 
     // Nothing
     
@@ -51,6 +51,7 @@ public:
 	int read(void);
     int availableForWrite(void);
 	void flush(int w=0);
+    void setTimeout(unsigned long rxtimeout, unsigned long txtimeout);
 	size_t write(uint8_t);
 	size_t write(const uint8_t*, size_t);
     using Stream::setTimeout;

@@ -308,7 +308,6 @@ void setFIFOCOM_IRQ(void) {
 */
 #endif
 
-
 bool init() {
     unsigned char mcm_irq;
     void *_usbdev_EX;
@@ -511,6 +510,10 @@ bool init() {
 	TX_LED_OFF();
 	RX_LED_OFF();
     
+#if defined (__86DUINO_DUO)
+    delay(200);
+#endif
+   
     // Setup USBCDC & USBHID
     if (_G_USBD == NOTHING) goto EXITUSBSETTING;
 
@@ -526,7 +529,7 @@ bool init() {
         }
     }
     if (usbdev_irq == 0) usbdev_irq = 0xFF;
-    
+
     if (usbdev_irq != 0xFF) {
         com_SetUSBCallback(HID_Reinitialize, HID_Uninitialize, _86Duino_suspend_callback, _86Duino_USB_ON_PIN_callback, _86Duino_USB_OFF_PIN_callback);
         handle = com_Init(USB_COM);
@@ -546,7 +549,7 @@ bool init() {
         com_EnableSOFInterrupt(handle); // Enable SOF interrupt to remain 100ms LED Blink.
         if (DEBUG_MSG) printf("USB Device init OK.\n");
     }
-    
+
 EXITUSBSETTING:
 #if defined (__86DUINO_EX2)
     // DM&P FIFOLAN initialize

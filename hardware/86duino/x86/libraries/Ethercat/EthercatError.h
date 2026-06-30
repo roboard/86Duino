@@ -45,6 +45,9 @@ enum EthercatErrorCode {
     ECAT_ERR_MASTER_WAIT_MASTER_SYNC_TIMEOUT            = -1016,
     ECAT_ERR_MASTER_CYCLIC_START_FAIL                   = -1017,
     ECAT_ERR_MASTER_WRONG_BUFFER_POINTER                = -1018,
+    ECAT_ERR_MASTER_DOWNLOAD_COPYINFOS_FAIL             = -1019,
+    ECAT_ERR_MASTER_CONFIGURE_FAIL                      = -1020,
+    ECAT_ERR_MASTER_INTERRUPT_START_FAIL                = -1021,
     ECAT_ERR_MASTER_ENI_INIT_FAIL                       = -1050,
     ECAT_ERR_MASTER_ENI_MISMATCH                        = -1051,
     ECAT_ERR_MASTER_STOPPED                             = -1100,
@@ -119,6 +122,12 @@ enum EthercatErrorCode {
     ECAT_ERR_DEVICE_EOE_TIMEOUT                         = -2612,
     ECAT_ERR_GROUP_WRONG_INPUT                          = -3000,
     ECAT_ERR_GROUP_NOT_ATTACH                           = -3001,
+    ECAT_ERR_MODULE_NOT_ATTACH                          = -5000,
+    ECAT_ERR_MODULE_MEMORY_ALLOCATION_FAIL              = -5001,
+    ECAT_ERR_MODULE_NO_SUCH_FUNCTION                    = -5002,
+    ECAT_ERR_MODULE_WRONG_INPUT                         = -5003,
+    ECAT_ERR_MODULE_PDO_NOT_EXIST                       = -5004,
+    ECAT_ERR_MODULE_INVALID_VALUE                       = -5005
 };
 
 #endif
