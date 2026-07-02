@@ -69,6 +69,11 @@ public class ContributedLibraryTableCellEditor extends InstallerTableCell {
     editorCell.installButton
         .addActionListener(e -> onInstall(editorValue.getSelected(),
                                           editorValue.getInstalled()));
+    editorCell.removeButton.addActionListener(e -> {
+      if (editorValue.getInstalled().isPresent()) {
+        onRemove(editorValue.getInstalled().get());
+      }
+    });
     editorCell.downgradeButton.addActionListener(e -> {
       JComboBox chooser = editorCell.downgradeChooser;
       ContributedLibrary lib = (ContributedLibrary) chooser.getSelectedItem();

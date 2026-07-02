@@ -27,6 +27,8 @@ public class ContributedLibraryTableCellJPanel extends JPanel {
   final JButton moreInfoButton;
   final JButton installButton;
   final Component installButtonPlaceholder;
+  final JButton removeButton;
+  final Component removeButtonPlaceholder;
   final JComboBox downgradeChooser;
   final JComboBox versionToInstallChooser;
   final JButton downgradeButton;
@@ -52,6 +54,10 @@ public class ContributedLibraryTableCellJPanel extends JPanel {
     installButton = new JButton(tr("Install"));
     int width = installButton.getPreferredSize().width;
     installButtonPlaceholder = Box.createRigidArea(new Dimension(width, 1));
+
+    removeButton = new JButton(tr("Remove"));
+    int removeWidth = removeButton.getPreferredSize().width;
+    removeButtonPlaceholder = Box.createRigidArea(new Dimension(removeWidth, 1));
 
     downgradeButton = new JButton(tr("Install"));
 
@@ -98,6 +104,8 @@ public class ContributedLibraryTableCellJPanel extends JPanel {
     buttonsPanel.add(Box.createHorizontalStrut(5));
     buttonsPanel.add(installButton);
     buttonsPanel.add(Box.createHorizontalStrut(5));
+    buttonsPanel.add(removeButton);
+    buttonsPanel.add(Box.createHorizontalStrut(5));
     buttonsPanel.add(Box.createHorizontalStrut(15));
 
     add(buttonsPanel);
@@ -129,14 +137,16 @@ public class ContributedLibraryTableCellJPanel extends JPanel {
     titledBorder.setTitle(selected.getName());
     Optional<ContributedLibrary> mayInstalled = releases.getInstalled();
 
-    boolean installable, upgradable;
+    boolean installable, upgradable, removable;
     if (!mayInstalled.isPresent()) {
       installable = true;
       upgradable = false;
+      removable = false;
     } else {
       installable = false;
       upgradable = new DownloadableContributionVersionComparator()
           .compare(selected, mayInstalled.get()) > 0;
+      removable = !mayInstalled.get().isIDEBuiltIn();
     }
     if (installable) {
       installButton.setText(tr("Install"));
@@ -146,6 +156,8 @@ public class ContributedLibraryTableCellJPanel extends JPanel {
     }
     installButton.setVisible(installable || upgradable);
     installButtonPlaceholder.setVisible(!(installable || upgradable));
+    removeButton.setVisible(removable);
+    removeButtonPlaceholder.setVisible(!removable);
 
     String name = selected.getName();
     // String author = selected.getAuthor();
@@ -266,6 +278,7 @@ public class ContributedLibraryTableCellJPanel extends JPanel {
 
   public void setButtonsVisible(boolean enabled) {
     installButton.setEnabled(enabled);
+    removeButton.setEnabled(enabled);
     buttonsPanel.setVisible(enabled);
     inactiveButtonsPanel.setVisible(!enabled);
   }
