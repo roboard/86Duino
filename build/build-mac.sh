@@ -169,7 +169,8 @@ if [ "$ant_status" -eq 0 ]; then
     # 以「來源目錄 → 目標目錄」精準鏡像 +x
     mirror_pairs="macosx/upx309w:$JAVA_DIR/hardware/tools/upx309w
 macosx/x86:$JAVA_DIR/hardware/tools/x86
-shared/tools:$JAVA_DIR/tools"
+shared/tools:$JAVA_DIR/tools
+macosx/tools:$JAVA_DIR/tools"
     while IFS= read -r pair; do
       src="${pair%%:*}"; dest="${pair#*:}"
       [ -d "$src" ] && [ -d "$dest" ] || continue

@@ -222,9 +222,20 @@
   <target name="assemble">
     <fail unless="target.path" message="Do not call assemble from the command line." />
 
-    <!-- copy shared tools folder (86Duino: 內容為 build/shared/tools 下的 86Duino 工具) -->
+    <!-- copy shared tools folder (86Duino: 內容為 build/shared/tools 下的平台無關工具，如各工具的 .jar 與圖片資源) -->
     <copy todir="${target.path}/tools">
       <fileset dir="shared/tools">
+        <exclude name="**/.DS_Store"/>
+        <exclude name="**/Thumbs.db"/>
+      </fileset>
+    </copy>
+
+    <!-- for 86Duino: 疊上「平台專屬」的工具執行檔 (build/<平台>/tools)，覆蓋 shared 版本。
+         tools_src_folder 依平台 = macosx / windows / linux/32 / linux/64。
+         目前只有 EcConfig/tool 下的原生執行檔 (如 EcConfig.exe)，未來新增也會自動一起覆蓋。
+         failonerror=false: 某平台尚未放入時不致中斷。 -->
+    <copy todir="${target.path}/tools" overwrite="true" failonerror="false">
+      <fileset dir="${tools_src_folder}/tools">
         <exclude name="**/.DS_Store"/>
         <exclude name="**/Thumbs.db"/>
       </fileset>
