@@ -5,4 +5,4 @@
 # no matter the current directory).
 DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 export LD_LIBRARY_PATH="$DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$DIR/EcConfig.exe" "$@"
+exec "$DIR/EcConfig" "$@"
