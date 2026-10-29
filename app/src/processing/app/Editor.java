@@ -2304,8 +2304,10 @@ public class Editor extends JFrame implements RunnerListener {
 
       setTitle(StringReplacer.replaceFromMapping(customFormat, titleMap));
     } else {
-      String MyVersionName = processCompileFile(".");
-      if (MyVersionName == "Error: Can not read file.") {
+      // Read lib/version_name.txt from the IDE folder (APP_DIR), not the working
+      // directory: a macOS app started from Finder runs in "/".
+      String MyVersionName = processCompileFile(BaseNoGui.getContentFile("").getPath());
+      if ("Error: Can not read file.".equals(MyVersionName)) {
         MyVersionName = BaseNoGui.VERSION_NAME_LONG;
       }
 
