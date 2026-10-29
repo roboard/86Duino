@@ -116,6 +116,13 @@ public class Base {
   List<Editor> editors = Collections.synchronizedList(new ArrayList<Editor>());
   Editor activeEditor;
 
+  // Guards against re-entering the watch-reload prompt: closing the modal
+  // dialog re-activates the editor window, which fires windowActivated
+  // again. This flag suppresses that single self-induced re-activation so
+  // the prompt does not loop when the user answers "No"; it is cleared via
+  // invokeLater so a later, genuine focus-return still prompts.
+  private boolean suppressReloadPrompt = false;
+
   // these menus are shared so that the board and serial port selections
   // are the same for all windows (since the board and serial port that are
   // actually used are determined by the preferences, which are shared)
@@ -721,6 +728,45 @@ public class Base {
       } catch (IOException e) {
         System.err.println(e);
       }
+    } else if (PreferencesData.getBoolean("editor.watch.reload")) {
+      // Skip the self-induced re-activation caused by closing the prompt
+      // dialog, so answering "No" does not immediately re-open it.
+      if (suppressReloadPrompt) {
+        return;
+      }
+      // 86Duino: the AI assistant reloads the files it changes by itself
+      if (activeEditor.isAiBusy()) {
+        return;
+      }
+      try {
+        // If files were added to, removed from, or modified in the sketch
+        // folder on disk, ask the user whether to reload the sketch. Only
+        // rebuild the tabs (which reloads the file contents as UTF-8) when
+        // they agree.
+        Sketch sketch = activeEditor.getSketch();
+        if (sketch.filesChangedOnDisk() || sketch.filesModifiedOnDisk()) {
+          suppressReloadPrompt = true;
+          try {
+            int result = JOptionPane.showConfirmDialog(activeEditor,
+                tr("Files in the sketch folder were added, removed, or modified.\nReload the sketch? Unsaved changes will be lost."),
+                tr("Reload sketch?"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+            if (result == JOptionPane.YES_OPTION) {
+              sketch.reload();
+              activeEditor.createTabs();
+            }
+          } finally {
+            // Clear the guard only after the queued windowActivated event
+            // (posted when the dialog closed) has been processed, so that
+            // one self-induced re-activation is skipped but later genuine
+            // focus-returns prompt again.
+            SwingUtilities.invokeLater(() -> suppressReloadPrompt = false);
+          }
+        }
+      } catch (IOException e) {
+        System.err.println(e);
+      }
     }
   }
 
@@ -1038,6 +1084,7 @@ public class Base {
         return false;
       }
       editor.setVisible(false);
+      editor.closeAiAssistant(); // 86Duino
       editor.dispose();
       editors.remove(editor);
     }
@@ -1071,6 +1118,11 @@ public class Base {
     }
 
     if (handleQuitEach()) {
+      // 86Duino: stop the AI assistant processes
+      for (Editor editor : editors) {
+        editor.closeAiAssistant();
+      }
+
       // Save out the current prefs state
       PreferencesData.save();
 

@@ -56,6 +56,10 @@ public class Preferences extends javax.swing.JDialog {
 
   private final WarningItem[] warningItems;
   private final Base base;
+  private final cc.arduino.ai.AiPreferencesPanel aiPreferencesPanel;
+  /** The AI tab: the panel inside a scroll pane, so a tall page scrolls instead of being squeezed. */
+  private final JScrollPane aiTab;
+  private final JTabbedPane tabbedPane;
 
   private static class WarningItem {
     private final String value;
@@ -89,9 +93,40 @@ public class Preferences extends javax.swing.JDialog {
 
     initComponents();
 
+    // 86Duino: the AI tab is built in code, outside the generated form
+    aiPreferencesPanel = new cc.arduino.ai.AiPreferencesPanel();
+    aiTab = new JScrollPane(aiPreferencesPanel, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    aiTab.setBorder(null);
+    aiTab.getVerticalScrollBar().setUnitIncrement(Theme.scale(16));
+    tabbedPane = findTabbedPane(getContentPane());
+    tabbedPane.addTab(tr("AI"), aiTab);
+    pack();
+
     Base.registerWindowCloseKeys(getRootPane(), this::cancelButtonActionPerformed);
 
     showPreferencesData();
+  }
+
+  /** The generated form keeps its JTabbedPane in a local variable. */
+  private static JTabbedPane findTabbedPane(Container container) {
+    for (Component c : container.getComponents()) {
+      if (c instanceof JTabbedPane) {
+        return (JTabbedPane) c;
+      }
+      if (c instanceof Container) {
+        JTabbedPane found = findTabbedPane((Container) c);
+        if (found != null) {
+          return found;
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Opens the dialog on the AI tab. */
+  public void selectAiTab() {
+    tabbedPane.setSelectedComponent(aiTab);
   }
 
   /**
@@ -132,6 +167,7 @@ public class Preferences extends javax.swing.JDialog {
     enableCodeFoldingBox = new javax.swing.JCheckBox();
     verifyUploadBox = new javax.swing.JCheckBox();
     externalEditorBox = new javax.swing.JCheckBox();
+    watchReloadBox = new javax.swing.JCheckBox();
     checkUpdatesBox = new javax.swing.JCheckBox();
     saveVerifyUploadBox = new javax.swing.JCheckBox();
     accessibleIDEBox = new javax.swing.JCheckBox();
@@ -275,6 +311,9 @@ public class Preferences extends javax.swing.JDialog {
     });
 
     checkboxesContainer.add(externalEditorBox);
+
+    watchReloadBox.setText(tr("Watch sketch folder and reload when files are added or removed"));
+    checkboxesContainer.add(watchReloadBox);
 
     checkUpdatesBox.setText(tr("Check for updates on startup"));
     checkboxesContainer.add(checkUpdatesBox);
@@ -758,6 +797,7 @@ public class Preferences extends javax.swing.JDialog {
   private javax.swing.JCheckBox verboseCompilationBox;
   private javax.swing.JCheckBox verboseUploadBox;
   private javax.swing.JCheckBox verifyUploadBox;
+  private javax.swing.JCheckBox watchReloadBox;
   private javax.swing.JComboBox comboTheme;
   private javax.swing.JLabel comboThemeLabel;
   private javax.swing.JLabel requiresRestartLabel2;
@@ -767,6 +807,11 @@ public class Preferences extends javax.swing.JDialog {
     java.util.List<String> errors = new LinkedList<>();
     if (FileUtils.isSubDirectory(new File(sketchbookLocationField.getText()), new File(PreferencesData.get("runtime.ide.path")))) {
       errors.add(tr("The specified sketchbook folder contains your copy of the IDE.\nPlease choose a different folder for your sketchbook."));
+    }
+    String aiError = aiPreferencesPanel.validateSettings();
+    if (aiError != null) {
+      tabbedPane.setSelectedComponent(aiTab);
+      errors.add(aiError);
     }
     return errors;
   }
@@ -829,6 +874,8 @@ public class Preferences extends javax.swing.JDialog {
 
     PreferencesData.setBoolean("editor.external", externalEditorBox.isSelected());
 
+    PreferencesData.setBoolean("editor.watch.reload", watchReloadBox.isSelected());
+
     PreferencesData.setBoolean("update.check", checkUpdatesBox.isSelected());
 
     PreferencesData.setBoolean("ide.accessible", accessibleIDEBox.isSelected());
@@ -848,6 +895,8 @@ public class Preferences extends javax.swing.JDialog {
       PreferencesData.set(Constants.PREF_PROXY_USERNAME, autoProxyUsername.getText());
       PreferencesData.set(Constants.PREF_PROXY_PASSWORD, String.valueOf(autoProxyPassword.getPassword()));
     }
+
+    aiPreferencesPanel.save();
   }
 
   private void showPreferencesData() {
@@ -900,6 +949,8 @@ public class Preferences extends javax.swing.JDialog {
     verifyUploadBox.setSelected(PreferencesData.getBoolean("upload.verify"));
 
     externalEditorBox.setSelected(PreferencesData.getBoolean("editor.external"));
+
+    watchReloadBox.setSelected(PreferencesData.getBoolean("editor.watch.reload"));
 
     if (PreferencesData.get("compiler.cache_core") == null) {
       PreferencesData.setBoolean("compiler.cache_core", true);

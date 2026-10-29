@@ -144,8 +144,16 @@ public class SerialMonitor extends AbstractTextMonitor {
       int[] location = getPlacement();
       String locationStr = PApplet.join(PApplet.str(location), ",");
       PreferencesData.set("last.serial.location", locationStr);
-      serial.dispose();
-      serial = null;
+      try {
+        serial.dispose();
+      } finally {
+        // Always clear the reference, even when dispose() throws (which it
+        // does when the USB device was physically removed and closePort()
+        // fails). Otherwise serial stays non-null and open() short-circuits
+        // on reconnect via "if (serial != null) return", leaving the window
+        // un-grayed but not actually receiving any data.
+        serial = null;
+      }
     }
   }
   

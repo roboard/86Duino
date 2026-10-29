@@ -121,15 +121,31 @@ public abstract class AbstractMonitor extends JFrame implements ActionListener {
   public void resume(BoardPort boardPort) throws Exception {
     setBoardPort(boardPort);
 
-    // Enable the window
-    enableWindow(true);
-
-    // If the window is visible, try to open the serial port
-    if (!isVisible()) {
-      return;
+    // If the window is visible, try to (re)open the serial port first.
+    // Only mark the window as enabled once the port has actually opened, so
+    // that a failed reopen (e.g. right after replugging the USB cable, when
+    // the port is enumerated again but not yet ready) leaves the monitor in
+    // the closed/suspended (grayed) state. The portExists timer then retries
+    // on its next tick, instead of leaving the window un-grayed but not
+    // receiving any data.
+    if (isVisible()) {
+      try {
+        open();
+      } catch (Exception e) {
+        // Roll back so closed == true and the portExists timer keeps
+        // retrying every second until the port becomes ready again.
+        try {
+          close();
+        } catch (Exception ignore) {
+          // noop
+        }
+        throw e;
+      }
     }
 
-    open();
+    // Reached only when open() succeeded, or when the window is not visible
+    // and there is nothing to open.
+    enableWindow(true);
   }
 
   protected void setPlacement(int[] location) {

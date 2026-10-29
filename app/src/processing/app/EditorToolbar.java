@@ -740,6 +740,26 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     return new Dimension(scale(30000), BUTTON_HEIGHT);
   }
 
+  /**
+   * 86Duino: the narrowest width that shows every button and the longest
+   * rollover title (with or without Shift) between the two button groups,
+   * as laid out by paintComponent: five buttons on the left, the others
+   * against the right edge. Follows buttonCount and the titles, so it grows
+   * with new buttons. Used as the editor's minimum width beside the AI panel.
+   */
+  public int getRequiredWidth() {
+    FontMetrics fm = getFontMetrics(statusFont);
+    int longest = 0;
+    for (int i = 0; i < buttonCount && i < title.length; i++) {
+      longest = Math.max(longest, Math.max(fm.stringWidth(title[i]), fm.stringWidth(titleShift[i])));
+    }
+    int leftGroup = 5;
+    int rightGroupWidth = (buttonCount - leftGroup) * BUTTON_WIDTH + 14;
+    // the left buttons' titles start here, the right buttons' titles end a gap before their group
+    int titleStart = leftGroup * BUTTON_WIDTH + 3 * BUTTON_GAP;
+    return titleStart + longest + 2 * BUTTON_GAP + rightGroupWidth;
+  }
+
   public boolean dispatchKeyEvent(final KeyEvent e) {
     if (shiftPressed != e.isShiftDown()) {
       shiftPressed = !shiftPressed;

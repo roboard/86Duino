@@ -81,11 +81,7 @@ public class LibrariesIndexer {
     index = new LibrariesIndex(); // Fallback
 
     TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform(); // for 86Duino
-    // 首次執行時尚未選定開發板，getTargetPlatform() 會回傳 null；此處需做 null 防護，
-    // 否則啟動階段會 NullPointerException 導致 IDE 無法開啟。 // for 86Duino
-    String platformName = (targetPlatform != null && targetPlatform.getPreferences() != null)
-                          ? targetPlatform.getPreferences().get("name") : null;
-    if (platformName != null && platformName.indexOf("Vortex86") >= 0) { // for 86Duino
+    if (targetPlatform.getPreferences().get("name").indexOf("Vortex86") >= 0) { // for 86Duino
       if (!indexFile_86Duino.exists()) {
         return;
       }
@@ -253,11 +249,8 @@ public class LibrariesIndexer {
       ContributedLibrary foundLib = index.find(lib.getName(), lib.getVersion());
       if (foundLib != null) {
         foundLib.setInstalledUserLibrary(lib);
-        TargetPlatform tp = BaseNoGui.getTargetPlatform(); // for 86Duino
-        String tpName = (tp != null && tp.getPreferences() != null)
-                        ? tp.getPreferences().get("name") : null; // for 86Duino
-        if (tpName == null || tpName.indexOf("Vortex86") < 0)
-          lib.setTypes(foundLib.getTypes());
+        if (BaseNoGui.getTargetPlatform().getPreferences().get("name").indexOf("Vortex86")<0)
+        lib.setTypes(foundLib.getTypes());
       }
     }
     
@@ -293,11 +286,9 @@ public class LibrariesIndexer {
 
   public File getIndexFile() {
     TargetPlatform targetPlatform = BaseNoGui.getTargetPlatform(); // for 86Duino
-    String platformName = (targetPlatform != null && targetPlatform.getPreferences() != null)
-                          ? targetPlatform.getPreferences().get("name") : null; // for 86Duino
-    if (platformName != null && platformName.indexOf("Vortex86") >= 0) { // for 86Duino
+    if (targetPlatform.getPreferences().get("name").indexOf("Vortex86") >= 0) { // for 86Duino
       return indexFile_86Duino;
-    }
+    } 
     return indexFile;
   }
 }

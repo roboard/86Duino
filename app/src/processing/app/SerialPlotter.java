@@ -490,8 +490,15 @@ public class SerialPlotter extends AbstractMonitor {
       int[] location = getPlacement();
       String locationStr = PApplet.join(PApplet.str(location), ",");
       PreferencesData.set("last.serial.location", locationStr);
-      serial.dispose();
-      serial = null;
+      try {
+        serial.dispose();
+      } finally {
+        // Always clear the reference, even when dispose() throws (USB device
+        // physically removed -> closePort() fails). Otherwise serial stays
+        // non-null and open() short-circuits on reconnect, leaving the
+        // window un-grayed but not receiving any data.
+        serial = null;
+      }
     }
   }
 }

@@ -87,9 +87,62 @@ public class Sketch {
    */
   public boolean reload() throws IOException {
     List<SketchFile> reloaded = listSketchFiles(false);
+    // Fix 2: preserve new tabs that have not been saved to disk yet, so a
+    // reload triggered by some other change does not silently discard the
+    // user's unsaved work. If a file with the same name has meanwhile
+    // appeared on disk, the unsaved in-memory tab takes precedence to avoid
+    // losing the user's edits.
+    for (SketchFile file : files) {
+      if (file.isNewUnsaved()) {
+        reloaded.remove(file); // drop any disk entry with the same name
+        reloaded.add(file);    // keep the unsaved in-memory tab
+      }
+    }
+    Collections.sort(reloaded, CODE_DOCS_COMPARATOR);
     if (!reloaded.equals(files)) {
       files = reloaded;
       return true;
+    }
+    return false;
+  }
+
+  /**
+   * Check whether files were added to or removed from the sketch directory
+   * on disk since the file list was last loaded. Unlike {@link #reload()},
+   * this does *not* modify the in-memory file list, so it is safe to use
+   * purely for detection (e.g. before prompting the user to reload).
+   *
+   * @return true when the list of files on disk differs from the one in
+   *         memory, false when they match.
+   */
+  public boolean filesChangedOnDisk() throws IOException {
+    List<SketchFile> onDisk = listSketchFiles(false);
+    // Fix 1: ignore new tabs that have not been saved to disk yet. Such
+    // files exist only in memory, so comparing them against the on-disk
+    // listing would otherwise always report a difference and spuriously
+    // trigger the reload prompt.
+    List<SketchFile> saved = new ArrayList<>();
+    for (SketchFile file : files) {
+      if (!file.isNewUnsaved())
+        saved.add(file);
+    }
+    return !onDisk.equals(saved);
+  }
+
+  /**
+   * Check whether any of the currently loaded files has been modified on
+   * disk (e.g. by an external program) since the IDE last read or wrote
+   * it. Detects changes in either direction (a newer or an older
+   * timestamp). This does *not* look at added or removed files; use
+   * {@link #filesChangedOnDisk()} for that.
+   *
+   * @return true when at least one file's on-disk timestamp differs from
+   *         the one the IDE last saw, false otherwise.
+   */
+  public boolean filesModifiedOnDisk() {
+    for (SketchFile file : files) {
+      if (file.isModifiedOnDisk())
+        return true;
     }
     return false;
   }

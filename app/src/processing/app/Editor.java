@@ -54,7 +54,10 @@ import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 
 import java.nio.file.Files;
-
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
@@ -73,7 +76,6 @@ import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javax.sql.rowset.serial.SerialException;
 import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.JCheckBoxMenuItem;
@@ -221,6 +223,11 @@ public class Editor extends JFrame implements RunnerListener {
   EditorConsole console;
 
   private JSplitPane splitPane;
+
+  // 86Duino: AI assistant panel on the right of the editor and console
+  private JSplitPane aiSplitPane;
+  private cc.arduino.ai.AiChatPanel aiPanel;
+  private boolean aiPanelVisible;
 
   // currently opened program
   SketchController sketchController;
@@ -377,8 +384,36 @@ public class Editor extends JFrame implements RunnerListener {
 
     // the following changed from 600, 400 for netbooks
     // http://code.google.com/p/arduino/issues/detail?id=52
-    splitPane.setMinimumSize(scale(new Dimension(600, 100)));
-    box.add(splitPane);
+    // 86Duino: as narrow as the toolbar allows (every button and the longest
+    // button title) instead of 600, so the AI panel divider can be dragged
+    splitPane.setMinimumSize(new Dimension(toolbar.getRequiredWidth(), scale(100)));
+
+    // 86Duino: the AI panel shares the window width with editor + console
+    aiPanel = new cc.arduino.ai.AiChatPanel(this, base);
+    aiSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane, null);
+    aiSplitPane.setContinuousLayout(true);
+    aiSplitPane.setResizeWeight(1D);
+    aiSplitPane.setBorder(null);
+    aiSplitPane.setDividerSize(0);
+    Keys.killBinding(aiSplitPane, Keys.ctrl(KeyEvent.VK_TAB));
+    Keys.killBinding(aiSplitPane, Keys.ctrlShift(KeyEvent.VK_TAB));
+    aiSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> {
+      int width = aiSplitPane.getWidth() - aiSplitPane.getDividerLocation() - aiSplitPane.getDividerSize();
+      if (aiPanelVisible && aiSplitPane.getWidth() > 0 && width >= scale(200)) {
+        PreferencesData.setInteger(cc.arduino.ai.AiSettings.PREF_PANEL_WIDTH, width);
+      }
+    });
+    // If a resize (e.g. the window being maximized after it was laid out)
+    // squeezed the open panel below its minimum width, give it its width back.
+    aiSplitPane.addComponentListener(new java.awt.event.ComponentAdapter() {
+      @Override
+      public void componentResized(java.awt.event.ComponentEvent e) {
+        if (aiPanelVisible && isShowing() && aiPanelSqueezed()) {
+          SwingUtilities.invokeLater(() -> placeAiPanel());
+        }
+      }
+    });
+    box.add(aiSplitPane);
 
     // hopefully these are no longer needed w/ swing
     // (har har har.. that was wishful thinking)
@@ -407,6 +442,121 @@ public class Editor extends JFrame implements RunnerListener {
 
     // default the console output to the last opened editor
     EditorConsole.setCurrentEditorConsole(console);
+
+    if (PreferencesData.getBoolean(cc.arduino.ai.AiSettings.PREF_PANEL_VISIBLE, false)) {
+      setAiPanelVisible(true);
+    }
+  }
+
+  // 86Duino: AI assistant panel
+
+  public boolean isAiPanelVisible() {
+    return aiPanelVisible;
+  }
+
+  public void setAiPanelVisible(boolean visible) {
+    if (visible == aiPanelVisible) {
+      if (visible) {
+        aiPanel.focusInput();
+      }
+      return;
+    }
+    aiPanelVisible = visible;
+    PreferencesData.setBoolean(cc.arduino.ai.AiSettings.PREF_PANEL_VISIBLE, visible);
+    if (visible) {
+      // the API key may have been saved meanwhile (e.g. from another window)
+      aiPanel.refreshSetupState();
+      aiSplitPane.setRightComponent(aiPanel);
+      aiSplitPane.setDividerSize(scale(6));
+      if (isShowing()) {
+        SwingUtilities.invokeLater(() -> placeAiPanel());
+      } else {
+        // The window is still being built (Base shows it later): its size is
+        // not final yet, so place the panel once the window is on screen.
+        addWindowListener(new WindowAdapter() {
+          @Override
+          public void windowOpened(WindowEvent e) {
+            removeWindowListener(this);
+            SwingUtilities.invokeLater(() -> placeAiPanel());
+          }
+        });
+      }
+    } else {
+      aiSplitPane.setRightComponent(null);
+      aiSplitPane.setDividerSize(0);
+      getCurrentTab().requestFocusInWindow();
+    }
+    aiSplitPane.revalidate();
+  }
+
+  /** Toggles the panel from the Tools menu. */
+  private void toggleAiPanel() {
+    if (aiPanelVisible && aiPanelSqueezed()) {
+      // marked open but not really visible: show it instead of hiding it
+      placeAiPanel();
+    } else {
+      setAiPanelVisible(!aiPanelVisible);
+    }
+  }
+
+  /** True when the open panel is narrower than its minimum width. */
+  private boolean aiPanelSqueezed() {
+    return aiSplitPane.getRightComponent() == aiPanel && aiPanel.getWidth() < aiPanel.getMinimumSize().width;
+  }
+
+  /** Gives the open panel its remembered width, widening the window if needed. */
+  private void placeAiPanel() {
+    if (!aiPanelVisible) {
+      return;
+    }
+    int width = Math.max(scale(260), PreferencesData.getInteger(cc.arduino.ai.AiSettings.PREF_PANEL_WIDTH, scale(380)));
+    widenWindowFor(width);
+    validate();
+    int location = aiSplitPane.getWidth() - width - aiSplitPane.getDividerSize();
+    aiSplitPane.setDividerLocation(Math.max(splitPane.getMinimumSize().width, location));
+    aiPanel.focusInput();
+  }
+
+  /**
+   * Makes the window wide enough for the editor (at its minimum width) plus
+   * the AI panel, without leaving the screen. A maximized window is kept.
+   */
+  private void widenWindowFor(int panelWidth) {
+    if ((getExtendedState() & MAXIMIZED_HORIZ) != 0) {
+      return;
+    }
+    int needed = splitPane.getMinimumSize().width + panelWidth + aiSplitPane.getDividerSize();
+    int missing = needed - aiSplitPane.getWidth();
+    if (missing <= 0) {
+      return;
+    }
+    Rectangle screen = getGraphicsConfiguration().getBounds();
+    java.awt.Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+    int screenLeft = screen.x + insets.left;
+    int screenWidth = screen.width - insets.left - insets.right;
+    int newWidth = Math.min(getWidth() + missing, screenWidth);
+    int newX = Math.max(screenLeft, Math.min(getX(), screenLeft + screenWidth - newWidth));
+    setBounds(newX, getY(), newWidth, getHeight());
+    validate();
+  }
+
+  /** True while the AI is working, so the IDE does not ask to reload files it changes. */
+  public boolean isAiBusy() {
+    return aiPanel != null && aiPanel.isBusy();
+  }
+
+  /** The AI settings were saved in Preferences. */
+  public void aiSettingsChanged() {
+    if (aiPanel != null) {
+      aiPanel.settingsChanged();
+    }
+  }
+
+  /** Stops this window's Hermes process. Called when the window closes. */
+  public void closeAiAssistant() {
+    if (aiPanel != null) {
+      aiPanel.closeAssistant();
+    }
   }
 
 
@@ -526,6 +676,7 @@ public class Editor extends JFrame implements RunnerListener {
     if (serialMonitor != null) {
       serialMonitor.applyPreferences();
     }
+    aiSettingsChanged();
   }
 
 
@@ -768,6 +919,11 @@ public class Editor extends JFrame implements RunnerListener {
 
     item = newJMenuItemShift(tr("Serial Plotter"), 'L');
     item.addActionListener(e -> handlePlotter());
+    toolsMenu.add(item);
+
+    // 86Duino
+    item = newJMenuItemShift(tr("AI Assistant"), 'A');
+    item.addActionListener(e -> toggleAiPanel());
     toolsMenu.add(item);
 
     if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
@@ -1776,7 +1932,13 @@ public class Editor extends JFrame implements RunnerListener {
     tabs.ensureCapacity(sketch.getCodeCount());
     for (SketchFile file : sketch.getFiles()) {
       try {
-        addTab(file, null);
+        // For new tabs that have not been saved to disk yet, keep their
+        // current in-memory text instead of trying to (re)load from a file
+        // that does not exist. Passing null would make EditorTab call
+        // file.load(), which throws for a non-existent file and would lose
+        // the user's unsaved new tab.
+        String contents = file.isNewUnsaved() ? file.getProgram() : null;
+        addTab(file, contents);
       } catch(IOException e) {
         // TODO: Improve / move error handling
         System.err.println(e);
@@ -2098,6 +2260,33 @@ public class Editor extends JFrame implements RunnerListener {
     return true;
   }
 
+  public static String processCompileFile(String directoryPath) {
+
+    Path filePath = Paths.get(directoryPath, "lib/version_name.txt");
+
+    try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+      String firstLine = reader.readLine();
+      String secondLine = reader.readLine();
+
+      if (firstLine == null) {
+          return "";
+      }
+      if (secondLine == null) {
+          secondLine = "";
+      }
+
+      if (firstLine.toLowerCase().contains("beta")) {
+          return secondLine + firstLine;
+      } else {
+          return secondLine;
+      }
+
+    } catch (IOException e) {
+      System.err.println("Fail to read lib/version_name.txt" + e.getMessage());
+      return "Error: Can not read file.";
+    }
+  }
+
   public void updateTitle() {
     if (sketchController == null) {
       return;
@@ -2115,12 +2304,17 @@ public class Editor extends JFrame implements RunnerListener {
 
       setTitle(StringReplacer.replaceFromMapping(customFormat, titleMap));
     } else {
+      String MyVersionName = processCompileFile(".");
+      if (MyVersionName == "Error: Can not read file.") {
+        MyVersionName = BaseNoGui.VERSION_NAME_LONG;
+      }
+
       if (current.isPrimary()) {
         setTitle(I18n.format(tr("{0} | 86Duino {1}"), sketch.getName(),
-                             tr(BaseNoGui.VERSION_NAME_LONG)));
+                             tr(MyVersionName)));
       } else {
         setTitle(I18n.format(tr("{0} - {1} | 86Duino {2}"), sketch.getName(),
-                             current.getFileName(), tr(BaseNoGui.VERSION_NAME_LONG)));
+                             current.getFileName(), tr(MyVersionName)));
       }
     }
   }
@@ -2777,13 +2971,16 @@ public class Editor extends JFrame implements RunnerListener {
         if (e.getCause() != null && e.getCause() instanceof SerialPortException) {
           errorMessage += " (" + ((SerialPortException) e.getCause()).getExceptionType() + ")";
         }
-        serialMonitor = null;
         statusError(errorMessage);
+        // Close and release the half-opened monitor *before* dropping the
+        // reference, so the next click starts fresh instead of taking the
+        // "already open" path and silently doing nothing.
         try {
           serialMonitor.close();
         } catch (Exception e1) {
           // noop
         }
+        serialMonitor = null;
       } catch (Exception e) {
         statusError(e);
       } finally {
@@ -2877,6 +3074,14 @@ public class Editor extends JFrame implements RunnerListener {
           errorMessage += " (" + ((SerialPortException) e.getCause()).getExceptionType() + ")";
         }
         statusError(errorMessage);
+        // Close and release the half-opened plotter *before* dropping the
+        // reference, so the next click starts fresh instead of taking the
+        // "already open" path and silently doing nothing.
+        try {
+          serialPlotter.close();
+        } catch (Exception e1) {
+          // noop
+        }
         serialPlotter = null;
       } catch (Exception e) {
         statusError(e);

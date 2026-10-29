@@ -2392,6 +2392,22 @@ msgstr "以選取字串進行尋找"
 msgid "Use external editor"
 msgstr "使用外部編輯器"
 
+#: ../../../../../app/src/cc/arduino/view/preferences/Preferences.java:264
+msgid "Watch sketch folder and reload when files are added or removed"
+msgstr "監看草稿碼資料夾，當檔案新增或移除時重新載入"
+
+#: ../../../../../app/src/processing/app/Base.java:718
+msgid "Reload sketch?"
+msgstr "重新載入草稿碼？"
+
+#: ../../../../../app/src/processing/app/Base.java:715
+msgid ""
+"Files in the sketch folder were added, removed, or modified.\n"
+"Reload the sketch? Unsaved changes will be lost."
+msgstr ""
+"草稿碼資料夾中的檔案已被新增、移除或修改。\n"
+"要重新載入草稿碼嗎？未儲存的變更將會遺失。"
+
 #: ../../../../../app/src/cc/arduino/view/preferences/Preferences.java:493
 #: ../../../../../app/src/cc/arduino/view/preferences/Preferences.java:499
 msgid "Username:"
@@ -2819,3 +2835,543 @@ msgstr "{0}：不明的套件"
 #, java-format
 msgid "{0}Install this package{1} to use your {2} board"
 msgstr ""
+
+#: cc/arduino/ai
+msgid "(no changes)"
+msgstr "（沒有變更）"
+
+#: cc/arduino/ai
+msgid "... {0} unchanged lines ..."
+msgstr "…… 有 {0} 行未變更 ……"
+
+#: cc/arduino/ai
+msgid "AI"
+msgstr "AI"
+
+#: cc/arduino/ai
+msgid "AI Assistant"
+msgstr "AI 助手"
+
+#: cc/arduino/ai
+msgid "AI data folder:"
+msgstr "AI 資料夾："
+
+#: cc/arduino/ai
+msgid "AI needs your permission"
+msgstr "AI 需要你的允許"
+
+#: cc/arduino/ai
+msgid "AI settings changed. The next message starts a new conversation."
+msgstr "AI 設定已變更，下一則訊息會開始新的對話。"
+
+#: cc/arduino/ai
+msgid "AI wants to change a file"
+msgstr "AI 想要修改檔案"
+
+#: cc/arduino/ai
+msgid "AI wants to run a command"
+msgstr "AI 想要執行指令"
+
+#: cc/arduino/ai
+msgid "API key:"
+msgstr "API Key："
+
+#: cc/arduino/ai
+msgid "Add..."
+msgstr "新增…"
+
+#: cc/arduino/ai
+msgid "Address of an OpenAI-compatible server, for example http://localhost:11434/v1"
+msgstr "OpenAI 相容伺服器的網址，例如 http://localhost:11434/v1"
+
+#: cc/arduino/ai
+msgid "Allow"
+msgstr "允許"
+
+#: cc/arduino/ai
+msgid "Allow for this conversation"
+msgstr "這次對話都允許"
+
+#: cc/arduino/ai
+msgid "Allow once"
+msgstr "允許一次"
+
+#: cc/arduino/ai
+msgid "Allow the AI to run terminal commands (always asks first)"
+msgstr "允許 AI 執行終端機指令（每次都會先詢問）"
+
+#: cc/arduino/ai
+msgid "Allowed: "
+msgstr "已允許："
+
+#: cc/arduino/ai
+msgid "Always allow"
+msgstr "永遠允許"
+
+#: cc/arduino/ai
+msgid "Always deny"
+msgstr "永遠拒絕"
+
+#: cc/arduino/ai
+msgid "An API key is saved. Leave the field empty to keep it."
+msgstr "已儲存 API Key。欄位留空表示沿用。"
+
+#: cc/arduino/ai
+msgid "Ask before the AI changes a file (shows the changes first)"
+msgstr "AI 修改檔案前先詢問（會先顯示修改內容）"
+
+#: cc/arduino/ai
+msgid "Base URL:"
+msgstr "Base URL："
+
+#: cc/arduino/ai
+msgid "Connected ({0} s)"
+msgstr "連線成功（{0} 秒）"
+
+#: cc/arduino/ai
+msgid "Could not reload the sketch: "
+msgstr "無法重新載入專案："
+
+#: cc/arduino/ai
+msgid "Could not save the AI settings:"
+msgstr "無法儲存 AI 設定："
+
+#: cc/arduino/ai
+msgid "Could not save the sketch: "
+msgstr "無法儲存專案："
+
+#: cc/arduino/ai
+msgid "Current sketch folder (the AI may also change files here)"
+msgstr "目前的專案資料夾（AI 也可以修改這裡的檔案）"
+
+#: cc/arduino/ai
+msgid "Delete "
+msgstr "刪除 "
+
+#: cc/arduino/ai
+msgid "Denied: "
+msgstr "已拒絕："
+
+#: cc/arduino/ai
+msgid "Deny"
+msgstr "拒絕"
+
+#: cc/arduino/ai
+msgid "Details are in the log file: {0}"
+msgstr "詳細資訊請看紀錄檔：{0}"
+
+#: cc/arduino/ai
+msgid "Edit "
+msgstr "修改 "
+
+#: cc/arduino/ai
+msgid "Enable the AI Assistant"
+msgstr "啟用 AI 助手"
+
+#: cc/arduino/ai
+msgid "Enter: send, Shift+Enter: new line"
+msgstr "Enter：送出，Shift+Enter：換行"
+
+#: cc/arduino/ai
+msgid "Failed: "
+msgstr "失敗："
+
+#: cc/arduino/ai
+msgid "File: "
+msgstr "檔案："
+
+#: cc/arduino/ai
+msgid "Hide the AI Assistant"
+msgstr "隱藏 AI 助手"
+
+#: cc/arduino/ai
+msgid "Model:"
+msgstr "模型："
+
+#: cc/arduino/ai
+msgid "New Chat"
+msgstr "新對話"
+
+#: cc/arduino/ai
+msgid "New file: "
+msgstr "新檔案："
+
+#: cc/arduino/ai
+msgid "No AI model is selected. Choose one in Preferences &gt; AI."
+msgstr "尚未選擇 AI 模型，請到「偏好設定 &gt; AI」選擇。"
+
+#: cc/arduino/ai
+msgid "No API key is set. Enter your API key in Preferences &gt; AI."
+msgstr "尚未設定 API Key，請到「偏好設定 &gt; AI」輸入。"
+
+#: cc/arduino/ai
+msgid "No API key saved yet."
+msgstr "尚未儲存 API Key。"
+
+#: cc/arduino/ai
+msgid "Only allow commands you understand. Commands run on this computer."
+msgstr "只允許你看得懂的指令，指令會在這台電腦上執行。"
+
+#: cc/arduino/ai
+msgid "Open AI Settings..."
+msgstr "開啟 AI 設定…"
+
+#: cc/arduino/ai
+msgid "Please choose an AI model."
+msgstr "請選擇 AI 模型。"
+
+#: cc/arduino/ai
+msgid "Please enter the Base URL of the AI server."
+msgstr "請輸入 AI 伺服器的 Base URL。"
+
+#: cc/arduino/ai
+msgid "Provider:"
+msgstr "供應商："
+
+#: cc/arduino/ai
+msgid "Read "
+msgstr "讀取 "
+
+#: cc/arduino/ai
+msgid "Run: "
+msgstr "執行："
+
+#: cc/arduino/ai
+msgid "Search: "
+msgstr "搜尋："
+
+#: cc/arduino/ai
+msgid "Select a skill folder"
+msgstr "選擇 Skill 資料夾"
+
+#: cc/arduino/ai
+msgid "Show"
+msgstr "顯示"
+
+#: cc/arduino/ai
+msgid "Skill folders:"
+msgstr "Skill 資料夾："
+
+#: cc/arduino/ai
+msgid "Start a new conversation"
+msgstr "開始新的對話"
+
+#: cc/arduino/ai
+msgid "Starting the AI..."
+msgstr "正在啟動 AI…"
+
+#: cc/arduino/ai
+msgid "Stop"
+msgstr "停止"
+
+#: cc/arduino/ai
+msgid "Stopped."
+msgstr "已停止。"
+
+#: cc/arduino/ai
+msgid "Stopping..."
+msgstr "正在停止…"
+
+#: cc/arduino/ai
+msgid "Test Connection"
+msgstr "測試連線"
+
+#: cc/arduino/ai
+msgid "Testing... (this can take up to a minute)"
+msgstr "測試中…（可能需要一分鐘）"
+
+#: cc/arduino/ai
+msgid "The AI Assistant is turned off. Turn it on in Preferences &gt; AI."
+msgstr "AI 助手目前關閉中，請到「偏好設定 &gt; AI」開啟。"
+
+#: cc/arduino/ai
+msgid "The AI can read (read-only):"
+msgstr "AI 可以閱讀（唯讀）："
+
+#: cc/arduino/ai
+msgid "The AI changed files that you also edited.\nLoad the AI's version? Your unsaved typing will be lost."
+msgstr "AI 修改了你也正在編輯的檔案。\n要載入 AI 的版本嗎？你尚未儲存的輸入會遺失。"
+
+#: cc/arduino/ai
+msgid "The AI component (Hermes Agent) was not found in: {0}"
+msgstr "找不到 AI 元件（Hermes Agent）：{0}"
+
+#: cc/arduino/ai
+msgid "The AI component (Hermes Agent) was not found in:<br>{0}"
+msgstr "找不到 AI 元件（Hermes Agent）：<br>{0}"
+
+#: cc/arduino/ai
+msgid "The AI process ended (code {0}). It starts again with the next message."
+msgstr "AI 程序已結束（代碼 {0}），下一則訊息會自動重新啟動。"
+
+#: cc/arduino/ai
+msgid "The AI request failed: "
+msgstr "AI 請求失敗："
+
+#: cc/arduino/ai
+msgid "The AI stopped because it reached its limit."
+msgstr "AI 已達到上限而停止。"
+
+#: cc/arduino/ai
+msgid "The sketch folder changed, so a new conversation was started."
+msgstr "專案資料夾已變更，因此開始了新的對話。"
+
+#: cc/arduino/ai
+msgid "Thinking..."
+msgstr "思考中…"
+
+#: cc/arduino/ai
+msgid "This sketch is read-only (for example a built-in example), so the AI cannot change it.\nSave a copy of the sketch first?"
+msgstr "這個專案是唯讀的（例如內建範例），AI 無法修改。\n要先另存一份嗎？"
+
+#: cc/arduino/ai
+msgid "Waiting for your confirmation..."
+msgstr "等待你的確認…"
+
+#: cc/arduino/ai
+msgid "Warning: this file is outside the current sketch folder."
+msgstr "警告：這個檔案不在目前的專案資料夾內。"
+
+#: cc/arduino/ai
+msgid "You"
+msgstr "你"
+
+#: cc/arduino/ai
+msgid "failed"
+msgstr "失敗"
+
+#: cc/arduino/ai
+msgid "no answer"
+msgstr "沒有回應"
+
+#: cc/arduino/ai
+msgid "Built-in model list. With an API key, the models you can use are listed."
+msgstr "內建模型清單。設定 API Key 後會列出你可以使用的模型。"
+
+#: cc/arduino/ai
+msgid "Could not get the model list; showing the built-in list."
+msgstr "無法取得模型清單，顯示內建清單。"
+
+#: cc/arduino/ai
+msgid "Could not reach the provider; showing the built-in list."
+msgstr "無法連線到供應商，顯示內建清單。"
+
+#: cc/arduino/ai
+msgid "Enter the Base URL to list the server's models."
+msgstr "輸入 Base URL 後會列出伺服器的模型。"
+
+#: cc/arduino/ai
+msgid "Loading the model list..."
+msgstr "正在取得模型清單…"
+
+#: cc/arduino/ai
+msgid "Models your API key can use at {0} (first {1})."
+msgstr "你的 API Key 在 {0} 可使用的模型（前 {1} 個）。"
+
+#: cc/arduino/ai
+msgid "No API key saved yet. Enter one, press Test Connection, then OK."
+msgstr "尚未儲存 API Key。請輸入後按「測試連線」，成功後再按「確定」儲存。"
+
+#: cc/arduino/ai
+msgid "Please enter an API key first."
+msgstr "請先輸入 API Key。"
+
+#: cc/arduino/ai
+msgid "Press OK below to remove the API key."
+msgstr "請按下下方確定按鈕來移除 API Key"
+
+#: cc/arduino/ai
+msgid "Press OK to save this API key."
+msgstr "按「確定」即可儲存這組 API Key。"
+
+#: cc/arduino/ai
+msgid "Press Test Connection to check this API key before saving it."
+msgstr "請先按「測試連線」確認這組 API Key，成功後才能儲存。"
+
+#: cc/arduino/ai
+msgid "Remove API Key"
+msgstr "移除 API Key"
+
+#: cc/arduino/ai
+msgid "Select the AI data folder"
+msgstr "選擇 AI 資料夾"
+
+#: cc/arduino/ai
+msgid "Select..."
+msgstr "選擇…"
+
+#: cc/arduino/ai
+msgid "The AI Assistant did not find an API key for the AI model. Please set it in Preferences &gt; AI."
+msgstr "AI 助手目前沒偵測到模型的 API Key，請到「偏好設定 &gt; AI」設定。"
+
+#: cc/arduino/ai
+msgid "The AI data folder cannot be used. Please choose another folder."
+msgstr "無法使用這個 AI 資料夾，請選擇其他資料夾。"
+
+#: cc/arduino/ai
+msgid "The new API key has not passed Test Connection yet.\nPress Test Connection first; it is saved after the test succeeds and you press OK."
+msgstr "新的 API Key 尚未通過「測試連線」。\n請先按「測試連線」，成功後再按「確定」才會儲存。"
+
+#: cc/arduino/ai
+msgid "The saved API key is for {0}. Enter a {1} API key (it replaces the saved one)."
+msgstr "目前儲存的是 {0} 的 API Key，請輸入 {1} 的 API Key（會取代舊的）。"
+
+#: cc/arduino/ai
+msgid "Where the AI keeps its API key, settings and conversations"
+msgstr "AI 存放 API Key、設定與對話紀錄的資料夾"
+
+#: cc/arduino/ai
+msgid "Saving the AI settings..."
+msgstr "正在儲存 AI 設定…"
+
+#: cc/arduino/ai
+msgid "the endpoint answered \"{0}\""
+msgstr "端點回應「{0}」"
+
+#: cc/arduino/ai
+msgid "Could not get the model list from the server: {0}\nYou can also type the model name in the Model box."
+msgstr "無法從伺服器取得模型清單：{0}\n也可以直接在「模型」欄輸入模型名稱。"
+
+#: cc/arduino/ai
+msgid "Could not get the model list."
+msgstr "無法取得模型清單。"
+
+#: cc/arduino/ai
+msgid "Could not get the model list: {0}"
+msgstr "無法取得模型清單：{0}"
+
+#: cc/arduino/ai
+msgid "Could not reach the provider ({0}); showing the built-in list."
+msgstr "無法連線到供應商（{0}），顯示內建清單。"
+
+#: cc/arduino/ai
+msgid "Enter the Base URL and API key, then press Test Connection to list this server's models."
+msgstr "輸入 Base URL 和 API Key 後按「測試連線」，會列出這個端點的模型。"
+
+#: cc/arduino/ai
+msgid "The server did not list any models."
+msgstr "這個伺服器沒有列出任何模型。"
+
+#: cc/arduino/ai
+msgid "The model \"{0}\" may not support the tool calling (function calling) the AI Assistant needs. Choose another model in the Model box and try again."
+msgstr "模型「{0}」可能不支援 AI 助手需要的工具呼叫（function calling），請在「模型」欄換一個模型再試。"
+
+#: cc/arduino/ai
+msgid "This is the first model of the list, chosen automatically: \"{0}\". Choose another model in the Model box and try again."
+msgstr "這是自動選的第一個模型「{0}」，請在「模型」欄換一個模型再試。"
+
+#: cc/arduino/ai
+msgid "This is the first model of the list, chosen automatically: \"{0}\". It may not support the tool calling (function calling) the AI Assistant needs. Choose another model in the Model box and try again."
+msgstr "這是自動選的第一個模型「{0}」，這個模型可能不支援 AI 助手需要的工具呼叫（function calling），請在「模型」欄換一個模型再試。"
+
+#: cc/arduino/ai
+msgid "After Test Connection succeeds, the models this API key can use are listed here."
+msgstr "測試連線成功後，會在這裡列出這組 API Key 可使用的模型。"
+
+#: cc/arduino/ai
+msgid "Models your API key can use at {0} (first {1}, in the server's order)."
+msgstr "你的 API Key 在 {0} 可使用的模型（前 {1} 個，依伺服器順序）。"
+
+#: cc/arduino/ai
+msgid "Models your API key can use at {0} (first {1}, newest first)."
+msgstr "你的 API Key 在 {0} 可使用的模型（前 {1} 個，新的在前）。"
+
+#: cc/arduino/ai
+msgid "The first model of the server \"{0}\" was selected automatically; you can choose another one in the Model box."
+msgstr "已自動選擇伺服器清單上的第一個模型「{0}」，可在「模型」欄改成其他模型。"
+
+#: cc/arduino/ai
+msgid "The model \"{0}\" was chosen automatically and may not support the tool calling (function calling) the AI Assistant needs. Choose another model in the Model box and try again."
+msgstr "模型「{0}」是自動選擇的，可能不支援 AI 助手需要的工具呼叫（function calling），請在「模型」欄換一個模型再試。"
+
+#: cc/arduino/ai
+msgid "The model \"{0}\" was chosen automatically. Choose another model in the Model box and try again."
+msgstr "模型「{0}」是自動選擇的，請在「模型」欄換一個模型再試。"
+
+#: cc/arduino/ai
+msgid "The newest model \"{0}\" was selected automatically; you can choose another one in the Model box."
+msgstr "已自動選擇最新的模型「{0}」，可在「模型」欄改成其他模型。"
+
+#: cc/arduino/ai
+msgid "The free trial API key provided by 86Duino is filled in (shared usage limits). Press Test Connection, then OK."
+msgstr "已自動填入 86Duino 提供的免費體驗 API Key（所有使用者共用使用量上限）。按「測試連線」成功後，再按「確定」即可使用。"
+
+#: cc/arduino/ai
+msgid "The newest flash model \"{0}\" was selected automatically; you can choose another one in the Model box."
+msgstr "已自動選擇最新的 flash 模型「{0}」，可在「模型」欄改成其他模型。"
+
+#: cc/arduino/ai
+msgid "Using the free trial API key provided by 86Duino (shared usage limits)."
+msgstr "目前使用 86Duino 提供的免費體驗 API Key（所有使用者共用使用量上限）。"
+
+#: cc/arduino/ai
+msgid "Please note: under the terms of Google's free tier, what you send (including your code) may be used by Google to improve its products."
+msgstr "請注意，依 Google 免費方案的條款，送出的內容（包含使用者的程式碼）可能被 Google 用來改進產品。"
+
+#: cc/arduino/ai
+msgid "AI workspace:"
+msgstr "AI 工作資料夾："
+
+#: cc/arduino/ai
+msgid "Could not remove the API key:"
+msgstr "無法移除 API Key："
+
+#: cc/arduino/ai
+msgid "Remove the saved API key now?\nThe AI Assistant cannot be used until an API key is saved again."
+msgstr "要立即移除已儲存的 API Key 嗎？\n移除後，需要重新儲存 API Key 才能使用 AI 助手。"
+
+#: cc/arduino/ai
+msgid "Removing the API key..."
+msgstr "正在移除 API Key…"
+
+#: cc/arduino/ai
+msgid "Select the AI workspace"
+msgstr "選擇 AI 工作資料夾"
+
+#: cc/arduino/ai
+msgid "The AI workspace cannot be used. Please choose another folder."
+msgstr "無法使用這個 AI 工作資料夾，請選擇其他資料夾。"
+
+#: cc/arduino/ai
+msgid "Choosing an AI model..."
+msgstr "正在選擇 AI 模型…"
+
+#: cc/arduino/ai
+msgid "Could not get the model list. Please check the network connection."
+msgstr "取不到模型列表，請檢查網路連線狀態。"
+
+#: cc/arduino/ai
+msgid "Error: {0}"
+msgstr "錯誤：{0}"
+
+#: cc/arduino/ai
+msgid "Model: {0}"
+msgstr "模型：{0}"
+
+#: cc/arduino/ai
+msgid "Retry"
+msgstr "重試"
+
+#: cc/arduino/ai
+msgid "Previous conversation: {0}"
+msgstr "上次對話：{0}"
+
+#: cc/arduino/ai
+msgid "The AI could not continue the previous conversation (it is not in this AI workspace), so the AI does not remember the conversation above. A new conversation was started."
+msgstr "AI 無法接續先前的對話（這個 AI 工作資料夾裡沒有這段對話），AI 不記得以上的對話內容，已開始新的對話。"
+
+#: cc/arduino/ai
+msgid "The AI settings changed since then, so the AI does not remember the conversation above. The next message starts a new conversation."
+msgstr "AI 設定（提供商、模型或 AI 工作資料夾）已變更，AI 不記得以上的對話內容，下一則訊息會開始新的對話。"
+
+#: cc/arduino/ai
+msgid "{0} earlier messages are not shown."
+msgstr "較早的 {0} 則對話已省略。"
+
+#: cc/arduino/ai
+msgid "Starting a new conversation clears the current conversation, and the AI will not remember it.\nContinue?"
+msgstr "開啟新對話會清除目前的對話，而且 AI 不會記得先前的內容。\n是否要繼續？"
+
+#: cc/arduino/ai
+msgid "Starting a new conversation deletes the conversation saved in this sketch, and the AI will not remember it.\nContinue?"
+msgstr "開啟新對話會刪除這個專案已儲存的對話紀錄，而且 AI 不會記得先前的內容。\n是否要繼續？"

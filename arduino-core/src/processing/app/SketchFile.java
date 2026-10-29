@@ -92,6 +92,14 @@ public class SketchFile {
   private TextStorage storage;
 
   /**
+   * The on-disk last-modified timestamp of the file as of the last time
+   * the IDE itself read (load) or wrote (save) it. Used as the baseline
+   * for detecting modifications made by external programs. A value of 0
+   * means the timestamp is not yet known.
+   */
+  private long lastModifiedOnDisk = 0;
+
+  /**
    * Create a new SketchFile
    *
    * @param sketch
@@ -279,6 +287,9 @@ public class SketchFile {
    * just directly reads the file.
    */
   public String load() throws IOException {
+    // Remember the timestamp of the version we are about to read, so the
+    // IDE's own read is not later mistaken for an external modification.
+    lastModifiedOnDisk = file.lastModified();
     String text = BaseNoGui.loadFile(file);
 
     program = text; // for 86Duino
@@ -313,6 +324,9 @@ public class SketchFile {
 
     BaseNoGui.saveFile(storage.getText(), file);
     storage.clearModified();
+    // The IDE just wrote this file; update the baseline so this write is
+    // not later mistaken for an external modification.
+    lastModifiedOnDisk = file.lastModified();
   }
 
 
@@ -326,5 +340,28 @@ public class SketchFile {
     BaseNoGui.saveFile(storage.getText(), newFile);
     renamedTo(newFile);
     storage.clearModified();
+    lastModifiedOnDisk = file.lastModified();
+  }
+
+  /**
+   * Has this file been modified on disk (e.g. by an external program)
+   * since the IDE last read or wrote it? Detects changes in either
+   * direction, i.e. a newer *or* an older timestamp. Returns false when
+   * the file no longer exists; that case is treated as a file removal
+   * instead (see {@link Sketch#filesChangedOnDisk()}).
+   */
+  public boolean isModifiedOnDisk() {
+    return file.exists() && file.lastModified() != lastModifiedOnDisk;
+  }
+
+  /**
+   * Whether this is a newly created tab that has never been read from or
+   * written to disk by the IDE, i.e. it exists only in memory and is still
+   * awaiting its first save. Such files must be ignored when comparing the
+   * sketch against the on-disk listing, and preserved across a reload, so
+   * the user's unsaved work is not discarded.
+   */
+  public boolean isNewUnsaved() {
+    return lastModifiedOnDisk == 0 && !file.exists();
   }
 }
