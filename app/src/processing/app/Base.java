@@ -251,6 +251,14 @@ public class Base {
         // ignore
       }
 
+      // 86Duino: macOS + Chinese UI uses PingFang instead of Lucida Grande, or Java 8
+      // drops Latin letters drawn next to Chinese text (see CjkUiFont).
+      try {
+        cc.arduino.view.CjkUiFont.apply();
+      } catch (Throwable t) {
+        t.printStackTrace();
+      }
+
       // Use native popups so they don't look so crappy on osx
       JPopupMenu.setDefaultLightWeightPopupEnabled(false);
     } else {

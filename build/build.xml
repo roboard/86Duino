@@ -564,9 +564,29 @@
     <!-- 註: 原生 arm64 arduino-builder 的覆蓋已統一移到 build-arduino-builder 內，
          以 build/macosx/arduino-builder 為來源 (與 linux/windows 一致)。 -->
 
+    <antcall target="macosx-hermes" />
+
     <antcall target="portable-${portable}">
       <param name="parentdir" value="macosx/work/${staging_hardware_folder}/.." />
     </antcall>
+  </target>
+
+  <!-- for 86Duino: 精簡可攜版 Hermes CLI (AI Assistant)。
+       來源: build/macosx/hermes-macos-arm64.tar.gz (由 hermes-portable-cli-bundle-macos skill 的
+       build_portable.py 產生)。放到 Contents/Java/hermes = HermesBundle 的 getContentFile("hermes")。
+       用系統 tar 解壓: ant <copy>/<untar> 不保留 +x。tarball 不存在時略過 (AI Assistant 顯示未安裝)。
+       於 ant 內完成 → build-mac.sh 結尾的 ad-hoc 重簽會把 hermes 一併封存進簽章。 -->
+  <target name="macosx-hermes-check">
+    <available file="macosx/hermes-macos-arm64.tar.gz" property="hermes_tgz_available" />
+  </target>
+  <target name="macosx-hermes" depends="macosx-hermes-check" if="hermes_tgz_available">
+    <delete dir="${staging_folder}/work/${staging_hardware_folder}/../hermes" />
+    <exec executable="tar" failonerror="true">
+      <arg value="-xzf" />
+      <arg value="macosx/hermes-macos-arm64.tar.gz" />
+      <arg value="-C" />
+      <arg value="${staging_folder}/work/${staging_hardware_folder}/.." />
+    </exec>
   </target>
 
   <!-- Unzip AVR tools -->
