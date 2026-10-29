@@ -604,9 +604,9 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       AiPreferencesPanel.waitForPendingSave();
       if (c == null) {
         try {
-          bundle.ensureCompressionLimit();
+          bundle.ensureIdeConfig(settings);
         } catch (IOException e) {
-          System.err.println("Could not set the AI compression limit: " + e.getMessage());
+          System.err.println("Could not write the AI settings: " + e.getMessage());
         }
         c = new AcpClient(this);
         c.start(bundle, folder);

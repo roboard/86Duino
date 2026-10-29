@@ -303,9 +303,36 @@ public class HermesBundle {
       ops.addArray().add("unset").add("model.key_env");
     }
     ops.addArray().add("set").add("skills.external_dirs").add(toYamlList(s.skillDirs));
-    ops.addArray().add("set").add("platform_toolsets.acp").add(s.allowTerminal ? "[file, terminal]" : "[file]");
+    addToolsetOps(ops, s);
     ops.addArray().add("set").add("compression.threshold_tokens").add(String.valueOf(COMPRESSION_THRESHOLD_TOKENS));
     runConfigOps(ops);
+  }
+
+  /**
+   * The tools of the IDE chat. The skill tools come only with a skill folder:
+   * without them Hermes leaves the skill list out of the prompt.
+   */
+  static String acpToolsets(AiSettings s) {
+    List<String> sets = new ArrayList<>();
+    sets.add("file");
+    if (s.allowTerminal) {
+      sets.add("terminal");
+    }
+    if (s.skillDirs != null && !s.skillDirs.isEmpty()) {
+      sets.add("skills");
+    }
+    return "[" + String.join(", ", sets) + "]";
+  }
+
+  /**
+   * The skill tools can also change skills. Keep the user's skill folders as
+   * written: no background skill review, no unattended skill edits, no curator.
+   */
+  private static void addToolsetOps(com.fasterxml.jackson.databind.node.ArrayNode ops, AiSettings s) {
+    ops.addArray().add("set").add("platform_toolsets.acp").add(acpToolsets(s));
+    ops.addArray().add("set").add("skills.creation_nudge_interval").add("0");
+    ops.addArray().add("set").add("skills.write_approval").add("true");
+    ops.addArray().add("set").add("curator.enabled").add("false");
   }
 
   /**
@@ -316,16 +343,26 @@ public class HermesBundle {
    */
   static final int COMPRESSION_THRESHOLD_TOKENS = 100000;
 
-  /** Writes the compression limit into a Hermes home set up before the IDE wrote it. */
-  public void ensureCompressionLimit() throws IOException, InterruptedException {
+  /**
+   * Writes the IDE's settings into a Hermes home set up before the IDE wrote
+   * them: the compression limit and the chat's tools (skill tools included).
+   */
+  public void ensureIdeConfig(AiSettings s) throws IOException, InterruptedException {
     ensureHome();
     File config = new File(homeDir, "config.yaml");
     String text = config.isFile() ? new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8) : "";
-    if (text.contains("threshold_tokens:")) {
+    boolean hasLimit = text.contains("threshold_tokens:");
+    boolean hasTools = text.contains("creation_nudge_interval:");
+    if (hasLimit && hasTools) {
       return;
     }
     com.fasterxml.jackson.databind.node.ArrayNode ops = new com.fasterxml.jackson.databind.ObjectMapper().createArrayNode();
-    ops.addArray().add("set").add("compression.threshold_tokens").add(String.valueOf(COMPRESSION_THRESHOLD_TOKENS));
+    if (!hasLimit) {
+      ops.addArray().add("set").add("compression.threshold_tokens").add(String.valueOf(COMPRESSION_THRESHOLD_TOKENS));
+    }
+    if (!hasTools) {
+      addToolsetOps(ops, s);
+    }
     runConfigOps(ops);
   }
 
