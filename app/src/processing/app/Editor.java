@@ -30,8 +30,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
@@ -72,6 +74,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -95,6 +98,7 @@ import javax.swing.TransferHandler;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.JTextComponent;
 //import javafx.application.Platform;
 
 import org.fife.ui.rsyntaxtextarea.folding.FoldManager;
@@ -1589,6 +1593,39 @@ public class Editor extends JFrame implements RunnerListener {
     return menu;
   }
 
+  /**
+   * Runs an Edit menu item. On macOS the screen menu bar also runs the item
+   * when its shortcut is typed in another text field of this window (AI
+   * Assistant, console): the field has done the action itself, so the code
+   * must not change. A mouse click on the menu acts on that field instead,
+   * or on the code when onField is null. Windows and Linux: always the code.
+   */
+  private void runEditAction(ActionEvent event, Runnable onCode, Consumer<JTextComponent> onField) {
+    if (!OSUtils.isMacOS()) {
+      onCode.run();
+      return;
+    }
+    Component focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner();
+    JTextComponent field = editMenuField(focus, this, getCurrentTab().getTextArea());
+    if (field == null) {
+      onCode.run();
+    } else if ((event.getModifiers() & SHORTCUT_KEY_MASK) != 0) {
+      // typed shortcut: the field already did it (Cmd+Z can even arrive twice)
+    } else if (onField != null) {
+      onField.accept(field);
+    } else {
+      onCode.run();
+    }
+  }
+
+  /** The focused text field of this window other than the code area, or null. */
+  static JTextComponent editMenuField(Component focus, Window window, Component codeArea) {
+    if (focus instanceof JTextComponent && focus != codeArea
+        && SwingUtilities.getWindowAncestor(focus) == window) {
+      return (JTextComponent) focus;
+    }
+    return null;
+  }
 
   private JMenu buildEditMenu() {
     JMenu menu = new JMenu(tr("Edit"));
@@ -1597,7 +1634,7 @@ public class Editor extends JFrame implements RunnerListener {
 
     undoItem = newJMenuItem(tr("Undo"), 'Z');
     undoItem.setName("menuEditUndo");
-    undoItem.addActionListener(event -> getCurrentTab().handleUndo());
+    undoItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleUndo(), null));
     menu.add(undoItem);
 
     if (!OSUtils.isMacOS()) {
@@ -1606,17 +1643,17 @@ public class Editor extends JFrame implements RunnerListener {
         redoItem = newJMenuItemShift(tr("Redo"), 'Z');
     }
     redoItem.setName("menuEditRedo");
-    redoItem.addActionListener(event -> getCurrentTab().handleRedo());
+    redoItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleRedo(), null));
     menu.add(redoItem);
 
     menu.addSeparator();
 
     JMenuItem cutItem = newJMenuItem(tr("Cut"), 'X');
-    cutItem.addActionListener(event -> getCurrentTab().handleCut());
+    cutItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleCut(), JTextComponent::cut));
     menu.add(cutItem);
 
     JMenuItem copyItem = newJMenuItem(tr("Copy"), 'C');
-    copyItem.addActionListener(event -> getCurrentTab().getTextArea().copy());
+    copyItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().getTextArea().copy(), JTextComponent::copy));
     menu.add(copyItem);
 
     JMenuItem copyForumItem = newJMenuItemShift(tr("Copy for Forum"), 'C');
@@ -1628,11 +1665,11 @@ public class Editor extends JFrame implements RunnerListener {
     menu.add(copyHTMLItem);
 
     JMenuItem pasteItem = newJMenuItem(tr("Paste"), 'V');
-    pasteItem.addActionListener(event -> getCurrentTab().handlePaste());
+    pasteItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handlePaste(), JTextComponent::paste));
     menu.add(pasteItem);
 
     JMenuItem selectAllItem = newJMenuItem(tr("Select All"), 'A');
-    selectAllItem.addActionListener(event -> getCurrentTab().handleSelectAll());
+    selectAllItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleSelectAll(), JTextComponent::selectAll));
     menu.add(selectAllItem);
 
     JMenuItem gotoLine = newJMenuItem(tr("Go to line..."), 'L');
