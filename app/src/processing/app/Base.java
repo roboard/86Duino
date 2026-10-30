@@ -266,6 +266,14 @@ public class Base {
         t.printStackTrace();
       }
 
+      // 86Duino: macOS + Java 8 may leave a window inactive (no caret, no typing)
+      // when it is clicked after another app was used (see MacWindowFocus).
+      try {
+        cc.arduino.view.MacWindowFocus.install();
+      } catch (Throwable t) {
+        t.printStackTrace();
+      }
+
       // Use native popups so they don't look so crappy on osx
       JPopupMenu.setDefaultLightWeightPopupEnabled(false);
     } else {
