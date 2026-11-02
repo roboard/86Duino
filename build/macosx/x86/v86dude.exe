@@ -1,0 +1,4 @@
+#!/bin/sh
+# 相容用的轉接檔：部分舊工具 (如 Editor.java) 固定呼叫 v86dude.exe，
+# 在 macOS 上直接轉給同目錄下的 v86dude，參數與 exit code 原樣傳遞。
+exec "$(dirname "$0")/v86dude" "$@"
