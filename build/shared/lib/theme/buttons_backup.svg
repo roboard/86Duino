@@ -6,9 +6,9 @@
    id="Layer_1"
    x="0px"
    y="0px"
-   width="330"
+   width="363"
    height="99"
-   viewBox="0 0 330 99"
+   viewBox="0 0 363 99"
    enable-background="new 0 0 198 99"
    xml:space="preserve"
    sodipodi:docname="buttons_backup.svg"
@@ -23,7 +23,7 @@
    xmlns:dc="http://purl.org/dc/elements/1.1/"><g
      id="layer4-1"
      style="display:inline"
-     transform="translate(33.013303,-0.024)"><g
+     transform="translate(66.013303,-0.024)"><g
        id="g275-8-3-4"
        transform="translate(98.172485)"
        style="display:inline"><rect
@@ -1571,4 +1571,48 @@ AAAAAAAAADDEAcfpBhJlHhNTAAAAAElFTkSuQmCC
        id="path2826-0" /><path
        style="fill:#083e88;stroke-width:24.5669;stroke-linejoin:round;paint-order:markers stroke fill"
        d="m 272.90129,90.243449 c -0.31345,-0.32711 -0.5556,-0.635768 -0.53812,-0.685903 0.0175,-0.05014 1.06218,-1.130209 2.32154,-2.40016 2.14027,-2.158269 2.28715,-2.336027 2.25,-2.722964 l -0.0398,-0.413961 -3.03125,-0.03347 -3.03125,-0.03347 v -1.310282 -1.310278 h 3.0625 3.0625 v -2.9375 -2.9375 h 1.1875 1.1875 v 3.4375 c 0,1.890625 0.0422,3.436604 0.0937,3.435508 0.0516,-0.0011 0.72657,-0.640926 1.5,-1.421847 l 1.40625,-1.419855 v -2.015653 -2.015653 h 1.25 1.25 v 0.773006 0.773005 l 1.37717,-1.366755 c 0.75744,-0.751716 1.41997,-1.381349 1.47229,-1.399185 0.0523,-0.01784 0.35709,0.235289 0.67727,0.5625 l 0.58216,0.594929 -2.05229,2.125 -2.05228,2.125 -0.002,0.84375 -0.002,0.84375 h 2.6875 2.6875 v 1.3125 1.3125 h -2.68777 -2.6875 v 2.8125 2.8125 h -1.24814 -1.24814 l -0.0331,-3.692131 -0.0331,-3.692131 -1.46875,1.460689 -1.46875,1.460689 v 2.231442 2.231442 h -1.1875 -1.1875 v -0.930122 c 0,-0.511568 -0.0562,-0.964888 -0.125,-1.007378 -0.0688,-0.04249 -0.125,-0.03037 -0.125,0.02693 0,0.0573 -0.72816,0.793051 -1.61813,1.634994 l -1.61814,1.530806 z"
-       id="path2826-0-9" /></g></svg>
+       id="path2826-0-9" /></g><g
+     id="layer-ai"
+     inkscape:label="AI"><g
+       id="g-ai-0"
+       transform="translate(303.01376,6.0849886)"><rect
+         x="0" y="0" width="21" height="21"
+         id="rect-ai-bg-0"
+         style="fill:#ffcc00" /><path
+         d="M 1.75,2.75 H 19.25 V 16.25 H 17.75 V 19.25 L 14.25,16.25 H 1.75 Z"
+         id="path-ai-bubble-0"
+         style="fill:none;stroke:#655100;stroke-width:1.5;stroke-linejoin:miter;stroke-miterlimit:2" /><path
+         d="M 7.15,5 H 10.15 L 12.55,14 H 10.48 L 9.95,12 H 7.35 L 6.82,14 H 4.75 Z M 8.65,7.2 L 9.45,10 H 7.85 Z"
+         id="path-ai-a-0"
+         style="fill:#655100;fill-rule:evenodd" /><rect
+         x="14.25" y="5" width="2" height="9"
+         id="rect-ai-i-0"
+         style="fill:#655100" /></g><g
+       id="g-ai-1"
+       transform="translate(303.01376,38.941)"><rect
+         x="0" y="0" width="21" height="21"
+         id="rect-ai-bg-1"
+         style="fill:#ffffff" /><path
+         d="M 1.75,2.75 H 19.25 V 16.25 H 17.75 V 19.25 L 14.25,16.25 H 1.75 Z"
+         id="path-ai-bubble-1"
+         style="fill:none;stroke:#083e88;stroke-width:1.5;stroke-linejoin:miter;stroke-miterlimit:2" /><path
+         d="M 7.15,5 H 10.15 L 12.55,14 H 10.48 L 9.95,12 H 7.35 L 6.82,14 H 4.75 Z M 8.65,7.2 L 9.45,10 H 7.85 Z"
+         id="path-ai-a-1"
+         style="fill:#083e88;fill-rule:evenodd" /><rect
+         x="14.25" y="5" width="2" height="9"
+         id="rect-ai-i-1"
+         style="fill:#083e88" /></g><g
+       id="g-ai-2"
+       transform="translate(303.01376,71.953)"><rect
+         x="0" y="0" width="21" height="21"
+         id="rect-ai-bg-2"
+         style="fill:#e9f4f8" /><path
+         d="M 1.75,2.75 H 19.25 V 16.25 H 17.75 V 19.25 L 14.25,16.25 H 1.75 Z"
+         id="path-ai-bubble-2"
+         style="fill:none;stroke:#083e88;stroke-width:1.5;stroke-linejoin:miter;stroke-miterlimit:2" /><path
+         d="M 7.15,5 H 10.15 L 12.55,14 H 10.48 L 9.95,12 H 7.35 L 6.82,14 H 4.75 Z M 8.65,7.2 L 9.45,10 H 7.85 Z"
+         id="path-ai-a-2"
+         style="fill:#083e88;fill-rule:evenodd" /><rect
+         x="14.25" y="5" width="2" height="9"
+         id="rect-ai-i-2"
+         style="fill:#083e88" /></g></g></svg>

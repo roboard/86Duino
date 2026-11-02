@@ -56,14 +56,14 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
    * Rollover titles for each button.
    */
   private static final String[] title = {
-    tr("Verify"), tr("Upload"), tr("New"), tr("Open"), tr("Save"), tr("Serial Monitor"), tr("86LDmicro"), tr("ArduBlock"), tr("86HMI Editor"), tr("86EVA Configurator")
+    tr("Verify"), tr("Upload"), tr("New"), tr("Open"), tr("Save"), tr("Serial Monitor"), tr("86LDmicro"), tr("ArduBlock"), tr("86HMI Editor"), tr("86EVA Configurator"), tr("AI Assistant")
   };
 
   /**
    * Titles for each button when the shift key is pressed.
    */
   private static final String[] titleShift = {
-    tr("Verify"), tr("Upload Using Programmer"), tr("New"), tr("Open"), tr("Save As..."), tr("Serial Monitor"), tr("86LDmicro"), tr("ArduBlock"), tr("86HMI Editor"), tr("86EVA Configurator")
+    tr("Verify"), tr("Upload Using Programmer"), tr("New"), tr("Open"), tr("Save As..."), tr("Serial Monitor"), tr("86LDmicro"), tr("ArduBlock"), tr("86HMI Editor"), tr("86EVA Configurator"), tr("AI Assistant")
   };
 
   private static int BUTTON_COUNT = 0;
@@ -98,7 +98,8 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   private static final int ARDUBLOCK = 7;
   private static final int HMI = 8;
   private static final int EVA = 9;
-  
+  private static final int AI = 10;
+
   private static final int INACTIVE = 0;
   private static final int ROLLOVER = 1;
   private static final int ACTIVE = 2;
@@ -142,23 +143,14 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     this.menu = menu;
 
     if (BaseNoGui.getTargetBoard().getName().contains("QEC")) {
-        BUTTON_COUNT = 10;
+        BUTTON_COUNT = 11;
         buttonCount = 0;
-        
+
         state = new int[BUTTON_COUNT];
         which = new int[BUTTON_COUNT];
 
-        which[buttonCount++] = RUN;
-        which[buttonCount++] = EXPORT;
-        which[buttonCount++] = NEW;
-        which[buttonCount++] = OPEN;
-        which[buttonCount++] = SAVE;
-        which[buttonCount++] = EVA;    
-        which[buttonCount++] = HMI;
-        which[buttonCount++] = ARDUBLOCK;
-        which[buttonCount++] = LDMICRO;
-        which[buttonCount++] = SERIAL;
-        
+        setQECImageColumns();
+
         myPictureFileName = "buttons_backup";
     } else {
         BUTTON_COUNT = 6;
@@ -201,6 +193,26 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(this);
   }
   
+  /**
+   * 86Duino: QEC toolbar. A button's slot is its constant (RUN..AI) and picks
+   * its action, title and position; which[slot] is the column of its icon in
+   * buttons_backup.svg, whose columns follow the on-screen order:
+   * RUN EXPORT NEW OPEN SAVE | EVA HMI ARDUBLOCK LDMICRO AI SERIAL.
+   */
+  private void setQECImageColumns() {
+    which[buttonCount++] = 0;  // RUN
+    which[buttonCount++] = 1;  // EXPORT
+    which[buttonCount++] = 2;  // NEW
+    which[buttonCount++] = 3;  // OPEN
+    which[buttonCount++] = 4;  // SAVE
+    which[buttonCount++] = 10; // SERIAL
+    which[buttonCount++] = 8;  // LDMICRO
+    which[buttonCount++] = 7;  // ARDUBLOCK
+    which[buttonCount++] = 6;  // HMI
+    which[buttonCount++] = 5;  // EVA
+    which[buttonCount++] = 9;  // AI
+  }
+
   private void buildTouchBar() {
     touchBar = new JTouchBar();
     touchBarButtons = new TouchBarButton[BUTTON_COUNT];
@@ -221,7 +233,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       }
       
       touchBarButtons[i] = new TouchBarButton();
-      touchBarButtons[i].setImage(touchBarImages[i][ROLLOVER]);
+      touchBarButtons[i].setImage(touchBarImages[which[i]][ROLLOVER]);
       touchBarButtons[i].setAction(event -> {
         // Run event handler later to prevent hanging if a dialog needs to be open
         EventQueue.invokeLater(new Runnable() {
@@ -242,22 +254,13 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   public void rebuildTouchBar() {
     
     if (BaseNoGui.getTargetBoard().getName().contains("QEC")) {
-        BUTTON_COUNT = 10;
+        BUTTON_COUNT = 11;
         buttonCount = 0;
         state = new int[BUTTON_COUNT];
         which = new int[BUTTON_COUNT];
 
-        which[buttonCount++] = RUN;
-        which[buttonCount++] = EXPORT;
-        which[buttonCount++] = NEW;
-        which[buttonCount++] = OPEN;
-        which[buttonCount++] = SAVE;
-        which[buttonCount++] = EVA;    
-        which[buttonCount++] = HMI;
-        which[buttonCount++] = ARDUBLOCK;
-        which[buttonCount++] = LDMICRO;
-        which[buttonCount++] = SERIAL;
-        
+        setQECImageColumns();
+
         myPictureFileName = "buttons_backup";
         
     } else {
@@ -366,24 +369,27 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       int offsetX = 3;
       for (int i = 0; i < buttonCount; i++) {
         x1[i] = offsetX;
-        if (i == 2 || i == 10) x1[i] += BUTTON_GAP; // ORG: if (i == 2 || i == 6) 
+        if (i == 2) x1[i] += BUTTON_GAP; // ORG: if (i == 2 || i == 6)
         x2[i] = x1[i] + BUTTON_WIDTH;
         offsetX = x2[i];
       }
 
-      if (buttonCount == 10) {
+      if (buttonCount == 11) {
           // EVA
-          x1[EVA] = width - (BUTTON_WIDTH * 5) - 14;
-          x2[EVA] = width - (BUTTON_WIDTH * 4) - 14;            
+          x1[EVA] = width - (BUTTON_WIDTH * 6) - 14;
+          x2[EVA] = width - (BUTTON_WIDTH * 5) - 14;
           // HMI
-          x1[HMI] = width - (BUTTON_WIDTH * 4) - 14;
-          x2[HMI] = width - (BUTTON_WIDTH * 3) - 14;
+          x1[HMI] = width - (BUTTON_WIDTH * 5) - 14;
+          x2[HMI] = width - (BUTTON_WIDTH * 4) - 14;
           // ArduBlock
-          x1[ARDUBLOCK] = width - (BUTTON_WIDTH * 3) - 14;
-          x2[ARDUBLOCK] = width - (BUTTON_WIDTH * 2) - 14;
+          x1[ARDUBLOCK] = width - (BUTTON_WIDTH * 4) - 14;
+          x2[ARDUBLOCK] = width - (BUTTON_WIDTH * 3) - 14;
           // LDmicro
-          x1[LDMICRO] = width - (BUTTON_WIDTH * 2) - 14;
-          x2[LDMICRO] = width - (BUTTON_WIDTH * 1) - 14;
+          x1[LDMICRO] = width - (BUTTON_WIDTH * 3) - 14;
+          x2[LDMICRO] = width - (BUTTON_WIDTH * 2) - 14;
+          // AI Assistant
+          x1[AI] = width - (BUTTON_WIDTH * 2) - 14;
+          x2[AI] = width - (BUTTON_WIDTH * 1) - 14;
       }
       
       // Serial button must be on the right
@@ -415,14 +421,14 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     if (currentRollover != -1) {
       int statusY = (BUTTON_HEIGHT + g.getFontMetrics().getAscent()) / 2;
       String status = shiftPressed ? titleShift[currentRollover] : title[currentRollover];
-      if (currentRollover != SERIAL && currentRollover != ARDUBLOCK && currentRollover != HMI && currentRollover != EVA && currentRollover != LDMICRO)
+      if (currentRollover != SERIAL && currentRollover != ARDUBLOCK && currentRollover != HMI && currentRollover != EVA && currentRollover != LDMICRO && currentRollover != AI)
         g.drawString(status, 5 * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY); // ORG: g.drawString(status, (buttonCount - 1) * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY);
       else {
         int statusX = 0;
         if (buttonCount == 6)
             statusX = x1[SERIAL] - BUTTON_GAP; // ORG: x1[SERIAL] - BUTTON_GAP
-        else if (buttonCount == 10)
-            statusX = x1[SERIAL] - (BUTTON_WIDTH * 4 + BUTTON_GAP);
+        else if (buttonCount == 11)
+            statusX = x1[EVA] - BUTTON_GAP; // left of the right-hand group
         
         statusX -= g.getFontMetrics().stringWidth(status);
         g.drawString(status, statusX, statusY);
@@ -510,7 +516,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
         newState = ROLLOVER;
       }
       
-      touchBarButtons[slot].setImage(touchBarImages[slot][newState]);
+      touchBarButtons[slot].setImage(touchBarImages[which[slot]][newState]);
     }
   }
 
@@ -669,6 +675,11 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
         } catch (Exception e1) {
           throw new RuntimeException(e1);
         }
+        break;
+
+      case AI:
+        // same as Tools > AI Assistant: show the panel, press again to hide it
+        editor.toggleAiPanel();
         break;
 
       case SERIAL:

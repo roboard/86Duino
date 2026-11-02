@@ -493,8 +493,8 @@ public class Editor extends JFrame implements RunnerListener {
     aiSplitPane.revalidate();
   }
 
-  /** Toggles the panel from the Tools menu. */
-  private void toggleAiPanel() {
+  /** Toggles the panel from the Tools menu or the toolbar AI button. */
+  void toggleAiPanel() {
     if (aiPanelVisible && aiPanelSqueezed()) {
       // marked open but not really visible: show it instead of hiding it
       placeAiPanel();
