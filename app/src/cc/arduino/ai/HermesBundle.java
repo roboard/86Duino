@@ -172,8 +172,32 @@ public class HermesBundle {
     // Do not let a Python installed on this computer leak into the bundle.
     env.remove("PYTHONPATH");
     env.remove("PYTHONHOME");
+    applyBoardCli(env);
     applyProxy(env);
     return pb;
+  }
+
+  /**
+   * 86duino-cli for the AI's skill_cli (its scripts/duino.py reads DUINO_CLI_PATH).
+   * macOS: by default the CLI keeps its data next to itself, in
+   * Contents/Java/.86duino: that writes into the .app (breaks its signature,
+   * fails when macOS runs the app from a read-only location). Use
+   * &lt;IDE settings folder&gt;/cli-data instead (~/Library/86Duino15/cli-data).
+   */
+  private static void applyBoardCli(Map<String, String> env) {
+    File cli = BaseNoGui.getContentFile(WINDOWS ? "86duino-cli.exe" : "86duino-cli");
+    if (!cli.isFile()) {
+      return;
+    }
+    env.put("DUINO_CLI_PATH", cli.getAbsolutePath());
+    if (OSUtils.isMacOS()) {
+      try {
+        File data = new File(BaseNoGui.getSettingsFolder(), "cli-data");
+        env.put("ARDUINO_DIRECTORIES_DATA", data.getAbsolutePath());
+      } catch (RuntimeException e) {
+        System.err.println("AI: no settings folder for 86duino-cli data: " + e);
+      }
+    }
   }
 
   /** Passes the proxy configured in Preferences &gt; Network to Hermes. */
