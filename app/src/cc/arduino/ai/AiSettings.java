@@ -39,6 +39,8 @@ public class AiSettings {
   public static final String PREF_PANEL_WIDTH = "ai.panel.width";
   /** Height of the message box area (below the conversation), in pixels. */
   public static final String PREF_INPUT_HEIGHT = "ai.panel.input.height";
+  /** Font size of the conversation and the message box (Ctrl + mouse wheel); unset means the default. */
+  public static final String PREF_FONT_SIZE = "ai.panel.font.size";
   /** The AI data folder (HERMES_HOME); empty means the default folder. */
   public static final String PREF_HOME_PATH = "ai.hermes.home";
   // Hidden override (not shown in the Preferences page), mostly for development.
@@ -162,9 +164,17 @@ public class AiSettings {
     return findProvider(provider);
   }
 
-  /** Settings that require restarting a running Hermes process when changed. */
+  /** Settings written to Hermes' configuration when changed. */
   public String runtimeSignature() {
-    return provider + "|" + model + "|" + baseUrl + "|" + String.join(DIR_SEPARATOR, allSkillDirs()) + "|"
+    return processSignature() + "|" + model;
+  }
+
+  /**
+   * Settings that require restarting a running Hermes process when changed.
+   * Not the model: a running conversation switches models (session/set_model).
+   */
+  public String processSignature() {
+    return provider + "|" + baseUrl + "|" + String.join(DIR_SEPARATOR, allSkillDirs()) + "|"
            + allowTerminal + "|" + homePath;
   }
 

@@ -3375,3 +3375,23 @@ msgstr "開啟新對話會清除目前的對話，而且 AI 不會記得先前�
 #: cc/arduino/ai
 msgid "Starting a new conversation deletes the conversation saved in this sketch, and the AI will not remember it.\nContinue?"
 msgstr "開啟新對話會刪除這個專案已儲存的對話紀錄，而且 AI 不會記得先前的內容。\n是否要繼續？"
+
+#: cc/arduino/ai
+msgid "Could not find any models on the network."
+msgstr "目前從網路無法找到模型"
+
+#: cc/arduino/ai
+msgid "Switching the model..."
+msgstr "切換模型中…"
+
+#: cc/arduino/ai
+msgid "Could not switch to the model {0}: {1}"
+msgstr "無法切換到模型 {0}：{1}"
+
+#: cc/arduino/ai
+msgid "Choose another model below."
+msgstr "請在下方的選單換一個模型。"
+
+#: cc/arduino/ai
+msgid "Switched to the model {0}."
+msgstr "已切換到模型：{0}"

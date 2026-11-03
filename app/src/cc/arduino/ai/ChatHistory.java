@@ -57,7 +57,7 @@ final class ChatHistory {
   final List<Entry> entries = new ArrayList<>();
   /** The Hermes session to continue, or null. */
   String sessionId;
-  /** Provider, model, Base URL and AI workspace the session was made with (see {@link #aiSignature}). */
+  /** Provider, Base URL and AI workspace the session was made with (see {@link #aiSignature}). */
   String aiSignature = "";
   String sketchFolder = "";
   String board = "";
@@ -70,11 +70,24 @@ final class ChatHistory {
     return new File(new File(sketch.getDataFolder(), ".ai"), "chat.json");
   }
 
-  /** What a Hermes session depends on: a session made with other settings is not continued. */
+  /**
+   * What a Hermes session depends on: a session made with other settings is
+   * not continued. Not the model: a continued session switches to today's.
+   */
   static String aiSignature(AiSettings s) {
-    String model = s.model == null ? "" : s.model.trim();
     String baseUrl = s.getProvider().needsBaseUrl && s.baseUrl != null ? s.baseUrl.trim() : "";
-    return s.getProvider().id + "|" + model + "|" + baseUrl + "|" + HermesBundle.getDefault().getHomeDir().getAbsolutePath();
+    return s.getProvider().id + "|" + baseUrl + "|" + HermesBundle.getDefault().getHomeDir().getAbsolutePath();
+  }
+
+  /** The saved session can be continued with these settings. */
+  boolean sameAi(AiSettings s) {
+    String saved = aiSignature;
+    String[] parts = saved.split("\\|", -1);
+    if (parts.length == 4) {
+      // saved before the model was left out: provider|model|baseUrl|home
+      saved = parts[0] + "|" + parts[2] + "|" + parts[3];
+    }
+    return saved.equals(aiSignature(s));
   }
 
   void clear() {

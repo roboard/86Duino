@@ -727,6 +727,27 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     removeKeyButton.setEnabled(!running);
   }
 
+  /**
+   * The model chosen in an AI panel: saved for every window and written to
+   * Hermes' configuration (the model a new Hermes process starts with), then
+   * every AI panel shows it.
+   */
+  public static void saveModel(String model) {
+    AiSettings s = AiSettings.load();
+    s.model = model;
+    processing.app.PreferencesData.set(AiSettings.PREF_MODEL, model);
+    HermesBundle bundle = HermesBundle.forHome(s.homePath);
+    CompletableFuture<Void> previous = pendingSave;
+    pendingSave = previous.handle((v, t) -> null).thenRunAsync(() -> {
+      try {
+        bundle.applySettings(s, null, false);
+      } catch (Exception e) {
+        System.err.println("Could not save the AI model: " + e);
+      }
+    });
+    refreshAllEditors();
+  }
+
   /** True while settings saved with OK are still being written. */
   public static boolean isSaving() {
     return !pendingSave.isDone();

@@ -159,6 +159,18 @@ public class AcpClient {
     return request("session/set_mode", params);
   }
 
+  /**
+   * Switches the model of a session, keeping its conversation. Hermes refuses
+   * while the session is answering. "provider:model" or a plain model name
+   * (which keeps the session's provider).
+   */
+  public CompletableFuture<JsonNode> setModel(String sessionId, String modelId) {
+    ObjectNode params = newObject();
+    params.put("sessionId", sessionId);
+    params.put("modelId", modelId);
+    return request("session/set_model", params);
+  }
+
   /** Sends one user turn; the future yields the result (with stopReason). */
   public CompletableFuture<JsonNode> prompt(String sessionId, List<String> textBlocks) {
     ObjectNode params = newObject();
@@ -298,7 +310,10 @@ public class AcpClient {
       if (f != null) {
         JsonNode error = msg.get("error");
         if (error != null && !error.isNull()) {
-          f.completeExceptionally(new AcpException(error.path("message").asText("ACP error")));
+          String message = error.path("message").asText("ACP error");
+          // e.g. "Invalid params" with the reason in data.details
+          String details = error.path("data").path("details").asText("");
+          f.completeExceptionally(new AcpException(details.isEmpty() ? message : message + ": " + details));
         } else {
           f.complete(msg.path("result"));
         }

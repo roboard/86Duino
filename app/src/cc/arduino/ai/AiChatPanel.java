@@ -17,6 +17,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.HierarchyEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -24,6 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +34,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -75,12 +81,33 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
 
   private final JTextPane transcript = new JTextPane();
   private final JTextArea input = new JTextArea(3, 20);
+  /** "Send", and "Stop" while the AI answers. */
   private final JButton sendButton = new JButton(tr("Send"));
-  private final JButton stopButton = new JButton(tr("Stop"));
   private final JButton newButton = new JButton(tr("New Chat"));
   private final JLabel statusLabel = new JLabel(" ");
-  /** The model in use, next to the title. */
-  private final JLabel modelLabel = new JLabel(" ");
+  /**
+   * The model in use, next to Send. As wide as the longest model name, up to a
+   * limit; empty when the model list could not be fetched.
+   */
+  private final JComboBox<String> modelCombo = new JComboBox<String>() {
+    @Override
+    public Dimension getPreferredSize() {
+      Dimension d = super.getPreferredSize();
+      d.width = Math.max(Theme.scale(MODEL_MIN_WIDTH), Math.min(Theme.scale(MODEL_MAX_WIDTH), d.width));
+      return d;
+    }
+
+    @Override
+    public Dimension getMaximumSize() {
+      return getPreferredSize();
+    }
+  };
+  private static final int MODEL_MIN_WIDTH = 100;
+  private static final int MODEL_MAX_WIDTH = 280;
+  /** True while the panel fills the model box (not a choice of the user). */
+  private boolean fillingModels;
+  /** The model list the model box shows, see {@link #modelLists}. */
+  private CompletableFuture<List<String>> shownModels;
   /** "Retry", shown when the model list could not be fetched. */
   private final JButton retryButton = new JButton(tr("Retry"));
   /** A text area, not an HTML label: HTML labels do not wrap Chinese text. */
@@ -94,6 +121,33 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private final SimpleAttributeSet toolStyle = new SimpleAttributeSet();
   private final SimpleAttributeSet infoStyle = new SimpleAttributeSet();
   private final SimpleAttributeSet errorStyle = new SimpleAttributeSet();
+  /**
+   * The font size of the tool lines, one below the conversation's. The other
+   * styles set no size: they follow the conversation's font (transcript.setFont).
+   */
+  private javax.swing.text.Style smallText;
+
+  // Font size of the conversation and the message box (Ctrl + mouse wheel),
+  // shared by all windows. The model box and the buttons keep theirs.
+  private static final int FONT_MIN = 8;
+  private static final int FONT_MAX = 40;
+  /** Open AI panels, so a font size change reaches every window. */
+  private static final java.util.Set<AiChatPanel> PANELS =
+      java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+  /** The look and feel's font of the conversation: the default size. */
+  private final Font defaultFont = transcript.getFont();
+  /** Wheel turns not used yet: a touchpad sends many small ones. */
+  private double pendingWheel;
+
+  // The conversation above, the message box below, the border between them can be dragged.
+  private JSplitPane chat;
+  private JScrollPane transcriptScroll;
+  private JPanel inputPanel;
+  /** The message box's smallest height (three lines and the row below); it follows the font. */
+  private int inputMin;
+  /** The message box height the window had last time, used once. */
+  private int savedInput;
+  private boolean dividerPlaced;
 
   // Conversation state. Changed on the event thread only, except where noted.
   private AcpClient client;
@@ -101,8 +155,15 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private File sessionFolder;
   private String sessionSettings;
   private String sessionBoard;
+  /** The model the session uses (it may differ from the one chosen since), or null. */
+  private String sessionModel;
   private boolean contextSent;
   private volatile boolean busy;
+  /** Stop was pressed during this turn: the turn thread stops at the next step. */
+  private volatile boolean stopRequested;
+  /** Set by the turn thread once the message is sent, for Stop. */
+  private volatile AcpClient turnClient;
+  private volatile String turnSession;
   private boolean lastWasAssistantText;
   private boolean assistantLabelShown;
   /** Settings the current session was made (or continued) with, see {@link ChatHistory#aiSignature}. */
@@ -138,8 +199,6 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     JLabel title = new JLabel(tr("AI Assistant"));
     title.setFont(title.getFont().deriveFont(Font.BOLD));
     header.add(title, BorderLayout.WEST);
-    modelLabel.setForeground(Color.GRAY);
-    header.add(modelLabel, BorderLayout.CENTER);
     JPanel headerButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, Theme.scale(2), 0));
     newButton.setToolTipText(tr("Start a new conversation"));
     newButton.setMargin(new java.awt.Insets(1, 6, 1, 6));
@@ -158,44 +217,77 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     // Chat card
     transcript.setEditable(false);
     transcript.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(8), Theme.scale(6), Theme.scale(8)));
-    JScrollPane transcriptScroll = new JScrollPane(transcript, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                                   JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    transcriptScroll = new JScrollPane(transcript, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                       JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     transcriptScroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, Color.LIGHT_GRAY));
+    transcript.addMouseWheelListener(this::mouseWheel);
 
     input.setLineWrap(true);
     input.setWrapStyleWord(true);
-    input.setFont(transcript.getFont());
     input.setToolTipText(tr("Enter: send, Shift+Enter: new line"));
     input.addKeyListener(new KeyAdapter() {
       @Override
       public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_ENTER && !e.isShiftDown() && !e.isControlDown()) {
-          e.consume();
+        if (e.getKeyCode() != KeyEvent.VK_ENTER) {
+          return;
+        }
+        e.consume();
+        if (e.isShiftDown() || e.isControlDown()) {
+          // a text area has no binding for Shift+Enter: the line break is added here
+          input.replaceSelection("\n");
+        } else {
           send();
         }
       }
     });
-    sendButton.addActionListener(e -> send());
-    stopButton.addActionListener(e -> stop());
-    stopButton.setEnabled(false);
+    input.addMouseWheelListener(this::mouseWheel);
+    sendButton.addActionListener(e -> {
+      if (busy) {
+        stop();
+      } else {
+        send();
+      }
+    });
+    // "Send" and "Stop" take turns on the button: as wide as the wider one, so nothing moves
+    Dimension sendSize = widestSize(sendButton, tr("Send"), tr("Stop"));
+    sendButton.setPreferredSize(sendSize);
+    sendButton.setMinimumSize(sendSize);
+    sendButton.setMaximumSize(sendSize);
+    modelCombo.setMinimumSize(Theme.scale(new Dimension(60, 0)));
+    modelCombo.addActionListener(e -> modelChosen());
+    modelCombo.setEnabled(false);
 
-    JPanel inputPanel = new JPanel(new BorderLayout(Theme.scale(4), 0));
+    // The message box and the row below it (model, Send) are one framed box:
+    // a long message scrolls inside it and never covers the row.
+    JScrollPane inputScroll = new JScrollPane(input, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                              JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    inputScroll.setBorder(null);
+    JPanel inputRow = new JPanel();
+    inputRow.setLayout(new BoxLayout(inputRow, BoxLayout.X_AXIS));
+    inputRow.setOpaque(false);
+    inputRow.setBorder(BorderFactory.createEmptyBorder(Theme.scale(4), Theme.scale(6), Theme.scale(6), Theme.scale(6)));
+    inputRow.add(Box.createHorizontalGlue());
+    inputRow.add(modelCombo);
+    inputRow.add(Box.createHorizontalStrut(Theme.scale(6)));
+    inputRow.add(sendButton);
+    JPanel inputBox = new JPanel(new BorderLayout());
+    inputBox.setBackground(input.getBackground());
+    inputBox.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+    inputBox.add(inputScroll, BorderLayout.CENTER);
+    inputBox.add(inputRow, BorderLayout.SOUTH);
+    inputPanel = new JPanel(new BorderLayout());
     inputPanel.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(6), Theme.scale(6), Theme.scale(6)));
-    inputPanel.add(new JScrollPane(input), BorderLayout.CENTER);
-    JPanel inputButtons = new JPanel(new java.awt.GridLayout(2, 1, 0, Theme.scale(4)));
-    inputButtons.add(sendButton);
-    inputButtons.add(stopButton);
-    // a taller message box keeps the buttons at their size, at the top
-    JPanel buttonColumn = new JPanel(new BorderLayout());
-    buttonColumn.add(inputButtons, BorderLayout.NORTH);
-    inputPanel.add(buttonColumn, BorderLayout.EAST);
+    inputPanel.add(inputBox, BorderLayout.CENTER);
+
+    smallText = transcript.getStyledDocument().addStyle("ai-small", null);
+    applyFontSize(); // the size chosen last time, before the message box is measured
 
     // The border between the conversation and the message box can be dragged:
-    // the message box keeps at least its button column, and takes at most
+    // the message box keeps at least its height with the row below, and takes at most
     // three quarters of the height.
-    int inputMin = inputPanel.getPreferredSize().height;
+    inputMin = inputPanel.getPreferredSize().height;
     inputPanel.setMinimumSize(new Dimension(0, inputMin));
-    JSplitPane chat = new JSplitPane(JSplitPane.VERTICAL_SPLIT, transcriptScroll, inputPanel);
+    chat = new JSplitPane(JSplitPane.VERTICAL_SPLIT, transcriptScroll, inputPanel);
     chat.setContinuousLayout(true);
     chat.setResizeWeight(1D); // a taller window gives the conversation the room
     chat.setBorder(null);
@@ -208,26 +300,16 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     Keys.killBinding(chat, Keys.ctrl(KeyEvent.VK_TAB));
     Keys.killBinding(chat, Keys.ctrlShift(KeyEvent.VK_TAB));
     // read now: the split pane's own first layout moves the divider before it is placed
-    int savedInput = PreferencesData.getInteger(AiSettings.PREF_INPUT_HEIGHT, inputMin);
-    boolean[] placed = new boolean[1];
+    savedInput = PreferencesData.getInteger(AiSettings.PREF_INPUT_HEIGHT, inputMin);
     chat.addComponentListener(new java.awt.event.ComponentAdapter() {
       @Override
       public void componentResized(java.awt.event.ComponentEvent e) {
-        int height = chat.getHeight();
-        if (height <= 0) {
-          return;
-        }
-        int maxInput = Math.max(inputMin, height * 3 / 4);
-        transcriptScroll.setMinimumSize(new Dimension(0, height - maxInput - chat.getDividerSize()));
-        int input = placed[0] ? height - chat.getDividerLocation() - chat.getDividerSize() : savedInput;
-        input = Math.max(inputMin, Math.min(maxInput, input));
-        placed[0] = true;
-        chat.setDividerLocation(height - input - chat.getDividerSize());
+        placeDivider();
       }
     });
     chat.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> {
       int input = chat.getHeight() - chat.getDividerLocation() - chat.getDividerSize();
-      if (placed[0] && input >= inputMin) {
+      if (dividerPlaced && input >= inputMin) {
         PreferencesData.setInteger(AiSettings.PREF_INPUT_HEIGHT, input);
       }
     });
@@ -265,12 +347,117 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     StyleConstants.setForeground(aiLabelStyle, new Color(0x00, 0x87, 0x7F));
     StyleConstants.setForeground(aiStyle, new Color(0x20, 0x20, 0x20));
     StyleConstants.setForeground(toolStyle, new Color(0x70, 0x70, 0x70));
-    StyleConstants.setFontSize(toolStyle, Math.max(10, transcript.getFont().getSize() - 1));
+    toolStyle.setResolveParent(smallText);
     StyleConstants.setForeground(infoStyle, new Color(0x80, 0x80, 0x80));
     StyleConstants.setItalic(infoStyle, true);
     StyleConstants.setForeground(errorStyle, new Color(0xB0, 0x20, 0x20));
 
+    // the model list is fetched when the panel is opened (again, after it failed)
+    addHierarchyListener(e -> {
+      if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+        AiSettings settings = AiSettings.load();
+        HermesBundle bundle = HermesBundle.getDefault();
+        if (setupProblem(settings, bundle) == null) {
+          showModelList(settings, bundle, true);
+        }
+      }
+    });
+    PANELS.add(this);
     refreshSetupState();
+  }
+
+  /**
+   * Keeps the message box between its smallest height and three quarters of
+   * the height; the first time, at the height it had last time.
+   */
+  private void placeDivider() {
+    int height = chat.getHeight();
+    if (height <= 0) {
+      return;
+    }
+    int maxInput = Math.max(inputMin, height * 3 / 4);
+    transcriptScroll.setMinimumSize(new Dimension(0, height - maxInput - chat.getDividerSize()));
+    int input = dividerPlaced ? height - chat.getDividerLocation() - chat.getDividerSize() : savedInput;
+    input = Math.max(inputMin, Math.min(maxInput, input));
+    dividerPlaced = true;
+    chat.setDividerLocation(height - input - chat.getDividerSize());
+  }
+
+  // ------------------------------------------------------------------ font size
+
+  /** The conversation's font size: the one chosen with Ctrl + mouse wheel, or the default. */
+  private int fontSize() {
+    int size = PreferencesData.getInteger(AiSettings.PREF_FONT_SIZE, defaultFont.getSize());
+    return Math.max(FONT_MIN, Math.min(FONT_MAX, size));
+  }
+
+  /**
+   * Ctrl + mouse wheel makes the conversation and the message box bigger
+   * (wheel up) or smaller, in every window; other turns scroll as usual.
+   */
+  private void mouseWheel(java.awt.event.MouseWheelEvent e) {
+    if (!e.isControlDown()) {
+      // a listener here keeps the scroll pane from getting the turn: pass it on
+      java.awt.Component parent = e.getComponent().getParent();
+      if (parent != null) {
+        parent.dispatchEvent(e);
+      }
+      return;
+    }
+    e.consume();
+    double turn = e.getPreciseWheelRotation();
+    if (turn == 0) {
+      return;
+    }
+    if (pendingWheel != 0 && Math.signum(turn) != Math.signum(pendingWheel)) {
+      pendingWheel = 0; // the other direction starts afresh
+    }
+    pendingWheel += turn;
+    // a whole notch is one point; a touchpad's small turns add up to one
+    int steps = (int) pendingWheel;
+    if (steps == 0) {
+      return;
+    }
+    pendingWheel -= steps;
+    int size = Math.max(FONT_MIN, Math.min(FONT_MAX, fontSize() - steps));
+    if (size != fontSize()) {
+      PreferencesData.setInteger(AiSettings.PREF_FONT_SIZE, size);
+      for (AiChatPanel panel : new ArrayList<>(PANELS)) {
+        panel.applyFontSize();
+      }
+    }
+  }
+
+  /** Shows the conversation and the message box in the chosen font size. */
+  private void applyFontSize() {
+    int size = fontSize();
+    Font font = defaultFont.deriveFont((float) size);
+    // the conversation's text follows the font (its default style), the tool lines one smaller
+    StyleConstants.setFontSize(smallText, Math.max(FONT_MIN, size - 1));
+    transcript.setFont(font);
+    input.setFont(font);
+    if (chat == null) {
+      return; // being made: the message box is measured next
+    }
+    // the message box keeps room for three lines in the new size
+    inputMin = inputPanel.getPreferredSize().height;
+    inputPanel.setMinimumSize(new Dimension(0, inputMin));
+    placeDivider();
+    revalidate();
+  }
+
+  /** The size of the button with the longest of these texts. */
+  private static Dimension widestSize(JButton button, String... texts) {
+    String text = button.getText();
+    Dimension size = new Dimension();
+    for (String t : texts) {
+      button.setText(t);
+      Dimension d = button.getPreferredSize();
+      size.width = Math.max(size.width, d.width);
+      size.height = Math.max(size.height, d.height);
+    }
+    button.setText(text);
+    return size;
   }
 
   // ------------------------------------------------------------------ setup
@@ -296,14 +483,12 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     }
     retryButton.setVisible(listFailed);
     if (problem == null) {
-      String model = settings.model.trim();
-      modelLabel.setText(I18n.format(tr("Model: {0}"), model));
-      modelLabel.setToolTipText(settings.getProvider().label + " / " + model);
+      if (isShowing()) {
+        showModelList(settings, bundle, false);
+      }
       ((CardLayout) cards.getLayout()).show(cards, CARD_CHAT);
       newButton.setEnabled(true);
     } else {
-      modelLabel.setText(" ");
-      modelLabel.setToolTipText(null);
       // the messages are shared with HTML labels: turn them into plain text
       setupText.setText(problem.replace("<br>", "\n").replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&"));
       ((CardLayout) cards.getLayout()).show(cards, CARD_SETUP);
@@ -397,6 +582,98 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     return true;
   }
 
+  // ------------------------------------------------------------------ model box
+
+  /**
+   * The models each key can use, by {@link #pickAttempt} (provider, key, Base
+   * URL), shared by all editor windows. A failed list is fetched again when a
+   * panel is opened.
+   */
+  private static final Map<String, CompletableFuture<List<String>>> modelLists = new ConcurrentHashMap<>();
+
+  /** Fills the model box from the list for these settings, fetching it first when needed. */
+  private void showModelList(AiSettings settings, HermesBundle bundle, boolean retryFailed) {
+    String key = pickAttempt(settings, bundle);
+    CompletableFuture<List<String>> list = modelLists.get(key);
+    if (list != null && retryFailed && list.isCompletedExceptionally()) {
+      modelLists.remove(key, list);
+    }
+    list = modelLists.computeIfAbsent(key, k -> fetchModels(settings, bundle));
+    if (list == shownModels) {
+      if (list.isDone() && !list.isCompletedExceptionally()) {
+        fillModels(list.join()); // the chosen model may have changed
+      }
+      return;
+    }
+    shownModels = list;
+    // until the list arrives: the model in use
+    fillModels(java.util.Collections.singletonList(settings.model.trim()));
+    CompletableFuture<List<String>> shown = list;
+    list.whenComplete((models, error) -> SwingUtilities.invokeLater(() -> {
+      if (shownModels != shown) {
+        return; // the settings changed meanwhile
+      }
+      if (error != null) {
+        fillModels(java.util.Collections.emptyList());
+        appendNotice(tr("Could not find any models on the network."));
+      } else {
+        fillModels(models);
+      }
+    }));
+  }
+
+  private static CompletableFuture<List<String>> fetchModels(AiSettings settings, HermesBundle bundle) {
+    AiSettings.Provider p = settings.getProvider();
+    String baseUrl = settings.baseUrl;
+    return CompletableFuture.supplyAsync(() -> {
+      HermesBundle.ModelList list;
+      try {
+        list = bundle.listModels(p.id, bundle.readEnvValue(p.apiKeyEnv), baseUrl);
+      } catch (IOException | InterruptedException e) {
+        throw new CompletionException(e);
+      }
+      if (list.models.isEmpty()) {
+        throw new IllegalStateException(list.error == null ? "no models" : list.error);
+      }
+      return list.models;
+    });
+  }
+
+  /** Shows these models (and the chosen one, when the list misses it) in the model box. */
+  private void fillModels(List<String> models) {
+    AiSettings settings = AiSettings.load();
+    String current = settings.model.trim();
+    List<String> items = new ArrayList<>(models);
+    if (!items.isEmpty() && !current.isEmpty() && !items.contains(current)) {
+      items.add(0, current);
+    }
+    fillingModels = true;
+    try {
+      modelCombo.setModel(new DefaultComboBoxModel<>(items.toArray(new String[0])));
+      modelCombo.setSelectedItem(items.contains(current) ? current : null);
+    } finally {
+      fillingModels = false;
+    }
+    modelCombo.setToolTipText(items.contains(current) ? settings.getProvider().label + " / " + current : null);
+    modelCombo.setEnabled(!busy && !items.isEmpty());
+    modelCombo.revalidate(); // its width follows the longest name
+  }
+
+  /**
+   * A model was chosen: saved for every window. The conversation switches to
+   * it with the next message and keeps what was said (session/set_model).
+   */
+  private void modelChosen() {
+    Object item = modelCombo.getSelectedItem();
+    if (fillingModels || item == null) {
+      return;
+    }
+    String model = item.toString().trim();
+    if (!model.isEmpty() && !model.equals(AiSettings.load().model.trim())) {
+      AiPreferencesPanel.saveModel(model);
+    }
+  }
+
   // ------------------------------------------------------------------ saved conversation
 
   /** Where the conversation of this sketch is kept; null for an untitled or read-only sketch. */
@@ -428,7 +705,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     String when = saved.updated > 0
                   ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date(saved.updated)) : "";
     showHistory(I18n.format(tr("Previous conversation: {0}"), when));
-    if (saved.sessionId != null && saved.aiSignature.equals(ChatHistory.aiSignature(AiSettings.load()))) {
+    if (saved.sessionId != null && saved.sameAi(AiSettings.load())) {
       resumeSessionId = saved.sessionId;
     } else if (saved.sessionId != null) {
       recording = false;
@@ -464,7 +741,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
 
   /** Everything that needs a new Hermes process when it changes, the API key included. */
   private static String sessionSignature(AiSettings s, HermesBundle bundle) {
-    return s.runtimeSignature() + "|" + bundle.apiKeyFingerprint(s.getProvider().apiKeyEnv);
+    return s.processSignature() + "|" + bundle.apiKeyFingerprint(s.getProvider().apiKeyEnv);
   }
 
   private void openSettings() {
@@ -498,10 +775,13 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     input.requestFocusInWindow();
   }
 
+  /** While the AI answers, Send becomes Stop; it is Send again once the turn has ended. */
   private void setBusy(boolean b, String status) {
     busy = b;
-    sendButton.setEnabled(!b);
-    stopButton.setEnabled(b);
+    stopRequested = false;
+    sendButton.setText(b ? tr("Stop") : tr("Send"));
+    // Hermes switches models only between turns
+    modelCombo.setEnabled(!b && modelCombo.getItemCount() > 0);
     statusLabel.setText(status == null ? " " : status);
   }
 
@@ -532,7 +812,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     }
     // continue the conversation saved in the sketch (only as the first session of this window)
     String resume = newSession && sessionId == null ? resumeSessionId : null;
-    if (resume != null && !history.aiSignature.equals(ChatHistory.aiSignature(settings))) {
+    if (resume != null && !history.sameAi(settings)) {
       appendInfo(tr("The AI settings changed since then, so the AI does not remember the conversation above. The next message starts a new conversation."));
       resume = null;
     }
@@ -555,11 +835,13 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
 
     AcpClient currentClient = restart ? null : client;
     String currentSession = newSession ? null : sessionId;
+    String currentModel = newSession ? null : sessionModel;
     if (restart) {
       shutdownClient();
     }
     String resumeId = resume;
-    Thread worker = new Thread(() -> runTurn(bundle, settings, folder, currentClient, currentSession, resumeId, board, blocks), "ai-turn");
+    Thread worker = new Thread(() -> runTurn(bundle, settings, folder, currentClient, currentSession, currentModel,
+                                             resumeId, board, blocks), "ai-turn");
     worker.setDaemon(true);
     worker.start();
   }
@@ -594,12 +876,23 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     return true;
   }
 
+  /** Stop was pressed before the message was sent. */
+  private static class TurnStopped extends Exception {
+  }
+
+  private void checkStop() throws TurnStopped {
+    if (stopRequested) {
+      throw new TurnStopped();
+    }
+  }
+
   /**
    * Runs on a background thread. A null client means start Hermes first; a
-   * null session id means create a new conversation first.
+   * null session id means create a new conversation first. sessionModel is
+   * the model the session uses, or null when not known.
    */
   private void runTurn(HermesBundle bundle, AiSettings settings, File folder, AcpClient c,
-                       String sid, String resumeId, String board, List<String> blocks) {
+                       String sid, String sessionModel, String resumeId, String board, List<String> blocks) {
     try {
       AiPreferencesPanel.waitForPendingSave();
       if (c == null) {
@@ -614,10 +907,13 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
         onEdt(() -> client = started);
         c.initialize("86Duino IDE", BaseNoGui.VERSION_NAME_LONG).get(120, TimeUnit.SECONDS);
       }
+      checkStop();
       if (sid == null) {
         // the conversation saved in the sketch first: Hermes keeps it in the AI workspace
-        if (resumeId != null && resumeSession(c, resumeId, folder)) {
+        JsonNode loaded = resumeId != null ? resumeSession(c, resumeId, folder) : null;
+        if (loaded != null) {
           sid = resumeId;
+          sessionModel = currentModel(loaded);
           // the saved session keeps its old mode: use today's setting
           c.setMode(sid, settings.confirmEdits ? "default" : "accept_edits").get(30, TimeUnit.SECONDS);
         } else {
@@ -629,6 +925,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
           if (sid == null) {
             throw new IOException("Hermes did not create a session");
           }
+          sessionModel = currentModel(res);
           if (!settings.confirmEdits) {
             c.setMode(sid, "accept_edits").get(30, TimeUnit.SECONDS);
           }
@@ -644,8 +941,45 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
           contextSent = false;
         });
       }
+      checkStop();
+      // the model chosen since (in any window), or one the session was not made with
+      String model = settings.model.trim();
+      if (!sameModel(sessionModel, model)) {
+        onEdt(() -> statusLabel.setText(tr("Switching the model...")));
+        // "provider:model" when the name itself has a colon (Ollama's "qwen:7b" would read as a provider)
+        String modelId = model.contains(":") ? settings.getProvider().id + ":" + model : model;
+        try {
+          c.setModel(sid, modelId).get(120, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+          Throwable why = e.getCause() != null ? e.getCause() : e;
+          String msg = why.getMessage() == null ? why.toString() : why.getMessage();
+          onEdt(() -> {
+            finishTurn();
+            appendError(I18n.format(tr("Could not switch to the model {0}: {1}"), model, msg)
+                        + "\n" + tr("Choose another model below."));
+          });
+          return;
+        }
+        // a session that was just made silently gets the chosen model
+        boolean announce = sessionModel != null;
+        onEdt(() -> {
+          this.sessionModel = model;
+          if (announce) {
+            appendInfo(I18n.format(tr("Switched to the model {0}."), model));
+          }
+        });
+      } else {
+        onEdt(() -> this.sessionModel = model);
+      }
+      checkStop();
       onEdt(() -> statusLabel.setText(tr("Thinking...")));
-      JsonNode result = c.prompt(sid, blocks).get();
+      turnClient = c;
+      turnSession = sid;
+      CompletableFuture<JsonNode> answer = c.prompt(sid, blocks);
+      if (stopRequested) {
+        c.cancel(sid); // Stop was pressed just before the message went out
+      }
+      JsonNode result = answer.get();
       String stopReason = result.path("stopReason").asText("");
       onEdt(() -> {
         contextSent = true;
@@ -657,6 +991,11 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
           appendInfo(tr("The AI stopped because it reached its limit."));
         }
       });
+    } catch (TurnStopped e) {
+      onEdt(() -> {
+        finishTurn();
+        appendInfo(tr("Stopped."));
+      });
     } catch (ExecutionException e) {
       failTurn(e.getCause() != null ? e.getCause() : e);
     } catch (Exception e) {
@@ -666,21 +1005,32 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
 
   /**
    * Asks Hermes to continue a saved session. Its history replay is not shown:
-   * the panel already shows the saved conversation. False when Hermes does not
+   * the panel already shows the saved conversation. Null when Hermes does not
    * have the session (another computer or AI workspace) or cannot load it.
    */
-  private boolean resumeSession(AcpClient c, String id, File folder) {
+  private JsonNode resumeSession(AcpClient c, String id, File folder) {
     replaying = true;
     try {
       JsonNode res = c.loadSession(id, folder).get(120, TimeUnit.SECONDS);
       // an unknown session is answered with null or {} (a loaded one lists its modes and models)
-      return res != null && res.isObject() && res.size() > 0;
+      return res != null && res.isObject() && res.size() > 0 ? res : null;
     } catch (Exception e) {
       System.err.println("Could not continue the AI conversation " + id + ": " + e);
-      return false;
+      return null;
     } finally {
       replaying = false;
     }
+  }
+
+  /** The model of a session/new or session/load answer ("provider:model"), or null. */
+  private static String currentModel(JsonNode res) {
+    String id = res.path("models").path("currentModelId").asText("");
+    return id.isEmpty() ? null : id;
+  }
+
+  /** The session's model (plain, or "provider:model" as Hermes reports it) is this model. */
+  private static boolean sameModel(String sessionModel, String model) {
+    return sessionModel != null && (sessionModel.equals(model) || sessionModel.endsWith(":" + model));
   }
 
   private void failTurn(Throwable t) {
@@ -693,6 +1043,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   }
 
   private void finishTurn() {
+    turnClient = null;
+    turnSession = null;
     setBusy(false, null);
     lastWasAssistantText = false;
     reloadSketchFromDisk();
@@ -700,11 +1052,21 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     SwingUtilities.invokeLater(this::saveHistory);
   }
 
+  /**
+   * Stops the turn. Before the message is sent (Hermes still starting) the
+   * turn thread stops at its next step. Pressing Stop again sends another cancel.
+   */
   private void stop() {
-    if (busy && client != null && sessionId != null) {
-      client.cancel(sessionId);
-      statusLabel.setText(tr("Stopping..."));
+    if (!busy) {
+      return;
     }
+    stopRequested = true;
+    AcpClient c = turnClient;
+    String sid = turnSession;
+    if (c != null && sid != null) {
+      c.cancel(sid);
+    }
+    statusLabel.setText(tr("Stopping..."));
   }
 
   private void newConversation() {
@@ -758,6 +1120,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
 
   /** Stops Hermes and waits for it (the editor window is closing). */
   public void closeAssistant() {
+    PANELS.remove(this);
     saveHistory(); // a turn that is still running is saved as far as it got
     AcpClient c = client;
     client = null;
@@ -1054,6 +1417,17 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     append((atLineStart() ? "" : "\n") + text + "\n", infoStyle);
     lastWasAssistantText = false;
     record(ChatHistory.INFO, text);
+  }
+
+  /** An info line that is not kept in the saved conversation. */
+  private void appendNotice(String text) {
+    boolean was = recording;
+    recording = false;
+    try {
+      appendInfo(text);
+    } finally {
+      recording = was;
+    }
   }
 
   private void appendError(String text) {
