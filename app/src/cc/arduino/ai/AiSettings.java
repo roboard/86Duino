@@ -183,7 +183,11 @@ public class AiSettings {
     return new File(HermesBundle.getDefault().getBundleDir(), "skills");
   }
 
-  /** The skill folders Hermes uses: the IDE's own folder (if kept and present) first. */
+  /**
+   * The skill folders Hermes uses: the IDE's own folder (if kept and present),
+   * then the user's. The order gives no precedence: Hermes refuses a skill name
+   * found in two of them (see SkillFolderCheck).
+   */
   public List<String> allSkillDirs() {
     List<String> dirs = new ArrayList<>();
     File builtin = builtinSkillsDir();

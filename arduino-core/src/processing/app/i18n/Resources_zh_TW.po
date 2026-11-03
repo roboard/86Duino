@@ -3395,3 +3395,39 @@ msgstr "請在下方的選單換一個模型。"
 #: cc/arduino/ai
 msgid "Switched to the model {0}."
 msgstr "已切換到模型：{0}"
+
+#: cc/arduino/ai
+msgid "{0} (folder not found)"
+msgstr "{0}（找不到這個資料夾）"
+
+#: cc/arduino/ai
+msgid "A skill folder path cannot contain the character {0}. Please rename the folder or choose another one."
+msgstr "技能資料夾的路徑不能包含字元「{0}」。請將資料夾改名，或選擇其他資料夾。"
+
+#: cc/arduino/ai
+msgid "These skills have the same name in more than one place. The AI cannot tell them apart, so it cannot use any copy of them:"
+msgstr "下列技能的名稱在不只一個地方出現，AI 無法分辨要用哪一份，所以每一份都無法使用："
+
+#: cc/arduino/ai
+msgid "Please move or delete the extra copies (or change the name in their SKILL.md), or remove one of the folders from the skill folder list."
+msgstr "請自行搬移或刪除多出來的那幾份（或修改其 SKILL.md 裡的 name），或從技能資料夾清單中移除其中一個資料夾。"
+
+#: cc/arduino/ai
+msgid "A skill folder in the list is inside another one, so the AI finds its skills twice:"
+msgstr "清單中有技能資料夾位於另一個技能資料夾裡面，AI 會重複找到裡面的技能："
+
+#: cc/arduino/ai
+msgid "(inside {0})"
+msgstr "（位於 {0} 裡面）"
+
+#: cc/arduino/ai
+msgid "Please remove one of them from the list."
+msgstr "請從清單中移除其中一個。"
+
+#: cc/arduino/ai
+msgid "Skill folder problem"
+msgstr "技能資料夾有問題"
+
+#: cc/arduino/ai
+msgid "Add this folder anyway?"
+msgstr "仍要加入這個資料夾嗎？"

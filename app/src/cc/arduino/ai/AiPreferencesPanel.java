@@ -19,6 +19,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.HierarchyEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -36,6 +38,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
@@ -106,6 +109,9 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
   }
   private final DefaultListModel<String> skillDirs = new DefaultListModel<>();
   private final JList<String> skillList = new JList<>(skillDirs);
+  private final JButton addSkillButton = new JButton(tr("Add..."));
+  /** The skill folders were checked when the page was first shown. */
+  private boolean skillsChecked;
   private final JCheckBox confirmEditsBox = new JCheckBox(tr("Ask before the AI changes a file (shows the changes first)"));
   private final JCheckBox allowTerminalBox = new JCheckBox(tr("Allow the AI to run terminal commands (always asks first)"));
   private final JTextField homeField = new JTextField(30);
@@ -205,12 +211,26 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
 
     add(new JLabel(tr("Skill folders:")), labelTop(row));
     skillList.setVisibleRowCount(3);
+    // a folder that was moved or deleted is skipped by Hermes without a word: show it here
+    skillList.setCellRenderer(new DefaultListCellRenderer() {
+      @Override
+      public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                             boolean selected, boolean focused) {
+        boolean missing = !new File(String.valueOf(value)).isDirectory();
+        Object text = missing ? I18n.format(tr("{0} (folder not found)"), value) : value;
+        super.getListCellRendererComponent(list, text, index, selected, focused);
+        if (missing && !selected) {
+          setForeground(RED);
+        }
+        return this;
+      }
+    });
     JPanel skillPanel = new JPanel(new BorderLayout(Theme.scale(4), 0));
     JScrollPane skillScroll = new JScrollPane(skillList);
     skillScroll.setPreferredSize(new java.awt.Dimension(Theme.scale(380), Theme.scale(66)));
     skillPanel.add(skillScroll, BorderLayout.CENTER);
     JPanel skillButtons = new JPanel(new java.awt.GridLayout(2, 1, 0, Theme.scale(4)));
-    JButton addSkill = new JButton(tr("Add..."));
+    JButton addSkill = addSkillButton;
     addSkill.addActionListener(e -> addSkillFolder());
     JButton removeSkill = new JButton(tr("Remove"));
     removeSkill.addActionListener(e -> {
@@ -267,6 +287,13 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
       c.setEnabled(installed);
     }
     load();
+    // the first time the AI page is shown in this Preferences window
+    addHierarchyListener(e -> {
+      if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing() && !skillsChecked && installed) {
+        skillsChecked = true;
+        checkSkillFolders();
+      }
+    });
   }
 
   private static GridBagConstraints gbc(int x, int y, int width) {
@@ -578,15 +605,123 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     JFileChooser chooser = new JFileChooser();
     chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     chooser.setDialogTitle(tr("Select a skill folder"));
-    if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-      String path = chooser.getSelectedFile().getAbsolutePath();
-      for (int i = 0; i < skillDirs.size(); i++) {
-        if (AiSettings.samePath(skillDirs.get(i), chooser.getSelectedFile())) {
-          return;
+    if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+      return;
+    }
+    File dir = chooser.getSelectedFile();
+    String path = dir.getAbsolutePath();
+    if (path.contains(File.pathSeparator)) {
+      // the folders are stored in one preference, separated by this character
+      JOptionPane.showMessageDialog(this,
+          I18n.format(tr("A skill folder path cannot contain the character {0}. Please rename the folder or choose another one."),
+                      File.pathSeparator),
+          tr("Select a skill folder"), JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+    if (skillDirIndex(dir) >= 0) {
+      return;
+    }
+    List<String> dirs = listedSkillDirs();
+    dirs.add(path);
+    addSkillButton.setEnabled(false);
+    runCheck(dirs, check -> {
+      addSkillButton.setEnabled(installed);
+      SkillFolderCheck mine = check == null ? null : check.about(path);
+      if (mine != null && !mine.isEmpty() && !showSkillProblems(this, mine, true)) {
+        return;
+      }
+      if (skillDirIndex(dir) < 0) {
+        skillDirs.addElement(path);
+      }
+    });
+  }
+
+  private int skillDirIndex(File dir) {
+    for (int i = 0; i < skillDirs.size(); i++) {
+      if (AiSettings.samePath(skillDirs.get(i), dir)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private List<String> listedSkillDirs() {
+    List<String> dirs = new ArrayList<>();
+    for (int i = 0; i < skillDirs.size(); i++) {
+      dirs.add(skillDirs.get(i));
+    }
+    return dirs;
+  }
+
+  /** Warns about skills the AI cannot use because of the listed skill folders. */
+  private void checkSkillFolders() {
+    runCheck(listedSkillDirs(), check -> {
+      if (check != null && !check.isEmpty() && isShowing()) {
+        showSkillProblems(this, check, false);
+      }
+    });
+  }
+
+  /** Searches the folders in the background (they can be large); done gets null on an error. */
+  private static void runCheck(List<String> dirs, java.util.function.Consumer<SkillFolderCheck> done) {
+    Thread t = new Thread(() -> {
+      SkillFolderCheck check;
+      try {
+        check = SkillFolderCheck.check(dirs);
+      } catch (RuntimeException e) {
+        check = null;
+      }
+      SkillFolderCheck result = check;
+      SwingUtilities.invokeLater(() -> done.accept(result));
+    }, "ai-check-skills");
+    t.setDaemon(true);
+    t.start();
+  }
+
+  /**
+   * Lists the problems; the user moves or removes the copies. When adding a
+   * folder, asks whether to add it anyway and returns the answer.
+   */
+  static boolean showSkillProblems(java.awt.Component parent, SkillFolderCheck check, boolean adding) {
+    StringBuilder sb = new StringBuilder();
+    if (!check.conflicts.isEmpty()) {
+      sb.append(tr("These skills have the same name in more than one place. The AI cannot tell them apart, so it cannot use any copy of them:"))
+        .append("\n");
+      for (SkillFolderCheck.Conflict c : check.conflicts) {
+        sb.append("\n").append(c.name).append("\n");
+        for (File place : c.places) {
+          sb.append("    ").append(place.getAbsolutePath()).append("\n");
         }
       }
-      skillDirs.addElement(path);
+      sb.append("\n").append(tr("Please move or delete the extra copies (or change the name in their SKILL.md), or remove one of the folders from the skill folder list."))
+        .append("\n");
     }
+    if (!check.overlaps.isEmpty()) {
+      if (sb.length() > 0) {
+        sb.append("\n");
+      }
+      sb.append(tr("A skill folder in the list is inside another one, so the AI finds its skills twice:")).append("\n");
+      for (SkillFolderCheck.Overlap o : check.overlaps) {
+        sb.append("\n").append(o.inner).append("\n    ").append(I18n.format(tr("(inside {0})"), o.outer)).append("\n");
+      }
+      sb.append("\n").append(tr("Please remove one of them from the list.")).append("\n");
+    }
+    JTextArea text = new JTextArea(sb.toString().trim());
+    text.setEditable(false);
+    text.setFont(new JLabel().getFont());
+    text.setBackground(parent.getBackground());
+    text.setCaretPosition(0);
+    JScrollPane scroll = new JScrollPane(text);
+    java.awt.Dimension size = text.getPreferredSize();
+    scroll.setPreferredSize(new java.awt.Dimension(Math.min(size.width + Theme.scale(24), Theme.scale(640)),
+                                                   Math.min(size.height + Theme.scale(24), Theme.scale(320))));
+    String title = tr("Skill folder problem");
+    if (!adding) {
+      JOptionPane.showMessageDialog(parent, scroll, title, JOptionPane.WARNING_MESSAGE);
+      return true;
+    }
+    return JOptionPane.showConfirmDialog(parent, new Object[]{scroll, tr("Add this folder anyway?")}, title,
+                                         JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION;
   }
 
   private void chooseHomeFolder() {
