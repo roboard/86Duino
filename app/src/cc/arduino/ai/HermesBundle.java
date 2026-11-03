@@ -326,10 +326,9 @@ public class HermesBundle {
       ops.addArray().add("unset").add("model.base_url");
       ops.addArray().add("unset").add("model.key_env");
     }
-    ops.addArray().add("set").add("skills.external_dirs").add(toYamlList(s.skillDirs));
-    addToolsetOps(ops, s);
-    ops.addArray().add("set").add("compression.threshold_tokens").add(String.valueOf(COMPRESSION_THRESHOLD_TOKENS));
+    addIdeConfigOps(ops, s);
     runConfigOps(ops);
+    writeIdeConfigMarker(s);
   }
 
   /**
@@ -342,7 +341,7 @@ public class HermesBundle {
     if (s.allowTerminal) {
       sets.add("terminal");
     }
-    if (s.skillDirs != null && !s.skillDirs.isEmpty()) {
+    if (!s.allSkillDirs().isEmpty()) {
       sets.add("skills");
     }
     return "[" + String.join(", ", sets) + "]";
@@ -368,26 +367,40 @@ public class HermesBundle {
   static final int COMPRESSION_THRESHOLD_TOKENS = 100000;
 
   /**
-   * Writes the IDE's settings into a Hermes home set up before the IDE wrote
-   * them: the compression limit and the chat's tools (skill tools included).
+   * Remembers (in the Hermes home) which skill folders, tools and compression
+   * limit were last written, so a chat only rewrites config.yaml when they
+   * changed: a home set up before the IDE wrote them, a new IDE version, or an
+   * IDE folder that moved (the IDE's own skill folder moves with it).
    */
+  private static final String IDE_CONFIG_MARKER = "ide-config.txt";
+
+  /** The compression limit, the skill folders and the chat's tools. */
+  private static void addIdeConfigOps(com.fasterxml.jackson.databind.node.ArrayNode ops, AiSettings s) {
+    ops.addArray().add("set").add("skills.external_dirs").add(toYamlList(s.allSkillDirs()));
+    addToolsetOps(ops, s);
+    ops.addArray().add("set").add("compression.threshold_tokens").add(String.valueOf(COMPRESSION_THRESHOLD_TOKENS));
+  }
+
+  private static String ideConfigSignature(AiSettings s) {
+    return COMPRESSION_THRESHOLD_TOKENS + "\n" + acpToolsets(s) + "\n" + String.join("\n", s.allSkillDirs()) + "\n";
+  }
+
+  private void writeIdeConfigMarker(AiSettings s) throws IOException {
+    Files.write(new File(homeDir, IDE_CONFIG_MARKER).toPath(), ideConfigSignature(s).getBytes(StandardCharsets.UTF_8));
+  }
+
+  /** Writes the IDE's settings that are not stored with the API key when they changed. */
   public void ensureIdeConfig(AiSettings s) throws IOException, InterruptedException {
     ensureHome();
-    File config = new File(homeDir, "config.yaml");
-    String text = config.isFile() ? new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8) : "";
-    boolean hasLimit = text.contains("threshold_tokens:");
-    boolean hasTools = text.contains("creation_nudge_interval:");
-    if (hasLimit && hasTools) {
+    File marker = new File(homeDir, IDE_CONFIG_MARKER);
+    if (marker.isFile()
+        && ideConfigSignature(s).equals(new String(Files.readAllBytes(marker.toPath()), StandardCharsets.UTF_8))) {
       return;
     }
     com.fasterxml.jackson.databind.node.ArrayNode ops = new com.fasterxml.jackson.databind.ObjectMapper().createArrayNode();
-    if (!hasLimit) {
-      ops.addArray().add("set").add("compression.threshold_tokens").add(String.valueOf(COMPRESSION_THRESHOLD_TOKENS));
-    }
-    if (!hasTools) {
-      addToolsetOps(ops, s);
-    }
+    addIdeConfigOps(ops, s);
     runConfigOps(ops);
+    writeIdeConfigMarker(s);
   }
 
   /** Removes every stored API key from this Hermes home. */

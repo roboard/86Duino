@@ -31,6 +31,8 @@ public class AiSettings {
   public static final String PREF_MODEL = "ai.model";
   public static final String PREF_BASE_URL = "ai.base_url";
   public static final String PREF_SKILL_DIRS = "ai.skill_dirs";
+  /** false when the user removed the IDE's own skill folder (&lt;IDE&gt;/hermes/skills). */
+  public static final String PREF_BUILTIN_SKILLS = "ai.skill_dirs.builtin";
   public static final String PREF_CONFIRM_EDITS = "ai.confirm_edits";
   public static final String PREF_ALLOW_TERMINAL = "ai.allow_terminal";
   public static final String PREF_PANEL_VISIBLE = "ai.panel.visible";
@@ -115,7 +117,13 @@ public class AiSettings {
   public String provider;
   public String model;
   public String baseUrl;
+  /** Skill folders the user added; the IDE's own folder is {@link #builtinSkills}. */
   public List<String> skillDirs = new ArrayList<>();
+  /**
+   * Use the skill folder shipped with the IDE. It is not stored as a path, so
+   * it still works after the IDE folder is moved or a new version installed.
+   */
+  public boolean builtinSkills = true;
   public boolean confirmEdits;
   public boolean allowTerminal;
   /** Empty means the default AI data folder. */
@@ -127,6 +135,12 @@ public class AiSettings {
     s.model = PreferencesData.get(PREF_MODEL, "");
     s.baseUrl = PreferencesData.get(PREF_BASE_URL, "");
     s.skillDirs = splitDirs(PreferencesData.get(PREF_SKILL_DIRS, ""));
+    s.builtinSkills = PreferencesData.getBoolean(PREF_BUILTIN_SKILLS, true);
+    // added by hand before it became the default: keep it as the built-in entry
+    File builtin = builtinSkillsDir();
+    if (s.skillDirs.removeIf(d -> samePath(d, builtin))) {
+      s.builtinSkills = true;
+    }
     s.confirmEdits = PreferencesData.getBoolean(PREF_CONFIRM_EDITS, true);
     s.allowTerminal = PreferencesData.getBoolean(PREF_ALLOW_TERMINAL, false);
     s.homePath = PreferencesData.get(PREF_HOME_PATH, "");
@@ -138,6 +152,7 @@ public class AiSettings {
     PreferencesData.set(PREF_MODEL, model == null ? "" : model);
     PreferencesData.set(PREF_BASE_URL, baseUrl == null ? "" : baseUrl);
     PreferencesData.set(PREF_SKILL_DIRS, String.join(DIR_SEPARATOR, skillDirs));
+    PreferencesData.setBoolean(PREF_BUILTIN_SKILLS, builtinSkills);
     PreferencesData.setBoolean(PREF_CONFIRM_EDITS, confirmEdits);
     PreferencesData.setBoolean(PREF_ALLOW_TERMINAL, allowTerminal);
     PreferencesData.set(PREF_HOME_PATH, homePath == null ? "" : homePath);
@@ -149,8 +164,36 @@ public class AiSettings {
 
   /** Settings that require restarting a running Hermes process when changed. */
   public String runtimeSignature() {
-    return provider + "|" + model + "|" + baseUrl + "|" + String.join(DIR_SEPARATOR, skillDirs) + "|"
+    return provider + "|" + model + "|" + baseUrl + "|" + String.join(DIR_SEPARATOR, allSkillDirs()) + "|"
            + allowTerminal + "|" + homePath;
+  }
+
+  /** The IDE's own skill folder: &lt;IDE&gt;/hermes/skills (it may not exist). */
+  public static File builtinSkillsDir() {
+    return new File(HermesBundle.getDefault().getBundleDir(), "skills");
+  }
+
+  /** The skill folders Hermes uses: the IDE's own folder (if kept and present) first. */
+  public List<String> allSkillDirs() {
+    List<String> dirs = new ArrayList<>();
+    File builtin = builtinSkillsDir();
+    if (builtinSkills && builtin.isDirectory()) {
+      dirs.add(builtin.getAbsolutePath());
+    }
+    for (String d : skillDirs) {
+      if (!samePath(d, builtin)) {
+        dirs.add(d);
+      }
+    }
+    return dirs;
+  }
+
+  static boolean samePath(String path, File file) {
+    try {
+      return new File(path).getAbsoluteFile().toPath().normalize().equals(file.getAbsoluteFile().toPath().normalize());
+    } catch (java.nio.file.InvalidPathException e) {
+      return false;
+    }
   }
 
   private static List<String> splitDirs(String value) {

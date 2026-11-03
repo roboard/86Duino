@@ -320,7 +320,7 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     // the saved model stays shown; the list comes from the saved key (it passed a test before)
     modelCombo.setSelectedItem(loaded.model);
     skillDirs.clear();
-    for (String d : loaded.skillDirs) {
+    for (String d : loaded.allSkillDirs()) {
       skillDirs.addElement(d);
     }
     confirmEditsBox.setSelected(loaded.confirmEdits);
@@ -580,9 +580,12 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     chooser.setDialogTitle(tr("Select a skill folder"));
     if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
       String path = chooser.getSelectedFile().getAbsolutePath();
-      if (!skillDirs.contains(path)) {
-        skillDirs.addElement(path);
+      for (int i = 0; i < skillDirs.size(); i++) {
+        if (AiSettings.samePath(skillDirs.get(i), chooser.getSelectedFile())) {
+          return;
+        }
       }
+      skillDirs.addElement(path);
     }
   }
 
@@ -606,9 +609,16 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     Object model = modelCombo.getEditor().getItem();
     s.model = model == null ? "" : model.toString().trim();
     s.baseUrl = baseUrlField.getText().trim();
+    // the IDE's own skill folder is kept as on/off, not as a path
+    File builtin = AiSettings.builtinSkillsDir();
+    s.builtinSkills = builtin.isDirectory() ? false : loaded == null || loaded.builtinSkills;
     List<String> dirs = new ArrayList<>();
     for (int i = 0; i < skillDirs.size(); i++) {
-      dirs.add(skillDirs.get(i));
+      if (AiSettings.samePath(skillDirs.get(i), builtin)) {
+        s.builtinSkills = true;
+      } else {
+        dirs.add(skillDirs.get(i));
+      }
     }
     s.skillDirs = dirs;
     s.confirmEdits = confirmEditsBox.isSelected();
