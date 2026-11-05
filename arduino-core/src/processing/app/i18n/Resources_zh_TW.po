@@ -3431,3 +3431,23 @@ msgstr "技能資料夾有問題"
 #: cc/arduino/ai
 msgid "Add this folder anyway?"
 msgstr "仍要加入這個資料夾嗎？"
+
+#: cc/arduino/ai
+msgid "Ask a question..."
+msgstr "輸入問題..."
+
+#: cc/arduino/ai
+msgid "Attach the compile error messages"
+msgstr "附上編譯錯誤訊息"
+
+#: cc/arduino/ai
+msgid "Sends the error messages of the console below the editor (stderr) with your message"
+msgstr "將編輯器下方訊息視窗中的錯誤訊息（stderr）連同你的訊息一起送出"
+
+#: cc/arduino/ai
+msgid "Attached the compile error messages ({0} lines)"
+msgstr "已附上編譯錯誤訊息（{0} 行）"
+
+#: cc/arduino/ai
+msgid "Attached the compile error messages (the first {0} of {1} lines; the rest was too long)"
+msgstr "已附上編譯錯誤訊息（共 {1} 行，太長只送出前 {0} 行）"

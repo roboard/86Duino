@@ -91,6 +91,8 @@ public class EditorConsole extends JScrollPane {
     consoleTextPane.setParagraphAttributes(stdOutStyle, true);
 
     stdErrStyle = new SimpleAttributeSet();
+    // marks the error output, also when a theme gives it the same color as the rest
+    stdErrStyle.addAttribute(ERROR_OUTPUT, Boolean.TRUE);
     StyleConstants.setForeground(stdErrStyle, Theme.getColor("console.error.color"));
     StyleConstants.setBackground(stdErrStyle, backgroundColour);
     StyleConstants.setFontSize(stdErrStyle, actualFont.getSize());
@@ -232,6 +234,31 @@ public class EditorConsole extends JScrollPane {
 
   public String getText() {
     return consoleTextPane.getText();
+  }
+
+  /** Attribute of the text written to System.err (compiler errors, for example). */
+  private static final String ERROR_OUTPUT = "86duino.console.stderr";
+
+  /** The text written to System.err, in order; call it on the event thread. */
+  public String getErrorText() {
+    StringBuilder sb = new StringBuilder();
+    Element root = document.getDefaultRootElement();
+    try {
+      for (int p = 0; p < root.getElementCount(); p++) {
+        Element paragraph = root.getElement(p);
+        for (int i = 0; i < paragraph.getElementCount(); i++) {
+          Element run = paragraph.getElement(i);
+          if (run.getAttributes().getAttribute(ERROR_OUTPUT) != null) {
+            int start = run.getStartOffset();
+            int end = Math.min(run.getEndOffset(), document.getLength());
+            sb.append(document.getText(start, end - start));
+          }
+        }
+      }
+    } catch (BadLocationException e) {
+      // the console was cleared meanwhile
+    }
+    return sb.toString();
   }
 
 }

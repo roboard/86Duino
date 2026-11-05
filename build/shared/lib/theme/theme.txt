@@ -188,3 +188,44 @@ editor.comment2.style = #95a5a6,plain
 # LINE STATUS - editor line number status bar at the bottom of the screen
 linestatus.font	   = SansSerif,plain,10
 linestatus.height  = 20
+
+# GUI - AI ASSISTANT (the panel on the right)
+# All optional: without a key the color comes from the IDE color named after it,
+# so the panel follows the rest of this theme. Remove the # to set a color.
+# title bar and status line                     (buttons.bgcolor; text: white or black)
+#ai.header.bgcolor = #6686BA
+#ai.header.color = #FFFFFF
+# conversation                                  (editor.bgcolor / editor.fgcolor)
+#ai.chat.bgcolor = #FEFCFF
+#ai.chat.color = #000000
+# your messages: background and right stripe    (buttons.bgcolor 20% over the conversation / buttons.bgcolor)
+#ai.user.bgcolor = #E0E4F1
+#ai.user.accent.color = #6686BA
+# the AI's messages: background and left stripe (ai.chat.bgcolor / linestatus.bgcolor)
+#ai.assistant.bgcolor = #FEFCFF
+#ai.assistant.accent.color = #3C4B78
+# error lines in the conversation
+#ai.error.color = #B02020
+# row of "Attach the compile error messages"    (status.notice.bgcolor)
+#ai.attach.bgcolor = #7EA3D0
+# message box: background and text              (console.color; text: a light gray)
+#ai.input.bgcolor = #303640
+#ai.input.color = #ACAFB3
+# Send / Stop button                            (buttons.bgcolor; text: white or black)
+#ai.send.bgcolor = #6686BA
+#ai.send.color = #FFFFFF
+# model box                                     (linestatus.bgcolor / linestatus.color)
+#ai.model.bgcolor = #3C4B78
+#ai.model.color = #FFFFFF
+# "Model:" in front of the model box            (on ai.input.bgcolor: white or black)
+#ai.model.label.color = #FFFFFF
+# bar between the editor and the panel          (buttons.bgcolor 22% over the conversation)
+#ai.divider.bgcolor = #DDE2F0
+# font of the panel: family,style,size like the other fonts here. The size is the
+# conversation's (Ctrl + mouse wheel changes it); titles and buttons keep their sizes.
+# Hack has Chinese characters too. Lucida and Inconsolata have none: their
+# Chinese comes from the system's text font. Without a font: the system's.
+#ai.font = Hack,plain,12
+#ai.font = Lucida Sans,plain,12
+#ai.font = Inconsolata,plain,12
+#ai.font = Microsoft JhengHei,plain,12

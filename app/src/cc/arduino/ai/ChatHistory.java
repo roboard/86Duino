@@ -39,6 +39,8 @@ final class ChatHistory {
   static final String TOOL = "tool";
   static final String INFO = "info";
   static final String ERROR = "error";
+  /** The line under your message about what was sent with it (e.g. compile errors). */
+  static final String ATTACH = "attach";
 
   static final class Entry {
     final String type;

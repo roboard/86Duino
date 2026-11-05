@@ -395,6 +395,7 @@ public class Editor extends JFrame implements RunnerListener {
     // 86Duino: the AI panel shares the window width with editor + console
     aiPanel = new cc.arduino.ai.AiChatPanel(this, base);
     aiSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane, null);
+    cc.arduino.ai.AiChatPanel.styleDivider(aiSplitPane); // a pale blue bar, not the gray one
     aiSplitPane.setContinuousLayout(true);
     aiSplitPane.setResizeWeight(1D);
     aiSplitPane.setBorder(null);
@@ -547,6 +548,11 @@ public class Editor extends JFrame implements RunnerListener {
   /** True while the AI is working, so the IDE does not ask to reload files it changes. */
   public boolean isAiBusy() {
     return aiPanel != null && aiPanel.isBusy();
+  }
+
+  /** The error output (stderr) in this window's console, e.g. compiler errors; for the AI panel. */
+  public String getConsoleErrorText() {
+    return console.getErrorText();
   }
 
   /** The AI settings were saved in Preferences. */

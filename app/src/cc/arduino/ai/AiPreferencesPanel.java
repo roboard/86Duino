@@ -795,6 +795,9 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     String key = !typed.isEmpty() && verificationKey(typed).equals(verified) ? typed : "";
     boolean hermesChanged = !s.runtimeSignature().equals(loaded.runtimeSignature()) || !key.isEmpty();
     if (!hermesChanged) {
+      // Every OK checks the AI again: Preferences refreshes the AI panels right
+      // after this, and they fetch their model lists anew.
+      AiChatPanel.forgetModelLists();
       return;
     }
     HermesBundle bundle = HermesBundle.forHome(s.homePath);
@@ -808,8 +811,12 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
       }
     });
     // The AI panels show "saving" now (OK refreshes every editor), and the
-    // chat or the API key hint as soon as the settings are written.
-    pendingSave.whenComplete((v, t) -> SwingUtilities.invokeLater(AiPreferencesPanel::refreshAllEditors));
+    // chat or the API key hint as soon as the settings are written; the model
+    // lists are fetched again then, with the new key (not before: the old one).
+    pendingSave.whenComplete((v, t) -> SwingUtilities.invokeLater(() -> {
+      AiChatPanel.forgetModelLists();
+      refreshAllEditors();
+    }));
   }
 
   /**

@@ -14,9 +14,11 @@ import static processing.app.I18n.tr;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -37,6 +39,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -45,11 +48,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -79,12 +79,36 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private final Editor editor;
   private final Base base;
 
-  private final JTextPane transcript = new JTextPane();
-  private final JTextArea input = new JTextArea(3, 20);
+  /** The look and feel's font of the conversation: the default size. */
+  /** The conversation's font: ai.font of the theme, or the look and feel's text font. */
+  private final Font defaultFont = AiTheme.chatFont(new JTextPane().getFont());
+  private final ChatView chatView = new ChatView(defaultFont);
+  private final JTextArea input = new JTextArea(3, 20) {
+    @Override
+    protected void paintComponent(Graphics g) {
+      super.paintComponent(g);
+      if (getDocument().getLength() == 0) {
+        // the hint, until something is typed
+        java.awt.Insets in = getInsets();
+        g.setColor(AiTheme.mix(getBackground(), getForeground(), 0.7));
+        g.setFont(getFont());
+        g.drawString(tr("Ask a question..."), in.left, in.top + g.getFontMetrics().getAscent());
+      }
+    }
+  };
   /** "Send", and "Stop" while the AI answers. */
-  private final JButton sendButton = new JButton(tr("Send"));
-  private final JButton newButton = new JButton(tr("New Chat"));
-  private final JLabel statusLabel = new JLabel(" ");
+  private final JButton sendButton = AiWidgets.button(tr("Send"), AiTheme.sendBg(), AiTheme.sendFg(),
+                                                      AiTheme.mix(AiTheme.sendBg(), AiTheme.sendFg(), 0.3));
+  /** The ▶ and ■ of Send and Stop, as tall as the button's text (made with the button). */
+  private AiWidgets.ShapeIcon playIcon;
+  private AiWidgets.ShapeIcon stopIcon;
+  private final JButton newButton = AiWidgets.button(tr("New Chat"), AiTheme.chatBg(), AiTheme.chatFg(),
+                                                     AiTheme.mix(AiTheme.chatBg(), AiTheme.chatFg(), 0.25));
+  private final JLabel statusLabel = new JLabel(" ", SwingConstants.CENTER);
+  /** Sends the error output of the console (e.g. compiler errors) with the next message. */
+  private final JCheckBox attachErrors = new JCheckBox(tr("Attach the compile error messages"));
+  /** Compile errors sent with a message, at most this long (the first part is kept). */
+  private static final int MAX_ERROR_CHARS = 30000;
   /**
    * The model in use, next to Send. As wide as the longest model name, up to a
    * limit; empty when the model list could not be fetched.
@@ -94,6 +118,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     public Dimension getPreferredSize() {
       Dimension d = super.getPreferredSize();
       d.width = Math.max(Theme.scale(MODEL_MIN_WIDTH), Math.min(Theme.scale(MODEL_MAX_WIDTH), d.width));
+      d.height = sendButton.getPreferredSize().height; // as tall as Send
       return d;
     }
 
@@ -108,24 +133,13 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private boolean fillingModels;
   /** The model list the model box shows, see {@link #modelLists}. */
   private CompletableFuture<List<String>> shownModels;
+  /** "Could not find any models on the network." in the conversation, taken away when the list is fetched again. */
+  private Component modelNotice;
   /** "Retry", shown when the model list could not be fetched. */
   private final JButton retryButton = new JButton(tr("Retry"));
   /** A text area, not an HTML label: HTML labels do not wrap Chinese text. */
   private final JTextArea setupText = new JTextArea();
   private final JPanel cards = new JPanel(new CardLayout());
-
-  private final SimpleAttributeSet userStyle = new SimpleAttributeSet();
-  private final SimpleAttributeSet userLabelStyle = new SimpleAttributeSet();
-  private final SimpleAttributeSet aiStyle = new SimpleAttributeSet();
-  private final SimpleAttributeSet aiLabelStyle = new SimpleAttributeSet();
-  private final SimpleAttributeSet toolStyle = new SimpleAttributeSet();
-  private final SimpleAttributeSet infoStyle = new SimpleAttributeSet();
-  private final SimpleAttributeSet errorStyle = new SimpleAttributeSet();
-  /**
-   * The font size of the tool lines, one below the conversation's. The other
-   * styles set no size: they follow the conversation's font (transcript.setFont).
-   */
-  private javax.swing.text.Style smallText;
 
   // Font size of the conversation and the message box (Ctrl + mouse wheel),
   // shared by all windows. The model box and the buttons keep theirs.
@@ -134,8 +148,6 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   /** Open AI panels, so a font size change reaches every window. */
   private static final java.util.Set<AiChatPanel> PANELS =
       java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
-  /** The look and feel's font of the conversation: the default size. */
-  private final Font defaultFont = transcript.getFont();
   /** Wheel turns not used yet: a touchpad sends many small ones. */
   private double pendingWheel;
 
@@ -165,7 +177,6 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private volatile AcpClient turnClient;
   private volatile String turnSession;
   private boolean lastWasAssistantText;
-  private boolean assistantLabelShown;
   /** Settings the current session was made (or continued) with, see {@link ChatHistory#aiSignature}. */
   private String sessionAi;
 
@@ -193,35 +204,70 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     setMinimumSize(Theme.scale(new Dimension(260, 200)));
     setPreferredSize(Theme.scale(new Dimension(380, 400)));
 
-    // Header: title and buttons, the status line below
-    JPanel header = new JPanel(new BorderLayout(Theme.scale(6), Theme.scale(2)));
-    header.setBorder(BorderFactory.createEmptyBorder(Theme.scale(4), Theme.scale(8), Theme.scale(4), Theme.scale(4)));
+    // Header in the toolbar's color: title and buttons, the status line centered below
+    Color headerBg = AiTheme.headerBg();
+    Color headerFg = AiTheme.headerFg();
+    JPanel header = new JPanel(new BorderLayout(0, Theme.scale(2)));
+    header.setBackground(headerBg);
+    header.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(10), Theme.scale(4), Theme.scale(6)));
+    JPanel headerTop = new JPanel(new BorderLayout(Theme.scale(6), 0));
+    headerTop.setOpaque(false);
     JLabel title = new JLabel(tr("AI Assistant"));
-    title.setFont(title.getFont().deriveFont(Font.BOLD));
-    header.add(title, BorderLayout.WEST);
-    JPanel headerButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, Theme.scale(2), 0));
+    Font titleFont = AiTheme.inPanelFont(title.getFont());
+    title.setFont(titleFont.deriveFont(Font.BOLD, titleFont.getSize2D() + 3));
+    title.setForeground(headerFg);
+    // New Chat and the X as big as the title
+    newButton.setFont(title.getFont().deriveFont(Font.PLAIN));
+    // little room around the text, so the buttons are not much bigger than it
+    newButton.setBorder(BorderFactory.createEmptyBorder(Theme.scale(2), Theme.scale(6), Theme.scale(2), Theme.scale(6)));
+    headerTop.add(title, BorderLayout.WEST);
+    JPanel headerButtons = new JPanel();
+    headerButtons.setLayout(new BoxLayout(headerButtons, BoxLayout.X_AXIS));
+    headerButtons.setOpaque(false);
     newButton.setToolTipText(tr("Start a new conversation"));
-    newButton.setMargin(new java.awt.Insets(1, 6, 1, 6));
     newButton.addActionListener(e -> newConversation());
     headerButtons.add(newButton);
-    JButton hide = new JButton("×");
-    hide.setMargin(new java.awt.Insets(1, 6, 1, 6));
+    headerButtons.add(Box.createHorizontalStrut(Theme.scale(6)));
+    JButton hide = AiWidgets.button("", AiTheme.chatBg(), AiTheme.chatFg(),
+                                    AiTheme.mix(AiTheme.chatBg(), AiTheme.chatFg(), 0.25));
     hide.setToolTipText(tr("Hide the AI Assistant"));
     hide.addActionListener(e -> editor.setAiPanelVisible(false));
+    // a square as tall as New Chat, with an X about as big as a capital letter
+    // of the title in its middle: no border, and as much room left as right
+    int side = newButton.getPreferredSize().height;
+    int cross = Math.round(title.getFont().getSize2D() * 0.6f);
+    if ((side - cross) % 2 != 0) {
+      cross++;
+    }
+    hide.setIcon(new AiWidgets.ShapeIcon(AiWidgets.Shape.CLOSE, cross));
+    hide.setBorder(BorderFactory.createEmptyBorder());
+    hide.setPreferredSize(new Dimension(side, side));
+    hide.setMinimumSize(hide.getPreferredSize());
+    hide.setMaximumSize(hide.getPreferredSize());
+    newButton.setMaximumSize(newButton.getPreferredSize());
     headerButtons.add(hide);
-    header.add(headerButtons, BorderLayout.EAST);
-    statusLabel.setForeground(Color.GRAY);
-    header.add(statusLabel, BorderLayout.SOUTH);
+    headerTop.add(headerButtons, BorderLayout.EAST);
+    header.add(headerTop, BorderLayout.NORTH);
+    statusLabel.setForeground(headerFg);
+    statusLabel.setFont(AiTheme.inPanelFont(statusLabel.getFont()));
+    header.add(statusLabel, BorderLayout.CENTER);
     add(header, BorderLayout.NORTH);
 
     // Chat card
-    transcript.setEditable(false);
-    transcript.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(8), Theme.scale(6), Theme.scale(8)));
-    transcriptScroll = new JScrollPane(transcript, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+    transcriptScroll = new JScrollPane(chatView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                                        JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-    transcriptScroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, Color.LIGHT_GRAY));
-    transcript.addMouseWheelListener(this::mouseWheel);
+    transcriptScroll.setBorder(null);
+    transcriptScroll.getViewport().setBackground(AiTheme.chatBg());
+    chatView.addMouseWheelListener(this::mouseWheel);
 
+    Color inputBg = AiTheme.inputBg();
+    Color inputFg = AiTheme.inputFg();
+    input.setBackground(inputBg);
+    input.setForeground(inputFg);
+    input.setCaretColor(inputFg);
+    input.setSelectionColor(AiTheme.mix(inputBg, AiTheme.sendBg(), 0.7));
+    input.setSelectedTextColor(AiTheme.readableOn(input.getSelectionColor()));
+    input.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(8), Theme.scale(4), Theme.scale(8)));
     input.setLineWrap(true);
     input.setWrapStyleWord(true);
     input.setToolTipText(tr("Enter: send, Shift+Enter: new line"));
@@ -248,38 +294,86 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
         send();
       }
     });
-    // "Send" and "Stop" take turns on the button: as wide as the wider one, so nothing moves
+    // The model row is used all the time: Send, the model box and its label are
+    // as big as New Chat and the X at the top, so all the buttons look alike.
+    Font rowFont = newButton.getFont();
+    // "Send ▶" and "Stop ■" take turns on the button: as wide as the wider one, so nothing moves
+    sendButton.setFont(rowFont.deriveFont(Font.BOLD));
+    int iconSize = textHeight(sendButton.getFont(), tr("Send"));
+    playIcon = new AiWidgets.ShapeIcon(AiWidgets.Shape.PLAY, iconSize);
+    stopIcon = new AiWidgets.ShapeIcon(AiWidgets.Shape.STOP, iconSize);
+    sendButton.setIcon(playIcon);
+    // little room around the text and the icon
+    sendButton.setBorder(BorderFactory.createEmptyBorder(Theme.scale(2), Theme.scale(8), Theme.scale(2), Theme.scale(8)));
+    sendButton.setHorizontalTextPosition(SwingConstants.LEADING);
+    sendButton.setIconTextGap(Theme.scale(6));
     Dimension sendSize = widestSize(sendButton, tr("Send"), tr("Stop"));
+    sendSize.height = newButton.getPreferredSize().height; // exactly as tall as New Chat
     sendButton.setPreferredSize(sendSize);
     sendButton.setMinimumSize(sendSize);
     sendButton.setMaximumSize(sendSize);
+    AiWidgets.styleCombo(modelCombo, AiTheme.modelBg(), AiTheme.modelFg(),
+                         AiTheme.mix(AiTheme.modelBg(), AiTheme.modelFg(), 0.3));
+    modelCombo.setFont(rowFont);
     modelCombo.setMinimumSize(Theme.scale(new Dimension(60, 0)));
     modelCombo.addActionListener(e -> modelChosen());
     modelCombo.setEnabled(false);
+    JLabel modelLabel = new JLabel(tr("Model:"));
+    modelLabel.setForeground(AiTheme.modelLabelFg());
+    modelLabel.setFont(rowFont);
+    modelLabel.setLabelFor(modelCombo);
 
     // The message box and the row below it (model, Send) are one framed box:
     // a long message scrolls inside it and never covers the row.
     JScrollPane inputScroll = new JScrollPane(input, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                                               JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     inputScroll.setBorder(null);
+    inputScroll.getViewport().setBackground(inputBg);
     JPanel inputRow = new JPanel();
     inputRow.setLayout(new BoxLayout(inputRow, BoxLayout.X_AXIS));
     inputRow.setOpaque(false);
     inputRow.setBorder(BorderFactory.createEmptyBorder(Theme.scale(4), Theme.scale(6), Theme.scale(6), Theme.scale(6)));
     inputRow.add(Box.createHorizontalGlue());
+    inputRow.add(modelLabel);
+    inputRow.add(Box.createHorizontalStrut(Theme.scale(4)));
     inputRow.add(modelCombo);
-    inputRow.add(Box.createHorizontalStrut(Theme.scale(6)));
+    inputRow.add(Box.createHorizontalStrut(Theme.scale(8)));
     inputRow.add(sendButton);
     JPanel inputBox = new JPanel(new BorderLayout());
-    inputBox.setBackground(input.getBackground());
-    inputBox.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+    inputBox.setBackground(inputBg);
+    inputBox.setBorder(BorderFactory.createLineBorder(AiTheme.mix(inputBg, inputFg, 0.35)));
     inputBox.add(inputScroll, BorderLayout.CENTER);
     inputBox.add(inputRow, BorderLayout.SOUTH);
-    inputPanel = new JPanel(new BorderLayout());
-    inputPanel.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(6), Theme.scale(6), Theme.scale(6)));
-    inputPanel.add(inputBox, BorderLayout.CENTER);
 
-    smallText = transcript.getStyledDocument().addStyle("ai-small", null);
+    // "Attach the compile error messages" in a light box on a row of its own, above the message box
+    attachErrors.setToolTipText(tr("Sends the error messages of the console below the editor (stderr) with your message"));
+    attachErrors.setBackground(AiTheme.chatBg());
+    attachErrors.setForeground(AiTheme.chatFg());
+    attachErrors.setOpaque(true);
+    attachErrors.setFocusPainted(false);
+    attachErrors.setFont(AiTheme.inPanelFont(attachErrors.getFont()));
+    // the look and feel's square is much taller than the text: draw one as tall as the text
+    attachErrors.setIcon(new AiWidgets.CheckIcon(attachErrors));
+    attachErrors.setRolloverEnabled(true);
+    attachErrors.setBorderPainted(true);
+    attachErrors.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createLineBorder(AiTheme.mix(AiTheme.attachBg(), AiTheme.chatFg(), 0.3)),
+        BorderFactory.createEmptyBorder(Theme.scale(3), Theme.scale(6), Theme.scale(3), Theme.scale(10))));
+    JPanel attachRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+    attachRow.setBackground(AiTheme.attachBg());
+    // the same margin as around the message box below, so the two line up
+    attachRow.setBorder(BorderFactory.createEmptyBorder(Theme.scale(8), Theme.scale(8), Theme.scale(8), Theme.scale(8)));
+    attachRow.add(attachErrors);
+
+    JPanel inputArea = new JPanel(new BorderLayout());
+    inputArea.setBackground(inputBg);
+    // as far from the top and the bottom as from the sides
+    inputArea.setBorder(BorderFactory.createEmptyBorder(Theme.scale(8), Theme.scale(8), Theme.scale(8), Theme.scale(8)));
+    inputArea.add(inputBox, BorderLayout.CENTER);
+    inputPanel = new JPanel(new BorderLayout());
+    inputPanel.add(attachRow, BorderLayout.NORTH);
+    inputPanel.add(inputArea, BorderLayout.CENTER);
+
     applyFontSize(); // the size chosen last time, before the message box is measured
 
     // The border between the conversation and the message box can be dragged:
@@ -292,6 +386,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     chat.setResizeWeight(1D); // a taller window gives the conversation the room
     chat.setBorder(null);
     chat.setDividerSize(Theme.scale(6));
+    // the divider shows the split pane's color: the attach row's, so it looks part of that row
+    chat.setBackground(AiTheme.attachBg());
     // the divider draws no lines of its own (the conversation's bottom line is
     // the only separator); it still shows the resize cursor and can be dragged
     if (chat.getUI() instanceof javax.swing.plaf.basic.BasicSplitPaneUI) {
@@ -339,18 +435,6 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     setup.add(p, BorderLayout.CENTER);
     cards.add(setup, CARD_SETUP);
     add(cards, BorderLayout.CENTER);
-
-    StyleConstants.setBold(userLabelStyle, true);
-    StyleConstants.setForeground(userLabelStyle, new Color(0x1F, 0x5F, 0xA8));
-    StyleConstants.setForeground(userStyle, new Color(0x20, 0x20, 0x20));
-    StyleConstants.setBold(aiLabelStyle, true);
-    StyleConstants.setForeground(aiLabelStyle, new Color(0x00, 0x87, 0x7F));
-    StyleConstants.setForeground(aiStyle, new Color(0x20, 0x20, 0x20));
-    StyleConstants.setForeground(toolStyle, new Color(0x70, 0x70, 0x70));
-    toolStyle.setResolveParent(smallText);
-    StyleConstants.setForeground(infoStyle, new Color(0x80, 0x80, 0x80));
-    StyleConstants.setItalic(infoStyle, true);
-    StyleConstants.setForeground(errorStyle, new Color(0xB0, 0x20, 0x20));
 
     // the model list is fetched when the panel is opened (again, after it failed)
     addHierarchyListener(e -> {
@@ -432,9 +516,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private void applyFontSize() {
     int size = fontSize();
     Font font = defaultFont.deriveFont((float) size);
-    // the conversation's text follows the font (its default style), the tool lines one smaller
-    StyleConstants.setFontSize(smallText, Math.max(FONT_MIN, size - 1));
-    transcript.setFont(font);
+    // the conversation's labels and tool lines are one point smaller
+    chatView.setFonts(font);
     input.setFont(font);
     if (chat == null) {
       return; // being made: the message box is measured next
@@ -444,6 +527,13 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     inputPanel.setMinimumSize(new Dimension(0, inputMin));
     placeDivider();
     revalidate();
+  }
+
+  /** How tall the letters of the text really are in this font (not the line height). */
+  private static int textHeight(Font font, String text) {
+    java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, true, true);
+    double h = font.createGlyphVector(frc, text).getVisualBounds().getHeight();
+    return Math.max(Theme.scale(6), (int) Math.round(h));
   }
 
   /** The size of the button with the longest of these texts. */
@@ -458,6 +548,15 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     }
     button.setText(text);
     return size;
+  }
+
+  /**
+   * Draws the bar between the editor and this panel in the theme's color (a
+   * pale blue) instead of the look and feel's gray. Call it right after the
+   * split pane is made, before its other settings.
+   */
+  public static void styleDivider(JSplitPane split) {
+    AiWidgets.styleDivider(split, AiTheme.dividerBg());
   }
 
   // ------------------------------------------------------------------ setup
@@ -606,6 +705,9 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       return;
     }
     shownModels = list;
+    // a new list: the old "no models" line no longer holds (it comes back if this one fails too)
+    chatView.removeNote(modelNotice);
+    modelNotice = null;
     // until the list arrives: the model in use
     fillModels(java.util.Collections.singletonList(settings.model.trim()));
     CompletableFuture<List<String>> shown = list;
@@ -615,11 +717,24 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       }
       if (error != null) {
         fillModels(java.util.Collections.emptyList());
-        appendNotice(tr("Could not find any models on the network."));
+        chatView.removeNote(modelNotice);
+        modelNotice = appendNotice(tr("Could not find any models on the network."));
       } else {
         fillModels(models);
       }
     }));
+  }
+
+  /**
+   * OK in Preferences: every model list is fetched again the next time a panel
+   * shows it, a good one too (the same key may work again: renewed, topped up,
+   * the network back), and a failed automatic model choice is tried again.
+   * Call it once the new settings are written, so the lists use the new key.
+   */
+  static void forgetModelLists() {
+    modelLists.clear();
+    pickFailedFor = null;
+    pickFailedError = "";
   }
 
   private static CompletableFuture<List<String>> fetchModels(AiSettings settings, HermesBundle bundle) {
@@ -780,6 +895,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     busy = b;
     stopRequested = false;
     sendButton.setText(b ? tr("Stop") : tr("Send"));
+    sendButton.setIcon(b ? stopIcon : playIcon);
     // Hermes switches models only between turns
     modelCombo.setEnabled(!b && modelCombo.getItemCount() > 0);
     statusLabel.setText(status == null ? " " : status);
@@ -787,7 +903,10 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
 
   private void send() {
     String text = input.getText().trim();
-    if (text.isEmpty() || busy) {
+    // Ticked: the console's errors (stderr) go along when there are any. Errors
+    // or a message is enough to send; with neither, Send does nothing.
+    String errors = attachErrors.isSelected() ? editor.getConsoleErrorText().trim() : "";
+    if ((text.isEmpty() && errors.isEmpty()) || busy) {
       return;
     }
     AiSettings settings = AiSettings.load();
@@ -824,10 +943,19 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     } else if (!board.equals(sessionBoard)) {
       blocks.add(AiContextBuilder.boardChanged());
     }
-    blocks.add(text);
+    String attached = null;
+    if (!errors.isEmpty()) {
+      attached = attachErrorBlock(errors, blocks);
+    }
+    if (!text.isEmpty()) {
+      blocks.add(text);
+    }
 
-    input.setText("");
+    input.setText(""); // the box stays ticked: every message takes the console's errors along
     appendUser(text);
+    if (attached != null) {
+      appendAttachment(attached);
+    }
     editToolCalls.clear();
     toolCallTitles.clear();
     answeredThisTurn.clear();
@@ -844,6 +972,34 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
                                              resumeId, board, blocks), "ai-turn");
     worker.setDaemon(true);
     worker.start();
+  }
+
+  /**
+   * Adds the console's error output to the message; returns the line shown
+   * under your message. Very long output is cut after the first lines (the
+   * first errors are the ones that matter).
+   */
+  private static String attachErrorBlock(String errors, List<String> blocks) {
+    String[] lines = errors.split("\r?\n", -1);
+    String sent = errors;
+    int sentLines = lines.length;
+    if (errors.length() > MAX_ERROR_CHARS) {
+      int cut = errors.lastIndexOf('\n', MAX_ERROR_CHARS);
+      sent = errors.substring(0, cut > 0 ? cut : MAX_ERROR_CHARS);
+      sentLines = sent.split("\r?\n", -1).length;
+    }
+    StringBuilder block = new StringBuilder();
+    block.append("[Compile error messages from the IDE console (stderr), attached by the user]\n");
+    block.append(sent).append('\n');
+    if (sentLines < lines.length) {
+      block.append("[... ").append(lines.length - sentLines).append(" more lines not sent]\n");
+    }
+    block.append("[End of the compile error messages]");
+    blocks.add(block.toString());
+    return sentLines < lines.length
+        ? I18n.format(tr("Attached the compile error messages (the first {0} of {1} lines; the rest was too long)"),
+                      sentLines, lines.length)
+        : I18n.format(tr("Attached the compile error messages ({0} lines)"), lines.length);
   }
 
   /**
@@ -1074,12 +1230,12 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       stop();
       return;
     }
-    if (transcript.getDocument().getLength() > 0 && !confirmNewConversation()) {
+    if (!chatView.isEmpty() && !confirmNewConversation()) {
       return;
     }
     sessionId = null;
     contextSent = false;
-    transcript.setText("");
+    chatView.clear();
     lastWasAssistantText = false;
     statusLabel.setText(" ");
     // the saved conversation goes too
@@ -1359,23 +1515,16 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     return t.length() > 160 ? t.substring(0, 160) + "..." : t;
   }
 
-  /** True when the transcript is empty or ends with a line break. */
-  private boolean atLineStart() {
-    StyledDocument doc = transcript.getStyledDocument();
-    try {
-      return doc.getLength() == 0 || "\n".equals(doc.getText(doc.getLength() - 1, 1));
-    } catch (BadLocationException e) {
-      return true;
-    }
+  private void appendUser(String text) {
+    chatView.addUser(text);
+    lastWasAssistantText = false;
+    record(ChatHistory.USER, text);
   }
 
-  private void appendUser(String text) {
-    append(atLineStart() ? "\n" : "\n\n", userStyle);
-    append(tr("You") + "\n", userLabelStyle);
-    append(text + "\n", userStyle);
-    lastWasAssistantText = false;
-    assistantLabelShown = false;
-    record(ChatHistory.USER, text);
+  /** The line under your message saying what was sent with it. */
+  private void appendAttachment(String note) {
+    chatView.addAttachment(note);
+    record(ChatHistory.ATTACH, note);
   }
 
   private void appendAssistant(String text) {
@@ -1386,14 +1535,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       if (text.isEmpty()) {
         return;
       }
-      if (!assistantLabelShown) {
-        append("\n" + tr("AI") + "\n", aiLabelStyle);
-        assistantLabelShown = true;
-      } else {
-        append("\n", aiStyle);
-      }
     }
-    append(text, aiStyle);
+    chatView.appendAi(text, newBlock);
     lastWasAssistantText = true;
     if (newBlock) {
       record(ChatHistory.AI, text);
@@ -1405,33 +1548,26 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   }
 
   private void appendTool(String text) {
-    if (!atLineStart()) {
-      append("\n", toolStyle);
-    }
-    append(text + "\n", toolStyle);
+    chatView.addTool(text);
     lastWasAssistantText = false;
     record(ChatHistory.TOOL, text);
   }
 
   private void appendInfo(String text) {
-    append((atLineStart() ? "" : "\n") + text + "\n", infoStyle);
+    chatView.addNote(text, false);
     lastWasAssistantText = false;
     record(ChatHistory.INFO, text);
   }
 
-  /** An info line that is not kept in the saved conversation. */
-  private void appendNotice(String text) {
-    boolean was = recording;
-    recording = false;
-    try {
-      appendInfo(text);
-    } finally {
-      recording = was;
-    }
+  /** An info line that is not kept in the saved conversation; returned so it can be taken away. */
+  private Component appendNotice(String text) {
+    Component note = chatView.addNote(text, false);
+    lastWasAssistantText = false;
+    return note;
   }
 
   private void appendError(String text) {
-    append((atLineStart() ? "" : "\n") + text + "\n", errorStyle);
+    chatView.addNote(text, true);
     lastWasAssistantText = false;
     record(ChatHistory.ERROR, text);
   }
@@ -1447,9 +1583,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private void showHistory(String headline) {
     recording = false;
     try {
-      transcript.setText("");
+      chatView.clear();
       lastWasAssistantText = false;
-      assistantLabelShown = false;
       if (headline != null) {
         appendInfo(headline);
       }
@@ -1460,6 +1595,9 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
         switch (e.type) {
           case ChatHistory.USER:
             appendUser(e.text);
+            break;
+          case ChatHistory.ATTACH:
+            appendAttachment(e.text);
             break;
           case ChatHistory.AI:
             lastWasAssistantText = false; // each entry is a block of its own
@@ -1479,16 +1617,6 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     } finally {
       recording = true;
     }
-  }
-
-  private void append(String text, SimpleAttributeSet style) {
-    StyledDocument doc = transcript.getStyledDocument();
-    try {
-      doc.insertString(doc.getLength(), text, style);
-    } catch (BadLocationException e) {
-      // cannot happen when appending
-    }
-    transcript.setCaretPosition(doc.getLength());
   }
 
   private static void onEdt(Runnable r) {
