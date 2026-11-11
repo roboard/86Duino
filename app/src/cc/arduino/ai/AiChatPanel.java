@@ -259,6 +259,17 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     transcriptScroll.setBorder(null);
     transcriptScroll.getViewport().setBackground(AiTheme.chatBg());
     chatView.addMouseWheelListener(this::mouseWheel);
+    chatView.setCodeActions(new ChatView.CodeActions() {
+      @Override
+      public void insert(String code) {
+        insertCode(code);
+      }
+
+      @Override
+      public void prepare(org.fife.ui.rsyntaxtextarea.RSyntaxTextArea area, boolean arduino) {
+        prepareCodeArea(area, arduino);
+      }
+    });
 
     Color inputBg = AiTheme.inputBg();
     Color inputFg = AiTheme.inputFg();
@@ -1057,6 +1068,11 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
         } catch (IOException e) {
           System.err.println("Could not write the AI settings: " + e.getMessage());
         }
+        try {
+          bundle.copyIdeDefaults();
+        } catch (IOException e) {
+          System.err.println("Could not copy the AI's SOUL.md / memory files: " + e.getMessage());
+        }
         c = new AcpClient(this);
         c.start(bundle, folder);
         AcpClient started = c;
@@ -1202,6 +1218,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     turnClient = null;
     turnSession = null;
     setBusy(false, null);
+    chatView.answerDone(); // its code blocks are complete now
     lastWasAssistantText = false;
     reloadSketchFromDisk();
     // after the lines the caller adds ("Stopped.", errors)
@@ -1614,8 +1631,58 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
         }
       }
       lastWasAssistantText = false;
+      chatView.answerDone();
     } finally {
       recording = true;
+    }
+  }
+
+  // ------------------------------------------------------------------ code blocks
+
+  /**
+   * "Insert into Editor" of a code block: at the caret of the current tab
+   * (over the selection, when there is one), one step for Undo.
+   */
+  private void insertCode(String code) {
+    if (editor.getCurrentTab() == null) {
+      return;
+    }
+    processing.app.syntax.SketchTextArea area = editor.getCurrentTab().getTextArea();
+    if (!area.isEditable()) {
+      java.awt.Toolkit.getDefaultToolkit().beep(); // e.g. "use external editor"
+      return;
+    }
+    String text = code.endsWith("\n") ? code : code + "\n";
+    area.beginAtomicEdit();
+    try {
+      area.replaceSelection(text);
+    } finally {
+      area.endAtomicEdit();
+    }
+    area.requestFocusInWindow();
+  }
+
+  /** A code block in the editor's syntax colors, Arduino code with the editor's keywords. */
+  private void prepareCodeArea(org.fife.ui.rsyntaxtextarea.RSyntaxTextArea area, boolean arduino) {
+    java.io.InputStream in = null;
+    try {
+      in = Theme.getThemeResource("theme/syntax/" + PreferencesData.get("editor.syntax_theme", "default") + ".xml")
+          .getInputStream();
+      org.fife.ui.rsyntaxtextarea.Theme.load(in).apply(area);
+    } catch (Exception e) {
+      // RSyntaxTextArea's own colors
+    } finally {
+      if (in != null) {
+        try {
+          in.close();
+        } catch (IOException e) {
+          // nothing to do
+        }
+      }
+    }
+    if (arduino && base != null) {
+      ((org.fife.ui.rsyntaxtextarea.RSyntaxDocument) area.getDocument())
+          .setTokenMakerFactory(new processing.app.syntax.ArduinoTokenMakerFactory(base.getPdeKeywords()));
     }
   }
 

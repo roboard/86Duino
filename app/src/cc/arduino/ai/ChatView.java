@@ -33,9 +33,7 @@ import javax.swing.JViewport;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
-import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
@@ -45,8 +43,9 @@ import processing.app.Theme;
 
 /**
  * The conversation: your messages on the right, the AI's on the left, each in
- * a bubble; the AI's tool lines in small text inside its bubble; notes and
- * errors centered between them. Text can be selected inside one bubble.
+ * a bubble, the AI's written in Markdown and shown formatted (see
+ * {@link MarkdownView}); the AI's tool lines in small text inside its bubble;
+ * notes and errors centered between them. Text can be selected inside one block.
  */
 final class ChatView extends JPanel implements Scrollable {
 
@@ -70,14 +69,36 @@ final class ChatView extends JPanel implements Scrollable {
     }
   }
 
+  /** A component whose height depends on the width it gets (text that wraps). */
+  interface Sized {
+    int heightAt(int width);
+  }
+
+  /** What the buttons of a code block do, given by the AI panel. */
+  interface CodeActions {
+    /** Insert into Editor: at the caret of the sketch's current tab. */
+    void insert(String code);
+
+    /** The editor's colors (and, for Arduino code, its keywords) for a code block. */
+    void prepare(org.fife.ui.rsyntaxtextarea.RSyntaxTextArea area, boolean arduino);
+  }
+
   private Font font;
   private Font small;
   /** Your last message, for the "attached" line. */
   private Bubble lastUser;
   /** The AI's bubble of this answer (null after a note: the next text gets a new one). */
   private Bubble aiBubble;
-  /** Its text block that grows while the AI answers, or null. */
-  private JTextArea aiText;
+  /** Its Markdown block that grows while the AI answers, or null. */
+  private MarkdownView aiText;
+  private CodeActions codeActions;
+  /**
+   * The AI's text arrives in many small pieces: the Markdown is shown again
+   * at most every 50 ms, not for every piece.
+   */
+  private final javax.swing.Timer renderTimer = new javax.swing.Timer(50, e -> renderNow());
+  /** The conversation was at its end when the waiting pieces arrived. */
+  private boolean renderFollow;
   /** The "AI Assistant" label was shown for this answer. */
   private boolean aiLabelShown;
 
@@ -86,6 +107,15 @@ final class ChatView extends JPanel implements Scrollable {
     setBackground(AiTheme.chatBg());
     setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(10), Theme.scale(10), Theme.scale(10)));
     setFonts(font);
+    renderTimer.setRepeats(false);
+  }
+
+  void setCodeActions(CodeActions actions) {
+    codeActions = actions;
+  }
+
+  CodeActions codeActions() {
+    return codeActions;
   }
 
   // ------------------------------------------------------------------ content
@@ -130,17 +160,38 @@ final class ChatView extends JPanel implements Scrollable {
     changed(follow);
   }
 
-  /** Text of the AI's answer; newBlock starts a new paragraph (after a tool line). */
+  /** Text of the AI's answer (Markdown); newBlock starts a new block (after a tool line). */
   void appendAi(String text, boolean newBlock) {
     boolean follow = atBottom();
     if (newBlock || aiText == null) {
       closeAi();
-      aiText = text(text, AiTheme.chatFg(), false);
+      aiText = new MarkdownView(this, font, small, codeFont());
+      aiText.append(text);
+      aiText.render();
       bubble().add(aiText);
+      changed(follow);
     } else {
       aiText.append(text);
+      renderFollow |= follow;
+      if (!renderTimer.isRunning()) {
+        renderTimer.start();
+      }
     }
+  }
+
+  /** The answer has ended: its last block is complete (the buttons of its code blocks work). */
+  void answerDone() {
+    boolean follow = atBottom();
+    closeAi();
     changed(follow);
+  }
+
+  private void renderNow() {
+    if (aiText != null) {
+      aiText.render();
+    }
+    changed(renderFollow);
+    renderFollow = false;
   }
 
   /** A tool line, in small text inside the AI's bubble. */
@@ -205,24 +256,13 @@ final class ChatView extends JPanel implements Scrollable {
     aiText = null;
   }
 
-  /** The text block that was growing ends: the blank lines the AI ends it with are dropped. */
+  /** The Markdown block that was growing ends (shown complete, without its trailing blank lines). */
   private void closeAi() {
+    renderTimer.stop();
     if (aiText == null) {
       return;
     }
-    Document doc = aiText.getDocument();
-    try {
-      String s = doc.getText(0, doc.getLength());
-      int end = s.length();
-      while (end > 0 && Character.isWhitespace(s.charAt(end - 1))) {
-        end--;
-      }
-      if (end < s.length()) {
-        doc.remove(end, s.length() - end);
-      }
-    } catch (BadLocationException e) {
-      // cannot happen
-    }
+    aiText.finish();
     aiText = null;
   }
 
@@ -272,7 +312,7 @@ final class ChatView extends JPanel implements Scrollable {
   }
 
   /** Selectable (Ctrl+C copies), never scrolls the conversation to its caret. */
-  private static void readOnly(JTextComponent t) {
+  static void readOnly(JTextComponent t) {
     t.setEditable(false);
     t.setOpaque(false);
     t.setBorder(null);
@@ -291,8 +331,35 @@ final class ChatView extends JPanel implements Scrollable {
     repaint();
   }
 
+  /**
+   * Code in the editor's font, at the conversation's size: the editor's font
+   * (a theme's one unless you chose your own), with the Chinese of the system's.
+   */
+  private Font codeFont() {
+    String name = "Monospaced";
+    try {
+      Font editor = processing.app.PreferencesData.getFont("editor.font");
+      if (editor != null) {
+        name = editor.getName();
+        Font themeFont = Theme.getFont("editor.font");
+        String defaultName = processing.app.PreferencesData.getDefault("editor.font");
+        defaultName = defaultName == null ? "" : defaultName.split(",")[0];
+        if (themeFont != null && defaultName.equals(name)) {
+          name = themeFont.getName();
+        }
+      }
+    } catch (RuntimeException e) {
+      // no editor font: Monospaced
+    }
+    return javax.swing.text.StyleContext.getDefaultStyleContext().getFont(name, Font.PLAIN, font.getSize());
+  }
+
   private void setFonts(Container parent) {
     for (Component c : parent.getComponents()) {
+      if (c instanceof MarkdownView) {
+        ((MarkdownView) c).setFonts(font, small, codeFont());
+        continue; // it sets its own blocks' fonts
+      }
       if (c instanceof JComponent && ((JComponent) c).getClientProperty(SMALL) != null) {
         JComponent j = (JComponent) c;
         Font f = small;
@@ -366,8 +433,8 @@ final class ChatView extends JPanel implements Scrollable {
 
   /** The height a component needs at this width (wrapped text grows taller when narrower). */
   static int heightAt(Component c, int width) {
-    if (c instanceof Bubble) {
-      return ((Bubble) c).heightAt(width);
+    if (c instanceof Sized) {
+      return ((Sized) c).heightAt(width);
     }
     c.setSize(width, Short.MAX_VALUE);
     return c.getPreferredSize().height;
@@ -437,7 +504,7 @@ final class ChatView extends JPanel implements Scrollable {
    * A message: its text blocks top to bottom on a background with a thin line
    * around it and a colored stripe on one side.
    */
-  static final class Bubble extends JPanel {
+  static final class Bubble extends JPanel implements Sized {
     private final Color line;
     private final Color accent;
     private final boolean accentRight;
@@ -485,7 +552,8 @@ final class ChatView extends JPanel implements Scrollable {
       });
     }
 
-    int heightAt(int width) {
+    @Override
+    public int heightAt(int width) {
       Insets in = getInsets();
       int inner = Math.max(1, width - in.left - in.right);
       int h = in.top + in.bottom;

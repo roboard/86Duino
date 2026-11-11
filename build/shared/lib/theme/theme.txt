@@ -221,6 +221,17 @@ linestatus.height  = 20
 #ai.model.label.color = #FFFFFF
 # bar between the editor and the panel          (buttons.bgcolor 22% over the conversation)
 #ai.divider.bgcolor = #DDE2F0
+# code blocks in the AI's answers               (buttons.bgcolor 10% over ai.assistant.bgcolor)
+#ai.code.bgcolor = #EFF0F8
+# the bar over a code block: language, Copy, Insert into Editor (24%; its text: 65% to black)
+#ai.code.header.bgcolor = #DAE0EE
+#ai.code.header.color = #4C4E53
+# `code` inside a sentence                       (16%)
+#ai.code.inline.bgcolor = #E6E9F4
+# links                                         (buttons.bgcolor 30% to black)
+#ai.link.color = #475E82
+# lines of tables, quotes and --- rules          (45%)
+#ai.line.color = #BAC7E0
 # font of the panel: family,style,size like the other fonts here. The size is the
 # conversation's (Ctrl + mouse wheel changes it); titles and buttons keep their sizes.
 # Hack has Chinese characters too. Lucida and Inconsolata have none: their

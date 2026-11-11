@@ -139,6 +139,34 @@ final class AiTheme {
     return color("ai.divider.bgcolor", mix(chatBg(), toolbar(), 0.22));
   }
 
+  /** A code block in the AI's answers: a pale tint of the toolbar color. */
+  static Color codeBg() {
+    return color("ai.code.bgcolor", mix(assistantBg(), toolbar(), 0.10));
+  }
+
+  /** The bar over a code block with the language and the Copy / Insert buttons. */
+  static Color codeHeaderBg() {
+    return color("ai.code.header.bgcolor", mix(assistantBg(), toolbar(), 0.24));
+  }
+
+  static Color codeHeaderFg() {
+    return color("ai.code.header.color", mix(codeHeaderBg(), readableOn(codeHeaderBg()), 0.65));
+  }
+
+  /** `code` inside a sentence. */
+  static Color inlineCodeBg() {
+    return color("ai.code.inline.bgcolor", mix(assistantBg(), toolbar(), 0.16));
+  }
+
+  static Color linkFg() {
+    return color("ai.link.color", mix(toolbar(), Color.BLACK, 0.3));
+  }
+
+  /** Lines of tables, quotes and rules in the AI's answers. */
+  static Color markLine() {
+    return color("ai.line.color", mix(assistantBg(), toolbar(), 0.45));
+  }
+
   // ------------------------------------------------------------------ font
 
   /**

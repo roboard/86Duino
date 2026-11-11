@@ -3451,3 +3451,15 @@ msgstr "已附上編譯錯誤訊息（{0} 行）"
 #: cc/arduino/ai
 msgid "Attached the compile error messages (the first {0} of {1} lines; the rest was too long)"
 msgstr "已附上編譯錯誤訊息（共 {1} 行，太長只送出前 {0} 行）"
+
+#: cc/arduino/ai
+msgid "Copied"
+msgstr "已複製"
+
+#: cc/arduino/ai
+msgid "Insert into Editor"
+msgstr "插入編輯器"
+
+#: cc/arduino/ai
+msgid "Code"
+msgstr "程式碼"

@@ -113,6 +113,36 @@ public class HermesBundle {
     }
   }
 
+  /**
+   * The AI's identity and notes the IDE ships, copied over the HERMES_HOME
+   * files each time Hermes starts: &lt;IDE&gt;/hermes/SOUL.md and
+   * &lt;IDE&gt;/hermes/memory/{MEMORY,USER}.md. Users change the IDE's files, and
+   * the change applies to new conversations after the IDE is restarted (a
+   * continued conversation keeps the system prompt it started with). The
+   * chat has no memory tool, so the AI only reads them. A file missing from
+   * the IDE is removed from HERMES_HOME too (Hermes then writes its own SOUL.md).
+   */
+  public void copyIdeDefaults() throws IOException {
+    ensureHome();
+    File ideMemory = new File(bundleDir, "memory");
+    File homeMemory = new File(homeDir, "memories");
+    copyOrRemove(new File(bundleDir, "SOUL.md"), new File(homeDir, "SOUL.md"));
+    copyOrRemove(new File(ideMemory, "MEMORY.md"), new File(homeMemory, "MEMORY.md"));
+    copyOrRemove(new File(ideMemory, "USER.md"), new File(homeMemory, "USER.md"));
+  }
+
+  private static void copyOrRemove(File from, File to) throws IOException {
+    if (!from.isFile()) {
+      Files.deleteIfExists(to.toPath());
+      return;
+    }
+    byte[] bytes = Files.readAllBytes(from.toPath());
+    // Notepad's UTF-8 BOM would reach the prompt as an invisible character
+    int start = bytes.length >= 3 && bytes[0] == (byte) 0xEF && bytes[1] == (byte) 0xBB && bytes[2] == (byte) 0xBF ? 3 : 0;
+    Files.createDirectories(to.getParentFile().toPath());
+    Files.write(to.toPath(), Arrays.copyOfRange(bytes, start, bytes.length));
+  }
+
   /** Command line that runs the Hermes CLI with the given arguments. */
   public List<String> command(String... args) {
     List<String> cmd = pythonCommand();
