@@ -39,7 +39,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -90,7 +89,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       if (getDocument().getLength() == 0) {
         // the hint, until something is typed
         java.awt.Insets in = getInsets();
-        g.setColor(AiTheme.mix(getBackground(), getForeground(), 0.7));
+        g.setColor(AiTheme.mix(getBackground(), getForeground(), 0.5));
         g.setFont(getFont());
         g.drawString(tr("Ask a question..."), in.left, in.top + g.getFontMetrics().getAscent());
       }
@@ -104,21 +103,36 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private AiWidgets.ShapeIcon stopIcon;
   private final JButton newButton = AiWidgets.button(tr("New Chat"), AiTheme.chatBg(), AiTheme.chatFg(),
                                                      AiTheme.mix(AiTheme.chatBg(), AiTheme.chatFg(), 0.25));
-  private final JLabel statusLabel = new JLabel(" ", SwingConstants.CENTER);
-  /** Sends the error output of the console (e.g. compiler errors) with the next message. */
-  private final JCheckBox attachErrors = new JCheckBox(tr("Attach the compile error messages"));
-  /** Compile errors sent with a message, at most this long (the first part is kept). */
-  private static final int MAX_ERROR_CHARS = 30000;
+  /** Under the title bar: what the AI is doing ("Thinking...", "Reading xxx"). */
+  private final StatusLine statusLabel = new StatusLine();
+  /** The title bar with the model's logo and the model box, and the status line. */
+  private AiHeader header;
+  /** Puts the error output of the console (e.g. compiler errors) into the message box. */
+  private final JButton attachButton = AiWidgets.button(tr("Attach the compile error messages"), AiTheme.attachBg(),
+                                                        AiTheme.attachFg(),
+                                                        AiTheme.mix(AiTheme.attachBg(), AiTheme.attachFg(), 0.3));
+  /** Compile errors put into the message box: at most this many lines and characters (the first part is kept). */
+  private static final int MAX_ERROR_LINES = 100;
+  private static final int MAX_ERROR_CHARS = 10000;
+  /** "There are no compile error messages..." in the conversation, replaced by the next one. */
+  private Component errorsNotice;
   /**
-   * The model in use, next to Send. As wide as the longest model name, up to a
-   * limit; empty when the model list could not be fetched.
+   * The model in use, in the title bar after "AI Assistant". As wide as the
+   * longest model name in the list, so the list that drops down shows every
+   * name whole; with too little room before New Chat the title bar's layout
+   * makes it narrower and the name is cut ("..."). Empty when the model list
+   * could not be fetched.
    */
   private final JComboBox<String> modelCombo = new JComboBox<String>() {
     @Override
     public Dimension getPreferredSize() {
-      Dimension d = super.getPreferredSize();
-      d.width = Math.max(Theme.scale(MODEL_MIN_WIDTH), Math.min(Theme.scale(MODEL_MAX_WIDTH), d.width));
-      d.height = sendButton.getPreferredSize().height; // as tall as Send
+      Dimension d = super.getPreferredSize(); // the look and feel's: the widest name
+      // as tall as Send; the arrow is a square as tall as the box, so a taller
+      // box needs that much more width too
+      int height = sendButton.getPreferredSize().height;
+      d.width += Math.max(0, height - d.height);
+      d.width = Math.max(Theme.scale(MODEL_MIN_WIDTH), d.width);
+      d.height = height;
       return d;
     }
 
@@ -127,8 +141,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       return getPreferredSize();
     }
   };
-  private static final int MODEL_MIN_WIDTH = 100;
-  private static final int MODEL_MAX_WIDTH = 280;
+  /** Even a very short name gets a box this wide, so it is easy to click. */
+  private static final int MODEL_MIN_WIDTH = 50;
   /** True while the panel fills the model box (not a choice of the user). */
   private boolean fillingModels;
   /** The model list the model box shows, see {@link #modelLists}. */
@@ -204,14 +218,10 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     setMinimumSize(Theme.scale(new Dimension(260, 200)));
     setPreferredSize(Theme.scale(new Dimension(380, 400)));
 
-    // Header in the toolbar's color: title and buttons, the status line centered below
-    Color headerBg = AiTheme.headerBg();
+    // Title bar in the toolbar's color, as tall as the toolbar beside it: the
+    // model's logo, the title, the model box, New Chat and the X; under it the
+    // status line, as tall as the editor's row of tabs
     Color headerFg = AiTheme.headerFg();
-    JPanel header = new JPanel(new BorderLayout(0, Theme.scale(2)));
-    header.setBackground(headerBg);
-    header.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(10), Theme.scale(4), Theme.scale(6)));
-    JPanel headerTop = new JPanel(new BorderLayout(Theme.scale(6), 0));
-    headerTop.setOpaque(false);
     JLabel title = new JLabel(tr("AI Assistant"));
     Font titleFont = AiTheme.inPanelFont(title.getFont());
     title.setFont(titleFont.deriveFont(Font.BOLD, titleFont.getSize2D() + 3));
@@ -220,7 +230,6 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     newButton.setFont(title.getFont().deriveFont(Font.PLAIN));
     // little room around the text, so the buttons are not much bigger than it
     newButton.setBorder(BorderFactory.createEmptyBorder(Theme.scale(2), Theme.scale(6), Theme.scale(2), Theme.scale(6)));
-    headerTop.add(title, BorderLayout.WEST);
     JPanel headerButtons = new JPanel();
     headerButtons.setLayout(new BoxLayout(headerButtons, BoxLayout.X_AXIS));
     headerButtons.setOpaque(false);
@@ -246,11 +255,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     hide.setMaximumSize(hide.getPreferredSize());
     newButton.setMaximumSize(newButton.getPreferredSize());
     headerButtons.add(hide);
-    headerTop.add(headerButtons, BorderLayout.EAST);
-    header.add(headerTop, BorderLayout.NORTH);
-    statusLabel.setForeground(headerFg);
-    statusLabel.setFont(AiTheme.inPanelFont(statusLabel.getFont()));
-    header.add(statusLabel, BorderLayout.CENTER);
+    header = new AiHeader(editor, title, modelCombo, headerButtons, statusLabel);
     add(header, BorderLayout.NORTH);
 
     // Chat card
@@ -305,8 +310,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
         send();
       }
     });
-    // The model row is used all the time: Send, the model box and its label are
-    // as big as New Chat and the X at the top, so all the buttons look alike.
+    // Send and the model box (in the title bar) are as big as New Chat and the
+    // X at the top, so all the buttons look alike.
     Font rowFont = newButton.getFont();
     // "Send ▶" and "Stop ■" take turns on the button: as wide as the wider one, so nothing moves
     sendButton.setFont(rowFont.deriveFont(Font.BOLD));
@@ -329,61 +334,49 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     modelCombo.setMinimumSize(Theme.scale(new Dimension(60, 0)));
     modelCombo.addActionListener(e -> modelChosen());
     modelCombo.setEnabled(false);
-    JLabel modelLabel = new JLabel(tr("Model:"));
-    modelLabel.setForeground(AiTheme.modelLabelFg());
-    modelLabel.setFont(rowFont);
-    modelLabel.setLabelFor(modelCombo);
+    // "Attach the compile error messages" puts the console's errors into the
+    // message box, to be sent (or changed) like any message: as tall as Send
+    attachButton.setToolTipText(tr("Puts the error messages of the console below the editor (stderr) into the message box"));
+    attachButton.setFont(AiTheme.inPanelFont(new JLabel().getFont()));
+    attachButton.setBorder(BorderFactory.createEmptyBorder(Theme.scale(2), Theme.scale(8), Theme.scale(2), Theme.scale(8)));
+    attachButton.addActionListener(e -> attachCompileErrors());
+    Dimension attachSize = attachButton.getPreferredSize();
+    attachSize.height = sendSize.height;
+    attachButton.setPreferredSize(attachSize);
+    attachButton.setMaximumSize(attachSize);
+    attachButton.setMinimumSize(new Dimension(Theme.scale(40), sendSize.height));
 
-    // The message box and the row below it (model, Send) are one framed box:
-    // a long message scrolls inside it and never covers the row.
+    // The message box fills the bottom, with no frame; under it, without a
+    // border, the row of Attach and Send, as tall as the editor's line status
+    // beside it, the buttons at its top (level with the line status's top
+    // edge), away from the window's bottom edge. A long message scrolls inside
+    // the box and never covers the row.
     JScrollPane inputScroll = new JScrollPane(input, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                                               JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     inputScroll.setBorder(null);
     inputScroll.getViewport().setBackground(inputBg);
-    JPanel inputRow = new JPanel();
+    JPanel inputRow = new JPanel() {
+      @Override
+      public Dimension getPreferredSize() {
+        Dimension d = super.getPreferredSize();
+        int lineStatus = editor == null ? 0 : editor.getLineStatusHeight();
+        d.height = Math.max(d.height, lineStatus);
+        return d;
+      }
+    };
     inputRow.setLayout(new BoxLayout(inputRow, BoxLayout.X_AXIS));
     inputRow.setOpaque(false);
-    inputRow.setBorder(BorderFactory.createEmptyBorder(Theme.scale(4), Theme.scale(6), Theme.scale(6), Theme.scale(6)));
+    inputRow.setBorder(BorderFactory.createEmptyBorder(0, Theme.scale(6), Theme.scale(3), Theme.scale(6)));
+    attachButton.setAlignmentY(Component.TOP_ALIGNMENT);
+    sendButton.setAlignmentY(Component.TOP_ALIGNMENT);
+    inputRow.add(attachButton);
     inputRow.add(Box.createHorizontalGlue());
-    inputRow.add(modelLabel);
-    inputRow.add(Box.createHorizontalStrut(Theme.scale(4)));
-    inputRow.add(modelCombo);
     inputRow.add(Box.createHorizontalStrut(Theme.scale(8)));
     inputRow.add(sendButton);
-    JPanel inputBox = new JPanel(new BorderLayout());
-    inputBox.setBackground(inputBg);
-    inputBox.setBorder(BorderFactory.createLineBorder(AiTheme.mix(inputBg, inputFg, 0.35)));
-    inputBox.add(inputScroll, BorderLayout.CENTER);
-    inputBox.add(inputRow, BorderLayout.SOUTH);
-
-    // "Attach the compile error messages" in a light box on a row of its own, above the message box
-    attachErrors.setToolTipText(tr("Sends the error messages of the console below the editor (stderr) with your message"));
-    attachErrors.setBackground(AiTheme.chatBg());
-    attachErrors.setForeground(AiTheme.chatFg());
-    attachErrors.setOpaque(true);
-    attachErrors.setFocusPainted(false);
-    attachErrors.setFont(AiTheme.inPanelFont(attachErrors.getFont()));
-    // the look and feel's square is much taller than the text: draw one as tall as the text
-    attachErrors.setIcon(new AiWidgets.CheckIcon(attachErrors));
-    attachErrors.setRolloverEnabled(true);
-    attachErrors.setBorderPainted(true);
-    attachErrors.setBorder(BorderFactory.createCompoundBorder(
-        BorderFactory.createLineBorder(AiTheme.mix(AiTheme.attachBg(), AiTheme.chatFg(), 0.3)),
-        BorderFactory.createEmptyBorder(Theme.scale(3), Theme.scale(6), Theme.scale(3), Theme.scale(10))));
-    JPanel attachRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-    attachRow.setBackground(AiTheme.attachBg());
-    // the same margin as around the message box below, so the two line up
-    attachRow.setBorder(BorderFactory.createEmptyBorder(Theme.scale(8), Theme.scale(8), Theme.scale(8), Theme.scale(8)));
-    attachRow.add(attachErrors);
-
-    JPanel inputArea = new JPanel(new BorderLayout());
-    inputArea.setBackground(inputBg);
-    // as far from the top and the bottom as from the sides
-    inputArea.setBorder(BorderFactory.createEmptyBorder(Theme.scale(8), Theme.scale(8), Theme.scale(8), Theme.scale(8)));
-    inputArea.add(inputBox, BorderLayout.CENTER);
     inputPanel = new JPanel(new BorderLayout());
-    inputPanel.add(attachRow, BorderLayout.NORTH);
-    inputPanel.add(inputArea, BorderLayout.CENTER);
+    inputPanel.setBackground(inputBg);
+    inputPanel.add(inputScroll, BorderLayout.CENTER);
+    inputPanel.add(inputRow, BorderLayout.SOUTH);
 
     applyFontSize(); // the size chosen last time, before the message box is measured
 
@@ -393,17 +386,16 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     inputMin = inputPanel.getPreferredSize().height;
     inputPanel.setMinimumSize(new Dimension(0, inputMin));
     chat = new JSplitPane(JSplitPane.VERTICAL_SPLIT, transcriptScroll, inputPanel);
+    // The divider is a plain bar in ai.input.divider.bgcolor (by default the
+    // gray of the editor's split bars), drawn here like the bar between the
+    // editor and the panel: the look and feel's own divider draws its gray
+    // and its lines in the IDE whatever the split pane's color.
+    // It still shows the resize cursor and can be dragged.
+    AiWidgets.styleDivider(chat, AiTheme.inputDividerBg());
     chat.setContinuousLayout(true);
     chat.setResizeWeight(1D); // a taller window gives the conversation the room
     chat.setBorder(null);
     chat.setDividerSize(Theme.scale(6));
-    // the divider shows the split pane's color: the attach row's, so it looks part of that row
-    chat.setBackground(AiTheme.attachBg());
-    // the divider draws no lines of its own (the conversation's bottom line is
-    // the only separator); it still shows the resize cursor and can be dragged
-    if (chat.getUI() instanceof javax.swing.plaf.basic.BasicSplitPaneUI) {
-      ((javax.swing.plaf.basic.BasicSplitPaneUI) chat.getUI()).getDivider().setBorder(null);
-    }
     Keys.killBinding(chat, Keys.ctrl(KeyEvent.VK_TAB));
     Keys.killBinding(chat, Keys.ctrlShift(KeyEvent.VK_TAB));
     // read now: the split pane's own first layout moves the divider before it is placed
@@ -592,6 +584,9 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
       }
     }
     retryButton.setVisible(listFailed);
+    header.showProvider(settings.getProvider());
+    // the model box only with the chat: the setup hint says what is missing
+    modelCombo.setVisible(problem == null);
     if (problem == null) {
       if (isShowing()) {
         showModelList(settings, bundle, false);
@@ -914,10 +909,7 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
 
   private void send() {
     String text = input.getText().trim();
-    // Ticked: the console's errors (stderr) go along when there are any. Errors
-    // or a message is enough to send; with neither, Send does nothing.
-    String errors = attachErrors.isSelected() ? editor.getConsoleErrorText().trim() : "";
-    if ((text.isEmpty() && errors.isEmpty()) || busy) {
+    if (text.isEmpty() || busy) {
       return;
     }
     AiSettings settings = AiSettings.load();
@@ -954,19 +946,10 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     } else if (!board.equals(sessionBoard)) {
       blocks.add(AiContextBuilder.boardChanged());
     }
-    String attached = null;
-    if (!errors.isEmpty()) {
-      attached = attachErrorBlock(errors, blocks);
-    }
-    if (!text.isEmpty()) {
-      blocks.add(text);
-    }
+    blocks.add(text);
 
-    input.setText(""); // the box stays ticked: every message takes the console's errors along
+    input.setText("");
     appendUser(text);
-    if (attached != null) {
-      appendAttachment(attached);
-    }
     editToolCalls.clear();
     toolCallTitles.clear();
     answeredThisTurn.clear();
@@ -986,31 +969,43 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   }
 
   /**
-   * Adds the console's error output to the message; returns the line shown
-   * under your message. Very long output is cut after the first lines (the
-   * first errors are the ones that matter).
+   * "Attach the compile error messages": the console's error output (stderr)
+   * goes into the message box, after what is there, with a request to fix it
+   * at the end; the user can change it before sending. Very long output is cut
+   * after the first lines (the first errors are the ones that matter).
    */
-  private static String attachErrorBlock(String errors, List<String> blocks) {
-    String[] lines = errors.split("\r?\n", -1);
-    String sent = errors;
-    int sentLines = lines.length;
-    if (errors.length() > MAX_ERROR_CHARS) {
-      int cut = errors.lastIndexOf('\n', MAX_ERROR_CHARS);
-      sent = errors.substring(0, cut > 0 ? cut : MAX_ERROR_CHARS);
-      sentLines = sent.split("\r?\n", -1).length;
+  private void attachCompileErrors() {
+    chatView.removeNote(errorsNotice);
+    errorsNotice = null;
+    // the console's error output without blank lines around it
+    String errors = editor.getConsoleErrorText().replaceAll("\\s+$", "").replaceAll("^(\\s*\\n)+", "");
+    if (errors.trim().isEmpty()) {
+      errorsNotice = appendNotice(tr("There are no compile error messages in the console below the editor."));
+      return;
     }
-    StringBuilder block = new StringBuilder();
-    block.append("[Compile error messages from the IDE console (stderr), attached by the user]\n");
-    block.append(sent).append('\n');
-    if (sentLines < lines.length) {
-      block.append("[... ").append(lines.length - sentLines).append(" more lines not sent]\n");
+    String[] lines = errors.split("\\r?\\n", -1);
+    StringBuilder pasted = new StringBuilder();
+    int kept = 0;
+    for (String line : lines) {
+      if (kept == MAX_ERROR_LINES || pasted.length() + line.length() > MAX_ERROR_CHARS) {
+        break;
+      }
+      pasted.append(line).append('\n');
+      kept++;
     }
-    block.append("[End of the compile error messages]");
-    blocks.add(block.toString());
-    return sentLines < lines.length
-        ? I18n.format(tr("Attached the compile error messages (the first {0} of {1} lines; the rest was too long)"),
-                      sentLines, lines.length)
-        : I18n.format(tr("Attached the compile error messages ({0} lines)"), lines.length);
+    if (kept == 0) {
+      // the first line alone is too long
+      pasted.append(lines[0], 0, MAX_ERROR_CHARS).append('\n');
+      kept = 1;
+    }
+    if (kept < lines.length) {
+      pasted.append(I18n.format(tr("... ({0} more lines not pasted)"), lines.length - kept)).append('\n');
+    }
+    pasted.append('\n').append(tr("Please help me fix the compile errors."));
+    String before = input.getText().replaceAll("\\s+$", "");
+    input.setText(before.isEmpty() ? pasted.toString() : before + "\n\n" + pasted);
+    input.setCaretPosition(input.getDocument().getLength());
+    input.requestFocusInWindow();
   }
 
   /**
@@ -1680,9 +1675,64 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
         }
       }
     }
+    applyEditorStyles(area);
     if (arduino && base != null) {
       ((org.fife.ui.rsyntaxtextarea.RSyntaxDocument) area.getDocument())
           .setTokenMakerFactory(new processing.app.syntax.ArduinoTokenMakerFactory(base.getPdeKeywords()));
+    }
+  }
+
+  /** Token types of code and the editor.*.style of theme.txt that colors them, as the editor uses them. */
+  private static final Object[][] EDITOR_STYLES = {
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.DATA_TYPE, "data_type"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.FUNCTION, "function"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.RESERVED_WORD, "reserved_word"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.RESERVED_WORD_2, "reserved_word_2"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.VARIABLE, "variable"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.OPERATOR, "operator"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.COMMENT_DOCUMENTATION, "comment1"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.COMMENT_EOL, "comment1"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.COMMENT_KEYWORD, "comment1"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.COMMENT_MARKUP, "comment1"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.COMMENT_MULTILINE, "comment2"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.LITERAL_BOOLEAN, "literal_boolean"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.LITERAL_CHAR, "literal_char"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.LITERAL_STRING_DOUBLE_QUOTE, "literal_string_double_quote"},
+      {org.fife.ui.rsyntaxtextarea.TokenTypes.PREPROCESSOR, "preprocessor"},
+  };
+
+  /**
+   * The colors of theme.txt over the syntax theme's, as the editor does
+   * (SketchTextArea): a theme without a syntax theme of its own (Dark) still
+   * gets its own colors in code blocks, not the default theme's dark text.
+   */
+  private static void applyEditorStyles(org.fife.ui.rsyntaxtextarea.RSyntaxTextArea area) {
+    org.fife.ui.rsyntaxtextarea.SyntaxScheme scheme = area.getSyntaxScheme();
+    for (Object[] entry : EDITOR_STYLES) {
+      int type = (Integer) entry[0];
+      try {
+        if (Theme.get("editor." + entry[1] + ".style") == null) {
+          continue;
+        }
+        Map<String, Object> styled = Theme.getStyledFont((String) entry[1], area.getFont());
+        org.fife.ui.rsyntaxtextarea.Style style = scheme.getStyle(type);
+        style.foreground = (Color) styled.get("color");
+        style.font = (Font) styled.get("font");
+        scheme.setStyle(type, style);
+      } catch (RuntimeException e) {
+        // a style theme.txt has wrong: the syntax theme's color stays
+      }
+    }
+    try {
+      Color text = Theme.getColor("editor.fgcolor");
+      if (text != null) {
+        org.fife.ui.rsyntaxtextarea.Style style = scheme.getStyle(org.fife.ui.rsyntaxtextarea.TokenTypes.IDENTIFIER);
+        style.foreground = text;
+        scheme.setStyle(org.fife.ui.rsyntaxtextarea.TokenTypes.IDENTIFIER, style);
+        area.setForeground(text);
+      }
+    } catch (RuntimeException e) {
+      // the syntax theme's text color stays
     }
   }
 

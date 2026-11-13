@@ -165,52 +165,6 @@ final class AiWidgets {
     }
   }
 
-  /** A check box square as tall as the text next to it, in the check box's own colors. */
-  static final class CheckIcon implements Icon {
-    private final JComponent owner;
-
-    CheckIcon(JComponent owner) {
-      this.owner = owner;
-    }
-
-    /** About the height of a Chinese character of the owner's font, so it follows the font size. */
-    private int size() {
-      return Math.max(Theme.scale(8), Math.round(owner.getFont().getSize2D() * 0.9f));
-    }
-
-    @Override
-    public int getIconWidth() {
-      return size();
-    }
-
-    @Override
-    public int getIconHeight() {
-      return size();
-    }
-
-    @Override
-    public void paintIcon(Component c, Graphics g0, int x, int y) {
-      AbstractButton b = (AbstractButton) c;
-      ButtonModel m = b.getModel();
-      Color bg = b.getBackground();
-      Color fg = b.getForeground();
-      int s = size();
-      Graphics2D g = (Graphics2D) g0.create();
-      g.setColor(m.isPressed() && m.isArmed() ? AiTheme.mix(bg, fg, 0.15) : bg);
-      g.fillRect(x, y, s, s);
-      g.setColor(AiTheme.mix(bg, fg, !b.isEnabled() ? 0.3 : m.isRollover() ? 0.85 : 0.6));
-      g.drawRect(x, y, s - 1, s - 1);
-      if (m.isSelected()) {
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setColor(b.isEnabled() ? fg : AiTheme.mix(bg, fg, 0.45));
-        g.setStroke(new BasicStroke(Math.max(1.5f, s / 7f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g.drawPolyline(new int[]{x + s * 22 / 100, x + s * 42 / 100, x + s * 78 / 100},
-                       new int[]{y + s * 52 / 100, y + s * 72 / 100, y + s * 28 / 100}, 3);
-      }
-      g.dispose();
-    }
-  }
-
   /** The divider of a split pane as a plain bar of one color. */
   static void styleDivider(JSplitPane split, Color color) {
     split.setUI(new BasicSplitPaneUI() {
@@ -238,6 +192,26 @@ final class AiWidgets {
   }
 
   private static final class FlatComboUI extends BasicComboBoxUI {
+    /**
+     * The list that drops down is at least as wide as its longest item, even
+     * when the box was made narrower (its name cut "..."), so every name shows
+     * whole; the look and feel keeps it on the screen.
+     */
+    @Override
+    protected javax.swing.plaf.basic.ComboPopup createPopup() {
+      return new javax.swing.plaf.basic.BasicComboPopup(comboBox) {
+        @Override
+        protected Rectangle computePopupBounds(int px, int py, int pw, int ph) {
+          java.awt.Insets in = getInsets();
+          int want = list.getPreferredSize().width + in.left + in.right;
+          if (comboBox.getItemCount() > comboBox.getMaximumRowCount()) {
+            want += scroller.getVerticalScrollBar().getPreferredSize().width;
+          }
+          return super.computePopupBounds(px, py, Math.max(pw, want), ph);
+        }
+      };
+    }
+
     /** The list that drops down: the box's colors, the item under the mouse inverted. */
     void colorList(Color bg, Color fg, Color line) {
       listBox.setBackground(bg);
@@ -292,6 +266,14 @@ final class AiWidgets {
       if (opaque) {
         ((JComponent) c).setOpaque(true);
       }
+    }
+
+    /** Room for the space paintCurrentValue leaves left of the name, so a name that fits is not cut. */
+    @Override
+    public java.awt.Dimension getMinimumSize(JComponent c) {
+      java.awt.Dimension d = super.getMinimumSize(c);
+      d.width += Theme.scale(4);
+      return d;
     }
 
     @Override

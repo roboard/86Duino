@@ -3463,3 +3463,19 @@ msgstr "插入編輯器"
 #: cc/arduino/ai
 msgid "Code"
 msgstr "程式碼"
+
+#: cc/arduino/ai
+msgid "Puts the error messages of the console below the editor (stderr) into the message box"
+msgstr "將編輯器下方訊息視窗中的錯誤訊息（stderr）貼到輸入框"
+
+#: cc/arduino/ai
+msgid "There are no compile error messages in the console below the editor."
+msgstr "編輯器下方的訊息視窗目前沒有編譯錯誤訊息。"
+
+#: cc/arduino/ai
+msgid "... ({0} more lines not pasted)"
+msgstr "...（還有 {0} 行未貼上）"
+
+#: cc/arduino/ai
+msgid "Please help me fix the compile errors."
+msgstr "請幫我修正編譯錯誤訊息"

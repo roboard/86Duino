@@ -192,46 +192,52 @@ linestatus.height  = 20
 # GUI - AI ASSISTANT (the panel on the right)
 # All optional: without a key the color comes from the IDE color named after it,
 # so the panel follows the rest of this theme. Remove the # to set a color.
-# title bar and status line                     (buttons.bgcolor; text: white or black)
+# title bar: as tall as the toolbar             (buttons.bgcolor; text: white or black)
 #ai.header.bgcolor = #6686BA
 #ai.header.color = #FFFFFF
+# status line under it: as tall as the tabs     (header.bgcolor / ai.header.color)
+#ai.status.bgcolor = #8BB7E7
+#ai.status.color = #FFFFFF
 # conversation                                  (editor.bgcolor / editor.fgcolor)
-#ai.chat.bgcolor = #FEFCFF
+ai.chat.bgcolor = #F5F5F5
 #ai.chat.color = #000000
 # your messages: background and right stripe    (buttons.bgcolor 20% over the conversation / buttons.bgcolor)
-#ai.user.bgcolor = #E0E4F1
+#ai.user.bgcolor = #D8DFE9
 #ai.user.accent.color = #6686BA
 # the AI's messages: background and left stripe (ai.chat.bgcolor / linestatus.bgcolor)
-#ai.assistant.bgcolor = #FEFCFF
+#ai.assistant.bgcolor = #F5F5F5
 #ai.assistant.accent.color = #3C4B78
 # error lines in the conversation
 #ai.error.color = #B02020
-# row of "Attach the compile error messages"    (status.notice.bgcolor)
-#ai.attach.bgcolor = #7EA3D0
-# message box: background and text              (console.color; text: a light gray)
-#ai.input.bgcolor = #303640
-#ai.input.color = #ACAFB3
+# message box and its row of buttons: background and text (console.color; text: 60% to white or black)
+ai.input.bgcolor = #F5F5F5
+ai.input.color = #202020
+# bar between the conversation and the message box (the gray of the editor's split bars)
+#ai.input.divider.bgcolor = #F0F0F0
+# "Attach the compile error messages" button    (linestatus.bgcolor / linestatus.color)
+#ai.attach.bgcolor = #3C4B78
+#ai.attach.color = #FFFFFF
 # Send / Stop button                            (buttons.bgcolor; text: white or black)
 #ai.send.bgcolor = #6686BA
 #ai.send.color = #FFFFFF
-# model box                                     (linestatus.bgcolor / linestatus.color)
+# model box in the title bar                    (linestatus.bgcolor / linestatus.color)
 #ai.model.bgcolor = #3C4B78
 #ai.model.color = #FFFFFF
-# "Model:" in front of the model box            (on ai.input.bgcolor: white or black)
-#ai.model.label.color = #FFFFFF
+# the model's logo in the title bar: lib/theme/ai/<provider>.svg (white; custom.svg
+# for a provider without one): openai-api, anthropic, gemini, openrouter, deepseek
 # bar between the editor and the panel          (buttons.bgcolor 22% over the conversation)
-#ai.divider.bgcolor = #DDE2F0
+#ai.divider.bgcolor = #D6DDE8
 # code blocks in the AI's answers               (buttons.bgcolor 10% over ai.assistant.bgcolor)
-#ai.code.bgcolor = #EFF0F8
+#ai.code.bgcolor = #E7EAEF
 # the bar over a code block: language, Copy, Insert into Editor (24%; its text: 65% to black)
-#ai.code.header.bgcolor = #DAE0EE
-#ai.code.header.color = #4C4E53
+#ai.code.header.bgcolor = #D3DAE7
+#ai.code.header.color = #4A4C51
 # `code` inside a sentence                       (16%)
-#ai.code.inline.bgcolor = #E6E9F4
+#ai.code.inline.bgcolor = #DEE3EC
 # links                                         (buttons.bgcolor 30% to black)
 #ai.link.color = #475E82
 # lines of tables, quotes and --- rules          (45%)
-#ai.line.color = #BAC7E0
+#ai.line.color = #B5C3DA
 # font of the panel: family,style,size like the other fonts here. The size is the
 # conversation's (Ctrl + mouse wheel changes it); titles and buttons keep their sizes.
 # Hack has Chinese characters too. Lucida and Inconsolata have none: their

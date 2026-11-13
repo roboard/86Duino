@@ -40,10 +40,6 @@ final class AiTheme {
     return theme("editor.fgcolor", 0x000000);
   }
 
-  static Color notice() {
-    return theme("status.notice.bgcolor", 0x7EA3D0);
-  }
-
   static Color console() {
     return theme("console.color", 0x303640);
   }
@@ -58,13 +54,22 @@ final class AiTheme {
 
   // ------------------------------------------------------------------ the panel's colors
 
-  /** Title bar and status line. */
+  /** Title bar: the toolbar's color, as tall as the toolbar beside it. */
   static Color headerBg() {
     return color("ai.header.bgcolor", toolbar());
   }
 
   static Color headerFg() {
     return color("ai.header.color", readableOn(headerBg()));
+  }
+
+  /** The status line under the title bar: the color of the editor's tab row beside it. */
+  static Color statusBg() {
+    return color("ai.status.bgcolor", theme("header.bgcolor", 0x8BB7E7));
+  }
+
+  static Color statusFg() {
+    return color("ai.status.color", headerFg());
   }
 
   /** The conversation. */
@@ -94,12 +99,25 @@ final class AiTheme {
     return color("ai.assistant.accent.color", lineStatusBg());
   }
 
-  /** The row of "Attach the compile error messages". */
+  /** The "Attach the compile error messages" button, next to Send. */
   static Color attachBg() {
-    return color("ai.attach.bgcolor", notice());
+    return color("ai.attach.bgcolor", lineStatusBg());
   }
 
-  /** The message box. */
+  static Color attachFg() {
+    return color("ai.attach.color", lineStatusFg());
+  }
+
+  /**
+   * The bar between the conversation and the message box (it can be dragged):
+   * the gray of the editor's own split bars, so it looks like them.
+   */
+  static Color inputDividerBg() {
+    Color laf = javax.swing.UIManager.getColor("SplitPane.background");
+    return color("ai.input.divider.bgcolor", laf != null ? new Color(laf.getRGB()) : new Color(0xF0F0F0));
+  }
+
+  /** The message box with its row of buttons. */
   static Color inputBg() {
     return color("ai.input.bgcolor", console());
   }
@@ -121,17 +139,13 @@ final class AiTheme {
     return color("ai.send.color", readableOn(sendBg()));
   }
 
+  /** The model box in the title bar. */
   static Color modelBg() {
     return color("ai.model.bgcolor", lineStatusBg());
   }
 
   static Color modelFg() {
     return color("ai.model.color", lineStatusFg());
-  }
-
-  /** "Model:" in front of the model box, on the message box's background. */
-  static Color modelLabelFg() {
-    return color("ai.model.label.color", readableOn(inputBg()));
   }
 
   /** The bar between the editor and the panel: a pale tint of the toolbar color. */

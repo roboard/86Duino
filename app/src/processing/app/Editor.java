@@ -555,6 +555,21 @@ public class Editor extends JFrame implements RunnerListener {
     return console.getErrorText();
   }
 
+  /** How tall the toolbar is, so the AI panel's title bar lines up with it; 0 if there is none yet. */
+  public int getToolbarHeight() {
+    return toolbar == null ? 0 : toolbar.getPreferredSize().height;
+  }
+
+  /** How tall the row of tabs is, so the AI panel's status line lines up with it; 0 if there is none yet. */
+  public int getTabRowHeight() {
+    return header == null ? 0 : header.getPreferredSize().height;
+  }
+
+  /** How tall the line status at the bottom is, so the AI panel's button row lines up with it; 0 if there is none yet. */
+  public int getLineStatusHeight() {
+    return lineStatus == null ? 0 : lineStatus.getPreferredSize().height;
+  }
+
   /** The AI settings were saved in Preferences. */
   public void aiSettingsChanged() {
     if (aiPanel != null) {
