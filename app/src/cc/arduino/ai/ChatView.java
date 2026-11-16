@@ -53,11 +53,15 @@ final class ChatView extends JPanel implements Scrollable {
   private static final double USER_WIDTH = 0.8;
   private static final String ROW = "ai.row";
   private static final String SMALL = "ai.small";
+  /** More space under a copy icon: it belongs to the message above it, not to the next one. */
+  private static final int AFTER_COPY = 3;
 
   private enum Row {
     USER_LABEL(SwingConstants.RIGHT, 14), USER(SwingConstants.RIGHT, 3),
     AI_LABEL(SwingConstants.LEFT, 14), AI(SwingConstants.LEFT, 3), AI_MORE(SwingConstants.LEFT, 8),
-    NOTE(SwingConstants.CENTER, 8);
+    NOTE(SwingConstants.CENTER, 8),
+    /** The copy icons under your message and under the AI's answer: close to it. */
+    COPY_USER(SwingConstants.RIGHT, 1), COPY_AI(SwingConstants.LEFT, 1);
 
     final int align;
     /** Space above the row (none for the first one). */
@@ -101,6 +105,11 @@ final class ChatView extends JPanel implements Scrollable {
   private boolean renderFollow;
   /** The "AI Assistant" label was shown for this answer. */
   private boolean aiLabelShown;
+  /**
+   * The answer's last block of text (after its last tool line), or null: what
+   * the copy icon under the answer copies, without the tool lines before it.
+   */
+  private MarkdownView answerText;
 
   ChatView(Font font) {
     setLayout(new Rows());
@@ -128,6 +137,7 @@ final class ChatView extends JPanel implements Scrollable {
     removeAll();
     lastUser = null;
     endAnswer();
+    answerText = null;
     aiLabelShown = false;
     changed(true);
   }
@@ -136,6 +146,7 @@ final class ChatView extends JPanel implements Scrollable {
   void addUser(String text) {
     boolean follow = true; // your own message is always shown
     closeAi();
+    addAnswerCopy(); // the answer before it has ended (a conversation shown again)
     aiBubble = null;
     aiLabelShown = false;
     JLabel label = label(tr("You"));
@@ -146,6 +157,9 @@ final class ChatView extends JPanel implements Scrollable {
       lastUser.add(text(text, AiTheme.chatFg(), false));
     }
     add(lastUser, Row.USER);
+    if (!text.trim().isEmpty()) {
+      add(new CopyButton(() -> text), Row.COPY_USER);
+    }
     changed(follow);
   }
 
@@ -169,6 +183,7 @@ final class ChatView extends JPanel implements Scrollable {
       aiText.append(text);
       aiText.render();
       bubble().add(aiText);
+      answerText = aiText;
       changed(follow);
     } else {
       aiText.append(text);
@@ -183,7 +198,30 @@ final class ChatView extends JPanel implements Scrollable {
   void answerDone() {
     boolean follow = atBottom();
     closeAi();
+    addAnswerCopy();
     changed(follow);
+  }
+
+  /**
+   * The copy icon of the answer that has ended, under the bubble with its
+   * last text (notes after it, like "Stopped.", stay below the icon). An
+   * answer of tool lines only gets none.
+   */
+  private void addAnswerCopy() {
+    MarkdownView block = answerText;
+    answerText = null;
+    if (block == null || block.source().trim().isEmpty()) {
+      return;
+    }
+    Component bubble = block.getParent();
+    if (bubble == null || bubble.getParent() != this) {
+      return;
+    }
+    CopyButton copy = new CopyButton(block::source);
+    copy.putClientProperty(ROW, Row.COPY_AI);
+    copy.putClientProperty(SMALL, Boolean.TRUE);
+    copy.setFont(small);
+    add(copy, getComponentZOrder(bubble) + 1);
   }
 
   private void renderNow() {
@@ -268,6 +306,10 @@ final class ChatView extends JPanel implements Scrollable {
 
   private void add(Component c, Row row) {
     ((JComponent) c).putClientProperty(ROW, row);
+    if (c instanceof CopyButton) {
+      ((JComponent) c).putClientProperty(SMALL, Boolean.TRUE);
+      c.setFont(small);
+    }
     add(c);
   }
 
@@ -476,6 +518,10 @@ final class ChatView extends JPanel implements Scrollable {
         Row row = (Row) ((JComponent) c).getClientProperty(ROW);
         if (i > 0) {
           y += Theme.scale(row.gap);
+          Row above = (Row) ((JComponent) rows[i - 1]).getClientProperty(ROW);
+          if (above == Row.COPY_USER || above == Row.COPY_AI) {
+            y += Theme.scale(AFTER_COPY);
+          }
         }
         int w;
         switch (row) {
@@ -484,6 +530,8 @@ final class ChatView extends JPanel implements Scrollable {
             break;
           case USER_LABEL:
           case AI_LABEL:
+          case COPY_USER:
+          case COPY_AI:
             w = Math.min(inner, c.getPreferredSize().width);
             break;
           default:

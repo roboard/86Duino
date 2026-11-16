@@ -176,6 +176,15 @@ final class AiTheme {
     return color("ai.link.color", mix(toolbar(), Color.BLACK, 0.3));
   }
 
+  /** The copy icon under each message: faint, darker under the mouse (and its ✓). */
+  static Color copyFg() {
+    return color("ai.copy.color", mix(chatBg(), chatFg(), 0.4));
+  }
+
+  static Color copyHoverFg() {
+    return color("ai.copy.hover.color", assistantAccent());
+  }
+
   /** Lines of tables, quotes and rules in the AI's answers. */
   static Color markLine() {
     return color("ai.line.color", mix(assistantBg(), toolbar(), 0.45));

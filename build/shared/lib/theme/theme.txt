@@ -209,6 +209,9 @@ ai.chat.bgcolor = #F5F5F5
 #ai.assistant.accent.color = #3C4B78
 # error lines in the conversation
 #ai.error.color = #B02020
+# copy icon under each message / under the mouse and its check mark (ai.chat.color 40% over ai.chat.bgcolor / ai.assistant.accent.color)
+ai.copy.color = #8A9BB8
+ai.copy.hover.color = #3C4B78
 # message box and its row of buttons: background and text (console.color; text: 60% to white or black)
 ai.input.bgcolor = #F5F5F5
 ai.input.color = #202020

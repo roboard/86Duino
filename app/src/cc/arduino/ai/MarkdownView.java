@@ -74,6 +74,11 @@ final class MarkdownView extends JPanel implements ChatView.Sized {
     raw.append(text);
   }
 
+  /** The Markdown as the AI wrote it (what the copy icon copies). */
+  String source() {
+    return raw.toString();
+  }
+
   /** The block has ended: the blank lines the AI ends it with are dropped. */
   void finish() {
     int end = raw.length();
