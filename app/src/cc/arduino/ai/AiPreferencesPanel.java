@@ -147,6 +147,21 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     add(baseUrlLabel, label(row));
     add(baseUrlField, field(row++));
     baseUrlField.setToolTipText(tr("Address of an OpenAI-compatible server, for example http://localhost:11434/v1"));
+    baseUrlField.getDocument().addDocumentListener(new DocumentListener() {
+      @Override
+      public void insertUpdate(DocumentEvent e) {
+        connectionChanged();
+      }
+
+      @Override
+      public void removeUpdate(DocumentEvent e) {
+        connectionChanged();
+      }
+
+      @Override
+      public void changedUpdate(DocumentEvent e) {
+      }
+    });
 
     add(new JLabel(tr("API key:")), label(row));
     JPanel keyPanel = new JPanel(new BorderLayout(Theme.scale(4), 0));
@@ -157,11 +172,13 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     apiKeyField.getDocument().addDocumentListener(new DocumentListener() {
       @Override
       public void insertUpdate(DocumentEvent e) {
+        connectionChanged();
         keyTyped();
       }
 
       @Override
       public void removeUpdate(DocumentEvent e) {
+        connectionChanged();
         keyTyped();
       }
 
@@ -387,6 +404,27 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     revalidate();
     // the Base URL row may have appeared: grow the dialog instead of scrolling
     SwingUtilities.invokeLater(() -> SwingUtilities.invokeLater(this::growDialogToFit));
+  }
+
+  /** Increased for every change of the Base URL or the API key field. */
+  private int connectionEdits;
+
+  /**
+   * The Base URL or the API key was changed: the listed models and the chosen
+   * model belonged to the old server or key (a model of the old one makes Test
+   * Connection fail), so both are cleared; Test Connection lists the models of
+   * the new ones and picks one.
+   */
+  private void connectionChanged() {
+    if (loading) {
+      return;
+    }
+    connectionEdits++;
+    modelRequest++; // a list still loading for the old URL or key is dropped
+    modelCombo.setModel(new DefaultComboBoxModel<>());
+    modelCombo.setSelectedItem("");
+    modelStatus.setForeground(Color.GRAY);
+    modelStatus.setText(tr("After Test Connection succeeds, the models this API key can use are listed here."));
   }
 
   private void keyTyped() {
@@ -924,6 +962,7 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
     }
     boolean needModel = s.model.isEmpty();
     String verification = verificationKey(typed);
+    int edits = connectionEdits;
     HermesBundle bundle = currentBundle();
     setTesting(true);
     testResult.setForeground(Color.GRAY);
@@ -941,6 +980,11 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
         boolean[] gotModel = new boolean[1];
         try {
           SwingUtilities.invokeAndWait(() -> {
+            if (edits != connectionEdits) {
+              // the URL or key was changed meanwhile: this list is not theirs, leave the box empty
+              gotModel[0] = !loadedList.models.isEmpty();
+              return;
+            }
             modelRequest++; // a list still loading must not replace this one
             gotModel[0] = applyModelList(p, loadedList, true);
             if (gotModel[0]) {
@@ -988,7 +1032,7 @@ public class AiPreferencesPanel extends JPanel implements javax.swing.Scrollable
         } else {
           showTestResult(success, message);
         }
-        if (success && !needModel) {
+        if (success && !needModel && edits == connectionEdits) {
           loadModels(false); // the models this key can use (already loaded when needModel)
         }
       });

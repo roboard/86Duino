@@ -1627,6 +1627,18 @@ public class Editor extends JFrame implements RunnerListener {
       return;
     }
     Component focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner();
+    Window focusWindow = focus == null ? null : SwingUtilities.getWindowAncestor(focus);
+    if (focusWindow != null && focusWindow != this) {
+      // Another window (Preferences, Find, ...) has the focus, and the menu bar
+      // on top of the screen is still this editor's: the shortcut belongs to
+      // that window, never to the code behind it (Cmd+V in the API key field
+      // must not paste the key into the sketch too).
+      if (focus instanceof JTextComponent && onField != null
+          && (event.getModifiers() & SHORTCUT_KEY_MASK) == 0) {
+        onField.accept((JTextComponent) focus); // chosen in the menu: do it in that field
+      }
+      return;
+    }
     JTextComponent field = editMenuField(focus, this, getCurrentTab().getTextArea());
     if (field == null) {
       onCode.run();
