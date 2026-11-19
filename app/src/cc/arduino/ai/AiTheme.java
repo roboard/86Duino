@@ -110,11 +110,10 @@ final class AiTheme {
 
   /**
    * The bar between the conversation and the message box (it can be dragged):
-   * the gray of the editor's own split bars, so it looks like them.
+   * a light gray, a little darker than the editor's own split bars so it is seen.
    */
   static Color inputDividerBg() {
-    Color laf = javax.swing.UIManager.getColor("SplitPane.background");
-    return color("ai.input.divider.bgcolor", laf != null ? new Color(laf.getRGB()) : new Color(0xF0F0F0));
+    return color("ai.input.divider.bgcolor", new Color(0xE6, 0xE6, 0xE6));
   }
 
   /** The message box with its row of buttons. */
@@ -183,6 +182,39 @@ final class AiTheme {
 
   static Color copyHoverFg() {
     return color("ai.copy.hover.color", assistantAccent());
+  }
+
+  /**
+   * Diffs: the Diff window of a code block and the AI's file changes shown
+   * for permission. Unchanged lines, removed lines (red), added lines
+   * (green), and the "..." between the parts shown.
+   */
+  static Color diffBg() {
+    return color("ai.diff.bgcolor", editorBg());
+  }
+
+  static Color diffFg() {
+    return color("ai.diff.color", mix(diffBg(), readableOn(diffBg()), 0.65));
+  }
+
+  static Color diffDelBg() {
+    return color("ai.diff.del.bgcolor", new Color(0xFF, 0xE0, 0xE0));
+  }
+
+  static Color diffDelFg() {
+    return color("ai.diff.del.color", new Color(0x9A, 0x10, 0x10));
+  }
+
+  static Color diffAddBg() {
+    return color("ai.diff.add.bgcolor", new Color(0xDC, 0xF5, 0xDC));
+  }
+
+  static Color diffAddFg() {
+    return color("ai.diff.add.color", new Color(0x10, 0x6A, 0x10));
+  }
+
+  static Color diffGapFg() {
+    return color("ai.diff.gap.color", new Color(0x80, 0x80, 0xC0));
   }
 
   /** Lines of tables, quotes and rules in the AI's answers. */

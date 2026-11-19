@@ -173,6 +173,28 @@ final class ChatHistory {
     Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
   }
 
+  /**
+   * Keeps the conversation as chat_backup_yyyyMMddHHmmss.json next to it
+   * (New Chat). The IDE never reads these files; renamed to chat.json by hand
+   * (with the IDE closed) the conversation is back.
+   */
+  static void backup(File file) {
+    if (!file.isFile()) {
+      return;
+    }
+    File dir = file.getParentFile();
+    String stamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
+    File to = new File(dir, "chat_backup_" + stamp + ".json");
+    for (int n = 2; to.exists(); n++) {
+      to = new File(dir, "chat_backup_" + stamp + "_" + n + ".json");
+    }
+    try {
+      Files.move(file.toPath(), to.toPath());
+    } catch (IOException e) {
+      System.err.println("Could not back up the AI conversation " + file + ": " + e);
+    }
+  }
+
   /** Removes the saved conversation, and the .ai and data folders when nothing else is in them. */
   static void delete(File file) {
     if (file.isFile() && !file.delete()) {

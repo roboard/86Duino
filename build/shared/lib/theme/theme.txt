@@ -215,8 +215,8 @@ ai.copy.hover.color = #3C4B78
 # message box and its row of buttons: background and text (console.color; text: 60% to white or black)
 ai.input.bgcolor = #F5F5F5
 ai.input.color = #202020
-# bar between the conversation and the message box (the gray of the editor's split bars)
-#ai.input.divider.bgcolor = #F0F0F0
+# bar between the conversation and the message box (a light gray, a little darker than the editor's split bars)
+#ai.input.divider.bgcolor = #E6E6E6
 # "Attach the compile error messages" button    (linestatus.bgcolor / linestatus.color)
 #ai.attach.bgcolor = #3C4B78
 #ai.attach.color = #FFFFFF
@@ -241,6 +241,15 @@ ai.input.color = #202020
 #ai.link.color = #475E82
 # lines of tables, quotes and --- rules          (45%)
 #ai.line.color = #B5C3DA
+# Diff of a code block and the AI's file changes: background, unchanged lines (editor.bgcolor / 65% to black or white),
+# removed lines, added lines, and the ... between the parts shown
+#ai.diff.bgcolor = #FEFCFF
+#ai.diff.color = #595859
+#ai.diff.del.bgcolor = #FFE0E0
+#ai.diff.del.color = #9A1010
+#ai.diff.add.bgcolor = #DCF5DC
+#ai.diff.add.color = #106A10
+#ai.diff.gap.color = #8080C0
 # font of the panel: family,style,size like the other fonts here. The size is the
 # conversation's (Ctrl + mouse wheel changes it); titles and buttons keep their sizes.
 # Hack has Chinese characters too. Lucida and Inconsolata have none: their

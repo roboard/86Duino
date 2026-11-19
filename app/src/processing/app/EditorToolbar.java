@@ -66,7 +66,8 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     tr("Verify"), tr("Upload Using Programmer"), tr("New"), tr("Open"), tr("Save As..."), tr("Serial Monitor"), tr("86LDmicro"), tr("ArduBlock"), tr("86HMI Editor"), tr("86EVA Configurator"), tr("AI Assistant")
   };
 
-  private static int BUTTON_COUNT = 0;
+  /** Every board has the same 11 buttons (buttons_backup.svg); a board shows some of them. */
+  private static final int BUTTON_COUNT = 11;
   /**
    * Width of each toolbar button.
    */
@@ -104,7 +105,53 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   private static final int ROLLOVER = 1;
   private static final int ACTIVE = 2;
   
-  private static String myPictureFileName = "buttons";
+  private static final String myPictureFileName = "buttons_backup";
+
+  /** The buttons on the right, as on the screen from left to right. */
+  private static final int[] RIGHT_GROUP = {EVA, HMI, ARDUBLOCK, LDMICRO, AI, SERIAL};
+
+  /** The 86Duino boards with every tool but 86EVA (board ids of boards.txt). */
+  private static final java.util.List<String> BOARDS_WITHOUT_EVA =
+    java.util.Arrays.asList("86DuinoONE", "86DuinoZERO", "EduCake");
+
+  /**
+   * The tool buttons a board has. QEC: all of them. 86Duino ONE, ZERO and
+   * EduCake: all but 86EVA. Every other board (Arduino, AI-DIO-BOX, boards
+   * not in these lists yet): only the AI Assistant and the Serial Monitor.
+   */
+  public enum ToolSet {
+    ALL, NO_EVA, BASIC;
+
+    /** 86LDmicro, ArduBlock and 86HMI Editor (buttons and Tools menu). */
+    public boolean hasEditorTools() {
+      return this != BASIC;
+    }
+
+    public boolean hasEva() {
+      return this == ALL;
+    }
+  }
+
+  /** The tool set of the board selected now. */
+  public static ToolSet toolSet() {
+    processing.app.debug.TargetBoard board = BaseNoGui.getTargetBoard();
+    if (board == null) {
+      return ToolSet.BASIC;
+    }
+    String name = board.getPreferences().get("name");
+    if (name != null && name.contains("QEC")) {
+      return ToolSet.ALL;
+    }
+    processing.app.debug.TargetPlatform platform = BaseNoGui.getTargetPlatform();
+    String platformName = platform == null ? null : platform.getPreferences().get("name");
+    if (platformName != null && platformName.contains("Vortex86") && BOARDS_WITHOUT_EVA.contains(board.getId())) {
+      return ToolSet.NO_EVA;
+    }
+    return ToolSet.BASIC;
+  }
+
+  /** Which buttons this toolbar shows, by slot (RUN..AI). */
+  private final boolean[] shown = new boolean[BUTTON_COUNT];
 
   private final Editor editor;
 
@@ -142,32 +189,11 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     this.editor = editor;
     this.menu = menu;
 
-    if (BaseNoGui.getTargetBoard().getName().contains("QEC")) {
-        BUTTON_COUNT = 11;
-        buttonCount = 0;
-
-        state = new int[BUTTON_COUNT];
-        which = new int[BUTTON_COUNT];
-
-        setQECImageColumns();
-
-        myPictureFileName = "buttons_backup";
-    } else {
-        BUTTON_COUNT = 6;
-        buttonCount = 0;
-        
-        state = new int[BUTTON_COUNT];
-        which = new int[BUTTON_COUNT];
-
-        which[buttonCount++] = RUN;
-        which[buttonCount++] = EXPORT;
-        which[buttonCount++] = NEW;
-        which[buttonCount++] = OPEN;
-        which[buttonCount++] = SAVE;
-        which[buttonCount++] = SERIAL;
-        
-        myPictureFileName = "buttons";
-    }
+    buttonCount = 0;
+    state = new int[BUTTON_COUNT];
+    which = new int[BUTTON_COUNT];
+    setQECImageColumns();
+    updateShown();
 
     currentRollover = -1;
 
@@ -193,8 +219,16 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(this);
   }
   
+  /** The buttons of the board selected now: the five on the left, and its tools on the right. */
+  private void updateShown() {
+    ToolSet set = toolSet();
+    java.util.Arrays.fill(shown, true);
+    shown[EVA] = set.hasEva();
+    shown[HMI] = shown[ARDUBLOCK] = shown[LDMICRO] = set.hasEditorTools();
+  }
+
   /**
-   * 86Duino: QEC toolbar. A button's slot is its constant (RUN..AI) and picks
+   * 86Duino: the toolbar. A button's slotis its constant (RUN..AI) and picks
    * its action, title and position; which[slot] is the column of its icon in
    * buttons_backup.svg, whose columns follow the on-screen order:
    * RUN EXPORT NEW OPEN SAVE | EVA HMI ARDUBLOCK LDMICRO AI SERIAL.
@@ -222,16 +256,28 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       loadTouchBarImages();
     }
     
-    for (int i = 0; i < BUTTON_COUNT; i++) {
+    // as on the screen: the five on the left, then the board's tools on the right
+    int[] order = new int[BUTTON_COUNT];
+    int n = 0;
+    for (int i = RUN; i <= SAVE; i++) {
+      order[n++] = i;
+    }
+    for (int i : RIGHT_GROUP) {
+      order[n++] = i;
+    }
+    for (int i : order) {
+      if (!shown[i]) {
+        continue;
+      }
       final int selection = i;
-      
-      // add spacers before NEW and SERIAL buttons
+
+      // add spacers before NEW and the right-hand group
       if (i == NEW) {
         touchBar.addItem(new TouchBarItem(TouchBarItem.NSTouchBarItemIdentifierFixedSpaceSmall));
-      } else if (i == SERIAL) {
+      } else if (i == firstShownOnRight()) {
         touchBar.addItem(new TouchBarItem(TouchBarItem.NSTouchBarItemIdentifierFlexibleSpace));
       }
-      
+
       touchBarButtons[i] = new TouchBarButton();
       touchBarButtons[i].setImage(touchBarImages[which[i]][ROLLOVER]);
       touchBarButtons[i].setAction(event -> {
@@ -251,42 +297,41 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     }
   }
 
+  /** Another board series was selected: show its buttons (and on a Mac, on the Touch Bar too). */
   public void rebuildTouchBar() {
-    
-    if (BaseNoGui.getTargetBoard().getName().contains("QEC")) {
-        BUTTON_COUNT = 11;
-        buttonCount = 0;
-        state = new int[BUTTON_COUNT];
-        which = new int[BUTTON_COUNT];
-
-        setQECImageColumns();
-
-        myPictureFileName = "buttons_backup";
-        
-    } else {
-        
-        BUTTON_COUNT = 6;
-        buttonCount = 0;
-        state = new int[BUTTON_COUNT];
-        which = new int[BUTTON_COUNT];
-
-        which[buttonCount++] = RUN;
-        which[buttonCount++] = EXPORT;
-        which[buttonCount++] = NEW;
-        which[buttonCount++] = OPEN;
-        which[buttonCount++] = SAVE;
-        which[buttonCount++] = SERIAL;
-        
-        myPictureFileName = "buttons";
-    }
-
-    touchBarImages = null;
-    buttonImages = null;
+    updateShown();
+    currentRollover = -1;
     stateImage = null;
     offscreen = null;
-    
-    loadTouchBarImages();
-    loadButtons();
+    if (touchBar != null) {
+      touchBar.hide(editor);
+      touchBar = null;
+      touchBarButtons = null;
+      buildTouchBar();
+      touchBar.show(editor);
+    }
+    revalidate();
+    repaint();
+  }
+
+  /** The leftmost button shown on the right, or -1. */
+  private int firstShownOnRight() {
+    for (int i : RIGHT_GROUP) {
+      if (shown[i]) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private int shownOnRight() {
+    int n = 0;
+    for (int i : RIGHT_GROUP) {
+      if (shown[i]) {
+        n++;
+      }
+    }
+    return n;
   }
 
   private void loadButtons() {
@@ -374,34 +419,28 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
         offsetX = x2[i];
       }
 
-      if (buttonCount == 11) {
-          // EVA
-          x1[EVA] = width - (BUTTON_WIDTH * 6) - 14;
-          x2[EVA] = width - (BUTTON_WIDTH * 5) - 14;
-          // HMI
-          x1[HMI] = width - (BUTTON_WIDTH * 5) - 14;
-          x2[HMI] = width - (BUTTON_WIDTH * 4) - 14;
-          // ArduBlock
-          x1[ARDUBLOCK] = width - (BUTTON_WIDTH * 4) - 14;
-          x2[ARDUBLOCK] = width - (BUTTON_WIDTH * 3) - 14;
-          // LDmicro
-          x1[LDMICRO] = width - (BUTTON_WIDTH * 3) - 14;
-          x2[LDMICRO] = width - (BUTTON_WIDTH * 2) - 14;
-          // AI Assistant
-          x1[AI] = width - (BUTTON_WIDTH * 2) - 14;
-          x2[AI] = width - (BUTTON_WIDTH * 1) - 14;
+      // the board's tools against the right edge, the Serial Monitor last;
+      // a button the board does not have is not drawn and cannot be clicked
+      int right = width - 14;
+      for (int k = RIGHT_GROUP.length - 1; k >= 0; k--) {
+        int i = RIGHT_GROUP[k];
+        if (shown[i]) {
+          x1[i] = right - BUTTON_WIDTH;
+          x2[i] = right;
+          right = x1[i];
+        } else {
+          x1[i] = x2[i] = -1;
+        }
       }
-      
-      // Serial button must be on the right
-      x1[SERIAL] = width - BUTTON_WIDTH - 14;
-      x2[SERIAL] = width - 14;
     }
     Graphics2D g = Theme.setupGraphics2D(offscreen.getGraphics());
     g.setColor(bgcolor); //getBackground());
     g.fillRect(0, 0, width, height);
 
     for (int i = 0; i < buttonCount; i++) {
-      g.drawImage(stateImage[i], x1[i], y1, null);
+      if (shown[i]) {
+        g.drawImage(stateImage[i], x1[i], y1, null);
+      }
     }
 
     g.setColor(statusColor);
@@ -424,12 +463,8 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       if (currentRollover != SERIAL && currentRollover != ARDUBLOCK && currentRollover != HMI && currentRollover != EVA && currentRollover != LDMICRO && currentRollover != AI)
         g.drawString(status, 5 * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY); // ORG: g.drawString(status, (buttonCount - 1) * BUTTON_WIDTH + 3 * BUTTON_GAP, statusY);
       else {
-        int statusX = 0;
-        if (buttonCount == 6)
-            statusX = x1[SERIAL] - BUTTON_GAP; // ORG: x1[SERIAL] - BUTTON_GAP
-        else if (buttonCount == 11)
-            statusX = x1[EVA] - BUTTON_GAP; // left of the right-hand group
-        
+        int statusX = x1[firstShownOnRight()] - BUTTON_GAP; // left of the right-hand group
+
         statusX -= g.getFontMetrics().stringWidth(status);
         g.drawString(status, statusX, statusY);
       }
@@ -493,7 +528,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
     if ((x1 == null) || (x2 == null)) return -1;
 
     for (int i = 0; i < buttonCount; i++) {
-      if ((y > y1) && (x > x1[i]) &&
+      if (shown[i] && (y > y1) && (x > x1[i]) &&
         (y < y2) && (x < x2[i])) {
         //System.out.println("sel is " + i);
         return i;
@@ -510,7 +545,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
       repaint();
     }
     
-    if (touchBarButtons != null) { 
+    if (touchBarButtons != null && touchBarButtons[slot] != null) {
       if (newState == INACTIVE) {
         // use ROLLOVER state when INACTIVE
         newState = ROLLOVER;
@@ -743,7 +778,7 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
 
 
   public Dimension getMinimumSize() {
-    return new Dimension((BUTTON_COUNT + 1) * BUTTON_WIDTH, BUTTON_HEIGHT);
+    return new Dimension((5 + shownOnRight() + 1) * BUTTON_WIDTH, BUTTON_HEIGHT);
   }
 
 
@@ -761,11 +796,14 @@ public class EditorToolbar extends JComponent implements MouseInputListener, Key
   public int getRequiredWidth() {
     FontMetrics fm = getFontMetrics(statusFont);
     int longest = 0;
-    for (int i = 0; i < buttonCount && i < title.length; i++) {
-      longest = Math.max(longest, Math.max(fm.stringWidth(title[i]), fm.stringWidth(titleShift[i])));
+    for (int i = 0; i < BUTTON_COUNT && i < title.length; i++) {
+      if (!shown[i]) {
+        continue;
+      }
+      longest= Math.max(longest, Math.max(fm.stringWidth(title[i]), fm.stringWidth(titleShift[i])));
     }
     int leftGroup = 5;
-    int rightGroupWidth = (buttonCount - leftGroup) * BUTTON_WIDTH + 14;
+    int rightGroupWidth = shownOnRight() * BUTTON_WIDTH + 14;
     // the left buttons' titles start here, the right buttons' titles end a gap before their group
     int titleStart = leftGroup * BUTTON_WIDTH + 3 * BUTTON_GAP;
     return titleStart + longest + 2 * BUTTON_GAP + rightGroupWidth;

@@ -22,7 +22,6 @@ import java.awt.LayoutManager;
 import java.awt.Rectangle;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -80,8 +79,11 @@ final class ChatView extends JPanel implements Scrollable {
 
   /** What the buttons of a code block do, given by the AI panel. */
   interface CodeActions {
-    /** Insert into Editor: at the caret of the sketch's current tab. */
-    void insert(String code);
+    /** Diff: how the code differs from a tab (chosen under the button when there are more). */
+    void diff(String code, javax.swing.JComponent button);
+
+    /** Apply: the code replaces all of a tab (chosen under the button when there are more). */
+    void apply(String code, javax.swing.JComponent button);
 
     /** The editor's colors (and, for Arduino code, its keywords) for a code block. */
     void prepare(org.fife.ui.rsyntaxtextarea.RSyntaxTextArea area, boolean arduino);
@@ -321,7 +323,7 @@ final class ChatView extends JPanel implements Scrollable {
     return l;
   }
 
-  /** "AI" in a small badge, then "AI Assistant". */
+  /** "AI" in a small badge over the AI's answer. */
   private JPanel aiLabel() {
     JPanel p = new JPanel();
     p.setLayout(new BoxLayout(p, BoxLayout.X_AXIS));
@@ -335,8 +337,6 @@ final class ChatView extends JPanel implements Scrollable {
     badge.putClientProperty("ai.bold", Boolean.TRUE);
     badge.setFont(small.deriveFont(Font.BOLD));
     p.add(badge);
-    p.add(Box.createHorizontalStrut(Theme.scale(6)));
-    p.add(label(tr("AI Assistant")));
     return p;
   }
 

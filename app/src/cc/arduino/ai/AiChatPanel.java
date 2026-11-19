@@ -40,6 +40,7 @@ import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -171,9 +172,12 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   private JPanel inputPanel;
   /** The message box's smallest height (three lines and the row below); it follows the font. */
   private int inputMin;
-  /** The message box height the window had last time, used once. */
+  /**
+   * The message box height the user chose by dragging the divider (this time
+   * or last time). Every layout shows it again, cut to what fits: a smaller
+   * window does not change it, so the box gets its height back.
+   */
   private int savedInput;
-  private boolean dividerPlaced;
 
   // Conversation state. Changed on the event thread only, except where noted.
   private AcpClient client;
@@ -266,8 +270,13 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     chatView.addMouseWheelListener(this::mouseWheel);
     chatView.setCodeActions(new ChatView.CodeActions() {
       @Override
-      public void insert(String code) {
-        insertCode(code);
+      public void diff(String code, JComponent button) {
+        diffCode(code, button);
+      }
+
+      @Override
+      public void apply(String code, JComponent button) {
+        applyCode(code, button);
       }
 
       @Override
@@ -285,6 +294,8 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     input.setSelectedTextColor(AiTheme.readableOn(input.getSelectionColor()));
     input.setBorder(BorderFactory.createEmptyBorder(Theme.scale(6), Theme.scale(8), Theme.scale(4), Theme.scale(8)));
     input.setLineWrap(true);
+    // Ctrl+Z / Ctrl+Y in the box: its own last steps, never the sketch's (Send can be undone too)
+    InputUndo.install(input);
     input.setWrapStyleWord(true);
     input.setToolTipText(tr("Enter: send, Shift+Enter: new line"));
     input.addKeyListener(new KeyAdapter() {
@@ -391,25 +402,26 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     // editor and the panel: the look and feel's own divider draws its gray
     // and its lines in the IDE whatever the split pane's color.
     // It still shows the resize cursor and can be dragged.
-    AiWidgets.styleDivider(chat, AiTheme.inputDividerBg());
+    // only the user's drag is remembered, not where layouts and resizes put the divider
+    AiWidgets.styleDivider(chat, AiTheme.inputDividerBg(), () -> {
+      int input = chat.getHeight() - chat.getDividerLocation() - chat.getDividerSize();
+      savedInput = Math.max(inputMin, input);
+      PreferencesData.setInteger(AiSettings.PREF_INPUT_HEIGHT, savedInput);
+    });
     chat.setContinuousLayout(true);
     chat.setResizeWeight(1D); // a taller window gives the conversation the room
     chat.setBorder(null);
     chat.setDividerSize(Theme.scale(6));
     Keys.killBinding(chat, Keys.ctrl(KeyEvent.VK_TAB));
     Keys.killBinding(chat, Keys.ctrlShift(KeyEvent.VK_TAB));
-    // read now: the split pane's own first layout moves the divider before it is placed
     savedInput = PreferencesData.getInteger(AiSettings.PREF_INPUT_HEIGHT, inputMin);
+    // Each new size places the divider again from the remembered height. (Until
+    // the split pane is first painted, a resize does not move its divider: the
+    // message box would take all the new height.)
     chat.addComponentListener(new java.awt.event.ComponentAdapter() {
       @Override
       public void componentResized(java.awt.event.ComponentEvent e) {
         placeDivider();
-      }
-    });
-    chat.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> {
-      int input = chat.getHeight() - chat.getDividerLocation() - chat.getDividerSize();
-      if (dividerPlaced && input >= inputMin) {
-        PreferencesData.setInteger(AiSettings.PREF_INPUT_HEIGHT, input);
       }
     });
     cards.add(chat, CARD_CHAT);
@@ -454,8 +466,9 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   }
 
   /**
-   * Keeps the message box between its smallest height and three quarters of
-   * the height; the first time, at the height it had last time.
+   * Shows the message box at the height the user chose, kept between its
+   * smallest height and three quarters of the height (only on the screen:
+   * the chosen height is kept).
    */
   private void placeDivider() {
     int height = chat.getHeight();
@@ -464,10 +477,15 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     }
     int maxInput = Math.max(inputMin, height * 3 / 4);
     transcriptScroll.setMinimumSize(new Dimension(0, height - maxInput - chat.getDividerSize()));
-    int input = dividerPlaced ? height - chat.getDividerLocation() - chat.getDividerSize() : savedInput;
-    input = Math.max(inputMin, Math.min(maxInput, input));
-    dividerPlaced = true;
+    int input = Math.max(inputMin, Math.min(maxInput, savedInput));
     chat.setDividerLocation(height - input - chat.getDividerSize());
+  }
+
+  /** File &gt; Appearance &gt; Reset Settings: the message box at its smallest height again. */
+  public void resetInputHeight() {
+    PreferencesData.remove(AiSettings.PREF_INPUT_HEIGHT);
+    savedInput = inputMin;
+    placeDivider();
   }
 
   // ------------------------------------------------------------------ font size
@@ -560,6 +578,11 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
    */
   public static void styleDivider(JSplitPane split) {
     AiWidgets.styleDivider(split, AiTheme.dividerBg());
+  }
+
+  /** The same, and {@code dragged} runs when the user has dragged the divider with the mouse. */
+  public static void styleDivider(JSplitPane split, Runnable dragged) {
+    AiWidgets.styleDivider(split, AiTheme.dividerBg(), dragged);
   }
 
   // ------------------------------------------------------------------ setup
@@ -1245,6 +1268,12 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     if (!chatView.isEmpty() && !confirmNewConversation()) {
       return;
     }
+    File file = historyFile();
+    if (file != null) {
+      // the old conversation is kept as chat_backup_(time).json, never read by the IDE
+      saveHistory();
+      ChatHistory.backup(file);
+    }
     sessionId = null;
     contextSent = false;
     chatView.clear();
@@ -1254,7 +1283,6 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
     history.clear();
     historyDirty = false;
     resumeSessionId = null;
-    File file = historyFile();
     if (file != null) {
       ChatHistory.delete(file);
     }
@@ -1635,26 +1663,69 @@ public class AiChatPanel extends JPanel implements AcpClient.Listener {
   // ------------------------------------------------------------------ code blocks
 
   /**
-   * "Insert into Editor" of a code block: at the caret of the current tab
-   * (over the selection, when there is one), one step for Undo.
+   * The tab a code block's Diff or Apply is for: with one tab that one at
+   * once, with more a menu under the button (right-aligned), the current tab
+   * first and then the others in their order. A tab that cannot be changed
+   * (e.g. "use external editor") is grayed out.
    */
-  private void insertCode(String code) {
-    if (editor.getCurrentTab() == null) {
+  private void chooseTab(JComponent button, java.util.function.Consumer<EditorTab> then) {
+    List<EditorTab> tabs = editor.getTabs();
+    if (tabs.isEmpty()) {
       return;
     }
-    processing.app.syntax.SketchTextArea area = editor.getCurrentTab().getTextArea();
-    if (!area.isEditable()) {
-      java.awt.Toolkit.getDefaultToolkit().beep(); // e.g. "use external editor"
+    if (tabs.size() == 1) {
+      then.accept(tabs.get(0));
       return;
     }
-    String text = code.endsWith("\n") ? code : code + "\n";
-    area.beginAtomicEdit();
-    try {
-      area.replaceSelection(text);
-    } finally {
-      area.endAtomicEdit();
+    List<EditorTab> order = new ArrayList<>(tabs);
+    EditorTab current = editor.getCurrentTab();
+    if (order.remove(current)) {
+      order.add(0, current);
     }
-    area.requestFocusInWindow();
+    javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+    for (EditorTab tab : order) {
+      javax.swing.JMenuItem item = new javax.swing.JMenuItem(tab.getSketchFile().getFileName());
+      item.setEnabled(tab.getTextArea().isEditable());
+      item.addActionListener(e -> then.accept(tab));
+      menu.add(item);
+    }
+    menu.show(button, button.getWidth() - menu.getPreferredSize().width, button.getHeight());
+  }
+
+  /** The code as it goes into a tab: ending with a line break, like a file. */
+  private static String asTabText(String code) {
+    return code.endsWith("\n") ? code : code + "\n";
+  }
+
+  /** Diff of a code block: a window with how it differs from the chosen tab. */
+  private void diffCode(String code, JComponent button) {
+    chooseTab(button, tab -> {
+      Runnable apply = tab.getTextArea().isEditable() ? () -> applyCode(tab, code) : null;
+      new CodeDiffDialog(SwingUtilities.getWindowAncestor(this), tab.getSketchFile().getFileName(), tab.getText(),
+                         asTabText(code), apply).setVisible(true);
+    });
+  }
+
+  /** Apply of a code block: it replaces all of the chosen tab (one step for Undo), and that tab is shown. */
+  private void applyCode(String code, JComponent button) {
+    chooseTab(button, tab -> applyCode(tab, code));
+  }
+
+  private void applyCode(EditorTab tab, String code) {
+    int index = editor.getTabs().indexOf(tab);
+    if (index < 0 || !tab.getTextArea().isEditable()) {
+      java.awt.Toolkit.getDefaultToolkit().beep(); // closed meanwhile, or "use external editor"
+      return;
+    }
+    if (editor.getCurrentTab() != tab) {
+      editor.selectTab(index);
+    }
+    String text = asTabText(code);
+    if (!text.equals(tab.getText())) {
+      tab.setText(text);
+      tab.getTextArea().setCaretPosition(0);
+    }
+    tab.getTextArea().requestFocusInWindow();
   }
 
   /** A code block in the editor's syntax colors, Arduino code with the editor's keywords. */

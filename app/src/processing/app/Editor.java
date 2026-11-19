@@ -395,26 +395,33 @@ public class Editor extends JFrame implements RunnerListener {
     // 86Duino: the AI panel shares the window width with editor + console
     aiPanel = new cc.arduino.ai.AiChatPanel(this, base);
     aiSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane, null);
-    cc.arduino.ai.AiChatPanel.styleDivider(aiSplitPane); // a pale blue bar, not the gray one
+    // a pale blue bar, not the gray one; only the user's drag sets the panel's
+    // width, not where layouts and window resizes put the divider
+    cc.arduino.ai.AiChatPanel.styleDivider(aiSplitPane, () -> {
+      int width = aiSplitPane.getWidth() - aiSplitPane.getDividerLocation() - aiSplitPane.getDividerSize();
+      if (aiPanelVisible && width >= scale(200)) {
+        PreferencesData.setInteger(cc.arduino.ai.AiSettings.PREF_PANEL_WIDTH, width);
+      }
+    });
     aiSplitPane.setContinuousLayout(true);
     aiSplitPane.setResizeWeight(1D);
     aiSplitPane.setBorder(null);
     aiSplitPane.setDividerSize(0);
     Keys.killBinding(aiSplitPane, Keys.ctrl(KeyEvent.VK_TAB));
     Keys.killBinding(aiSplitPane, Keys.ctrlShift(KeyEvent.VK_TAB));
-    aiSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> {
-      int width = aiSplitPane.getWidth() - aiSplitPane.getDividerLocation() - aiSplitPane.getDividerSize();
-      if (aiPanelVisible && aiSplitPane.getWidth() > 0 && width >= scale(200)) {
-        PreferencesData.setInteger(cc.arduino.ai.AiSettings.PREF_PANEL_WIDTH, width);
-      }
-    });
-    // If a resize (e.g. the window being maximized after it was laid out)
-    // squeezed the open panel below its minimum width, give it its width back.
+    // After a resize the open panel gets its width again, as far as the editor
+    // keeps its minimum width. If the resize (e.g. the window being maximized
+    // after it was laid out) squeezed it below its minimum width, the window
+    // is widened for it.
     aiSplitPane.addComponentListener(new java.awt.event.ComponentAdapter() {
       @Override
       public void componentResized(java.awt.event.ComponentEvent e) {
-        if (aiPanelVisible && isShowing() && aiPanelSqueezed()) {
-          SwingUtilities.invokeLater(() -> placeAiPanel());
+        if (aiPanelVisible && isShowing()) {
+          if (aiPanelSqueezed()) {
+            SwingUtilities.invokeLater(() -> placeAiPanel());
+          } else {
+            fitAiPanel();
+          }
         }
       }
     });
@@ -509,17 +516,53 @@ public class Editor extends JFrame implements RunnerListener {
     return aiSplitPane.getRightComponent() == aiPanel && aiPanel.getWidth() < aiPanel.getMinimumSize().width;
   }
 
+  /** The panel's width: the one the user dragged it to, or the default. */
+  private int aiPanelWidth() {
+    return Math.max(scale(260), PreferencesData.getInteger(cc.arduino.ai.AiSettings.PREF_PANEL_WIDTH, scale(380)));
+  }
+
   /** Gives the open panel its remembered width, widening the window if needed. */
   private void placeAiPanel() {
     if (!aiPanelVisible) {
       return;
     }
-    int width = Math.max(scale(260), PreferencesData.getInteger(cc.arduino.ai.AiSettings.PREF_PANEL_WIDTH, scale(380)));
+    int width = aiPanelWidth();
     widenWindowFor(width);
     validate();
     int location = aiSplitPane.getWidth() - width - aiSplitPane.getDividerSize();
     aiSplitPane.setDividerLocation(Math.max(splitPane.getMinimumSize().width, location));
     aiPanel.focusInput();
+  }
+
+  /**
+   * Gives the open panel its remembered width in the window as it is (the
+   * editor keeps its minimum width); the window and the focus stay.
+   */
+  private void fitAiPanel() {
+    int location = aiSplitPane.getWidth() - aiPanelWidth() - aiSplitPane.getDividerSize();
+    location = Math.max(splitPane.getMinimumSize().width, location);
+    if (location != aiSplitPane.getDividerLocation()) {
+      aiSplitPane.setDividerLocation(location);
+    }
+  }
+
+  /**
+   * File &gt; Appearance &gt; Reset Settings: the AI panel and its message box
+   * at their default sizes again.
+   */
+  void resetAiPanelSizes() {
+    PreferencesData.remove(cc.arduino.ai.AiSettings.PREF_PANEL_WIDTH);
+    aiPanel.resetInputHeight();
+    if (aiPanelVisible && isShowing()) {
+      // after the window's own reset size is laid out
+      SwingUtilities.invokeLater(() -> {
+        if (aiPanelSqueezed()) {
+          placeAiPanel();
+        } else {
+          fitAiPanel();
+        }
+      });
+    }
   }
 
   /**
@@ -951,31 +994,15 @@ public class Editor extends JFrame implements RunnerListener {
     item.addActionListener(e -> toggleAiPanel());
     toolsMenu.add(item);
 
-    if (BaseNoGui.getTargetBoard().getPreferences().get("name").contains("QEC")) {
-      if (globalToolItems.size() > 6) { // loading with high speed
-        toolsMenu.addSeparator();
-        item = globalToolItems.get("ArduBlock");
-        if (item != null) {
-          toolsMenu.add(item);
-        }
-        item = globalToolItems.get("86HMI Editor");
-        if (item != null) {
-          toolsMenu.add(item);
-        }
-        item = globalToolItems.get("86EVA (EtherCAT) Configurator");
-        if (item != null) {
-          toolsMenu.add(item);
-        }
-        item = globalToolItems.get("LDmicro");
-        if (item != null) {
-          toolsMenu.add(item);
-        }
-      } else { // loading with low speed
-        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "ArduBlock", true, 0, true); // 86Duino, specify name to sort, put it on UP location, and reverse sort
-        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "HMI", true, 0, false);
-        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "EcConfig", true, 0, false);
-        addTools(toolsMenu, BaseNoGui.getToolsFolder(), "LDmicro", true, 0, false);
+    // 86Duino: the board's tools, as on the toolbar (QEC: all; ONE, ZERO, EduCake: all but 86EVA)
+    EditorToolbar.ToolSet boardTools = EditorToolbar.toolSet();
+    if (boardTools.hasEditorTools()) {
+      addBoardTool("ArduBlock", "ArduBlock", true);
+      addBoardTool("86HMI Editor", "HMI", false);
+      if (boardTools.hasEva()) {
+        addBoardTool("86EVA (EtherCAT) Configurator", "EcConfig", false);
       }
+      addBoardTool("86LDmicro", "LDmicro", false);
     }
     
     File sketchbookTools = new File(BaseNoGui.getSketchbookFolder(), "tools");
@@ -1063,6 +1090,7 @@ public class Editor extends JFrame implements RunnerListener {
     // For 86Duino
     updateToolsName();
     boardSeriesChanged();
+    shownToolSet = EditorToolbar.toolSet();
     
     toolsMenu.addMenuListener(new StubMenuListener() {
       public JMenuItem getSelectedItemRecursive(JMenu menu) {
@@ -1108,6 +1136,23 @@ public class Editor extends JFrame implements RunnerListener {
     return toolsMenu;
   }
   
+  /**
+   * 86Duino: a tool of the tools folder in the Tools menu (and for its toolbar
+   * button): the one loaded before, else it is loaded now from the jar whose
+   * name contains fileName. A board selected first may not have loaded it.
+   */
+  private void addBoardTool(String title, String fileName, boolean separator) {
+    JMenuItem item = globalToolItems.get(title);
+    if (item != null) {
+      if (separator) {
+        toolsMenu.addSeparator();
+      }
+      toolsMenu.add(item);
+    } else {
+      addTools(toolsMenu, BaseNoGui.getToolsFolder(), fileName, true, 0, separator);
+    }
+  }
+
   private void rebuildToolsMenu() {
     toolsMenu.removeAll();
     buildToolsMenu();
@@ -1651,6 +1696,18 @@ public class Editor extends JFrame implements RunnerListener {
     }
   }
 
+  /**
+   * Undo / Redo chosen in the menu while a text field has the focus: the
+   * field's own (the AI message box has them), never the sketch's. A field
+   * without them does nothing.
+   */
+  private static void runFieldAction(JTextComponent field, String name) {
+    javax.swing.Action action = field.getActionMap().get(name);
+    if (action != null && action.isEnabled()) {
+      action.actionPerformed(new ActionEvent(field, ActionEvent.ACTION_PERFORMED, name));
+    }
+  }
+
   /** The focused text field of this window other than the code area, or null. */
   static JTextComponent editMenuField(Component focus, Window window, Component codeArea) {
     if (focus instanceof JTextComponent && focus != codeArea
@@ -1667,7 +1724,7 @@ public class Editor extends JFrame implements RunnerListener {
 
     undoItem = newJMenuItem(tr("Undo"), 'Z');
     undoItem.setName("menuEditUndo");
-    undoItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleUndo(), null));
+    undoItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleUndo(), field -> runFieldAction(field, "undo")));
     menu.add(undoItem);
 
     if (!OSUtils.isMacOS()) {
@@ -1676,7 +1733,7 @@ public class Editor extends JFrame implements RunnerListener {
         redoItem = newJMenuItemShift(tr("Redo"), 'Z');
     }
     redoItem.setName("menuEditRedo");
-    redoItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleRedo(), null));
+    redoItem.addActionListener(event -> runEditAction(event, () -> getCurrentTab().handleRedo(), field -> runFieldAction(field, "redo")));
     menu.add(redoItem);
 
     menu.addSeparator();
@@ -3204,6 +3261,9 @@ public class Editor extends JFrame implements RunnerListener {
 
   private void resetAppearanceSettings() {
     base.storeSketchLocation(true);
+    for (Editor editor : base.getEditors()) {
+      editor.resetAiPanelSizes();
+    }
     statusNotice(tr("Done Reset."));
   }
 
@@ -3427,6 +3487,8 @@ public class Editor extends JFrame implements RunnerListener {
   // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
   String privBoardName = "";
+  /** The tools of the board the toolbar and the Tools menu were built for. */
+  private EditorToolbar.ToolSet shownToolSet;
   public boolean boardSeriesChanged() {
     String[] nowBoardName;
     
@@ -3508,8 +3570,13 @@ public class Editor extends JFrame implements RunnerListener {
     updateToolsName();
     updateHelpName();
 
-    // 86Duino special function
-    if (boardSeriesChanged()) {
+    // 86Duino special function: another series, or a board with other tools
+    // (two boards of one series, e.g. "86Duino ONE" and a new "86Duino ...", may differ)
+    boolean seriesChanged = boardSeriesChanged();
+    EditorToolbar.ToolSet tools = EditorToolbar.toolSet();
+    boolean toolsChanged = tools != shownToolSet;
+    shownToolSet = tools;
+    if (seriesChanged || toolsChanged) {
         rebuildToolsMenu();
         toolbar.rebuildTouchBar();
         

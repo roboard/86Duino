@@ -167,16 +167,52 @@ final class AiWidgets {
 
   /** The divider of a split pane as a plain bar of one color. */
   static void styleDivider(JSplitPane split, Color color) {
+    styleDivider(split, color, null);
+  }
+
+  /**
+   * The divider of a split pane as a plain bar of one color; {@code dragged}
+   * (if not null) runs when the user has dragged it with the mouse and let go,
+   * the divider at its new place. Layouts and window resizes do not run it.
+   */
+  static void styleDivider(JSplitPane split, Color color, Runnable dragged) {
     split.setUI(new BasicSplitPaneUI() {
       @Override
       public BasicSplitPaneDivider createDefaultDivider() {
-        return new BasicSplitPaneDivider(this) {
+        BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this) {
           @Override
           public void paint(Graphics g) {
             g.setColor(color);
             g.fillRect(0, 0, getWidth(), getHeight());
           }
         };
+        if (dragged != null) {
+          // added after the divider's own mouse handler: it has moved the divider when this runs
+          java.awt.event.MouseAdapter drag = new java.awt.event.MouseAdapter() {
+            private boolean moved;
+
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+              moved = false;
+            }
+
+            @Override
+            public void mouseDragged(java.awt.event.MouseEvent e) {
+              moved = true;
+            }
+
+            @Override
+            public void mouseReleased(java.awt.event.MouseEvent e) {
+              if (moved) {
+                moved = false;
+                dragged.run();
+              }
+            }
+          };
+          divider.addMouseListener(drag);
+          divider.addMouseMotionListener(drag);
+        }
+        return divider;
       }
     });
   }
